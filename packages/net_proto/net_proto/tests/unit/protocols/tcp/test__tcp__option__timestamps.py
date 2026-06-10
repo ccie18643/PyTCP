@@ -412,6 +412,17 @@ class TestTcpOptionTimestampsParser(TestCase):
             },
         },
         {
+            "_description": "TCP Timestamps option, buffer 'type' byte is below TcpOptionType.TIMESTAMPS.",
+            "_args": [b"\x05\x0a\x00\x00\x00\x00\x00\x00\x00\x00"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Timestamps option type must be {TcpOptionType.TIMESTAMPS!r}. "
+                    f"Got: {TcpOptionType.from_int(5)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Timestamps option, declared 'len' differs from TCP__OPTION__TIMESTAMPS__LEN.",
             "_args": [b"\x08\x09\x00\x00\x00\x00\x00\x00\x00\x00"],
             "_results": {

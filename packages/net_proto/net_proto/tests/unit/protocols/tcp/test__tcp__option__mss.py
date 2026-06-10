@@ -346,6 +346,16 @@ class TestTcpOptionMssParser(TestCase):
             },
         },
         {
+            "_description": "TCP Mss option, buffer 'type' byte is below TcpOptionType.MSS.",
+            "_args": [b"\x01\x04\xff\xff"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Mss option type must be {TcpOptionType.MSS!r}. " f"Got: {TcpOptionType.from_int(1)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Mss option, declared 'len' byte differs from TCP__OPTION__MSS__LEN.",
             "_args": [b"\x02\x03\xff\xff"],
             "_results": {

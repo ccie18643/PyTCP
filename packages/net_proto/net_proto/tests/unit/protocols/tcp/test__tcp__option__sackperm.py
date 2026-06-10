@@ -217,6 +217,17 @@ class TestTcpOptionSackpermParser(TestCase):
             },
         },
         {
+            "_description": "TCP Sackperm option, buffer 'type' byte is below TcpOptionType.SACKPERM.",
+            "_args": [b"\x03\x02"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Sackperm option type must be {TcpOptionType.SACKPERM!r}. "
+                    f"Got: {TcpOptionType.from_int(3)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Sackperm option, declared 'len' byte differs from TCP__OPTION__SACKPERM__LEN.",
             "_args": [b"\x04\x01"],
             "_results": {

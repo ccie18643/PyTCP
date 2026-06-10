@@ -463,6 +463,16 @@ class TestTcpOptionSackParser(TestCase):
             },
         },
         {
+            "_description": "TCP Sack option, buffer 'type' byte is below TcpOptionType.SACK.",
+            "_args": [b"\x04\x02"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Sack option type must be {TcpOptionType.SACK!r}. " f"Got: {TcpOptionType.from_int(4)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Sack option, declared 'len' exceeds provided buffer size.",
             "_args": [b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff"],
             "_results": {

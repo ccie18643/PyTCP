@@ -375,6 +375,17 @@ class TestTcpOptionWscaleParser(TestCase):
             },
         },
         {
+            "_description": "TCP Wscale option, buffer 'type' byte is below TcpOptionType.WSCALE.",
+            "_args": [b"\x02\x03\x0e"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Wscale option type must be {TcpOptionType.WSCALE!r}. "
+                    f"Got: {TcpOptionType.from_int(2)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Wscale option, declared 'len' byte differs from TCP__OPTION__WSCALE__LEN.",
             "_args": [b"\x03\x02\x0e"],
             "_results": {

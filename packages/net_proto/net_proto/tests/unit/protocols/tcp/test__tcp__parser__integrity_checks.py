@@ -238,3 +238,38 @@ class TestTcpParserIntegrityBoundary(TestCase):
             24,
             msg="Baseline-frame parser must report hlen=24.",
         )
+
+    def test__tcp__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip__payload_len' (the TCP
+        segment is followed by lower-layer padding) still parses: both
+        integrity bounds end in 'ip__payload_len <= len(frame)', so
+        trailing bytes beyond the IP-declared payload are tolerated, not
+        rejected, and the payload is sliced at 'ip__payload_len'.
+
+        Reference: RFC 9293 §3.1 (TCP header integrity).
+        """
+
+        # Baseline 24-byte segment (valid checksum) followed by 4 octets of
+        # lower-layer padding. ip__payload_len=24 is strictly less than
+        # len(frame)=28.
+        frame = _BASELINE_FRAME + b"\x00\x00\x00\x00"
+
+        packet_rx = PacketRx(frame)
+        packet_rx.ip = SimpleNamespace(  # type: ignore[assignment]
+            payload_len=len(_BASELINE_FRAME),
+            pshdr_sum=0,
+        )
+
+        parser = TcpParser(packet_rx)
+
+        self.assertEqual(
+            parser.hlen,
+            24,
+            msg="Trailing-padding frame must parse with hlen=24.",
+        )
+        self.assertEqual(
+            bytes(parser.payload),
+            b"",
+            msg="Payload must end at ip__payload_len, excluding the lower-layer padding.",
+        )
