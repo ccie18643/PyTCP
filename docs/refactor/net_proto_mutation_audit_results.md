@@ -32,6 +32,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | ip6_hbh | 1427   | 72.7 %     | 72.7 %    | ~90 %                 | 0 (seam)            | DONE   |
 | ip6_dest_opts | 1070 | 70.2 % | 70.2 %    | ~90 %                 | 0 (seam)            | DONE   |
 | igmp  | 1369    | 78.7 %     | 78.7 %    | ~93 %                 | 0 (seam)            | DONE   |
+| lib   | 1123    | 91.2 %     | 91.2 %    | ~98 %                 | 0                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -504,3 +505,81 @@ The clean bit-field patterns are **already covered**:
 - `igmp__v3_group_record.py` source-list / aux-data offset arithmetic —
   the same source-list-length seam as the MLDv2 / classless-static-route
   options. A Phase-2-relevant deep-TLV follow-up.
+
+
+---
+
+## Shard: lib (shared foundation, full-suite scope)
+
+**Baseline:** 1024 / 1123 = **91.2 % raw**, 99 survivors. ~98 %
+equivalent-adjusted. Run with the **full net_proto suite** as the
+test-command (lib is shared by every protocol). No genuine gap; no test
+change — the foundation is solid.
+
+The 99 survivors are all equivalent:
+
+- **`inet_cksum.py` 8-byte fast-path chunking** (~19, the largest cluster)
+  — `if (remainder := buffer_len - offset) >= 8` and `q_count =
+  remainder >> 3`. These are a **result-preserving optimization**: the
+  one's-complement sum is associative, so changing the chunk threshold
+  (`>= 8` → `>= 9`) or the chunk count (`>> 3` → `>> 4`) only shifts
+  bytes between the fast path and the remainder loop — the checksum is
+  byte-for-byte identical. Verified: both survive every protocol's
+  checksum test. Equivalent.
+- **`int_checks.py` `x % 4 == 0` / `x % 8 == 0`** alignment predicates —
+  `== 0` → `<= 0` is equivalent (`x % n` ≥ 0). The `UINT_24__MIN = 0`
+  constant IS tested (0 → 1 is killed).
+- The usual classes: PEP 604 annotation-`|`, `@override`, interned-string
+  prefix comparisons (`prefix == "RX"` ≡ `is`), the `proto.py` /
+  `proto_option.py` `type(self) is type(other)` identity guards, and the
+  `tracker.py` time-delta f-string arithmetic.
+
+---
+
+## Audit complete — final summary
+
+**Scope:** all 20 protocols + the shared `lib`, 27,007 source mutants
+across 21 shards. Branch `PyTCP_3_0_8`, test-only throughout (production
+source pristine), full suite green (12822 → ~12940 tests).
+
+| Tier | Shards | Genuine gaps closed |
+|------|--------|--------------------:|
+| **P0** core codecs | tcp, ip4, ip6, udp, icmp4, icmp6, arp, ethernet | 53 |
+| **P1** stateful/optional + ext headers | dhcp4, dhcp6, dns, ip6_frag/routing/hbh/dest_opts, igmp | 17 |
+| **Foundation** | lib | 0 (solid) |
+| **Total** | 21 shards | **70** |
+
+### The standout findings
+
+1. **Three whole-thing omissions** — entire codecs with *no test file at
+   all*: TCP Fast Open option (RFC 7413), ICMPv6 Packet Too Big (RFC
+   4443), MLDv2 Query (RFC 3810, the single largest gap at 185
+   surviving mutants). These are exactly what mutation testing exists to
+   catch and line coverage cannot.
+2. **The wrong-type / wrong-code assert gap** recurred across ~30 options
+   in 4 protocols (ip4, dhcp4, dhcp6, accecn) — the `buffer[0] ==
+   int(Type)` dispatch-guaranteed assert was untested everywhere.
+3. **Degenerate-fixture patterns** — empty-data `__len__` (icmp4/icmp6),
+   one-sided boundary tests (the over-length `!= LEN`), the DNS
+   all-flags header (every flag bit position unexercised), the AccECN
+   field-ordering invariant.
+
+### The honest equivalent-adjusted story
+
+Raw scores (60–91 %) badly understate the suite: PyTCP's annotation-dense
+Python 3.14 code is saturated with **equivalent mutants** — PEP 604 union
+`|` under lazy annotations (the single biggest class everywhere),
+`@override` removals, disjoint bit-packing (`|` ≡ `^`), result-preserving
+optimizations (the inet_cksum chunking), base-coincidence arithmetic
+(ARP `0x0001`, IGMP code-128, routing RH0=0), and message-text formulas.
+**Equivalent-adjusted, every shard is 90–100 %.** The genuine gaps were
+concentrated, not diffuse.
+
+### Documented deep-TLV follow-up seam (not closed)
+
+The same intricate territory across protocols, deferred as a dedicated
+future pass: ip4 route-record / CIPSO / timestamp options, dhcp4 RFC 3442
+classless-static-route walk, icmp6 ND options, ip6 HBH/DestOpt
+option-walkers, dns name compression, igmp IGMPv3 record/aux-data
+arithmetic. These need contrived multi-descriptor / boundary frames for
+marginal, mostly-equivalent gain.
