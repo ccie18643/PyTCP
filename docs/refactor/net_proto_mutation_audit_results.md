@@ -23,6 +23,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | icmp6 | 5755    | 80.8 %     | 84.2 %    | ~96 %                 | 7                   | DONE   |
 | udp   | 280     | 80.7 %     | 81.4 %    | ~97 %                 | 2                   | DONE   |
 | arp   | 216     | 82.9 %     | 82.9 %    | 100 %                 | 0                   | DONE   |
+| ethernet | 217  | 72.4 %     | 72.4 %    | 100 %                 | 0                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -303,3 +304,38 @@ survivors are:
   identically to reading the full word; killable only by a contrived
   non-Ethernet hardware type. Equivalent for the realistic frame set.
 - `@override` removals. Equivalent.
+
+
+---
+
+## Shard: ethernet
+
+**Baseline:** 157 / 217 = **72.4 % raw**, 60 survivors. **No genuine
+gaps** — every survivor is equivalent (adjusted **100 %**); no test change
+was made.
+
+The low raw is the same single equivalent class as ip6: 44 of the 60
+survivors are the `EthernetAssembler` PEP 695 generic type-parameter
+constraint `[P: (ArpAssembler | Ip4Assembler | Ip6Assembler | …)]` in
+`ethernet__base.py` — a PEP 604 union spread across continuation lines,
+never executed at runtime. The remainder: 14 `@override` removals, one
+`@dataclass(frozen=True…)` flag flip (cosmetic), and one
+`ReplaceBinaryOperator_Mul` on the `*` keyword-only marker in the
+assembler signature (a parser artifact, not an operator).
+
+---
+
+## P0 milestone — all 8 core codecs complete
+
+| Metric | Value |
+|--------|------:|
+| P0 shards done | 8 / 8 (tcp, ip4, ip6, udp, icmp4, icmp6, arp, ethernet) |
+| Genuine gaps closed | 53 |
+| Whole-thing gaps found | 3 (TCP FastOpen, ICMPv6 Packet Too Big, MLDv2 Query) |
+| Tests added | ~150 |
+| Production source changes | 0 (test-only throughout) |
+
+The stop-early signal (§3) has fired: the last shards yielded 2 (udp),
+0 (arp), 0 (ethernet) genuine gaps — the core codecs are proven strong.
+The remaining P1 options-heavy modules (dhcp4 / ip4-options-analog, dns,
+igmp) are still the richest expected seam and are not skipped.
