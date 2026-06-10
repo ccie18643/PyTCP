@@ -176,3 +176,74 @@ class TestDnsHeaderRejected(TestCase):
             str(raised.exception),
             msg=f"Unexpected assertion message for case: {self._description}",
         )
+
+
+class TestDnsHeaderAllFlags(TestCase):
+    """
+    The DNS header all-flags-distinct round-trip tests, pinning every
+    flag bit position and the opcode / rcode codepoints.
+    """
+
+    def test__dns__header__all_flags_distinct_bytes(self) -> None:
+        """
+        Ensure '__bytes__()' packs every flag bit at its correct
+        position with a header whose flags are all set to distinct
+        values, pinning each '<< n' shift, the opcode/rcode codepoints,
+        and the count fields.
+
+        Reference: RFC 1035 §4.1.1 (Header flags layout).
+        """
+
+        header = DnsHeader(
+            id=0x1234,
+            qr=True,
+            opcode=DnsOpcode.STATUS,
+            aa=True,
+            tc=True,
+            rd=True,
+            ra=True,
+            z=5,
+            rcode=DnsResponseCode.REFUSED,
+            qdcount=0x1111,
+            ancount=0x2222,
+            nscount=0x3333,
+            arcount=0x4444,
+        )
+
+        # DNS header wire frame (12 bytes):
+        #   Bytes 0-1   : 0x1234 -> id
+        #   Bytes 2-3   : 0x97d5 -> flags: qr=1, opcode=2 (STATUS), aa=1,
+        #                 tc=1, rd=1, ra=1, z=5, rcode=5 (REFUSED)
+        #   Bytes 4-5   : 0x1111 -> qdcount
+        #   Bytes 6-7   : 0x2222 -> ancount
+        #   Bytes 8-9   : 0x3333 -> nscount
+        #   Bytes 10-11 : 0x4444 -> arcount
+        self.assertEqual(
+            bytes(header),
+            b"\x12\x34\x97\xd5\x11\x11\x22\x22\x33\x33\x44\x44",
+            msg="All-flags-distinct header must pack each flag at its correct bit position.",
+        )
+
+    def test__dns__header__all_flags_distinct_round_trip_fields(self) -> None:
+        """
+        Ensure 'from_buffer()' unpacks every flag field from its correct
+        bit position with a header whose flags are all distinct, pinning
+        each '>> n & mask' extraction.
+
+        Reference: RFC 1035 §4.1.1 (Header flags layout).
+        """
+
+        decoded = DnsHeader.from_buffer(b"\x12\x34\x97\xd5\x11\x11\x22\x22\x33\x33\x44\x44")
+
+        self.assertTrue(decoded.qr, msg="qr must unpack from bit 15.")
+        self.assertEqual(decoded.opcode, DnsOpcode.STATUS, msg="opcode must unpack from bits 11-14.")
+        self.assertTrue(decoded.aa, msg="aa must unpack from bit 10.")
+        self.assertTrue(decoded.tc, msg="tc must unpack from bit 9.")
+        self.assertTrue(decoded.rd, msg="rd must unpack from bit 8.")
+        self.assertTrue(decoded.ra, msg="ra must unpack from bit 7.")
+        self.assertEqual(decoded.z, 5, msg="z must unpack from bits 4-6.")
+        self.assertEqual(decoded.rcode, DnsResponseCode.REFUSED, msg="rcode must unpack from bits 0-3.")
+        self.assertEqual(decoded.qdcount, 0x1111, msg="qdcount must unpack from bytes 4-5.")
+        self.assertEqual(decoded.ancount, 0x2222, msg="ancount must unpack from bytes 6-7.")
+        self.assertEqual(decoded.nscount, 0x3333, msg="nscount must unpack from bytes 8-9.")
+        self.assertEqual(decoded.arcount, 0x4444, msg="arcount must unpack from bytes 10-11.")
