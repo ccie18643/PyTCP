@@ -194,14 +194,22 @@ class TestDnsNameDecode(TestCase):
     def test__dns__name__decode_rejects_reserved_label_bits(self) -> None:
         """
         Ensure a label whose top two length bits are the reserved 10 / 01
-        combinations is rejected.
+        combinations is rejected specifically as a reserved-top-bits
+        error — not merely as some later integrity failure once the
+        reserved octet is mis-interpreted as a label length.
 
         Reference: RFC 1035 §4.1.4 (Message compression).
         """
 
         # 0x80 -> top bits '10', a reserved label type.
-        with self.assertRaises(DnsIntegrityError):
+        with self.assertRaises(DnsIntegrityError) as error:
             decode_name(b"\x80\x00", 0)
+
+        self.assertIn(
+            "reserved top bits",
+            str(error.exception),
+            msg="A reserved label-type octet must be rejected as a reserved-top-bits error.",
+        )
 
     def test__dns__name__decode_rejects_name_over_max(self) -> None:
         """
