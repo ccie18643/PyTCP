@@ -311,3 +311,33 @@ class TestDhcp6OptionClientIdBehavior(TestCase):
 
         with self.assertRaises(FrozenInstanceError):
             option.duid = b"other"  # type: ignore[misc]
+
+
+class TestDhcp6OptionClientIdWrongType(TestCase):
+    """
+    The DHCPv6 Client Identifier option wrong-code-word parser tests.
+    """
+
+    def test__dhcp6__option__client_id__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code word equals
+        Dhcp6OptionType.CLIENT_ID and rejects a code below it, pinning the
+        equality check against a '<=' relaxation.
+
+        Reference: RFC 8415 §21.2 (Client Identifier option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionClientId.from_buffer(b"\x00\x00\x00\x0a\x00\x01\x00\x01\x11\x22\x33\x44\x55\x66")
+
+    def test__dhcp6__option__client_id__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code word above
+        Dhcp6OptionType.CLIENT_ID, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 8415 §21.2 (Client Identifier option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionClientId.from_buffer(b"\xff\xff\x00\x0a\x00\x01\x00\x01\x11\x22\x33\x44\x55\x66")
