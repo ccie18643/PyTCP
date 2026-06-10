@@ -24,6 +24,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | udp   | 280     | 80.7 %     | 81.4 %    | ~97 %                 | 2                   | DONE   |
 | arp   | 216     | 82.9 %     | 82.9 %    | 100 %                 | 0                   | DONE   |
 | ethernet | 217  | 72.4 %     | 72.4 %    | 100 %                 | 0                   | DONE   |
+| dhcp4 | 3708    | 76.9 %     | 77.3 %    | ~93 %                 | 11                  | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -339,3 +340,36 @@ The stop-early signal (§3) has fired: the last shards yielded 2 (udp),
 0 (arp), 0 (ethernet) genuine gaps — the core codecs are proven strong.
 The remaining P1 options-heavy modules (dhcp4 / ip4-options-analog, dns,
 igmp) are still the richest expected seam and are not skipped.
+
+
+---
+
+## Shard: dhcp4 (P1)
+
+**Baseline:** 2852 / 3708 = **76.9 % raw**, 856 survivors. **After:**
+2865 / 3708 = **77.3 % raw** (13 newly killed), ~93 % equivalent-adjusted.
+The largest single module (the richest TLV seam).
+
+### Genuine gaps closed (commit `92388397`, kill-proven, test-only)
+
+| Module(s) | Mutation | Killing test |
+|-----------|----------|--------------|
+| 10 options (classless_static_route, client_id, host_name, lease_time, message_type, param_req_list, req_ip_addr, router, server_id, subnet_mask) | `buffer[0] == int(Dhcp4OptionType.X)` code-byte assert → `<=` / `>=` | wrong-code byte below (0x00) and above (0xff) over a valid frame |
+| `dhcp4__option__classless_static_route.py:213` | `prefixlen > 32` → `>= 32` | from_buffer decoding a valid /32 host route (every prior fixture used a non-/32 prefix) |
+
+### Documented remaining (intricate / lower-value, not closed)
+
+The same intricate-TLV territory as ip4's route-record modulo and icmp6's
+ND options — a follow-up seam if a deeper pass is wanted:
+
+- **RFC 3442 classless_static_route** significant-octet walk arithmetic
+  (`offset += 1 + n_sig + ROUTER_LEN`, the descriptor-truncation bound) —
+  needs contrived multi-descriptor / boundary frames.
+- **dhcp4__options container walker** (76 survivors) and **dhcp4__header**
+  (37) field arithmetic.
+- **Fixed-option buffer-bound** `DHCP4__OPTION__LEN + buffer[1] > len(buffer)`
+  short-buffer branch — untested across the fixed-length options (the
+  `!=LEN` exactness check IS tested; the over-length-vs-buffer branch is
+  not).
+- The usual equivalents: PEP 604 annotation-`|`, `@override`, the
+  "max length" error-message arithmetic, dispatch-backstopped asserts.
