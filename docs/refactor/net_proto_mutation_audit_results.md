@@ -26,6 +26,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | ethernet | 217  | 72.4 %     | 72.4 %    | 100 %                 | 0                   | DONE   |
 | dhcp4 | 3708    | 76.9 %     | 77.3 %    | ~93 %                 | 11                  | DONE   |
 | dhcp6 | 2407    | 78.4 %     | ~79 %     | ~94 %                 | 4                   | DONE   |
+| dns   | 1116    | 61.2 %     | ~64 %     | ~90 %                 | 2                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -399,3 +400,31 @@ status_code already had wrong-code-word coverage.)
 - The IA_NA / IA_ADDR nested-options length arithmetic.
 - The usual equivalents (PEP 604 annotation-`|`, `@override`,
   message-text arithmetic, dispatch-backstopped asserts).
+
+
+---
+
+## Shard: dns (P1)
+
+**Baseline:** 683 / 1116 = **61.2 % raw** (the lowest of any shard),
+433 survivors. ~90 % equivalent-adjusted. dns is the weakest-covered
+codec.
+
+### Genuine gap closed (kill-proven, test-only)
+
+| Module | Mutation surface | Killing test |
+|--------|------------------|--------------|
+| `dns__header.py` (~145 survivors) | flag `<< n` pack shifts + `>> n & mask` unpack extractions — the round-trip fixture set only `rd` (flags=0x0100), leaving every other bit position unexercised | all-flags-distinct header (qr / opcode=STATUS / aa / tc / rd / ra / z=5 / rcode=REFUSED, distinct counts): exact-12-byte-frame assert (pins pack shifts + opcode/rcode codepoints) + per-field round-trip (pins unpack masks) |
+
+### Documented remaining (lower-value / intricate, not closed)
+
+- **RFC 1035 §4.1.4 name compression** (`dns__name.py`, 52 survivors) —
+  the pointer detection / offset computation / length-bound arithmetic;
+  the genuinely tricky parse, an intricate follow-up seam.
+- **Untested enum codepoints** (`dns__enums.py`, 34) — IQUERY / STATUS /
+  NOTIFY / UPDATE, the RR types (NS / CNAME / SOA / PTR / MX / TXT), and
+  classes (CH / HS); only the common A / AAAA / IN and the STATUS /
+  REFUSED used by the new header test are pinned. Low-value codepoint
+  pinning.
+- `aa << 10 |` -> `^` (disjoint-bitpack equivalent); the opcode
+  `& 0b1111` -> `& 0b111` mask (no defined opcode reaches bit 3).
