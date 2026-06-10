@@ -787,6 +787,51 @@ class TestDhcp4HeaderOperation(TestCase):
             msg="from_buffer must reject frames with bad magic cookie with Dhcp4IntegrityError.",
         )
 
+    def test__dhcp4__header__from_buffer_rejects_hrlen_below(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a hardware length BELOW 6, pinning
+        the 'hrlen != 6' check against a '> 6' relaxation (the existing
+        bad-hrlen case only clobbers it above 6).
+
+        Reference: RFC 2131 §2 (BOOTP hlen field; hlen=6 for Ethernet).
+        """
+
+        original = Dhcp4Header(**self._valid_kwargs())
+        frame = bytearray(bytes(memoryview(original)))
+        frame[2] = 0x05  # clobber hrlen below the Ethernet value of 6
+
+        with self.assertRaises(Dhcp4IntegrityError) as error:
+            Dhcp4Header.from_buffer(bytes(frame))
+
+        self.assertIn(
+            "Invalid DHCPv4 hardware length",
+            str(error.exception),
+            msg="from_buffer must reject a below-6 hardware length with Dhcp4IntegrityError.",
+        )
+
+    def test__dhcp4__header__from_buffer_rejects_magic_cookie_below(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a magic cookie numerically BELOW
+        0x63825363, pinning the 'magic_cookie != cookie' check against a
+        '> cookie' relaxation (the existing bad-cookie case only clobbers
+        it above the value).
+
+        Reference: RFC 2131 §3 / RFC 2132 §2 (DHCP magic cookie 0x63825363).
+        """
+
+        original = Dhcp4Header(**self._valid_kwargs())
+        frame = bytearray(bytes(memoryview(original)))
+        frame[236:240] = b"\x00\x00\x00\x00"  # 0x00000000 < 0x63825363
+
+        with self.assertRaises(Dhcp4IntegrityError) as error:
+            Dhcp4Header.from_buffer(bytes(frame))
+
+        self.assertIn(
+            "Invalid DHCPv4 magic cookie",
+            str(error.exception),
+            msg="from_buffer must reject a below-value magic cookie with Dhcp4IntegrityError.",
+        )
+
     def test__dhcp4__header__equality(self) -> None:
         """
         Ensure two DHCPv4 headers with identical field values compare equal.
