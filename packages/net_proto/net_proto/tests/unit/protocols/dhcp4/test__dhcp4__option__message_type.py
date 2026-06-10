@@ -498,3 +498,33 @@ class TestDhcp4OptionMessageTypeBehavior(TestCase):
                 type=Dhcp4OptionType.MESSAGE_TYPE,
                 message_type=Dhcp4MessageType.DISCOVER,
             )
+
+
+class TestDhcp4OptionMessageTypeWrongType(TestCase):
+    """
+    The DHCPv4 Message Type option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__message_type__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.MESSAGE_TYPE and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.6 (DHCP Message Type option code 53).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionMessageType.from_buffer(b"\x00\x01\x01")
+
+    def test__dhcp4__option__message_type__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.MESSAGE_TYPE, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.6 (DHCP Message Type option code 53).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionMessageType.from_buffer(b"\xff\x01\x01")

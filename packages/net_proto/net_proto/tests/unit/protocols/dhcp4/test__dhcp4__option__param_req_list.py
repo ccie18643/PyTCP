@@ -617,3 +617,33 @@ class TestDhcp4OptionParamReqListBehavior(TestCase):
                 [Dhcp4OptionType.HOST_NAME],
                 type=Dhcp4OptionType.PARAM_REQ_LIST,
             )
+
+
+class TestDhcp4OptionParamReqListWrongType(TestCase):
+    """
+    The DHCPv4 Parameter Request List option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__param_req_list__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.PARAM_REQ_LIST and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.8 (Parameter Request List option code 55).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionParamReqList.from_buffer(b"\x00\x03\x01\x03\x33")
+
+    def test__dhcp4__option__param_req_list__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.PARAM_REQ_LIST, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.8 (Parameter Request List option code 55).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionParamReqList.from_buffer(b"\xff\x03\x01\x03\x33")

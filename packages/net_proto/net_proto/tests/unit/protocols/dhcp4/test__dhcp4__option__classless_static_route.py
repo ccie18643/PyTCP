@@ -490,3 +490,63 @@ class TestDhcp4OptionClasslessStaticRouteIntegrity(TestCase):
             str(error.exception),
             msg="A below-minimum length byte must raise a typed integrity error.",
         )
+
+
+class TestDhcp4OptionClasslessStaticRouteWrongType(TestCase):
+    """
+    The DHCPv4 Classless Static Route option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__classless_static_route__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.CLASSLESS_STATIC_ROUTE and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 3442 (Classless Static Route option code 121).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClasslessStaticRoute.from_buffer(b"\x00\x08\x18\x0a\x00\x00\xc0\xa8\x01\x01")
+
+    def test__dhcp4__option__classless_static_route__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.CLASSLESS_STATIC_ROUTE, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 3442 (Classless Static Route option code 121).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClasslessStaticRoute.from_buffer(b"\xff\x08\x18\x0a\x00\x00\xc0\xa8\x01\x01")
+
+
+class TestDhcp4OptionClasslessStaticRouteHostRoute(TestCase):
+    """
+    The DHCPv4 Classless Static Route /32 host-route boundary tests.
+    """
+
+    def test__dhcp4__option__classless_static_route__from_buffer_prefixlen_32_accepted(self) -> None:
+        """
+        Ensure 'from_buffer()' accepts a /32 host route — the inclusive
+        maximum prefix length — pinning the 'prefixlen > 32' rejection
+        against a '>= 32' over-rejection that would reject valid host
+        routes.
+
+        Reference: RFC 3442 (subnet-mask width is 0..32 inclusive).
+        """
+
+        # Classless Static Route option, one /32 host route:
+        #   Byte 0     : 0x79       -> code=CLASSLESS_STATIC_ROUTE (121)
+        #   Byte 1     : 0x09       -> len=9
+        #   Byte 2     : 0x20       -> prefixlen=32 (all 4 octets significant)
+        #   Bytes 3-6  : 0x0a010203 -> destination 10.1.2.3
+        #   Bytes 7-10 : 0xc0a80101 -> router 192.168.1.1
+        decoded = Dhcp4OptionClasslessStaticRoute.from_buffer(b"\x79\x09\x20\x0a\x01\x02\x03\xc0\xa8\x01\x01")
+
+        self.assertEqual(
+            decoded.routes,
+            [(Ip4Network("10.1.2.3/32"), Ip4Address("192.168.1.1"))],
+            msg="A /32 host route must decode (prefixlen=32 is the inclusive maximum).",
+        )

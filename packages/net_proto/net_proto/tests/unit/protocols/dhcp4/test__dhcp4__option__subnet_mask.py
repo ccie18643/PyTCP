@@ -539,3 +539,33 @@ class TestDhcp4OptionSubnetMaskBehavior(TestCase):
                 Ip4Mask("255.255.255.0"),
                 type=Dhcp4OptionType.SUBNET_MASK,
             )
+
+
+class TestDhcp4OptionSubnetMaskWrongType(TestCase):
+    """
+    The DHCPv4 Subnet Mask option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__subnet_mask__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.SUBNET_MASK and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §3.3 (Subnet Mask option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionSubnetMask.from_buffer(b"\x00\x04\xff\xff\xff\x00")
+
+    def test__dhcp4__option__subnet_mask__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.SUBNET_MASK, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §3.3 (Subnet Mask option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionSubnetMask.from_buffer(b"\xff\x04\xff\xff\xff\x00")

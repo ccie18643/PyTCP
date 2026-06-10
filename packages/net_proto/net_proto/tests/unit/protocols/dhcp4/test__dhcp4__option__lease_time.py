@@ -468,3 +468,33 @@ class TestDhcp4OptionLeaseTimeBehavior(TestCase):
                 type=Dhcp4OptionType.LEASE_TIME,
                 lease_time=60,
             )
+
+
+class TestDhcp4OptionLeaseTimeWrongType(TestCase):
+    """
+    The DHCPv4 Lease Time option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__lease_time__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.LEASE_TIME and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.2 (IP Address Lease Time option code 51).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionLeaseTime.from_buffer(b"\x00\x04\x00\x00\x0e\x10")
+
+    def test__dhcp4__option__lease_time__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.LEASE_TIME, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.2 (IP Address Lease Time option code 51).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionLeaseTime.from_buffer(b"\xff\x04\x00\x00\x0e\x10")

@@ -539,3 +539,33 @@ class TestDhcp4OptionServerIdBehavior(TestCase):
                 Ip4Address("192.0.2.1"),
                 type=Dhcp4OptionType.SERVER_ID,
             )
+
+
+class TestDhcp4OptionServerIdWrongType(TestCase):
+    """
+    The DHCPv4 Server Identifier option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__server_id__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.SERVER_ID and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.7 (Server Identifier option code 54).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionServerId.from_buffer(b"\x00\x04\x0a\x00\x00\x01")
+
+    def test__dhcp4__option__server_id__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.SERVER_ID, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.7 (Server Identifier option code 54).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionServerId.from_buffer(b"\xff\x04\x0a\x00\x00\x01")

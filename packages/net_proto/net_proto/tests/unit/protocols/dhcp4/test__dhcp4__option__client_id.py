@@ -550,3 +550,33 @@ class TestDhcp4OptionClientIdBehavior(TestCase):
                 type=Dhcp4OptionType.CLIENT_ID,
                 client_id=b"\x01\x02\x03",
             )
+
+
+class TestDhcp4OptionClientIdWrongType(TestCase):
+    """
+    The DHCPv4 Client Identifier option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__client_id__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.CLIENT_ID and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.14 (Client-identifier option code 61).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClientId.from_buffer(b"\x00\x07\x01\x02\x03\x04\x05\x06\x07")
+
+    def test__dhcp4__option__client_id__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.CLIENT_ID, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.14 (Client-identifier option code 61).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClientId.from_buffer(b"\xff\x07\x01\x02\x03\x04\x05\x06\x07")

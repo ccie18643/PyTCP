@@ -597,3 +597,33 @@ class TestDhcp4OptionHostNameWireConsistency(TestCase):
             str(error.exception),
             msg="AssertionError must cite the uint8 length-byte ceiling.",
         )
+
+
+class TestDhcp4OptionHostNameWrongType(TestCase):
+    """
+    The DHCPv4 Host Name option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__host_name__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.HOST_NAME and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §3.14 (Host Name option code 12).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionHostName.from_buffer(b"\x00\x04\x68\x6f\x73\x74")
+
+    def test__dhcp4__option__host_name__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.HOST_NAME, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §3.14 (Host Name option code 12).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionHostName.from_buffer(b"\xff\x04\x68\x6f\x73\x74")
