@@ -22,6 +22,7 @@ protocol's own tests plus `tests/unit/lib`; shards run sequentially.
 | icmp4 | 1135    | 84.4 %     | 85.4 %    | ~97 %                 | 5                   | DONE   |
 | icmp6 | 5755    | 80.8 %     | 84.2 %    | ~96 %                 | 7                   | DONE   |
 | udp   | 280     | 80.7 %     | 81.4 %    | ~97 %                 | 2                   | DONE   |
+| arp   | 216     | 82.9 %     | 82.9 %    | 100 %                 | 0                   | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -277,3 +278,28 @@ checksum-handling paths.
   payload that checksums to exactly 0 (impractical to construct).
 - `dport == 0` → `<= 0` (dport is uint16 ≥ 0); PEP 604 annotation-`|`;
   `@override` removals.
+
+
+---
+
+## Shard: arp
+
+**Baseline:** 179 / 216 = **82.9 % raw**, 37 survivors. **No genuine
+gaps** — every survivor is equivalent, so the adjusted score is **100 %**
+and no test change was made.
+
+The arp parser's four RFC 826 integrity checks (`hrtype` / `prtype` /
+`hrlen` / `prlen` `!= CONSTANT`) are thoroughly tested — every `!=` → `<`
+/ `>` comparison swap is already killed (the `hrlen` and `prlen` checks
+have both below-value and above-value wrong cases). The residual
+survivors are:
+
+- **`NotEq_IsNot` ×4** — `!=` → `is not` on the four checks. The operands
+  are enum singletons (`ArpHardwareType` / `EtherType`) or interned small
+  ints (`hrlen` 6, `prlen` 4), so `is not` ≡ `!=`. Equivalent.
+- **Slice-offset NumberReplacer ×3** — e.g. `frame[0:2]` → `frame[1:2]`
+  for the `hrtype` read. A realistic Ethernet ARP frame carries
+  `hrtype = 0x0001` (byte 0 = 0), so reading the low byte classifies
+  identically to reading the full word; killable only by a contrived
+  non-Ethernet hardware type. Equivalent for the realistic frame set.
+- `@override` removals. Equivalent.
