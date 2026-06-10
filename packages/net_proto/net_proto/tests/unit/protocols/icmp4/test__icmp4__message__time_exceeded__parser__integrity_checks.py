@@ -163,3 +163,25 @@ class TestIcmp4MessageTimeExceededParserIntegrityBoundary(TestCase):
         packet_rx = _packet_rx_with_ip4(frame)
 
         Icmp4Parser(packet_rx)
+
+    def test__icmp4__message__time_exceeded__parser__integrity__trailing_bytes_accepted(
+        self,
+    ) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip4__payload_len' (the
+        ICMPv4 message is followed by lower-layer padding) still parses:
+        the integrity bound is 'ip4__payload_len <= len(frame)', so
+        trailing bytes beyond the declared payload are tolerated, not
+        rejected.
+
+        Reference: RFC 792 (ICMPv4 Time Exceeded type 11 integrity).
+        """
+
+        # Minimum 8-byte Time Exceeded (valid checksum over the 8 octets)
+        # followed by 4 octets of lower-layer padding. ip4__payload_len=8
+        # is strictly less than len(frame)=12.
+        # ip4__payload_len=8 == ICMP4__TIME_EXCEEDED__LEN; the constant is
+        # not imported into this module, so the literal is used directly.
+        frame = b"\x0b\x00\xf4\xff\x00\x00\x00\x00" + b"\x00\x00\x00\x00"
+
+        Icmp4Parser(_packet_rx_with_ip4(frame, ip4__payload_len=8))
