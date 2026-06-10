@@ -14,12 +14,23 @@ test notices. A break no test catches — a **surviving
 mutant** — is a coverage blind spot that line coverage
 cannot see.
 
-The canonical worked example is the net_addr audit
-(2026-06-08): **78.2 % → 80.5 % raw**, **92.4 % → 95.2 %
-equivalent-adjusted**, 14 test-only commits. The runbook
-and results live at
+The first worked example is the net_addr audit (2026-06-08,
+a flat value-type library): **78.2 % → 80.5 % raw**,
+**92.4 % → 95.2 % equivalent-adjusted**, 14 test-only
+commits. Runbook + results:
 `docs/refactor/net_addr_mutation_audit.md` and
-`docs/refactor/net_addr_mutation_audit_results.md`.
+`…_results.md`.
+
+The at-scale example is the net_proto audit (2026-06-09, 20
+protocols + shared `lib`, **27,007 mutants across 21
+sharded runs**): **70 genuine gaps closed test-only**,
+including **three whole-codec omissions** (an option, two
+messages, with no test file at all). It is the precedent for
+the dependency-scoped sharding (rail #2), the whole-file-gap
+first-check (§6), and the result-preserving / base-coincidence
+equivalent classes (§4). Results:
+`docs/refactor/net_proto_mutation_audit_results.md` (the
+plan/sharding doc is `…_mutation_audit.md`).
 
 ## When to invoke
 
@@ -67,14 +78,38 @@ result or a near-miss during the net_addr audit.
    dies fast as `MemoryError` (counted *killed*) instead.
    Monitor `free -h` during the run regardless.
 
-2. **Test-command = the FULL package unit suite, never a
-   narrower scope.** A narrow test-command reports
-   **false-positive survivors** — mutants the broader suite
-   would kill. (The trial run scoped to one test file and
-   "found" a survivor that the sibling SACK tests already
-   killed.) Running the whole package suite per mutant means
-   every survivor is a *genuine* gap no test anywhere
-   catches.
+2. **Test-command = the FULL consumer set of the mutated
+   code, never UNDER that.** A test-command that omits any
+   test which exercises the mutated module reports
+   **false-positive survivors** — mutants a left-out test
+   would kill. (The net_addr trial run scoped to one test
+   file and "found" a survivor the sibling SACK tests already
+   killed.) The danger is *under*-scoping below the real
+   consumer set — NOT scoping to the exact consumers.
+   **Refinement from the net_proto audit (4.5× scale):** for
+   a package of *independent* modules (e.g. net_proto's 20
+   protocols — a udp mutant can never be killed by a tcp
+   test), the **correct** test scope is that module's own
+   tests **plus the shared-dependency tests it transitively
+   needs** (`tests/unit/lib`), and sharding per module that
+   way is right — *not* the dangerous narrowing this rail
+   warns about. It also runs ~3× faster and lets you
+   prioritize / stop early. **The one exception is shared
+   foundation code** (net_proto's `lib/`: `inet_cksum`,
+   `int_checks`, `proto_*`) — that is consumed by every
+   module, so its shard MUST run the **full** package suite.
+   Rule of thumb: scope to *exactly the set of tests that can
+   kill a mutant in this module*, computed from the
+   dependency graph — full-suite when in doubt, dependency-
+   scoped when the independence is provable.
+   **Cross-module-constant blind spot:** a constant defined
+   in module A but *consumed* by module B (net_proto's
+   `IP6__MIN_MTU`, defined in ip6, used by icmp6 error
+   messages) survives A's shard but is killed by B's tests.
+   When a survivor is a bare constant with no in-module
+   reader, check whether another module's suite kills it
+   before calling it a gap — it is *cross-shard-covered*, not
+   a real gap.
 
 3. **Clear `__pycache__` before the run AND between EVERY
    manual mutate→revert.** A stale `.pyc` makes a later run
@@ -258,6 +293,30 @@ mutated line.
    are killable — and those are killable **directly**, by
    calling the helper with crafted inputs, NOT by coaxing
    the generator into producing them (see §6 lesson).
+10. **Result-preserving optimizations** (net_proto) — an
+    internal fast path whose output is identical regardless
+    of how it chunks. `inet_cksum`'s 8-byte loop:
+    `(remainder := buffer_len - offset) >= 8` and `q_count =
+    remainder >> 3` — mutating the chunk threshold (`>= 8` →
+    `>= 9`) or the chunk count (`>> 3` → `>> 4`) only shifts
+    bytes between the fast path and the remainder loop; the
+    one's-complement sum is associative, so the checksum is
+    byte-identical. Verify by confirming the mutant survives
+    *every* consumer's round-trip test, then it is equivalent.
+11. **Base-coincidence arithmetic** (net_proto) — a constant
+    whose specific value makes an operator mutation coincide
+    with the original on the entire *reachable* domain.
+    Examples: ARP `hrtype == 0x0001` has byte 0 = 0, so
+    reading `frame[1:2]` classifies identically to
+    `frame[0:2]`; routing-header `routing_type == RH0` where
+    `RH0 = 0` makes `<= 0` ≡ `== 0` on the byte domain; a
+    pointer check where `POINTER_BASE == SLOT_LEN == 4` makes
+    `(p - 4) % 4` ≡ `(p + 4) % 4`; IGMP max-resp-`code == 128`
+    where the linear value (128) equals the float decode
+    `(0|0x10) << 3` (128). Generalizes class 4 (max-value /
+    non-negative). Killable only by an input the realistic
+    wire never carries — usually low-value; confirm the
+    coincidence arithmetically before deferring.
 
 The remainder are **genuine gaps**. Triage each by reading
 the mutated line; propose the test that would catch it.
@@ -287,18 +346,73 @@ input or trusting a single test file is how false claims ship.
 5. **`git checkout` the source + clear `__pycache__` again.**
 6. Verify `git diff` on the package is empty before moving on.
 
-For a batch of kill-proofs, wrap each in a function that
-clears pycache between iterations — a tight `cp/sed/run`
-loop within the same filesystem-mtime second WILL reuse a
-stale `.pyc` and lie to you.
+**The self-referential-constant trap (net_proto, hit twice).**
+When the gap is a `NumberReplacer` on a *constant definition*
+(`TCP__MIN_MSS = 536` → `537`, `IP6__DEFAULT_HOP_LIMIT = 64`
+→ `65`), the killing test MUST assert against the **literal**
+value (`assert x == 536`), NOT against the imported constant
+(`assert x == TCP__MIN_MSS`). Asserting against the constant
+makes the expectation move *with* the mutation — both sides
+change to 537, the assert still passes, the mutant survives.
+This passed my first kill-proof for MIN_MSS and hop=64 and
+looked closed; only re-running the survivor scan exposed it.
+Assert the literal; optionally add a second
+`assert THE_CONSTANT == 536` line to pin the constant by name
+too.
+
+**Use a Python harness for batches, not a shell loop**
+(net_proto). A `cp/sed/run` shell loop — especially with
+`r=$(kp ...)` command substitution or a trailing `| sort` —
+can have its **restore step (`cp bak file`) race or get its
+stdout eaten**, leaving a **stranded mutation on disk** (it
+happened: 10 dhcp4 option files left with `<=` applied, then
+the next iteration found nothing to substitute). A small
+Python driver (`subprocess.run` per mutant, `open(f,"w")`
+restore, `shutil.rmtree` pycache between) is deterministic
+and prints each result; it never strands. Always
+`git diff --stat` the package after a batch regardless
+(rail #6).
 
 ---
 
 ## 6. Common real-gap patterns (where survivors actually cluster)
 
+- **Whole-file / whole-thing omissions — CHECK THIS FIRST**
+  (net_proto). The highest-value finds are not arithmetic at
+  all: an entire source file (an option, a message, a codec)
+  with **no dedicated test**, where *every* mutant in it
+  survives. Line coverage shows it "covered" because the
+  dispatch *imports* it, but its logic is never asserted. The
+  net_proto audit found three — TCP FastOpen option, ICMPv6
+  Packet Too Big, MLDv2 Query (185 survivors). **Before
+  triaging individual operators, bucket survivors by source
+  file and compare the count against a `find … -name
+  'test__*<file>*'`** — a file with ~80–185 survivors and no
+  test file is a whole-thing gap. Close it with the full
+  per-file test (the §8 test-matrix in `unit_testing.md`),
+  not a one-off; it converts the most mutants per unit effort.
+- **The dispatch-guaranteed assert, untested everywhere**
+  (net_proto). The `buffer[0] == int(Type)` / `from_bytes(...)
+  == int(Type)` kind-byte assert at the top of every option's
+  `from_buffer` was untested across ~30 options in 4 protocols
+  (ip4 / dhcp4 / dhcp6 / accecn). The container dispatch
+  *guarantees* the byte, so the assert never fires in normal
+  flow — but `== Type` → `<=` / `>=` survives with no
+  wrong-type test. One cheap shared batch: a wrong-type-below
+  (e.g. `0x00`) and wrong-type-above (`0xff` / `0xffff`)
+  `from_buffer` over a valid frame, expecting `AssertionError`.
+  Detect the gap quickly by scripting the `<=` mutation across
+  every option and re-running just that option's suite.
 - **Degenerate / weak fixtures.** The single most common
-  real gap. A test asserts the right output but for an input
-  where many mutations coincide:
+  *arithmetic* gap. A test asserts the right output but for an
+  input where many mutations coincide:
+  - **empty-data / zero-value operands** — an `X + len(data)`
+    `__len__` asserted only with `data=b""` (so `X+0 == X-0`,
+    the `+` → `-` survives); a timestamp slice asserted only
+    with a top-byte-zero value (so `[+4:+8]` → `[+5:+8]` reads
+    the same int); a header flag round-trip with only `rd` set
+    (every other bit position unexercised). Use non-empty
+    data, a top-byte-set value, **all flags distinct**.
   - all-zero-byte operands (MAC `02:00:00:...` hides EUI-64
     field-placement bugs) → use a non-degenerate operand
     (`aa:bb:cc:dd:ee:ff`).
@@ -321,6 +435,15 @@ stale `.pyc` and lie to you.
   landing *exactly* on `0` or `MAX` (both valid). Add the
   exact-endpoint cases to pin the `<=` and the `- 1` max
   constant.
+- **One-sided length boundaries** (net_proto). A fixed-length
+  check `buffer[1] != LEN` whose only wrong-length test uses
+  an *under*-length value — `<` and `!=` agree below `LEN`, so
+  the `!=` → `<` mutant survives; it dies only on an
+  *over*-length frame (`LEN+1`). Likewise a version/type check
+  tested only *below* the value (DNS `ver=5`, ARP `hrtype=0`,
+  ip6 `ver=5`): `!=` → `<` survives until you add an *above*
+  case (`ver=7`). Always test wrong-value on **both** sides of
+  a `!=`.
 - **One-sided predicate tests.** A prefix predicate
   (`& mask == prefix`) tested with a None-case on only one
   side of the prefix. The `==`→`<=` mutant needs a *below*-
@@ -433,6 +556,10 @@ characterised.
 - `docs/refactor/net_addr_mutation_audit_results.md` — the
   exemplar results document (per-module table, equivalent
   ledger, kill-proven corrections).
+- `docs/refactor/net_proto_mutation_audit.md` /
+  `…_results.md` — the at-scale precedent (21 sharded runs,
+  dependency-scoped test-commands, whole-file gaps, the
+  per-shard score table + deep-TLV follow-up seam).
 - `.claude/rules/unit_testing.md` — test authoring (the
   corrections land as unit tests; §7.2 docstring audit, §6a
   mocking, tight assertions).
