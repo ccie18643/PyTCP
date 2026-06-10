@@ -583,3 +583,42 @@ classless-static-route walk, icmp6 ND options, ip6 HBH/DestOpt
 option-walkers, dns name compression, igmp IGMPv3 record/aux-data
 arithmetic. These need contrived multi-descriptor / boundary frames for
 marginal, mostly-equivalent gain.
+
+---
+
+## Re-validation pending (capstone full-from-scratch scan)
+
+The net_addr audit's authoritative validation was a single
+**full-from-scratch re-scan after all fixes landed** — it caught an
+"all equivalent" overclaim (a `__format__` `Eq_LtE` gap) and would catch
+an ineffective fixture. net_proto was held to a slightly lower bar:
+per-gap kill-proofs (strong) + survivor-only re-scans on **most** changed
+shards, but (a) **dhcp6 and dns got kill-proofs only, no re-scan**, and
+(b) **no holistic full-from-scratch capstone** was run, and the
+documented "equivalent / intricate-seam" survivors were bucket-triaged,
+not re-validated with a fresh scan + the sharpened skill lens
+(base-coincidence, result-preserving, self-referential-constant,
+whole-file classes added 2026-06-09).
+
+**Action:** re-run **full-from-scratch** scans of the 9 changed shards
+and reconcile against the recorded post-fix raw scores below. A score
+**below** the recorded number means an ineffective fixture (a test that
+didn't actually kill what it claimed — re-triage and fix). A score
+**at/above** confirms the shard. Then re-triage each shard's residual
+survivors with the updated `mutation_testing` skill §4/§6 classes; any
+"documented-seam / equivalent" survivor that turns out cheaply killable
+is a missed gap to close tests-first. The 5 zero-gap shards (arp,
+ethernet, igmp, ip6_frag/routing/hbh/dest_opts, lib) have **no test
+diffs** — unchanged, no re-scan needed (spot-check optional).
+
+| Changed shard | Mutants | Recorded post-fix raw | Gaps closed |
+|---|--:|--:|--:|
+| tcp    | 2255 | 85.1 % (1910/2255) | 21 |
+| ip4    | 3088 | 82.4 % (2545/3088) | 15 |
+| ip6    | 503  | 74.0 % (372/503)   | 3  |
+| icmp4  | 1135 | 85.4 % (969/1135)  | 5  |
+| icmp6  | 5755 | 84.2 % (4843/5755) | 7  |
+| udp    | 280  | 81.4 % (228/280)   | 2  |
+| dhcp4  | 3708 | 77.3 % (2865/3708) | 11 |
+| dhcp6  | 2407 | ~79 % (no re-scan — VALIDATE) | 4 |
+| dns    | 1116 | ~64 % (no re-scan — VALIDATE) | 2 |
