@@ -816,3 +816,138 @@ class TestPmtuSearch__SearchLadderExact(TestCase):
             1500,
             msg="Classical PTB must NOT lower search_high (the upward-probe ceiling).",
         )
+
+
+class TestPmtuSearch__TimerRecovery(TestCase):
+    """
+    Golden-value coverage of the PROBE_TIMER / PMTU_RAISE_TIMER
+    arithmetic and the ERROR / SEARCH_COMPLETE recovery
+    transitions that re-open probing once the raise timer
+    fires. Captured from the engine on correct source so any
+    mutation of the 'now + TIMER' arithmetic or the
+    'now < expiry' gate moves the produced timing and fails.
+    """
+
+    def test__plpmtud__error_recovery_re_probes_after_raise_timer(self) -> None:
+        """
+        Ensure an engine in ERROR (black-holed) emits nothing
+        until PMTU_RAISE_TIMER expires, then re-enters BASE and
+        re-probes at BASE_PLPMTU with the PROBE_TIMER armed at
+        now + PROBE_TIMER__SEC.
+
+        Reference: RFC 8899 §5.2 (Error → Base recovery on the raise timer).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        for _ in range(MAX_PROBES):
+            engine.on_probe_loss(now=0.0)
+        self.assertIs(engine.state, PmtuState.ERROR, msg="MAX_PROBES losses must reach ERROR.")
+        self.assertEqual(
+            engine._raise_timer_expiry,
+            PMTU_RAISE_TIMER__SEC,
+            msg="ERROR must arm the raise timer at now + PMTU_RAISE_TIMER__SEC (0 + 600).",
+        )
+
+        self.assertIsNone(
+            engine.next_probe_size(now=PMTU_RAISE_TIMER__SEC - 1.0),
+            msg="Before the raise timer fires, ERROR must emit nothing.",
+        )
+        self.assertIs(engine.state, PmtuState.ERROR, msg="Engine must remain in ERROR before the raise timer.")
+
+        self.assertEqual(
+            engine.next_probe_size(now=PMTU_RAISE_TIMER__SEC),
+            BASE_PLPMTU__IP4,
+            msg="When the raise timer fires, ERROR must re-probe at BASE_PLPMTU__IP4.",
+        )
+        self.assertIs(engine.state, PmtuState.BASE, msg="Raise-timer recovery must re-enter BASE.")
+        self.assertEqual(
+            engine._probe_timer_expiry,
+            PMTU_RAISE_TIMER__SEC + PROBE_TIMER__SEC,
+            msg="The recovery probe must arm PROBE_TIMER at now + PROBE_TIMER__SEC (600 + 30).",
+        )
+
+    def test__plpmtud__search_complete_reopens_after_raise_timer(self) -> None:
+        """
+        Ensure an engine in SEARCH_COMPLETE stays idle until the
+        PMTU_RAISE_TIMER expires, then leaves SEARCH_COMPLETE to
+        re-probe for a possible path-MTU increase.
+
+        Reference: RFC 8899 §5.1.1 (PMTU_RAISE_TIMER re-opens the search).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+        while engine.state is PmtuState.SEARCHING:
+            candidate = engine.candidate_mtu
+            assert candidate is not None
+            engine.on_probe_ack(candidate, now=0.0)
+        self.assertIs(engine.state, PmtuState.SEARCH_COMPLETE, msg="Ladder must converge to SEARCH_COMPLETE.")
+        raise_expiry = engine._raise_timer_expiry
+        assert raise_expiry is not None
+
+        self.assertIsNone(
+            engine.next_probe_size(now=raise_expiry - 1.0),
+            msg="Before the raise timer fires, SEARCH_COMPLETE must emit nothing.",
+        )
+        self.assertIs(
+            engine.state,
+            PmtuState.SEARCH_COMPLETE,
+            msg="Engine must remain in SEARCH_COMPLETE before the raise timer.",
+        )
+
+        engine.next_probe_size(now=raise_expiry)
+        self.assertIsNot(
+            engine.state,
+            PmtuState.SEARCH_COMPLETE,
+            msg="When the raise timer fires, SEARCH_COMPLETE must re-open the search.",
+        )
+
+    def test__plpmtud__confirm_current_raises_up_to_search_high_ceiling(self) -> None:
+        """
+        Ensure 'confirm_current' raises current_mtu for a
+        segment larger than current — but only up to search_high;
+        a confirmation above search_high advances ack_size yet
+        must NOT raise current_mtu past the ceiling.
+
+        Reference: RFC 8899 §7.1 (implicit-probe feedback bounded by the search ceiling).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+        engine.on_classical_pmtu(1300, now=0.0)
+        # current_mtu = 1300 < search_high = 1500.
+
+        engine.confirm_current(1400)
+        self.assertEqual(
+            engine.current_mtu,
+            1400,
+            msg="A 1400-byte confirmation (> current, <= search_high) must raise current_mtu to 1400.",
+        )
+
+        engine.confirm_current(1600)
+        self.assertEqual(
+            engine.current_mtu,
+            1400,
+            msg="A confirmation above search_high must NOT raise current_mtu past the ceiling.",
+        )
+
+    def test__plpmtud__probe_timer_armed_at_now_plus_probe_timer(self) -> None:
+        """
+        Ensure emitting the BASE probe arms the PROBE_TIMER at
+        exactly now + PROBE_TIMER__SEC.
+
+        Reference: RFC 8899 §5.1.1 (PROBE_TIMER arms on probe emit).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+
+        engine.next_probe_size(now=5.0)
+
+        self.assertEqual(
+            engine._probe_timer_expiry,
+            5.0 + PROBE_TIMER__SEC,
+            msg="Emitting a probe at now=5 must arm PROBE_TIMER at 5 + PROBE_TIMER__SEC (35).",
+        )
