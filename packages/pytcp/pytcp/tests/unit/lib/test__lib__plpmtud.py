@@ -646,3 +646,173 @@ class TestPmtuSearch__IcmpInterleave(TestCase):
             max(BASE_PLPMTU__IP6, 1400),
             msg="ICMP MTU=1400 during SEARCHING must shrink current_mtu accordingly.",
         )
+
+
+class TestPmtuSearch__SearchLadderExact(TestCase):
+    """
+    Exact golden-value coverage of the binary-search ladder
+    arithmetic, the probe-loss narrowing, and black-hole
+    detection. The candidate-size literals are captured from
+    the engine on correct source so that any mutation of the
+    midpoint formula, the 8-byte alignment, the convergence
+    bound, or the search-ceiling step moves the produced
+    sequence and fails the assertion.
+    """
+
+    def test__plpmtud__ipv4_search_ladder_exact_sequence(self) -> None:
+        """
+        Ensure the IPv4 binary-search ladder produces the exact
+        8-byte-aligned midpoint sequence from BASE_PLPMTU__IP4
+        up to the interface MTU and then converges to
+        SEARCH_COMPLETE.
+
+        Reference: RFC 8899 §5.3 (search-ladder binary search).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+
+        self.assertEqual(
+            engine.next_probe_size(now=0.0),
+            BASE_PLPMTU__IP4,
+            msg="BASE state must probe at BASE_PLPMTU__IP4 (1200).",
+        )
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+
+        ladder: list[int] = []
+        while engine.state is PmtuState.SEARCHING:
+            candidate = engine.candidate_mtu
+            assert candidate is not None
+            ladder.append(candidate)
+            engine.on_probe_ack(candidate, now=0.0)
+
+        self.assertEqual(
+            ladder,
+            [1344, 1416, 1456, 1472, 1480, 1488, 1496],
+            msg="The IPv4 search ladder must follow the exact 8-byte-aligned midpoint sequence.",
+        )
+        self.assertIs(
+            engine.state,
+            PmtuState.SEARCH_COMPLETE,
+            msg="The ladder must converge to SEARCH_COMPLETE once the gap drops to the granularity.",
+        )
+        self.assertEqual(
+            engine.current_mtu,
+            1500,
+            msg="current_mtu must equal the interface MTU after a fully-confirmed search.",
+        )
+
+    def test__plpmtud__probe_loss_narrows_search_high_to_candidate_minus_one(self) -> None:
+        """
+        Ensure a probe loss during SEARCHING lowers search_high
+        to exactly (candidate - 1) and recomputes a smaller
+        candidate from the narrowed range.
+
+        Reference: RFC 8899 §5.3 (probe loss narrows the upper bound).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+
+        self.assertEqual(
+            engine.candidate_mtu,
+            1344,
+            msg="First SEARCHING candidate must be 1344.",
+        )
+
+        engine.on_probe_loss(now=0.0)
+
+        self.assertEqual(
+            engine.candidate_mtu,
+            1264,
+            msg="After a loss of the 1344 candidate, the next candidate must be 1264 (midpoint of 1200..1343).",
+        )
+
+    def test__plpmtud__black_hole_enters_error_at_max_probes(self) -> None:
+        """
+        Ensure MAX_PROBES consecutive losses clamp current_mtu
+        to the minimum, reset the probe counter, and enter
+        ERROR — but a loss count strictly below MAX_PROBES
+        does not.
+
+        Reference: RFC 8899 §5.1.2 (MAX_PROBES black-hole detection).
+        """
+
+        engine: PmtuSearch[Ip6Address] = PmtuSearch(address=_IP6_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+
+        for _ in range(MAX_PROBES - 1):
+            engine.on_probe_loss(now=0.0)
+
+        self.assertIs(
+            engine.state,
+            PmtuState.BASE,
+            msg="Below MAX_PROBES losses, the engine must remain in BASE (pins the '>=' boundary).",
+        )
+
+        engine.on_probe_loss(now=0.0)
+
+        self.assertIs(
+            engine.state,
+            PmtuState.ERROR,
+            msg="The MAX_PROBES-th consecutive loss must enter ERROR.",
+        )
+        self.assertEqual(
+            engine.current_mtu,
+            MIN_PLPMTU__IP6,
+            msg="Black-hole detection must clamp current_mtu to the IPv6 minimum.",
+        )
+
+    def test__plpmtud__confirm_current_advances_ack_size_only_when_larger(self) -> None:
+        """
+        Ensure 'confirm_current' raises ack_size when the
+        confirmed segment is larger than the prior ack_size and
+        leaves it unchanged for a smaller segment.
+
+        Reference: RFC 8899 §7.1 (implicit-probe feedback from data).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+        # ack_size is now BASE_PLPMTU__IP4 (1200).
+
+        engine.confirm_current(1250)
+        self.assertEqual(
+            engine._ack_size,  # pylint: disable=protected-access
+            1250,
+            msg="A 1250-byte confirmation larger than ack_size must raise ack_size to 1250.",
+        )
+
+        engine.confirm_current(1100)
+        self.assertEqual(
+            engine._ack_size,  # pylint: disable=protected-access
+            1250,
+            msg="A confirmation smaller than ack_size must leave ack_size unchanged.",
+        )
+
+    def test__plpmtud__classical_pmtu_shrinks_current_not_search_high(self) -> None:
+        """
+        Ensure a classical RFC 1191 PTB hint during SEARCHING
+        lowers current_mtu to the hinted value but leaves
+        search_high (the upward-probe ceiling) untouched.
+
+        Reference: RFC 8201 §4 (classical signal shrinks but must not raise).
+        """
+
+        engine: PmtuSearch[Ip4Address] = PmtuSearch(address=_IP4_DST, interface_mtu=1500)
+        engine.next_probe_size(now=0.0)
+        engine.on_probe_ack(BASE_PLPMTU__IP4, now=0.0)
+
+        engine.on_classical_pmtu(1400, now=0.0)
+
+        self.assertEqual(
+            engine.current_mtu,
+            1400,
+            msg="Classical PTB must shrink current_mtu to the hinted value.",
+        )
+        self.assertEqual(
+            engine._search_high,  # pylint: disable=protected-access
+            1500,
+            msg="Classical PTB must NOT lower search_high (the upward-probe ceiling).",
+        )
