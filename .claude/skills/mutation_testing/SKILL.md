@@ -32,6 +32,17 @@ equivalent classes (§4). Results:
 `docs/refactor/net_proto_mutation_audit_results.md` (the
 plan/sharding doc is `…_mutation_audit.md`).
 
+A **capstone re-validation** of that audit (2026-06-10,
+full-from-scratch re-scan of all 9 changed shards) confirmed
+every shard reproduced its recorded score — no ineffective
+fixture — then the sharpened §4/§6 re-triage found **40 more
+cheaply-killable survivors** the first pass had bucketed as
+equivalent/seam. It is the precedent for **always running the
+full-from-scratch capstone after the fixes land** (§8), and
+for the **trailing-padding integrity bound** and one-sided
+**dispatch-/`!=`-assert** classes (§6) — the two systematic
+shapes that dominated the residual.
+
 ## When to invoke
 
 - A user asks to "mutation test", "run cosmic-ray", or
@@ -391,6 +402,44 @@ and prints each result; it never strands. Always
   test file is a whole-thing gap. Close it with the full
   per-file test (the §8 test-matrix in `unit_testing.md`),
   not a one-off; it converts the most mutants per unit effort.
+- **The trailing-padding integrity bound — THE most prolific
+  class at scale** (net_proto capstone, ~26 of 40 gaps across
+  udp, icmp4 ×5, tcp, ip4, icmp6 ×6). Every length-bearing
+  parser guards a *chained* bound of the shape
+  `<PROTO>__LEN <= <declared_len> <= len(frame)` (the
+  `<declared_len>` is the IP/UDP-layer payload length: `plen`,
+  `ip__payload_len`, `ip6__dlen`). The parser **deliberately
+  tolerates trailing lower-layer padding** — the second `<=`
+  accepts `declared_len < len(frame)`. But the test harness's
+  IP stub almost always hard-codes
+  `payload_len = len(frame)` (and the `minimum_length_accepted`
+  boundary fixture uses an exact-fit frame), so **no test ever
+  has `declared_len < len(frame)`** — and the second
+  comparison's `LtE_Eq` (`<=`→`==`) and `LtE_GtE` (`<=`→`>=`)
+  mutants survive on *every* such parser. Symptom in the
+  survivor scan: paired `ReplaceComparisonOperator_LtE_Eq` +
+  `LtE_GtE` at the same `col` of the `... <= len(frame)`
+  bound line, recurring identically across sibling message/
+  protocol files. **Detect it** by grepping the integrity
+  test for the stub default (`payload_len=len(frame)` /
+  `dlen=len(frame)`); if every fixture fits exactly, the
+  tolerance is unpinned. **Close it** with ONE
+  `trailing_bytes_accepted` boundary test per parser: a valid
+  *minimum* message (valid checksum over its own bytes) **plus
+  N padding bytes**, with the IP stub's `payload_len` set to
+  the *un-padded* length (`< len(frame)`); assert it parses.
+  That single frame also exercises the *first* `<=` at
+  equality (`<PROTO>__LEN == declared_len`), so it kills the
+  min-length `LtE_Lt` survivor for free, and — because it
+  drives the full parser — it kills the same mutant on *both*
+  the parser-level and per-message bound lines at once (cf.
+  tcp L81 + L93). Watch for messages with **no parser test at
+  all** (icmp6 Packet Too Big): there the whole bound is
+  unpinned and you add a fresh integrity-boundary file. The
+  one harness wrinkle: combined `*__parser.py` files often use
+  a simpler `_packet_rx_with_ip*(frame)` helper with no
+  `payload_len` kwarg — extend it to
+  `(frame, *, payload_len=None)` before adding the test.
 - **The dispatch-guaranteed assert, untested everywhere**
   (net_proto). The `buffer[0] == int(Type)` / `from_bytes(...)
   == int(Type)` kind-byte assert at the top of every option's
@@ -403,6 +452,19 @@ and prints each result; it never strands. Always
   `from_buffer` over a valid frame, expecting `AssertionError`.
   Detect the gap quickly by scripting the `<=` mutation across
   every option and re-running just that option's suite.
+  **Half-closed is the common partial state** (capstone
+  re-validation): an earlier pass often pins only ONE side —
+  dhcp6 had wrong-type-*below* but not *above* (6 options →
+  `Eq_GtE` survives), tcp had *above* but not *below* (5
+  options → `Eq_LtE` survives). For an option with code `c`,
+  `Eq_GtE` dies only on a byte `> c`, `Eq_LtE` only on a byte
+  `< c`; a code-0 kind-byte (`EOL`/`PAD`) makes the *below*
+  side vacuously equivalent (no byte `< 0`). Always check
+  *which* direction survives and add the missing one. The
+  same one-sided shape appears on `!=` field guards
+  (`hrlen != 6`, `magic_cookie != COOKIE`, `ver != 4`):
+  tested only *above* the value, `NotEq_Gt` survives until you
+  add a *below* case — see "One-sided length boundaries".
 - **Degenerate / weak fixtures.** The single most common
   *arithmetic* gap. A test asserts the right output but for an
   input where many mutations coincide:
