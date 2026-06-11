@@ -1145,3 +1145,238 @@ class TestNeighborCachePendingQueue(_NeighborCacheFixture):
             [(p3, MAC_A), (p4, MAC_A), (p5, MAC_A)],
             msg="Overflow must drop the oldest packets and keep the newest within unres_qlen.",
         )
+
+
+class TestNeighborCacheAgingBoundaries(_NeighborCacheFixture):
+    """
+    Exact-threshold coverage of the NUD aging transitions. The
+    existing transition tests exercise the inclusive '>='
+    timers / counters only strictly above (age 31 vs the 30 s
+    timer, probe_count well over the limit), so the
+    '>=' -> '>' relaxation survives. These pin the transition
+    at the exact boundary value.
+    """
+
+    def test__lib__neighbor__reachable_to_stale_at_exact_reachable_time(self) -> None:
+        """
+        Ensure a REACHABLE entry transitions to STALE at an age
+        of exactly REACHABLE_TIME — the inclusive boundary, not
+        only strictly past it.
+
+        Reference: RFC 4861 §7.3.3 (REACHABLE_TIME inclusive boundary).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._add_entry(ADDR_A, MAC_A)
+
+        # REACHABLE_TIME default is 30 s; age is EXACTLY 30 here.
+        self._run_loop_once(now=1030.0)
+
+        self.assertIs(
+            self._cache._entries[ADDR_A].state,
+            NudState.STALE,
+            msg="At an age of exactly REACHABLE_TIME the entry must already be STALE.",
+        )
+
+    def test__lib__neighbor__incomplete_to_failed_at_exact_max_multicast_solicit(self) -> None:
+        """
+        Ensure an INCOMPLETE entry transitions to FAILED once its
+        probe_count reaches exactly MAX_MULTICAST_SOLICIT.
+
+        Reference: RFC 4861 §7.3.3 (give up after MAX_MULTICAST_SOLICIT).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._find_entry(ADDR_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "probe_count", 3)  # == MAX_MULTICAST_SOLICIT default
+
+        self._run_loop_once(now=1000.5)
+
+        self.assertIs(
+            entry.state,
+            NudState.FAILED,
+            msg="At probe_count == MAX_MULTICAST_SOLICIT the INCOMPLETE entry must FAIL.",
+        )
+
+    def test__lib__neighbor__incomplete_below_max_solicit_not_failed(self) -> None:
+        """
+        Ensure an INCOMPLETE entry whose probe_count is one below
+        MAX_MULTICAST_SOLICIT is NOT failed (pins the boundary
+        against an off-by-one relaxation).
+
+        Reference: RFC 4861 §7.3.3 (do not give up before the limit).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._find_entry(ADDR_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "probe_count", 2)  # < MAX_MULTICAST_SOLICIT
+
+        # Age 0.5 s < RETRANS_TIMER so no re-solicit either; state holds.
+        self._run_loop_once(now=1000.5)
+
+        self.assertIs(
+            entry.state,
+            NudState.INCOMPLETE,
+            msg="Below MAX_MULTICAST_SOLICIT the INCOMPLETE entry must NOT fail.",
+        )
+
+    def test__lib__neighbor__probe_to_failed_at_exact_max_unicast_solicit(self) -> None:
+        """
+        Ensure a PROBE entry transitions to FAILED once its
+        probe_count reaches exactly MAX_UNICAST_SOLICIT.
+
+        Reference: RFC 4861 §7.3.3 (give up after MAX_UNICAST_SOLICIT).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._add_entry(ADDR_A, MAC_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "state", NudState.PROBE)
+        object.__setattr__(entry, "probe_count", 3)  # == MAX_UNICAST_SOLICIT default
+        object.__setattr__(entry, "state_changed_at", 1000.0)
+
+        self._run_loop_once(now=1000.5)
+
+        self.assertIs(
+            entry.state,
+            NudState.FAILED,
+            msg="At probe_count == MAX_UNICAST_SOLICIT the PROBE entry must FAIL.",
+        )
+
+    def test__lib__neighbor__delay_to_probe_at_exact_delay_first_probe_time(self) -> None:
+        """
+        Ensure a DELAY entry transitions to PROBE at an age of
+        exactly DELAY_FIRST_PROBE_TIME.
+
+        Reference: RFC 4861 §7.3.3 (DELAY_FIRST_PROBE_TIME inclusive boundary).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._add_entry(ADDR_A, MAC_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "state", NudState.DELAY)
+        object.__setattr__(entry, "state_changed_at", 1000.0)
+
+        # DELAY_FIRST_PROBE_TIME default is 5 s; age is EXACTLY 5.
+        self._run_loop_once(now=1005.0)
+
+        self.assertIs(
+            entry.state,
+            NudState.PROBE,
+            msg="At an age of exactly DELAY_FIRST_PROBE_TIME the DELAY entry must enter PROBE.",
+        )
+
+    def test__lib__neighbor__incomplete_resolicits_at_exact_retrans_timer(self) -> None:
+        """
+        Ensure an INCOMPLETE entry below the solicit limit
+        re-solicits (incrementing probe_count) at an age of
+        exactly RETRANS_TIMER.
+
+        Reference: RFC 4861 §7.2.2 (RETRANS_TIMER multicast re-solicit cadence).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._find_entry(ADDR_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "probe_count", 1)
+        object.__setattr__(entry, "state_changed_at", 1000.0)
+        self._solicit_calls.clear()
+
+        # RETRANS_TIMER default is 1 s; age is EXACTLY 1.
+        self._run_loop_once(now=1001.0)
+
+        self.assertEqual(
+            entry.probe_count,
+            2,
+            msg="At an age of exactly RETRANS_TIMER the INCOMPLETE entry must re-solicit (probe_count 1 -> 2).",
+        )
+        self.assertEqual(
+            len(self._solicit_calls),
+            1,
+            msg="The exact-RETRANS_TIMER re-solicit must fire one solicit.",
+        )
+
+    def test__lib__neighbor__probe_resolicits_at_exact_retrans_timer(self) -> None:
+        """
+        Ensure a PROBE entry below the unicast-solicit limit
+        re-solicits (incrementing probe_count) at an age of
+        exactly RETRANS_TIMER.
+
+        Reference: RFC 4861 §7.3.3 (RETRANS_TIMER unicast re-solicit cadence).
+        """
+
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._add_entry(ADDR_A, MAC_A)
+        entry = self._cache._entries[ADDR_A]
+        object.__setattr__(entry, "state", NudState.PROBE)
+        object.__setattr__(entry, "probe_count", 1)
+        object.__setattr__(entry, "state_changed_at", 1000.0)
+
+        self._run_loop_once(now=1001.0)
+
+        self.assertEqual(
+            entry.probe_count,
+            2,
+            msg="At an age of exactly RETRANS_TIMER the PROBE entry must re-solicit (probe_count 1 -> 2).",
+        )
+
+
+class TestNeighborCacheReachableTimeOverride(_NeighborCacheFixture):
+    """
+    The RA-driven Reachable Time override
+    ('set_reachable_time_override_ms') — millisecond-to-second
+    conversion and its effect on the REACHABLE -> STALE timer.
+    """
+
+    def test__lib__neighbor__reachable_time_override_converts_ms_to_seconds(self) -> None:
+        """
+        Ensure the override stores the value converted from
+        milliseconds to seconds, and that None clears it.
+
+        Reference: RFC 4861 §6.3.4 (RA Reachable Time in milliseconds).
+        """
+
+        self._cache.set_reachable_time_override_ms(30000)
+        self.assertEqual(
+            self._cache._reachable_time_override_s,
+            30.0,
+            msg="A 30000 ms override must be stored as 30.0 s.",
+        )
+
+        self._cache.set_reachable_time_override_ms(None)
+        self.assertIsNone(
+            self._cache._reachable_time_override_s,
+            msg="Passing None must clear the override.",
+        )
+
+    def test__lib__neighbor__reachable_time_override_drives_stale_timer(self) -> None:
+        """
+        Ensure the override (not the sysctl default) governs the
+        REACHABLE -> STALE transition: a 10 s override ages a
+        REACHABLE entry to STALE at age 10, where the 30 s
+        default would not.
+
+        Reference: RFC 4861 §6.3.4 (RA Reachable Time overrides the default).
+        """
+
+        self._cache.set_reachable_time_override_ms(10000)  # 10 s
+        with patch("pytcp.lib.neighbor.time.monotonic", return_value=1000.0):
+            self._cache._add_entry(ADDR_A, MAC_A)
+
+        # Age 9 s < 10 s override: still REACHABLE.
+        self._run_loop_once(now=1009.0)
+        self.assertIs(
+            self._cache._entries[ADDR_A].state,
+            NudState.REACHABLE,
+            msg="Below the 10 s override the entry must remain REACHABLE.",
+        )
+
+        # Age 10 s == override: STALE (the 30 s default would not fire here).
+        self._run_loop_once(now=1010.0)
+        self.assertIs(
+            self._cache._entries[ADDR_A].state,
+            NudState.STALE,
+            msg="At the 10 s override boundary the entry must transition to STALE.",
+        )
