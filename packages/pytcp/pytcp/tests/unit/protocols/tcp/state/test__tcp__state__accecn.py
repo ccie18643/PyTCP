@@ -570,3 +570,151 @@ class TestAccEcnState__ApparentCeDelta(TestCase):
             0b101,
             msg="Matching ACE must leave s.cep unchanged.",
         )
+
+
+class TestAccEcnState__RecordReceivedCodepointPerCodepoint(TestCase):
+    """
+    Exact per-codepoint byte-counter coverage of
+    'record_received_codepoint' — the ECT(0) / ECT(1) / Not-ECT
+    dispatch arms and the 2^24 wrap, which the CE-only existing
+    test leaves unpinned.
+    """
+
+    def test__accecn_state__record_ect0_bumps_only_ect0_b(self) -> None:
+        """
+        Ensure ip_ecn=2 (ECT0) accumulates the payload length into
+        r.ect0_b alone and leaves r.ce_b / r.ect1_b / r.cep untouched.
+
+        Reference: RFC 9768 §3.2.3 (per-codepoint byte counters).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=2, payload_len=40)
+
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER + 40, msg="ECT0 must add to r.ect0_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="ECT0 must not touch r.ce_b.")
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="ECT0 must not touch r.ect1_b.")
+        self.assertEqual(state.r_cep, ACCECN__INITIAL_CEP, msg="ECT0 must not bump r.cep.")
+
+    def test__accecn_state__record_ect1_bumps_only_ect1_b(self) -> None:
+        """
+        Ensure ip_ecn=1 (ECT1) accumulates the payload length into
+        r.ect1_b alone and leaves r.ce_b / r.ect0_b / r.cep untouched.
+
+        Reference: RFC 9768 §3.2.3 (per-codepoint byte counters).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=1, payload_len=60)
+
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER + 60, msg="ECT1 must add to r.ect1_b.")
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="ECT1 must not touch r.ect0_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="ECT1 must not touch r.ce_b.")
+
+    def test__accecn_state__record_not_ect_bumps_nothing(self) -> None:
+        """
+        Ensure ip_ecn=0 (Not-ECT) accumulates into none of the
+        receiver byte counters.
+
+        Reference: RFC 9768 §3.2.3 (only ECN-capable codepoints counted).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=0, payload_len=99)
+
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="Not-ECT must not touch r.ect0_b.")
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="Not-ECT must not touch r.ect1_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="Not-ECT must not touch r.ce_b.")
+        self.assertEqual(state.r_cep, ACCECN__INITIAL_CEP, msg="Not-ECT must not bump r.cep.")
+
+    def test__accecn_state__record_ce_byte_counter_wraps_modulo_2_24(self) -> None:
+        """
+        Ensure the CE byte counter wraps modulo 2^24 (the AccECN
+        option counter width).
+
+        Reference: RFC 9768 §3.2.3 (24-bit counter wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ce_b = ACCECN__COUNTER_MASK
+        state.record_received_codepoint(ip_ecn=3, payload_len=5)
+
+        self.assertEqual(
+            state.r_ce_b,
+            4,
+            msg="r.ce_b must wrap: (0xFFFFFF + 5) & 0xFFFFFF == 4.",
+        )
+
+
+class TestAccEcnState__SenderOptionCounters(TestCase):
+    """
+    'update_sender_counters_from_option' — the §3.2.3 abbreviation
+    rule (omitted slots are None and leave the mirror unchanged).
+    """
+
+    def test__accecn_state__option_full_tuple_updates_all_mirrors(self) -> None:
+        """
+        Ensure a fully-populated option tuple installs all three
+        sender byte-counter mirrors in (ect0, ce, ect1) order.
+
+        Reference: RFC 9768 §3.2.1 (sender mirror state).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((11, 22, 33))
+
+        self.assertEqual(state.s_ect0_b, 11, msg="Slot 0 must map to s.ect0_b.")
+        self.assertEqual(state.s_ce_b, 22, msg="Slot 1 must map to s.ce_b.")
+        self.assertEqual(state.s_ect1_b, 33, msg="Slot 2 must map to s.ect1_b.")
+
+    def test__accecn_state__option_none_slots_leave_mirrors_unchanged(self) -> None:
+        """
+        Ensure an omitted (None) option slot leaves its sender mirror
+        at the prior value — only the present slot is applied.
+
+        Reference: RFC 9768 §3.2.3 (abbreviation rule slot omission).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((None, 99, None))
+
+        self.assertEqual(state.s_ce_b, 99, msg="The present slot 1 must update s.ce_b.")
+        self.assertEqual(state.s_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="An omitted slot 0 must leave s.ect0_b.")
+        self.assertEqual(state.s_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="An omitted slot 2 must leave s.ect1_b.")
+
+
+class TestAccEcnState__ApparentCeDeltaArithmetic(TestCase):
+    """
+    'apparent_ce_delta' — the 3-bit modular ACE subtraction, its
+    wrap, and the s.cep accumulation.
+    """
+
+    def test__accecn_state__apparent_delta_simple(self) -> None:
+        """
+        Ensure a forward ACE field yields the straight 3-bit
+        difference and advances s.cep by it.
+
+        Reference: RFC 9768 §3.2.2.5 (ACE-based fallback).
+        """
+
+        state = AccEcnState()  # s.cep default 5 (0b101)
+        delta = state.apparent_ce_delta(7)
+
+        self.assertEqual(delta, 2, msg="apparent delta must be (7 - 5) & 0b111 == 2.")
+        self.assertEqual(state.s_cep, 7, msg="s.cep must advance by the apparent delta to 7.")
+
+    def test__accecn_state__apparent_delta_wraps_modulo_8(self) -> None:
+        """
+        Ensure an ACE field that has wrapped below the stored low 3
+        bits is interpreted modulo 8 (a small forward delta), not as
+        a negative jump.
+
+        Reference: RFC 9768 §3.2.2.5 (3-bit modular ACE arithmetic).
+        """
+
+        state = AccEcnState()
+        state.s_cep = 7
+        delta = state.apparent_ce_delta(1)
+
+        self.assertEqual(delta, 2, msg="apparent delta must be (1 - 7) & 0b111 == 2 (modular wrap).")
+        self.assertEqual(state.s_cep, 9, msg="s.cep must advance to (7 + 2) & MASK == 9.")
