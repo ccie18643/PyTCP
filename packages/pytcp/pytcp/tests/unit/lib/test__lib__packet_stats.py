@@ -35,7 +35,13 @@ from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass
 from typing import Any
 from unittest import TestCase
 
-from pytcp.lib.packet_stats import PacketStats, PacketStatsRx, PacketStatsTx
+from pytcp.lib.packet_stats import (
+    LinkStatsCounters,
+    PacketStats,
+    PacketStatsRx,
+    PacketStatsShards,
+    PacketStatsTx,
+)
 from pytcp.tests.lib.parameterized import parameterized_class
 
 
@@ -524,4 +530,87 @@ class TestPacketStatsExtensibility(TestCase):
         self.assertFalse(
             hasattr(stats, "__dict__"),
             msg="_CustomStats must inherit the slotted-instance contract.",
+        )
+
+
+class TestLinkStatsCounters(TestCase):
+    """
+    The link-level aggregate byte counters (Phase-3 Link API).
+    """
+
+    def test__packet_stats__link_counters_default_to_zero(self) -> None:
+        """
+        Ensure a freshly-constructed LinkStatsCounters has both byte
+        counters initialised to zero.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        counters = LinkStatsCounters()
+
+        self.assertEqual(counters.rx_bytes, 0, msg="rx_bytes must default to 0.")
+        self.assertEqual(counters.tx_bytes, 0, msg="tx_bytes must default to 0.")
+
+    def test__packet_stats__link_counters_are_slotted(self) -> None:
+        """
+        Ensure LinkStatsCounters is a slotted dataclass so it grows no
+        per-instance __dict__ on the PacketHandler.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertTrue(
+            hasattr(LinkStatsCounters, "__slots__"),
+            msg="LinkStatsCounters must be declared with slots=True.",
+        )
+
+
+class TestPacketStatsShards(TestCase):
+    """
+    The per-thread sharded statistics aggregator.
+    """
+
+    def test__packet_stats__shards_current_returns_seed_on_constructing_thread(self) -> None:
+        """
+        Ensure 'current' returns the seed shard for the thread that
+        constructed the store, so a single-threaded fixture reads back
+        the exact instance it injected.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        seed = PacketStatsRx()
+        shards: PacketStatsShards[PacketStatsRx] = PacketStatsShards(factory=PacketStatsRx, seed=seed)
+
+        self.assertIs(
+            shards.current(),
+            seed,
+            msg="current() on the constructing thread must return the seed shard.",
+        )
+
+    def test__packet_stats__shards_snapshot_sums_fields(self) -> None:
+        """
+        Ensure 'snapshot' returns a fresh copy-by-value instance whose
+        every field is the field-by-field sum across all registered
+        shards (here the single seeded shard carrying one non-zero
+        counter).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        seed = PacketStatsRx()
+        seed.ethernet__pre_parse = 7
+        shards: PacketStatsShards[PacketStatsRx] = PacketStatsShards(factory=PacketStatsRx, seed=seed)
+
+        snapshot = shards.snapshot()
+
+        self.assertEqual(
+            snapshot.ethernet__pre_parse,
+            7,
+            msg="snapshot() must sum each field across shards (7 from the single seeded shard).",
+        )
+        self.assertIsNot(
+            snapshot,
+            seed,
+            msg="snapshot() must return a fresh instance, not the live shard.",
         )

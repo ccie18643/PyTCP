@@ -129,6 +129,26 @@ class TestIp4MulticastFilterMerge(TestCase):
             msg=f"Unexpected merged interface filter for case: {self._description}",
         )
 
+    def test__ip4_multicast_filter__merge_exclude_intersection_is_symmetric(self) -> None:
+        """
+        Ensure merging two EXCLUDE filters with no INCLUDE contributor
+        yields the exact intersection of their blocked-source lists — a
+        source is filtered out only when EVERY EXCLUDE socket blocks it.
+        Uses asymmetric lists with no INCLUDE subtraction so the result
+        distinguishes the head list from the tail (pins the
+        'exclude_lists[0].intersection(*exclude_lists[1:])' indexing).
+
+        Reference: RFC 3376 §3.2 (EXCLUDE state is the source intersection).
+        """
+
+        merged = Ip4MulticastFilter.merge([_exclude(_A, _B, _C), _exclude(_B, _C, _D)])
+
+        self.assertEqual(
+            merged,
+            _exclude(_B, _C),
+            msg="Two EXCLUDE{A,B,C} and EXCLUDE{B,C,D} must merge to EXCLUDE{B,C} (their intersection).",
+        )
+
 
 class TestIp4MulticastFilterReception(TestCase):
     """
