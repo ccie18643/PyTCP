@@ -1089,6 +1089,83 @@ class TestNeighborCacheGcPass(_NeighborCacheFixture):
                 ),
             )
 
+    def test__lib__neighbor__gc_no_op_at_exact_thresh1(self) -> None:
+        """
+        Ensure the GC pass is a no-op when cache size equals
+        gc_thresh1 exactly (the '<= gc_thresh1' return is inclusive),
+        even with a FAILED entry present.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with sysctl_module.override("neighbor.gc_thresh1", 3):
+            addrs = self._populate(3)  # size == gc_thresh1
+            self._force_state(addrs[0], NudState.FAILED)
+
+            self._cache._gc_pass(now=2000.0)
+
+            self.assertIn(
+                addrs[0],
+                self._cache._entries,
+                msg="At size == gc_thresh1 the GC must NOT evict (inclusive boundary).",
+            )
+
+    def test__lib__neighbor__gc_does_not_enter_stale_tier_at_exact_thresh2(self) -> None:
+        """
+        Ensure the STALE-eviction tier is NOT entered when, after the
+        FAILED tier, cache size equals gc_thresh2 exactly (the
+        'size > gc_thresh2' gate is strict).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with (
+            sysctl_module.override("neighbor.gc_thresh1", 0),
+            sysctl_module.override("neighbor.gc_thresh2", 3),
+            sysctl_module.override("neighbor.gc_thresh3", 1000),
+            sysctl_module.override("neighbor.gc_stale_time", 60),
+        ):
+            addrs = self._populate(3)  # size == gc_thresh2, no FAILED to prune
+            # An old STALE entry that WOULD be evicted if the tier ran.
+            self._force_state(addrs[0], NudState.STALE, when=1000.0)
+
+            self._cache._gc_pass(now=2000.0)
+
+            self.assertIn(
+                addrs[0],
+                self._cache._entries,
+                msg="At size == gc_thresh2 the STALE tier must NOT run (strict '>').",
+            )
+
+    def test__lib__neighbor__gc_does_not_enter_lru_tier_at_exact_thresh3(self) -> None:
+        """
+        Ensure the hard-cap LRU tier is NOT entered when, after the
+        FAILED / STALE tiers, cache size equals gc_thresh3 exactly
+        (the 'size > gc_thresh3' gate is strict).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with (
+            sysctl_module.override("neighbor.gc_thresh1", 0),
+            sysctl_module.override("neighbor.gc_thresh2", 1000),
+            sysctl_module.override("neighbor.gc_thresh3", 3),
+        ):
+            addrs = self._populate(3)  # size == gc_thresh3, all REACHABLE
+
+            self._cache._gc_pass(now=2000.0)
+
+            self.assertEqual(
+                len(self._cache._entries),
+                3,
+                msg="At size == gc_thresh3 the LRU hard-cap tier must NOT evict (strict '>').",
+            )
+            self.assertIn(
+                addrs[0],
+                self._cache._entries,
+                msg="No REACHABLE entry may be LRU-evicted at exactly gc_thresh3.",
+            )
+
 
 class TestNeighborCachePendingQueue(_NeighborCacheFixture):
     """
