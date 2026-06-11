@@ -55,3 +55,22 @@ class TestFastOpenState__Defaults(TestCase):
         self.assertIsNone(s.cookie_to_emit, msg="cookie_to_emit must default to None.")
         self.assertFalse(s.pending_counted, msg="pending_counted must default to False.")
         self.assertFalse(s.syn_retransmitted, msg="syn_retransmitted must default to False.")
+
+
+class TestFastOpenState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for FastOpenState.
+    """
+
+    def test__tcp_state__fastopen__is_slotted(self) -> None:
+        """
+        Ensure FastOpenState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(FastOpenState(), "__dict__"),
+            msg="FastOpenState must be declared with slots=True (no per-instance __dict__).",
+        )

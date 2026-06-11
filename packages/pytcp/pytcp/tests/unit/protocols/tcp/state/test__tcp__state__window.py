@@ -30,6 +30,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__window.py
 ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__window import WindowState
@@ -75,3 +76,67 @@ class TestWindowState(TestCase):
         self.assertEqual(s.max_window, 2000, msg="bump_max_window must advance to higher value.")
         s.bump_max_window(snd_wnd=1500)
         self.assertEqual(s.max_window, 2000, msg="bump_max_window must NOT decrease.")
+
+
+class TestWindowState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for WindowState.
+    """
+
+    def test__tcp_state__window__is_slotted(self) -> None:
+        """
+        Ensure WindowState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(WindowState(), "__dict__"),
+            msg="WindowState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestWindowState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the WindowState mutator signatures.
+    """
+
+    def test__tcp_state__window__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the WindowState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(WindowState.bump_max_window).parameters["snd_wnd"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="WindowState.bump_max_window 'snd_wnd' must be keyword-only.",
+        )
+
+
+class TestWindowState__BumpMaxBoundary(TestCase):
+    """
+    Inclusive-boundary coverage of 'bump_max_window'.
+    """
+
+    def test__window_state__bump_max_window_no_change_at_equal(self) -> None:
+        """
+        Ensure 'bump_max_window' does NOT advance when the offered window
+        equals the current maximum (the update is strictly greater-than),
+        pinning the '>' against a '>=' relaxation.
+
+        Reference: RFC 5961 §5 (MAX.SND.WND strict running maximum).
+        """
+
+        state = WindowState()
+        state.max_window = 1000
+        state.bump_max_window(snd_wnd=1000)
+
+        self.assertEqual(
+            state.max_window,
+            1000,
+            msg="An equal window must not change max_window (strict '>').",
+        )

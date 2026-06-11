@@ -31,6 +31,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__cc.py
 ver 3.0.8
 """
 
+import inspect
 from typing import override
 from unittest import TestCase
 
@@ -630,3 +631,67 @@ class TestCcState__FrCubicSnapshot(TestCase):
             8888,
             msg="clear_fr_cubic_snapshot must not mutate fr_pre_ssthresh.",
         )
+
+
+class TestCcState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for CcState.
+    """
+
+    def test__tcp_state__cc__is_slotted(self) -> None:
+        """
+        Ensure CcState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(CcState(), "__dict__"),
+            msg="CcState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestCcState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the CcState mutator signatures.
+    """
+
+    def test__tcp_state__cc__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the CcState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(CcState.save_frto_snapshot).parameters["snd_max"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="CcState.save_frto_snapshot 'snd_max' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(CcState.restore_frto_snapshot).parameters["snd_wnd"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="CcState.restore_frto_snapshot 'snd_wnd' must be keyword-only.",
+        )
+
+
+class TestCcState__FrtoSnapshotDefaults(TestCase):
+    """
+    Default values of the F-RTO CUBIC snapshot fields.
+    """
+
+    def test__cc_state__fr_pre_cubic_snapshot_fields_default_zero(self) -> None:
+        """
+        Ensure the pre-F-RTO CUBIC snapshot fields default to zero so a
+        session that never spuriously retransmits carries no stale epoch.
+
+        Reference: RFC 8312 / RFC 5682 (F-RTO CUBIC snapshot restore).
+        """
+
+        state = CcState()
+
+        self.assertEqual(state.fr_pre_cubic_K_ms, 0, msg="fr_pre_cubic_K_ms must default to 0.")
+        self.assertEqual(state.fr_pre_cubic_epoch_start_ms, 0, msg="fr_pre_cubic_epoch_start_ms must default to 0.")
+        self.assertEqual(state.fr_pre_cubic_w_est, 0, msg="fr_pre_cubic_w_est must default to 0.")

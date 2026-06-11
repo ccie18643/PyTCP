@@ -30,6 +30,7 @@ pytcp/tests/unit/protocols/tcp/state/test__tcp__state__ecn_classic.py
 ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__ecn_classic import ClassicEcnState
@@ -108,3 +109,42 @@ class TestClassicEcnState__Methods(TestCase):
 
         s = ClassicEcnState()
         self.assertFalse(s.consume_cwr(), msg="consume_cwr must return False when unarmed.")
+
+
+class TestClassicEcnState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for ClassicEcnState.
+    """
+
+    def test__tcp_state__ecn_classic__is_slotted(self) -> None:
+        """
+        Ensure ClassicEcnState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(ClassicEcnState(), "__dict__"),
+            msg="ClassicEcnState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestClassicEcnState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the ClassicEcnState mutator signatures.
+    """
+
+    def test__tcp_state__ecn_classic__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the ClassicEcnState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(ClassicEcnState.arm_cwr_response).parameters["snd_nxt"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="ClassicEcnState.arm_cwr_response 'snd_nxt' must be keyword-only.",
+        )
