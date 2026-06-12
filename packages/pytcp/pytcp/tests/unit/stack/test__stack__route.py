@@ -31,6 +31,7 @@ pytcp/tests/unit/stack/test__stack__route.py
 ver 3.0.8
 """
 
+import inspect
 from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
@@ -660,3 +661,34 @@ class TestRouteApiConnectedRoutes(TestCase):
             1,
             msg="The IPv6 connected route must egress the address's interface.",
         )
+
+
+class TestRouteApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every RouteApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__route__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each RouteApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add_route": {"route"},
+            "list_routes": {"family"},
+            "remove_default": {"family"},
+            "remove_route": {"destination", "gateway"},
+            "replace_default": {"gateway", "protocol", "oif"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(RouteApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"RouteApi.{method} must keep keyword-only parameters {names}.",
+            )

@@ -30,12 +30,17 @@ pytcp/tests/unit/stack/test__stack__socket_introspect.py
 ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
 from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.runtime.socket import AddressFamily, SocketType
-from pytcp.stack.socket_introspect import SocketSnapshot, build_socket_snapshots
+from pytcp.stack.socket_introspect import (
+    SocketIntrospectApi,
+    SocketSnapshot,
+    build_socket_snapshots,
+)
 
 
 class _FakeStatus:
@@ -266,4 +271,27 @@ class TestBuildSocketSnapshots(TestCase):
             tuple(snapshot.local_port for snapshot in result),
             (1000, 9000),
             msg="Snapshots must be returned sorted by local port regardless of input order.",
+        )
+
+
+class TestSocketIntrospectApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on SocketIntrospectApi.list_sockets
+    so the '*'→'/' separator mutation is caught.
+    """
+
+    def test__socket_introspect__list_sockets_is_keyword_only(self) -> None:
+        """
+        Ensure SocketIntrospectApi.list_sockets keeps family /
+        socket_type / listening_only keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        params = inspect.signature(SocketIntrospectApi.list_sockets).parameters
+        kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+        self.assertEqual(
+            kw_only,
+            {"family", "socket_type", "listening_only"},
+            msg="SocketIntrospectApi.list_sockets must keep its parameters keyword-only.",
         )

@@ -31,6 +31,7 @@ pytcp/tests/unit/stack/test__stack__address.py
 ver 3.0.8
 """
 
+import inspect
 import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, override
@@ -950,3 +951,33 @@ class TestAddressApiUnboundTool(TestCase):
             (host,),
             msg="interface(2) on the unbound tool must read interface 2's address list.",
         )
+
+
+class TestAddressApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every AddressApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__address__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each AddressApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add": {"ifaddr", "dad_conflict_callback", "dad"},
+            "list_ifaddrs": {"family"},
+            "remove": {"address", "abort_bound_sessions"},
+            "replace": {"old_address", "new_ifaddr", "abort_bound_sessions"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(AddressApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"AddressApi.{method} must keep keyword-only parameters {names}.",
+            )

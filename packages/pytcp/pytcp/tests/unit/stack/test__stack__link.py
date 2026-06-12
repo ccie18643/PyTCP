@@ -35,6 +35,7 @@ pytcp/tests/unit/stack/test__stack__link.py
 ver 3.0.8
 """
 
+import inspect
 from typing import TYPE_CHECKING, cast
 from unittest import TestCase
 from unittest.mock import patch
@@ -1268,3 +1269,30 @@ class TestLinkApiUnboundTool(TestCase):
             ifaces[1]._interface_mtu,
             msg="interface(2) on the unbound tool must read interface 2's MTU.",
         )
+
+
+class TestLinkApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on the LinkApi mutator methods so
+    the '*'→'/' separator mutation is caught.
+    """
+
+    def test__link__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure the LinkApi mutators keep their parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "set_mac_address": {"mac_address"},
+            "set_mtu": {"mtu"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(LinkApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"LinkApi.{method} must keep keyword-only parameters {names}.",
+            )

@@ -30,6 +30,7 @@ pytcp/tests/unit/stack/test__stack__resolver.py
 ver 3.0.8
 """
 
+import inspect
 from typing import override
 from unittest import TestCase
 from unittest.mock import create_autospec
@@ -131,3 +132,25 @@ class TestResolverApi(TestCase):
 
         with self.assertRaises(DnsResolverError):
             self._api.resolve(host="nonexistent.example")
+
+
+class TestResolverApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on ResolverApi.resolve so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__resolver__resolve_is_keyword_only(self) -> None:
+        """
+        Ensure ResolverApi.resolve keeps host / family keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        params = inspect.signature(ResolverApi.resolve).parameters
+        kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+        self.assertEqual(
+            kw_only,
+            {"host", "family"},
+            msg="ResolverApi.resolve must keep host / family keyword-only.",
+        )

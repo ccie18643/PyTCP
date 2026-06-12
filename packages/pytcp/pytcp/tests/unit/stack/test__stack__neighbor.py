@@ -32,6 +32,7 @@ pytcp/tests/unit/stack/test__stack__neighbor.py
 ver 3.0.8
 """
 
+import inspect
 from types import SimpleNamespace
 from typing import cast, override
 from unittest import TestCase
@@ -293,3 +294,33 @@ class TestStackNeighborApi(TestCase):
             (),
             msg="A bare mutation on the unbound tool must not touch any interface's cache.",
         )
+
+
+class TestNeighborApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every NeighborApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__neighbor__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each NeighborApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add": {"ip", "mac"},
+            "flush": {"family"},
+            "list_neighbors": {"family"},
+            "remove": {"ip"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(NeighborApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"NeighborApi.{method} must keep keyword-only parameters {names}.",
+            )
