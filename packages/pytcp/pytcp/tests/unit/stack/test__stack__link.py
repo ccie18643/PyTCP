@@ -1296,3 +1296,70 @@ class TestLinkApi__KeywordOnlySignatures(TestCase):
                 names,
                 msg=f"LinkApi.{method} must keep keyword-only parameters {names}.",
             )
+
+
+class TestLinkApiStats__SumGoldens(TestCase):
+    """
+    Additive-aggregation goldens for the packet-count sums. The
+    existing per-counter tests leave the second addend at 0, where
+    '+' is indistinguishable from '|' / '^'; these set BOTH addends to
+    bit-overlapping values (3 + 5 = 8, while 3 | 5 = 7 and 3 ^ 5 = 6)
+    so an operator edit on the sum is caught.
+    """
+
+    def test__link_api__stats__l2_packet_sums_are_additive(self) -> None:
+        """
+        Ensure the L2 rx_packets / tx_packets aggregate the Ethernet and
+        802.3 counters by addition (3 + 5 = 8), not bit-OR / XOR.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        rx = PacketStatsRx()
+        rx.ethernet__pre_parse = 3
+        rx.ethernet_802_3__pre_parse = 5
+        tx = PacketStatsTx()
+        tx.ethernet__pre_assemble = 3
+        tx.ethernet_802_3__pre_assemble = 5
+        handler = _FakePacketHandlerL2(
+            mac_unicast=MacAddress("02:00:00:00:00:07"),
+            interface_mtu=1500,
+            packet_stats_rx=rx,
+            packet_stats_tx=tx,
+        )
+        api = LinkApi(packet_handler=cast("PacketHandlerL2", handler))
+
+        stats = api.stats
+        self.assertEqual(
+            (stats.rx_packets, stats.tx_packets),
+            (8, 8),
+            msg="L2 rx/tx packet sums must be additive: 3 + 5 = 8.",
+        )
+
+    def test__link_api__stats__l3_packet_sums_are_additive(self) -> None:
+        """
+        Ensure the L3 rx_packets / tx_packets aggregate the IPv4 and
+        IPv6 counters by addition (3 + 5 = 8), not bit-OR / XOR.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        rx = PacketStatsRx()
+        rx.ip4__pre_parse = 3
+        rx.ip6__pre_parse = 5
+        tx = PacketStatsTx()
+        tx.ip4__pre_assemble = 3
+        tx.ip6__pre_assemble = 5
+        handler = _FakePacketHandlerL3(
+            interface_mtu=1500,
+            packet_stats_rx=rx,
+            packet_stats_tx=tx,
+        )
+        api = LinkApi(packet_handler=cast("PacketHandlerL3", handler))
+
+        stats = api.stats
+        self.assertEqual(
+            (stats.rx_packets, stats.tx_packets),
+            (8, 8),
+            msg="L3 rx/tx packet sums must be additive: 3 + 5 = 8.",
+        )
