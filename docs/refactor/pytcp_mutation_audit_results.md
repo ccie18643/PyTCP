@@ -42,7 +42,7 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | lib       | 1812    | TBD        | TBD       | ~98 %                 | ~120                | DONE   |
 | tcp/state | 905     | 70.6 %     | 78.1 %    | ~99 %                 | 92                  | DONE   |
 | tcp-math  | 2573    | 79.2 %     | 90.8 %    | ~98 %                 | 299                 | DONE   |
-| stack     | 2521    | 44.3 %     | 45.9 %    | ~76 %                 | 42                  | PARTIAL |
+| stack     | 2521    | 44.3 %     | 46.9 %    | ~78 %                 | 66                  | PARTIAL |
 
 (Updated per shard as the audit proceeds.)
 
@@ -258,7 +258,7 @@ integration-shielded lifecycle. Adjusted for the annotation/decorator/
 log-guard/enum core, the score is **~76 %** and rising as the
 integration-only paths are excluded.
 
-### Genuine gaps closed (42, kill-proven, test-only)
+### Genuine gaps closed (66, kill-proven, test-only)
 
 - **Config constants** (`8390d0c2`): the four 16-byte bootstrap
   secrets, the 1024-entry TFO cache cap, the 5-second IPv4/IPv6
@@ -270,6 +270,11 @@ integration-only paths are excluded.
   `is_float_in_range` accept both inclusive endpoints and reject the
   values just outside, reject booleans, and keep `low` / `high`
   keyword-only. 100 → 79.
+- **Control-API keyword-only `*` separators** (`5d768e90`, ~24): the
+  `'*'`→`'/'` mutation on every `RouteApi` / `AddressApi` / `LinkApi` /
+  `NeighborApi` / `ResolverApi` / `SocketIntrospectApi` method, asserted
+  via `inspect.signature(...).kind is KEYWORD_ONLY` in each API's test
+  file.
 
 ### Remaining killable tail (enumerated for continuation)
 
@@ -277,14 +282,6 @@ The diffuse, lower-density killable survivors not yet closed, ready for
 a follow-up pass (each is the same technique already applied elsewhere
 in this shard):
 
-- **Keyword-only `*` separators** on the control-API methods (~24):
-  `RouteApi` (add_route / list_routes / remove_default / remove_route /
-  replace_default), `AddressApi` (add / list_ifaddrs / remove /
-  replace), `LinkApi` (set_mac_address / set_mtu), `NeighborApi` (add /
-  flush / list_neighbors / remove), `SocketIntrospectApi.list_sockets`,
-  `ResolverApi.resolve`. Each killed by an
-  `inspect.signature(...).kind is KEYWORD_ONLY` assertion in that API's
-  test file.
 - **`__init__` validator boundaries** (`low >= high`, `not isinstance(value, bool)`)
   and the per-validator default bounds (`low=1024` / `high=65535`).
 - **sysctl `_split_iface_key` parsing** (`len(parts) < 3`, the
