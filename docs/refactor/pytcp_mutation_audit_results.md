@@ -42,7 +42,7 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | lib       | 1812    | TBD        | TBD       | ~98 %                 | ~120                | DONE   |
 | tcp/state | 905     | 70.6 %     | 78.1 %    | ~99 %                 | 92                  | DONE   |
 | tcp-math  | 2573    | 79.2 %     | 90.8 %    | ~98 %                 | 299                 | DONE   |
-| stack     | 2521    | 44.3 %     | 46.9 %    | ~78 %                 | 66                  | PARTIAL |
+| stack     | 2521    | 44.3 %     | 50.8 %    | ~83 %                 | 165                 | PARTIAL |
 
 (Updated per shard as the audit proceeds.)
 
@@ -253,12 +253,32 @@ shards because the control-plane surface is **annotation-dense** and
 | **config constants / validator boundaries / kw-only separators / iface-key parsing** | **~180** | **yes** |
 
 So ~1035 of the 1405 survivors are firmly equivalent (annotation +
-decorator + log-guard + enum-`is`), and a further chunk is
-integration-shielded lifecycle. Adjusted for the annotation/decorator/
-log-guard/enum core, the score is **~76 %** and rising as the
-integration-only paths are excluded.
+decorator + log-guard + enum-`is`), and a further chunk (lifecycle's
+431) is integration-shielded. After the closures below, adjusting for
+the annotation/decorator/log-guard/enum core and the integration-only
+lifecycle, the shard sits at **~83 %**; the raw ceiling cannot rise
+further without integration-level mutation testing.
 
-### Genuine gaps closed (66, kill-proven, test-only)
+### Genuine gaps closed (165, kill-proven, test-only)
+
+A clean exclusive re-scan (no concurrent formatter pass — see the note
+below) confirms the per-file kills: socket_introspect 118→89 (29),
+sysctl 100→56 (44), `__init__` 310→281 (29), resolver 38→13 (25), link
+86→64 (22), plus the deterministic keyword-only kills on address (5),
+neighbor (5), and route (6). `lifecycle.py` (431 survivors) is
+untouched — its mutants are overwhelmingly annotation unions, thread
+ordering, and mock-shielded `init`/`start`/`stop` internals that only
+the integration suite exercises.
+
+> **Re-scan hygiene note.** Survivor re-scans MUST run with nothing else
+> touching the tree. `make lint` runs isort/black in **write mode**; a
+> re-scan that overlaps it sees a half-rewritten file and reports
+> spurious "kills" (one route re-scan showed an impossible 93/137 before
+> this was caught). The numbers above come from a fully-isolated re-scan
+> and are reproducible across runs.
+
+The closures, by commit:
+
 
 - **Config constants** (`8390d0c2`): the four 16-byte bootstrap
   secrets, the 1024-entry TFO cache cap, the 5-second IPv4/IPv6
@@ -275,23 +295,39 @@ integration-only paths are excluded.
   `NeighborApi` / `ResolverApi` / `SocketIntrospectApi` method, asserted
   via `inspect.signature(...).kind is KEYWORD_ONLY` in each API's test
   file.
+- **Introspection filter / queue accounting** (`33ebb49c`): the
+  `build_socket_snapshots` listening filter excludes a connected
+  datagram socket (`remote_port == 0` vs `>=`), the family/type filter
+  `continue`s past a non-match (vs `break`), and the queue counts
+  default to 0 when the status object has no buffer fields.
+- **sysctl `_split_iface_key` parsing** (`33ebb49c`): a 3-segment
+  `<ns>.<ifname>.<field>` key splits into `(base, ifname)` — pinning the
+  `len(parts) < 3` boundary, the `parts[:-2] + parts[-1:]` base
+  reconstruction, and the `parts[-2]` ifname slice — against the real
+  registry's interface-scoped `ip4.accept_source_route` knob.
+- **`__init__` registered-validator boundaries** (`33ebb49c`): the
+  source-route bool validator rejects non-bools, the ephemeral-range
+  validators pin their exact 1024 / 65535 bounds, and the cross-knob
+  finalize rejects `low == high` (`low >= high` vs `>`).
+- **resolver error aggregation** (`33ebb49c`): a NODATA all-empty result
+  returns an empty tuple (`not addresses and errors` vs `or`), and a
+  single-family failure raises `errors[0]` (vs an off-by-one index).
+- **LinkApi packet-count sums** (`1c37c9d3`): rx/tx packet aggregation
+  is additive (3 + 5 = 8, distinguished from `|`=7 / `^`=6) on both the
+  L2 Ethernet/802.3 and L3 IPv4/IPv6 addends.
 
-### Remaining killable tail (enumerated for continuation)
+### Remaining survivors — overwhelmingly equivalent / integration-shielded
 
-The diffuse, lower-density killable survivors not yet closed, ready for
-a follow-up pass (each is the same technique already applied elsewhere
-in this shard):
-
-- **`__init__` validator boundaries** (`low >= high`, `not isinstance(value, bool)`)
-  and the per-validator default bounds (`low=1024` / `high=65535`).
-- **sysctl `_split_iface_key` parsing** (`len(parts) < 3`, the
-  `parts[:-2] + parts[-1:]` / `parts[-2]` slice indices) — needs a
-  registered interface-scope knob fixture.
-- **Introspection snapshot boundaries** in `route` / `address` /
-  `socket_introspect` / `neighbor` (the per-field snapshot values and
-  the `socket_id.local_address == address` comparisons).
-
-These are bounded and mechanical; the equivalent core (annotation /
-decorator / log-guard / enum-`is` / integration-shielded lifecycle)
-is the floor the raw score cannot exceed without integration-level
-mutation testing (out of Tier-1 scope).
+After the above, the residual 1240 survivors are dominated by the
+un-killable core: ~971 PEP 604 annotation unions, ~19 decorator
+removals, the `__debug__ and log(...)` guards (no-ops in the test
+harness), enum-identity `is` on interned `AddressFamily` / `FsmState`
+members, and — the largest single block — `lifecycle.py`'s 431
+thread-ordering / mock-shielded `init` / `start` / `stop` mutants that
+only the integration suite drives. Adjusting for that core puts the
+shard at **~83 %**; the raw ceiling cannot rise further without
+integration-level mutation testing, which is out of Tier-1 scope. The
+only genuinely-killable unit-level residue is a thin tail of
+interned-`is` address comparisons (`socket_id.local_address == address`
+in the address ABORT loop) and the `_sum_drops` prefix/suffix filter
+branches in `link`, both low-yield.
