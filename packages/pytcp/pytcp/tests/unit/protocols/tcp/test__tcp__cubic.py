@@ -866,3 +866,287 @@ class TestCubicExactGoldens(TestCase):
             100005,
             msg="cubic_w_est half-MSS ack must grow estimate 100000 -> 100005.",
         )
+
+
+class TestCubicMutationTail(TestCase):
+    """
+    Odd-value floor-division goldens, exact branch-boundary cases,
+    and per-argument guard boundaries closing the remaining killable
+    CUBIC mutation survivors.
+    """
+
+    def test__cubic__target_upper_clamp_floor_divides_on_odd_cwnd(self) -> None:
+        """
+        Ensure the 1.5*cwnd ceiling uses integer floor division: an
+        odd cwnd yields cwnd + cwnd//2 (150001), never the float
+        150001.5.
+
+        Reference: RFC 9438 §4.2 (target ceiling at 1.5 * cwnd).
+        """
+
+        self.assertEqual(
+            cubic_target(100001, 200000, 100, 500, 1460),
+            150001,
+            msg="target ceiling for odd cwnd=100001 must floor to 150001.",
+        )
+
+    def test__cubic__loss_event_floor_divides_on_odd_cwnd(self) -> None:
+        """
+        Ensure the loss-event ssthresh and fast-convergence W_max use
+        integer floor division: an odd cwnd yields the floored
+        (70000, 85000), never floats.
+
+        Reference: RFC 9438 §4.6 / §4.7 (ssthresh = cwnd*7//10, W_max = cwnd*17//20).
+        """
+
+        ssthresh, w_max = cubic_loss_event_ssthresh(cwnd=100001, smss=1460, prior_w_max=200000, fast_conv_active=True)
+        self.assertEqual(
+            (ssthresh, w_max),
+            (70000, 85000),
+            msg="odd cwnd=100001 must floor to ssthresh=70000, W_max=85000.",
+        )
+        self.assertIsInstance(ssthresh, int, msg="ssthresh must be int (floor div).")
+        self.assertIsInstance(w_max, int, msg="W_max must be int (floor div).")
+
+    def test__cubic__ca_increment_floor_is_at_least_one_byte(self) -> None:
+        """
+        Ensure the CA growth floors at +1 byte: a zero raw increment
+        and a unit raw increment both yield exactly cwnd + 1, pinning
+        the max(1, ...) floor against a 0 or 2 edit.
+
+        Reference: RFC 9438 §4.2 (1-byte minimum CA growth).
+        """
+
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=200000,
+                ssthresh=50000,
+                w_max=200000,
+                K_ms=100,
+                epoch_start_ms=0,
+                now_ms=2000,
+                bytes_acked=1,
+                smss=1460,
+            ),
+            200001,
+            msg="zero raw increment must floor to cwnd + 1 = 200001.",
+        )
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=200000,
+                ssthresh=50000,
+                w_max=200000,
+                K_ms=100,
+                epoch_start_ms=0,
+                now_ms=2000,
+                bytes_acked=50,
+                smss=1460,
+            ),
+            200001,
+            msg="unit raw increment must yield cwnd + 1 = 200001 (kills the +2 floor edit).",
+        )
+
+    def test__cubic__ca_default_srtt_is_zero(self) -> None:
+        """
+        Ensure the srtt_ms parameter defaults to 0: omitting it in an
+        unclamped CA case yields the same 200167 as passing srtt_ms=0.
+
+        Reference: RFC 9438 §4.2 (legacy W_cubic(t) without RTT projection).
+        """
+
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=200000,
+                ssthresh=50000,
+                w_max=200000,
+                K_ms=100,
+                epoch_start_ms=0,
+                now_ms=3500,
+                bytes_acked=1460,
+                smss=1460,
+            ),
+            200167,
+            msg="default srtt_ms must be 0 (omitted == passing 0).",
+        )
+
+    def test__cubic__ca_branch_taken_at_cwnd_equals_ssthresh(self) -> None:
+        """
+        Ensure the slow-start / congestion-avoidance split uses a
+        strict '<': at cwnd == ssthresh the CA branch is taken (growth
+        200029), not the slow-start branch (which would give 201460).
+
+        Reference: RFC 5681 §3.1 (cwnd >= ssthresh enters CA).
+        """
+
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=200000,
+                ssthresh=200000,
+                w_max=200000,
+                K_ms=100,
+                epoch_start_ms=0,
+                now_ms=2000,
+                bytes_acked=1460,
+                smss=1460,
+            ),
+            200029,
+            msg="cwnd == ssthresh must take the CA branch (200029, not SS 201460).",
+        )
+
+    def test__cubic__no_growth_when_target_not_above_cwnd(self) -> None:
+        """
+        Ensure that when the curve has not caught up (target floored
+        to cwnd) the cwnd is returned unchanged: a strict '<=' edit to
+        '<' would wrongly add the 1-byte floor.
+
+        Reference: RFC 9438 §4.2 (no growth while target <= cwnd).
+        """
+
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=300000,
+                ssthresh=50000,
+                w_max=200000,
+                K_ms=100,
+                epoch_start_ms=0,
+                now_ms=200,
+                bytes_acked=1460,
+                smss=1460,
+            ),
+            300000,
+            msg="target == cwnd must leave cwnd unchanged at 300000.",
+        )
+
+    def test__cubic__fast_convergence_not_applied_at_cwnd_equals_prior(self) -> None:
+        """
+        Ensure fast convergence uses a strict '<': at cwnd ==
+        prior_w_max it is NOT applied, so W_max stays cwnd (200000),
+        not the reduced cwnd*17//20.
+
+        Reference: RFC 9438 §4.7 (fast convergence only when cwnd < prior W_max).
+        """
+
+        self.assertEqual(
+            cubic_loss_event_ssthresh(cwnd=200000, smss=1460, prior_w_max=200000, fast_conv_active=True),
+            (140000, 200000),
+            msg="cwnd == prior_w_max must keep W_max = cwnd (200000).",
+        )
+
+    def test__cubic__positive_guards_accept_boundary_and_reject_below(self) -> None:
+        """
+        Ensure every CUBIC argument guard accepts its exact boundary
+        (0 for '>= 0' guards, 1 for '> 0' guards) and rejects the
+        value just below it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Boundary values accepted (no AssertionError).
+        self.assertEqual(cubic_compute_K(0, 0, 1), 0)
+        self.assertEqual(cubic_w(0, 0, 0, 1), 0)
+        self.assertEqual(cubic_target(1, 0, 0, 0, 1), 1)
+        self.assertEqual(
+            cubic_grow_per_ack(
+                cwnd=1,
+                ssthresh=1,
+                w_max=0,
+                K_ms=0,
+                epoch_start_ms=0,
+                now_ms=0,
+                bytes_acked=0,
+                smss=1,
+            ),
+            1,
+        )
+        self.assertEqual(
+            cubic_loss_event_ssthresh(
+                cwnd=1,
+                smss=1,
+                prior_w_max=0,
+                fast_conv_active=False,
+            ),
+            (2, 1),
+        )
+        self.assertEqual(
+            cubic_w_est(
+                w_est_prev=0,
+                cwnd=1,
+                smss=1,
+                bytes_acked=0,
+            ),
+            0,
+        )
+
+        # Below-boundary values rejected.
+        for call in (
+            lambda: cubic_compute_K(-1, 0, 1),
+            lambda: cubic_compute_K(0, -1, 1),
+            lambda: cubic_compute_K(0, 0, 0),
+            lambda: cubic_w(0, -1, 0, 1),
+            lambda: cubic_w(0, 0, 0, 0),
+            lambda: cubic_target(0, 0, 0, 0, 1),
+            lambda: cubic_grow_per_ack(
+                cwnd=0,
+                ssthresh=1,
+                w_max=0,
+                K_ms=0,
+                epoch_start_ms=0,
+                now_ms=0,
+                bytes_acked=0,
+                smss=1,
+            ),
+            lambda: cubic_grow_per_ack(
+                cwnd=1,
+                ssthresh=0,
+                w_max=0,
+                K_ms=0,
+                epoch_start_ms=0,
+                now_ms=0,
+                bytes_acked=0,
+                smss=1,
+            ),
+            lambda: cubic_grow_per_ack(
+                cwnd=1,
+                ssthresh=1,
+                w_max=0,
+                K_ms=0,
+                epoch_start_ms=0,
+                now_ms=0,
+                bytes_acked=-1,
+                smss=1,
+            ),
+            lambda: cubic_grow_per_ack(
+                cwnd=1,
+                ssthresh=1,
+                w_max=0,
+                K_ms=0,
+                epoch_start_ms=0,
+                now_ms=0,
+                bytes_acked=0,
+                smss=0,
+            ),
+            lambda: cubic_loss_event_ssthresh(
+                cwnd=0,
+                smss=1,
+                prior_w_max=0,
+                fast_conv_active=False,
+            ),
+            lambda: cubic_loss_event_ssthresh(
+                cwnd=1,
+                smss=0,
+                prior_w_max=0,
+                fast_conv_active=False,
+            ),
+            lambda: cubic_loss_event_ssthresh(
+                cwnd=1,
+                smss=1,
+                prior_w_max=-1,
+                fast_conv_active=False,
+            ),
+            lambda: cubic_w_est(w_est_prev=-1, cwnd=1, smss=1, bytes_acked=0),
+            lambda: cubic_w_est(w_est_prev=0, cwnd=0, smss=1, bytes_acked=0),
+            lambda: cubic_w_est(w_est_prev=0, cwnd=1, smss=0, bytes_acked=0),
+            lambda: cubic_w_est(w_est_prev=0, cwnd=1, smss=1, bytes_acked=-1),
+        ):
+            with self.assertRaises(AssertionError):
+                call()
