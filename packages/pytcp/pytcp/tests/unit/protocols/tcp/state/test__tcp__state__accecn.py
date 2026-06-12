@@ -843,3 +843,77 @@ class TestAccEcnState__NextEmitCountersSelection(TestCase):
 
         self.assertIsNone(accecn0, msg="AccECN0 must be None when ECT(1) leads.")
         self.assertEqual(accecn1, (None, None, 51), msg="An ECT(1)-only change must emit AccECN1 with only e1b.")
+
+    def test__accecn_state__e0b_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure change detection uses inequality, not greater-than: a
+        counter that has wrapped BELOW the last-emit tracker still reads
+        'changed' and is emitted.
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 50, 100
+        state.r_ce_b, state.r_last_emit_ceb = 0, 0
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((50, None, None), None),
+            msg="An e0b that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__ceb_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure a CE byte counter wrapped below its last-emit tracker is
+        still detected as changed (Length-8 AccECN0).
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 5, 100
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((1, 5, None), None),
+            msg="A ceb that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__e1b_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure an ECT(1) byte counter wrapped below its last-emit
+        tracker is still detected as changed (selects AccECN1).
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 0, 0
+        state.r_ect1_b, state.r_last_emit_e1b = 5, 100
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            (None, (None, None, 5)),
+            msg="An e1b that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__s_cep_wraps_modulo_24_bit_on_delta(self) -> None:
+        """
+        Ensure 'apparent_ce_delta' advances s.cep with a 24-bit bitmask
+        wrap: at s.cep == 0xFFFFFF a delta of 3 wraps s.cep to 2.
+
+        Reference: RFC 9768 §3.2.2.5 (s.cep 24-bit modular accumulation).
+        """
+
+        state = AccEcnState()
+        state.s_cep = ACCECN__COUNTER_MASK  # low 3 bits == 7
+
+        delta = state.apparent_ce_delta(2)
+
+        self.assertEqual(delta, 3, msg="(2 - 7) & 0b111 must be 3.")
+        self.assertEqual(state.s_cep, 2, msg="s.cep must wrap: (0xFFFFFF + 3) & 0xFFFFFF == 2.")
