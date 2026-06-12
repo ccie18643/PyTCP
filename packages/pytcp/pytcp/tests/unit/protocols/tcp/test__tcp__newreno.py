@@ -300,3 +300,50 @@ class TestPartialCumAckDeflate__ArgumentAsserts(TestCase):
             10000,
             msg="bytes_acked=0 leaves cwnd unchanged.",
         )
+
+
+class TestPartialCumAckDeflate__GuardBoundaries(TestCase):
+    """
+    Exact argument-guard boundaries closing the assert-line mutation
+    survivors: cwnd accepts 0 and rejects negatives, smss accepts its
+    exact lower bound of 1.
+    """
+
+    def test__newreno__cwnd_guard_accepts_zero(self) -> None:
+        """
+        Ensure the cwnd guard accepts its exact lower boundary of 0
+        (a '>= 0' guard mutated to '>= 1' or '> 0' would reject it).
+
+        Reference: RFC 6582 §3 (partial-ACK deflation).
+        """
+
+        self.assertEqual(
+            partial_cum_ack_deflate(cwnd=0, bytes_acked=0, smss=1),
+            1,
+            msg="cwnd=0 must be accepted and floor to 1 SMSS.",
+        )
+
+    def test__newreno__cwnd_guard_rejects_negative(self) -> None:
+        """
+        Ensure the cwnd guard rejects a negative value (a '>= 0' guard
+        mutated to '!= 0' would wrongly accept -1).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(AssertionError):
+            partial_cum_ack_deflate(cwnd=-1, bytes_acked=0, smss=1)
+
+    def test__newreno__smss_guard_accepts_exact_lower_bound(self) -> None:
+        """
+        Ensure the smss guard accepts its exact lower boundary of 1
+        (a '> 0' guard mutated to '> 1' would reject it).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            partial_cum_ack_deflate(cwnd=10, bytes_acked=0, smss=1),
+            10,
+            msg="smss=1 must be accepted.",
+        )
