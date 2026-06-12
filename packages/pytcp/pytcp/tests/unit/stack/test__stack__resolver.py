@@ -154,3 +154,47 @@ class TestResolverApi__KeywordOnlySignatures(TestCase):
             {"host", "family"},
             msg="ResolverApi.resolve must keep host / family keyword-only.",
         )
+
+
+class TestResolverApi__ErrorAggregationGoldens(TestCase):
+    """
+    Branch goldens for the resolve error-aggregation logic: an
+    all-empty NODATA result returns an empty tuple (not a raise), and
+    a single-family failure raises the first recorded error.
+    """
+
+    def test__resolver__nodata_returns_empty_tuple(self) -> None:
+        """
+        Ensure a host that yields no addresses AND no errors (NODATA)
+        returns an empty tuple — pinning the 'not addresses AND errors'
+        guard against an 'or' edit that would index an empty error list.
+
+        Reference: RFC 1035 §4.1.1 (NODATA — RCODE 0, empty answer).
+        """
+
+        resolver = create_autospec(DnsResolver, spec_set=True)
+        resolver.resolve.side_effect = lambda host, record_type: []
+        api = ResolverApi(resolver=resolver)
+
+        self.assertEqual(
+            api.resolve(host="empty.example"),
+            (),
+            msg="a NODATA lookup (no addresses, no errors) must return an empty tuple.",
+        )
+
+    def test__resolver__single_family_failure_raises_first_error(self) -> None:
+        """
+        Ensure a family-restricted lookup that fails raises the first
+        (and only) recorded error — pinning the 'errors[0]' index
+        against an off-by-one edit that would index past the single
+        error.
+
+        Reference: RFC 1035 §4.1.1 (RCODE 3 — name error).
+        """
+
+        resolver = create_autospec(DnsResolver, spec_set=True)
+        resolver.resolve.side_effect = DnsResolverError("nxdomain", name_error=True)
+        api = ResolverApi(resolver=resolver)
+
+        with self.assertRaises(DnsResolverError):
+            api.resolve(host="nx.example", family=AddressFamily.INET4)

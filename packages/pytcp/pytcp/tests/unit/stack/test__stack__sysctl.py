@@ -728,3 +728,54 @@ class TestSysctlValidatorBoundaryGoldens(TestCase):
                 {"low", "high"},
                 msg=f"{factory.__name__} low/high must be keyword-only.",
             )
+
+
+class TestSysctlSplitIfaceKeyGoldens(TestCase):
+    """
+    Exact goldens for the interface-scope key splitter, closing the
+    'len(parts) < 3' boundary and the base-reconstruction / ifname
+    slice-index mutation survivors. Uses the real registry's
+    interface-scoped 'ip4.accept_source_route' knob.
+    """
+
+    def test__sysctl__split_iface_key_three_part_key(self) -> None:
+        """
+        Ensure a '<ns>.<ifname>.<field>' key splits into the base key
+        (with the ifname removed) plus the ifname, exercising the
+        'parts[:-2] + parts[-1:]' base reconstruction and the
+        'parts[-2]' ifname extraction.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            sysctl._split_iface_key("ip4.eth0.accept_source_route"),
+            ("ip4.accept_source_route", "eth0"),
+            msg="a 3-part interface key must split into (base, ifname).",
+        )
+
+    def test__sysctl__split_iface_key_too_short_returns_none(self) -> None:
+        """
+        Ensure a key with fewer than three segments is not an
+        interface key (pins the 'len(parts) < 3' boundary).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIsNone(
+            sysctl._split_iface_key("ip4.accept_source_route"),
+            msg="a 2-segment key must not be treated as an interface key.",
+        )
+
+    def test__sysctl__split_iface_key_non_interface_scope_returns_none(self) -> None:
+        """
+        Ensure a key whose base is not a registered interface-scope
+        knob returns None.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIsNone(
+            sysctl._split_iface_key("foo.eth0.bar"),
+            msg="a key whose base is unregistered must return None.",
+        )

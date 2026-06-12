@@ -40,6 +40,7 @@ from unittest.mock import MagicMock, create_autospec, patch
 
 import pytcp.stack as stack
 import pytcp.stack.lifecycle as lifecycle
+import pytcp.stack.sysctl as sysctl_module
 from net_addr import (
     Ip4Address,
     Ip4IfAddr,
@@ -2995,3 +2996,90 @@ class TestStackConfigConstantGoldens(TestCase):
             False,
             msg="IP4__ACCEPT_SOURCE_ROUTE default must be False.",
         )
+
+
+class TestStackSysctlValidatorGoldens(TestCase):
+    """
+    Boundary goldens for the stack-registered sysctl validators,
+    closing the bool-guard, ephemeral-range validator-bound, and
+    cross-knob low-less-than-high mutation survivors. Each test
+    restores the registry to defaults on cleanup.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Register a registry reset on cleanup so a validator-probe set
+        does not leak into sibling tests.
+        """
+
+        self.addCleanup(sysctl_module.reset_to_defaults)
+
+    def test__stack__bool_validator_rejects_non_bool(self) -> None:
+        """
+        Ensure the source-route bool validator rejects a non-bool value
+        and accepts a bool (pins 'not isinstance(value, bool)').
+
+        Reference: RFC 791 §3.1 (source-route acceptance is a boolean policy).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("ip4.default.accept_source_route", "notbool")
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("ip4.default.accept_source_route", True)
+        self.assertTrue(
+            sysctl_module.get("ip4.default.accept_source_route"),
+            msg="a bool value must be accepted by the source-route validator.",
+        )
+
+    def test__stack__ephemeral_low_validator_bound_is_1024(self) -> None:
+        """
+        Ensure the ephemeral-low validator's lower bound is exactly
+        1024: 1024 is accepted, 1023 is rejected (pins the 1024
+        validator-bound constant).
+
+        Reference: RFC 6056 §3.2 (ephemeral port range lower bound).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("net.ephemeral_port_range.low", 1023)
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("net.ephemeral_port_range.low", 1024)
+        self.assertEqual(
+            sysctl_module.get("net.ephemeral_port_range.low"),
+            1024,
+            msg="ephemeral low must accept its exact 1024 boundary.",
+        )
+
+    def test__stack__ephemeral_high_validator_bound_is_65535(self) -> None:
+        """
+        Ensure the ephemeral-high validator's upper bound is exactly
+        65535: 65535 is accepted, 65536 is rejected (pins the 65535
+        validator-bound constant).
+
+        Reference: RFC 6056 §3.2 (ephemeral port range upper bound).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("net.ephemeral_port_range.high", 65536)
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("net.ephemeral_port_range.high", 65535)
+        self.assertEqual(
+            sysctl_module.get("net.ephemeral_port_range.high"),
+            65535,
+            msg="ephemeral high must accept its exact 65535 boundary.",
+        )
+
+    def test__stack__ephemeral_range_cross_knob_rejects_low_equals_high(self) -> None:
+        """
+        Ensure the cross-knob finalize validator rejects low == high
+        (the 'range(low, high)' pool would be empty), pinning the
+        'low >= high' comparison against a strict '>'.
+
+        Reference: RFC 6056 §3.2 (a non-empty ephemeral range).
+        """
+
+        sysctl_module.set("net.ephemeral_port_range.low", 40000)
+        sysctl_module.set("net.ephemeral_port_range.high", 40000)
+        with self.assertRaises(ValueError):
+            sysctl_module.finalize_validators()

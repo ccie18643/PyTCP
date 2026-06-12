@@ -295,3 +295,114 @@ class TestSocketIntrospectApi__KeywordOnlySignatures(TestCase):
             {"family", "socket_type", "listening_only"},
             msg="SocketIntrospectApi.list_sockets must keep its parameters keyword-only.",
         )
+
+
+class _FakeStatusNoBuffers:
+    """A status double that lacks the rx/tx buffer-length attributes."""
+
+
+class _FakeNoBufferSocket:
+    """A TCP-like socket whose status() carries no queue-length fields."""
+
+    def __init__(self) -> None:
+        self.address_family = AddressFamily.INET4
+        self.socket_type = SocketType.STREAM
+        self.local_ip_address = Ip4Address("0.0.0.0")
+        self.local_port = 80
+        self.remote_ip_address = Ip4Address("0.0.0.0")
+        self.remote_port = 0
+        self.state = FsmState.LISTEN
+
+    def status(self) -> _FakeStatusNoBuffers:
+        """Return a status object with no buffer-length attributes."""
+
+        return _FakeStatusNoBuffers()
+
+
+class TestBuildSocketSnapshots__MutationGoldens(TestCase):
+    """
+    Branch and default-value goldens closing the build_socket_snapshots
+    filter / queue-accounting mutation survivors.
+    """
+
+    def test__build__listening_only_excludes_connected_udp(self) -> None:
+        """
+        Ensure the listening filter excludes a CONNECTED datagram socket
+        (remote_port != 0): the non-TCP listening test is exactly
+        'remote_port == 0', so a '>=' edit would wrongly keep a
+        connected UDP socket.
+
+        Reference: RFC 768 (UDP — a connected datagram socket is not listening).
+        """
+
+        unconnected = _FakeUdpSocket(
+            address_family=AddressFamily.INET4,
+            local_address=Ip4Address("0.0.0.0"),
+            local_port=1000,
+            remote_address=Ip4Address("0.0.0.0"),
+            remote_port=0,
+        )
+        connected = _FakeUdpSocket(
+            address_family=AddressFamily.INET4,
+            local_address=Ip4Address("0.0.0.0"),
+            local_port=2000,
+            remote_address=Ip4Address("10.0.0.1"),
+            remote_port=80,
+        )
+
+        result = build_socket_snapshots([unconnected, connected], listening_only=True)
+
+        self.assertEqual(
+            tuple(snapshot.local_port for snapshot in result),
+            (1000,),
+            msg="listening_only must keep the unconnected UDP (1000) and drop the connected one (2000).",
+        )
+
+    def test__build__family_filter_continues_past_skipped_socket(self) -> None:
+        """
+        Ensure the family filter continues scanning after skipping a
+        non-matching socket: a leading IPv6 socket must not break the
+        loop and drop a later IPv4 match (kills 'continue'→'break').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        v6 = _FakeUdpSocket(
+            address_family=AddressFamily.INET6,
+            local_address=Ip6Address("::"),
+            local_port=500,
+            remote_address=Ip6Address("::"),
+            remote_port=0,
+        )
+        v4 = _FakeUdpSocket(
+            address_family=AddressFamily.INET4,
+            local_address=Ip4Address("0.0.0.0"),
+            local_port=1000,
+            remote_address=Ip4Address("0.0.0.0"),
+            remote_port=0,
+        )
+
+        result = build_socket_snapshots([v6, v4], family=AddressFamily.INET4)
+
+        self.assertEqual(
+            tuple(snapshot.local_port for snapshot in result),
+            (1000,),
+            msg="the IPv6 socket must be skipped (continue), not break, keeping the IPv4 match.",
+        )
+
+    def test__build__queues_default_to_zero_without_buffer_fields(self) -> None:
+        """
+        Ensure the queue accounting falls back to 0 when the socket's
+        status object lacks the buffer-length attributes (the getattr
+        default), pinning the literal 0.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        snapshot = build_socket_snapshots([_FakeNoBufferSocket()])[0]
+
+        self.assertEqual(
+            (snapshot.rx_queue, snapshot.tx_queue),
+            (0, 0),
+            msg="a status object without buffer fields must yield (0, 0) queue counts.",
+        )
