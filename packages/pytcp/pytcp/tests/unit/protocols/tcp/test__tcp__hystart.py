@@ -828,3 +828,17 @@ class TestHyStartMutationGoldens(TestCase):
             0,
             msg="rounds==0 must NOT decrement below 0 (kills '> 0'→'>= 0').",
         )
+
+    def test__hystart__guards_reject_negative(self) -> None:
+        """
+        Ensure the css_growth_increment smss guard and the
+        fold_rtt_sample rtt guard reject negatives (kills '> 0'→'!= 0'
+        and '>= 0'→'!= 0').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(AssertionError):
+            css_growth_increment(100, -1)
+        with self.assertRaises(AssertionError):
+            fold_rtt_sample(HyStartState(), -1)

@@ -454,3 +454,34 @@ class TestLossRecoveryMutationGoldens(TestCase):
             1900,
             msg="out-of-window block must be skipped (continue), not break: pipe=1900.",
         )
+
+    def test__is_lost__block_count_above_dup_thresh_still_lost(self) -> None:
+        """
+        Ensure IsLost rule 1 fires when MORE than dup_thresh blocks lie
+        above seq (4 blocks, dup_thresh=3), pinning the '>=' against an
+        '==' edit that would only fire at exactly dup_thresh.
+
+        Reference: RFC 6675 §3 (IsLost: >= dup_thresh blocks above seq).
+        """
+
+        scoreboard = SackScoreboard()
+        for left in (2000, 2200, 2400, 2600):
+            scoreboard.add_block(left, left + 50)
+        self.assertTrue(
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=3),
+            msg="4 blocks above seq with dup_thresh=3 must be lost (kills '>='→'==').",
+        )
+
+    def test__is_lost__guards_reject_negative(self) -> None:
+        """
+        Ensure the mss and dup_thresh guards reject negative values
+        (kills '> 0'→'!= 0').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        scoreboard = SackScoreboard()
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=-1, dup_thresh=3)
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=-1)
