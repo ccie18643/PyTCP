@@ -917,3 +917,67 @@ class TestAccEcnState__NextEmitCountersSelection(TestCase):
 
         self.assertEqual(delta, 3, msg="(2 - 7) & 0b111 must be 3.")
         self.assertEqual(state.s_cep, 2, msg="s.cep must wrap: (0xFFFFFF + 3) & 0xFFFFFF == 2.")
+
+
+class TestAccEcnState__BitwiseAndExactness(TestCase):
+    """
+    Inputs that distinguish the AccECN bitwise '& 0b111' / indexing
+    from arithmetic look-alikes that coincide on the common cases.
+    """
+
+    def test__accecn_state__inner_ace_mask_is_bitand_not_power(self) -> None:
+        """
+        Ensure the stored low-3-bits in the ACE delta uses '& 0b111',
+        not '** 0b111': at s.cep == 2 (an even low-3-bits value) the
+        two diverge — '(5 - (2 & 7)) & 7' == 3 vs the power form == 5.
+
+        Reference: RFC 9768 §3.2.2.5 (3-bit modular ACE via bitmask).
+        """
+
+        state = AccEcnState()
+        state.s_cep = 2
+
+        self.assertEqual(
+            state.apparent_ce_delta(5),
+            3,
+            msg="apparent delta must be (5 - (2 & 0b111)) & 0b111 == 3, not the power look-alike.",
+        )
+
+    def test__accecn_state__ceb_above_last_emit_is_changed(self) -> None:
+        """
+        Ensure change detection is symmetric: a CE byte counter ABOVE
+        its last-emit tracker (the ordinary forward case) is detected
+        as changed — pinning '!=' against a '<' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (counter change detection).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 100, 5
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((1, 100, None), None),
+            msg="A ceb above last-emit must be emitted (!= not <).",
+        )
+
+    def test__accecn_state__option_slot0_index_is_head_not_tail(self) -> None:
+        """
+        Ensure the AccECN-option slot-0 update reads the head element,
+        not the tail: a (5, None, None) tuple installs s.ect0_b == 5,
+        which a wrong index (slot -1 / 2 being None) would leave at the
+        default.
+
+        Reference: RFC 9768 §3.2.3 (option slot ordering ect0, ce, ect1).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((5, None, None))
+
+        self.assertEqual(
+            state.s_ect0_b,
+            5,
+            msg="Slot 0 (present) must install s.ect0_b == 5, pinning the head index.",
+        )
