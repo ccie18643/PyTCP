@@ -2915,3 +2915,83 @@ class TestStackAddInterfaceDhcp4PerInterface(TestCase):
             client_2,
             msg="Each interface must own a DISTINCT DHCPv4 client (no shared module slot).",
         )
+
+
+class TestStackConfigConstantGoldens(TestCase):
+    """
+    Exact-value goldens for the stack configuration constants whose
+    NumberReplacer / boolean-flip mutations survived the range-style
+    assertions: secret lengths, the TFO cache cap, fragment-flow
+    timeouts, the ephemeral port range, and the boolean policy
+    defaults.
+    """
+
+    def test__stack__secret_lengths_are_16_bytes(self) -> None:
+        """
+        Ensure every bootstrap secret is exactly 16 bytes (128 bits).
+
+        Reference: RFC 6528 §3 (ISS secret as opaque keying material).
+        """
+
+        self.assertEqual(len(stack.TCP__ISS_SECRET), 16, msg="ISS secret must be 16 bytes.")
+        self.assertEqual(len(stack.IP6__FLOW_SECRET), 16, msg="IPv6 flow secret must be 16 bytes.")
+        self.assertEqual(len(stack.TCP__FASTOPEN_SECRET), 16, msg="TFO secret must be 16 bytes.")
+        self.assertEqual(len(stack.TCP__PORT_SECRET), 16, msg="port secret must be 16 bytes.")
+
+    def test__stack__fastopen_cache_max_size(self) -> None:
+        """
+        Ensure the TCP Fast Open cache cap is exactly 1024 entries.
+
+        Reference: RFC 7413 §6.1 (server-side TFO state bound).
+        """
+
+        self.assertEqual(
+            stack.TCP__FASTOPEN_CACHE_MAX_SIZE,
+            1024,
+            msg="TCP__FASTOPEN_CACHE_MAX_SIZE must be 1024.",
+        )
+
+    def test__stack__fragment_flow_timeouts_are_5_seconds(self) -> None:
+        """
+        Ensure the IPv4 and IPv6 fragment-flow reassembly timeouts are
+        exactly 5 seconds.
+
+        Reference: RFC 791 §3.2 (IPv4 reassembly timeout).
+        """
+
+        self.assertEqual(stack.IP4__FRAG_FLOW_TIMEOUT__S, 5, msg="IPv4 frag-flow timeout must be 5 s.")
+        self.assertEqual(stack.IP6__FRAG_FLOW_TIMEOUT__S, 5, msg="IPv6 frag-flow timeout must be 5 s.")
+
+    def test__stack__ephemeral_port_range_exact_bounds(self) -> None:
+        """
+        Ensure the ephemeral port range is exactly [32768, 61000].
+
+        Reference: RFC 6056 §3.2 (ephemeral port range).
+        """
+
+        self.assertEqual(
+            stack.STACK__EPHEMERAL_PORT_RANGE__LOW,
+            32768,
+            msg="ephemeral low must be 32768.",
+        )
+        self.assertEqual(
+            stack.STACK__EPHEMERAL_PORT_RANGE__HIGH,
+            61000,
+            msg="ephemeral high must be 61000.",
+        )
+
+    def test__stack__boolean_policy_defaults(self) -> None:
+        """
+        Ensure the boolean policy defaults are False (a True-flip is
+        caught).
+
+        Reference: RFC 1122 §3.3.5 (source-route default off).
+        """
+
+        self.assertIs(stack.UDP__ECHO_NATIVE, False, msg="UDP__ECHO_NATIVE must default False.")
+        self.assertIs(stack.LOG__DEBUG, False, msg="LOG__DEBUG must default False.")
+        self.assertIs(
+            stack.IP4__ACCEPT_SOURCE_ROUTE["default"],
+            False,
+            msg="IP4__ACCEPT_SOURCE_ROUTE default must be False.",
+        )
