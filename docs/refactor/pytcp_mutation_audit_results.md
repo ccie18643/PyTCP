@@ -42,7 +42,7 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | lib       | 1812    | TBD        | TBD       | ~98 %                 | ~120                | DONE   |
 | tcp/state | 905     | 70.6 %     | 78.1 %    | ~99 %                 | 92                  | DONE   |
 | tcp-math  | 2573    | 79.2 %     | 90.8 %    | ~98 %                 | 299                 | DONE   |
-| stack     | 2622    | TBD        | TBD       | TBD                   | TBD                 | PENDING |
+| stack     | 2521    | 44.3 %     | 45.9 %    | ~76 %                 | 42                  | PARTIAL |
 
 (Updated per shard as the audit proceeds.)
 
@@ -227,6 +227,74 @@ chained `0 < diff < HALF` `<`→`is not` mutations are the interned-int
 
 ---
 
-## Shard: stack (pending)
+## Shard: stack (partial)
 
-(Filled on completion.)
+The Phase-3 control-plane APIs and stack configuration under
+`pytcp/stack/`: the link / address / route / neighbor / sysctl /
+introspection APIs, the `stack.init/start/stop` lifecycle, and the
+module-level configuration constants. `membership.py` (101 mutants) is
+**excluded** — it is exercised only by the IGMP/MLD integration suite,
+not by any unit test, so it is not a Tier-1 (green-in-isolation) target.
+
+### Why the raw score is low
+
+The stack shard's raw score (44.3 %) is far below the other Tier-1
+shards because the control-plane surface is **annotation-dense** and
+**deliberately thin** over the runtime:
+
+| Survivor class | ~Count | Killable? |
+|----------------|-------:|-----------|
+| PEP 604 union annotations on every API method signature (`Ip4IfAddr \| Ip6IfAddr`, `… \| None`) | 971 | no — never executed under PEP 649 |
+| `@property` / `@override` decorator removals | 19 | no — type-only |
+| `__debug__ and log(...)` guard `and`→`or` (log is mocked / `__debug__` is True) | ~30 | no — the log call is a no-op in the test harness |
+| `family is AddressFamily.INET6` enum-identity `is`→`==` | ~15 | no — enum members are interned singletons |
+| Lifecycle thread-ordering / mock-shielded `init`/`start`/`stop` internals | ~120 | mostly no — integration-shielded |
+| Introspection snapshot field copies / interned-int comparisons | ~80 | partly |
+| **config constants / validator boundaries / kw-only separators / iface-key parsing** | **~180** | **yes** |
+
+So ~1035 of the 1405 survivors are firmly equivalent (annotation +
+decorator + log-guard + enum-`is`), and a further chunk is
+integration-shielded lifecycle. Adjusted for the annotation/decorator/
+log-guard/enum core, the score is **~76 %** and rising as the
+integration-only paths are excluded.
+
+### Genuine gaps closed (42, kill-proven, test-only)
+
+- **Config constants** (`8390d0c2`): the four 16-byte bootstrap
+  secrets, the 1024-entry TFO cache cap, the 5-second IPv4/IPv6
+  fragment-flow timeouts, the [32768, 61000] ephemeral port range, and
+  the `UDP__ECHO_NATIVE` / `LOG__DEBUG` / `IP4__ACCEPT_SOURCE_ROUTE`
+  False defaults — the existing range-style assertions left their
+  NumberReplacer / boolean-flip mutants alive. 310 → 289.
+- **sysctl range validators** (`05cfd1b7`): `is_int_in_range` /
+  `is_float_in_range` accept both inclusive endpoints and reject the
+  values just outside, reject booleans, and keep `low` / `high`
+  keyword-only. 100 → 79.
+
+### Remaining killable tail (enumerated for continuation)
+
+The diffuse, lower-density killable survivors not yet closed, ready for
+a follow-up pass (each is the same technique already applied elsewhere
+in this shard):
+
+- **Keyword-only `*` separators** on the control-API methods (~24):
+  `RouteApi` (add_route / list_routes / remove_default / remove_route /
+  replace_default), `AddressApi` (add / list_ifaddrs / remove /
+  replace), `LinkApi` (set_mac_address / set_mtu), `NeighborApi` (add /
+  flush / list_neighbors / remove), `SocketIntrospectApi.list_sockets`,
+  `ResolverApi.resolve`. Each killed by an
+  `inspect.signature(...).kind is KEYWORD_ONLY` assertion in that API's
+  test file.
+- **`__init__` validator boundaries** (`low >= high`, `not isinstance(value, bool)`)
+  and the per-validator default bounds (`low=1024` / `high=65535`).
+- **sysctl `_split_iface_key` parsing** (`len(parts) < 3`, the
+  `parts[:-2] + parts[-1:]` / `parts[-2]` slice indices) — needs a
+  registered interface-scope knob fixture.
+- **Introspection snapshot boundaries** in `route` / `address` /
+  `socket_introspect` / `neighbor` (the per-field snapshot values and
+  the `socket_id.local_address == address` comparisons).
+
+These are bounded and mechanical; the equivalent core (annotation /
+decorator / log-guard / enum-`is` / integration-shielded lifecycle)
+is the floor the raw score cannot exceed without integration-level
+mutation testing (out of Tier-1 scope).
