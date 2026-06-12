@@ -32,6 +32,7 @@ pytcp/tests/unit/stack/test__stack__sysctl.py
 ver 3.0.8
 """
 
+import inspect
 import sys
 import types
 from typing import override
@@ -654,3 +655,76 @@ class TestSysctlValidatorHelpers(_SysctlFixtureBase):
             with self.subTest(bad=bad):
                 with self.assertRaises(ValueError):
                     validator(bad)
+
+
+class TestSysctlValidatorBoundaryGoldens(TestCase):
+    """
+    Exact inclusive-range boundary goldens for the sysctl range
+    validators, closing the '<=' boundary and keyword-only-separator
+    mutation survivors.
+    """
+
+    def test__sysctl__is_int_in_range_inclusive_boundaries(self) -> None:
+        """
+        Ensure is_int_in_range accepts both endpoints and rejects the
+        values just outside them, pinning the '<= value <=' bounds.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        validator = sysctl.is_int_in_range("test.knob", low=10, high=20)
+        validator(10)
+        validator(20)
+        for bad in (9, 21):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    validator(bad)
+
+    def test__sysctl__is_float_in_range_inclusive_boundaries(self) -> None:
+        """
+        Ensure is_float_in_range accepts both endpoints and rejects the
+        values just outside them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        validator = sysctl.is_float_in_range("test.knob", low=1.0, high=2.0)
+        validator(1.0)
+        validator(2.0)
+        for bad in (0.9, 2.1):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    validator(bad)
+
+    def test__sysctl__range_validators_reject_bool(self) -> None:
+        """
+        Ensure both range validators reject booleans (which Python
+        otherwise treats as ints), pinning the explicit bool guard.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl.is_int_in_range("test.knob", low=0, high=5)(True)
+        with self.assertRaises(ValueError):
+            sysctl.is_float_in_range("test.knob", low=0.0, high=5.0)(True)
+
+    def test__sysctl__range_validator_bounds_are_keyword_only(self) -> None:
+        """
+        Ensure the low / high bounds on the range-validator factories
+        are keyword-only (kills the '*'→'/' separator mutation).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        for factory in (sysctl.is_int_in_range, sysctl.is_float_in_range):
+            kw_only = {
+                name
+                for name, param in inspect.signature(factory).parameters.items()
+                if param.kind is inspect.Parameter.KEYWORD_ONLY
+            }
+            self.assertEqual(
+                kw_only,
+                {"low", "high"},
+                msg=f"{factory.__name__} low/high must be keyword-only.",
+            )
