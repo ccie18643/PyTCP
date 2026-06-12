@@ -30,11 +30,17 @@ pytcp/tests/unit/ipc/test__ipc__socket_rpc.py
 ver 3.0.8
 """
 
+import os
 from unittest import TestCase
+from unittest.mock import create_autospec
 
-from pytcp.ipc.ipc__errors import IpcRemoteError
+from pytcp.ipc.ipc__client import IpcClient
+from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
+from pytcp.ipc.ipc__errors import IpcConnectionError, IpcRemoteError
+from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__socket_rpc import (
     SocketRequest,
+    accept_socket,
     decode_socket_request,
     decode_socket_value,
     encode_socket_error,
@@ -111,3 +117,87 @@ class TestIpcSocketRpc(TestCase):
             ("ConnectionRefusedError", "Connection refused"),
             msg="A socket error body must surface as an IpcRemoteError with the remote type and message.",
         )
+
+
+class TestIpcSocketRpc__AcceptDecode(TestCase):
+    """
+    The fd-bearing 'accept' client-RPC decode paths, exercising the
+    response-kind dispatch, the data-channel descriptor handling, and
+    the (handle, peer host, peer port) tuple decode — none of which the
+    codec-only round-trip tests reach.
+    """
+
+    def test__accept__ok_returns_handle_peer_and_fd(self) -> None:
+        """
+        Ensure a RESPONSE_OK accept returns (child_handle, (host, port),
+        data_fd) with the peer host at index 0 and port at index 1.
+
+        Reference: RFC 9293 §3.5 (passive open / accept).
+        """
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(write_fd))
+        client = create_autospec(IpcClient, spec_set=True)
+        client.request_with_fd.return_value = (
+            IpcMessage(
+                kind=IpcMessageKind.RESPONSE_OK,
+                op=IpcOp.SOCKET_CALL,
+                req_id=1,
+                body=encode_socket_ok({"handle": 5, "peer": ["10.0.0.1", 80]}),
+            ),
+            read_fd,
+        )
+
+        child_handle, peer, data_fd = accept_socket(client, handle=3)
+        self.addCleanup(lambda: os.close(data_fd))
+
+        self.assertEqual(
+            (child_handle, peer),
+            (5, ("10.0.0.1", 80)),
+            msg="accept must decode the child handle and the (host, port) peer tuple in order.",
+        )
+        self.assertEqual(data_fd, read_fd, msg="accept must return the passed data-channel fd.")
+
+    def test__accept__ok_without_fd_raises(self) -> None:
+        """
+        Ensure a RESPONSE_OK accept that carries no data-channel
+        descriptor is a protocol error.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = create_autospec(IpcClient, spec_set=True)
+        client.request_with_fd.return_value = (
+            IpcMessage(
+                kind=IpcMessageKind.RESPONSE_OK,
+                op=IpcOp.SOCKET_CALL,
+                req_id=1,
+                body=encode_socket_ok({"handle": 5, "peer": ["10.0.0.1", 80]}),
+            ),
+            None,
+        )
+
+        with self.assertRaises(IpcConnectionError):
+            accept_socket(client, handle=3)
+
+    def test__accept__error_response_raises_remote(self) -> None:
+        """
+        Ensure a RESPONSE_ERROR accept surfaces the remote error rather
+        than returning.
+
+        Reference: RFC 9293 §3.5 (accept failure).
+        """
+
+        client = create_autospec(IpcClient, spec_set=True)
+        client.request_with_fd.return_value = (
+            IpcMessage(
+                kind=IpcMessageKind.RESPONSE_ERROR,
+                op=IpcOp.SOCKET_CALL,
+                req_id=1,
+                body=encode_socket_error(error_type="ConnectionAbortedError", message="aborted"),
+            ),
+            None,
+        )
+
+        with self.assertRaises(IpcRemoteError):
+            accept_socket(client, handle=3)
