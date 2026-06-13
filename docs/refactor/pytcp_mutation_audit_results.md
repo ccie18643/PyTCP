@@ -43,8 +43,17 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | tcp/state | 905     | 70.6 %     | 78.1 %    | ~99 %                 | 92                  | DONE   |
 | tcp-math  | 2573    | 79.2 %     | 90.8 %    | ~98 %                 | 299                 | DONE   |
 | stack     | 2521    | 44.3 %     | 50.8 %    | ~83 %                 | 165                 | PARTIAL |
+| ipc       | 1877    | 64.2 %     | 67.9 %    | ~98 %                 | 69                  | DONE   |
+| session/fsm | ~5000 | 4.7 %†     | n/a       | n/a                   | 1 (demonstrator)    | AUDITED — see note |
 
 (Updated per shard as the audit proceeds.)
+
+† session/fsm raw is a baseline artifact — the per-collaborator parity
+tests pin only the decomposition seam (3 tests for ack's 792 LOC). The
+real baseline is the full 590-test TCP integration suite (33 s/mutant),
+under which 33–73 % of parity-survivors die; the shard is
+integration-saturated, not under-tested. Exhaustive closure is a ~46 h
+low-ROI track. See "Shard: tcp/session + tcp/fsm" below.
 
 ### tcp-math per-file breakdown
 
@@ -402,3 +411,88 @@ commits.
 The genuinely-killable-by-unit-test surface of the ipc shard is
 exhausted; the raw ceiling cannot rise further without daemon
 end-to-end integration mutation testing (out of Tier-2 scope).
+
+---
+
+## Shard: tcp/session + tcp/fsm — integration-saturated, baseline-bound
+
+The TCP session collaborators (`protocols/tcp/session/`: `ack` 792 LOC,
+`tx` 1226, `retransmit` 783, `validate` 471, `timers` 217, `info` 76,
+plus the main `tcp__session.py` 2098) and the FSM dispatch
+(`protocols/tcp/fsm/`, 12 files) are a **different shape** from every
+Tier-1 shard and from ipc. They are not under-tested; they are
+**integration-saturated** — their logic is driven almost entirely by
+the 590-test TCP integration suite (handshake / data-transfer /
+retransmit / SACK / RACK / ECN / AccECN / Fast-Open / F-RTO / CUBIC /
+HyStart / RTO), not by isolated unit tests. The audit therefore became a
+**baseline-economics** problem, and the conclusion is a recommendation,
+not an exhaustive close-out.
+
+### The baseline under-reports by ~15×
+
+The per-collaborator parity tests (`test__tcp__session__<collab>.py`)
+pin only the Phase-3 decomposition seam — e.g. `ack_processor` is 3
+tests for 792 LOC. Run as a mutation baseline they give a meaningless
+floor:
+
+| Baseline for `tcp__session__ack.py`         | Kill rate          |
+|---------------------------------------------|--------------------|
+| collaborator-seam parity test (3 tests)     | 26/559 = **4.7%**  |
+| broad data-transfer + retransmit (~5 s)     | +0 on a 40-survivor sample |
+| **full TCP integration suite (590 t, 33 s)**| **33–73%** of the parity-survivors (sample-dependent) |
+
+The "4.7%" is a baseline artifact, not a coverage gap. The correct
+session baseline is the **full TCP integration suite at ~33 s/mutant**,
+which makes an exhaustive run (≈5 000 mutants across the collaborators +
+main + FSM) cost **~46 h of serial compute** — infeasible to grind, and
+low-value because the suite already kills the bulk.
+
+### Residue classification (survivors of the FULL suite)
+
+Sampling ack's parity-survivors against the full suite and reading the
+true survivors (mutations that survive even the 590-test suite) splits
+them cleanly:
+
+- **Equivalents** (~half) — idempotent re-assignment guards
+  (`if snd_wnd != win << wsc:` whose body re-derives the same value),
+  `__debug__ and log(...)` f-string operands (log mocked), unsigned
+  `== 0`≡`<= 0` comparisons (`cubic_w_est`), and 32-bit modular masks
+  (`& 0xFFFF_FFFF` on a `bytes_acked`/`flight_size`/`ts_rtt_ms` that
+  never wraps in the tested range). None killable.
+- **Genuine corner-case gaps** (~half) — operands and boundaries
+  *within already-tested CC paths* that the existing assertions do not
+  pin to exact value: the RFC 6937 PRR SSRB/CRB limit formulas
+  (`max(prr_delivered - prr_out, bytes_acked) + snd_mss`), the
+  `pipe > ssthresh` PRR-proper/CRB boundary, the `cwnd < ssthresh`
+  slow-start/CA boundary (differs only at `cwnd == ssthresh`), and the
+  RFC 6582 post-RTO recover-marker decay `and` gate.
+
+The genuine gaps are real but **low-density and corner-case**: the main
+CC paths are covered; what survives is the exact intermediate operand a
+crafted data-in-flight + internal-CC-state scenario would pin.
+
+### Demonstrated close (kill-proven, test-only)
+
+To substantiate that the genuine residue is closable, one gap was closed
+end-to-end — the RFC 6582 §3.2 post-RTO recover-marker decay
+(`tcp__session__ack.py:244`), which survives both the parity baseline
+and a full-suite re-scan:
+
+- `test__tcp__session__recover_marker.py` — 3 tests over a session with
+  400 B in flight and an RTO fired. Kill-proven: `and`→`or` on line 244
+  clears `recover_seq` to 0 on the first advancing cum-ACK instead of
+  holding it at SND.MAX; the partial-ACK test catches it.
+
+### Recommendation
+
+Mutation-testing payoff concentrates in **thin-unit shards** (lib,
+tcp-math, tcp/state, ipc value codecs) where gaps are cheap to find and
+cheap to close. For the **integration-saturated session/FSM code** the
+integration suite is the correct coverage vehicle; exhaustive mutation
+closure is a ~46 h / multi-week low-ROI track whose residue is half
+equivalents and half corner-case operands. The genuine corner cases are
+best treated as an **opportunistic backlog** — closed by adding
+exact-value assertions to the existing CC test families (cubic /
+hystart / cwnd / retransmit-dupack) as that code is touched — not as a
+dedicated sweep. The recover-marker test is the worked example of that
+pattern.
