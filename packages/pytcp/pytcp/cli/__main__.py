@@ -67,6 +67,16 @@ from pytcp.cli.cli__format import (
     format_socket_table,
     format_sysctl,
 )
+from pytcp.cli.cli__ping import (
+    PingOutcome,
+    default_identifier,
+    format_ping_line,
+    format_ping_summary,
+    icmp_echo_profile,
+    open_ping_socket,
+    resolve_destination,
+    run_ping,
+)
 from pytcp.client import ClientStack, connect
 from pytcp.daemon.daemon import (
     default_pidfile_path,
@@ -620,6 +630,50 @@ class _PytcpArgumentParser(argparse.ArgumentParser):
         return f"\n{banner}\n\n{_highlight_help_headings(body)}\n"
 
 
+def _cmd_ping(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'ping' command — send ICMP Echo Requests to the destination
+    through the daemon's ping / raw socket and stream the replies in the
+    style of the Linux 'ping' utility. Streams each reply line as it
+    arrives, prints the statistics block on completion or Ctrl-C, and
+    exits non-zero when every request timed out.
+    """
+
+    is_ipv6, address = resolve_destination(args.destination)
+    profile = icmp_echo_profile(is_ipv6=is_ipv6)
+    identifier = default_identifier(args.identifier)
+    sock, use_cmsg, match_identifier = open_ping_socket(
+        is_ipv6=is_ipv6,
+        force_raw=args.identifier is not None,
+        identifier=identifier,
+    )
+
+    print(f"PING {args.destination} ({address}): {args.size} data bytes")
+    outcomes: list[PingOutcome] = []
+    try:
+        for outcome in run_ping(
+            sock,
+            profile,
+            address=address,
+            identifier=identifier,
+            count=args.count,
+            interval=args.interval,
+            timeout=args.timeout,
+            size=args.size,
+            use_cmsg=use_cmsg,
+            match_identifier=match_identifier,
+        ):
+            print(format_ping_line(outcome, address=address, size=args.size))
+            outcomes.append(outcome)
+    except KeyboardInterrupt:
+        print()
+    finally:
+        sock.close()
+
+    print(format_ping_summary(args.destination, outcomes))
+    return 0 if any(not outcome.timed_out for outcome in outcomes) else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the 'pytcp' multitool argument parser.
@@ -728,6 +782,30 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the key's registered description instead of its value.",
     )
     parser_sysctl.set_defaults(func=_cmd_sysctl)
+
+    parser_ping = subparsers.add_parser("ping", help="Send ICMP Echo Requests (Linux 'ping').")
+    parser_ping.add_argument("destination", help="IPv4 / IPv6 address or hostname to ping.")
+    parser_ping.add_argument(
+        "-c", "--count", type=int, default=None, metavar="COUNT", help="Stop after COUNT requests (default: forever)."
+    )
+    parser_ping.add_argument(
+        "-i", "--interval", type=float, default=1.0, metavar="SEC", help="Seconds between requests (default: 1.0)."
+    )
+    parser_ping.add_argument(
+        "-W", "--timeout", type=float, default=1.0, metavar="SEC", help="Seconds to wait per reply (default: 1.0)."
+    )
+    parser_ping.add_argument(
+        "-s", "--size", type=int, default=56, metavar="BYTES", help="Payload size in bytes (default: 56)."
+    )
+    parser_ping.add_argument(
+        "-e",
+        "--identifier",
+        type=int,
+        default=None,
+        metavar="ID",
+        help="ICMP identifier (0-65535); implies a raw socket.",
+    )
+    parser_ping.set_defaults(func=_cmd_ping, needs_client=False)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(
