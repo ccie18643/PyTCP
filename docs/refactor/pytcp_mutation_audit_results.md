@@ -331,3 +331,74 @@ only genuinely-killable unit-level residue is a thin tail of
 interned-`is` address comparisons (`socket_id.local_address == address`
 in the address ABORT loop) and the `_sum_drops` prefix/suffix filter
 branches in `link`, both low-yield.
+
+---
+
+## Tier-2 — integration-driven shards
+
+Tier-1 covered the green-in-isolation pure-logic shards. Tier-2 reaches
+the shards Tier-1 excluded because their tests are integration-driven,
+not unit-isolable. The baseline rule is unchanged — the per-file
+test-command must be green on unmutated code and actually exercise the
+mutated file — so a shard is in scope only when a viable green test
+surface exists.
+
+### Shard: ipc
+
+The 3.0.8 daemon-IPC machinery (`pytcp/ipc/`). The 12 files with
+dedicated unit tests are in scope (the wire codecs, bridges, mux client,
+rpc, value codec); the 8 integration-only files (`client` / `control` /
+`server` / `socket_session` / `stdlib_socket` / `remote_error` /
+`enums` / `errors`) are excluded — only the daemon end-to-end
+integration suite drives them.
+
+**Baseline:** 1877 mutants, **64.2 % raw** (672 survivors). Per-file
+character drove the strategy: well-tested codecs (`message` 92 %,
+`packet_frame` 93 %, `values` 91 %) needed nothing; the bridges sat low
+(`dgram_bridge` / `packet_bridge` ~28 %) because their pumps run over
+healthy socketpairs that never raise the errors the loops guard.
+
+**After:** 603 survivors, **67.9 % raw**, **69 kill-proven** across 7
+commits.
+
+| File | Killed | What the new tests pin |
+|------|-------:|------------------------|
+| dgram_frame | 25 | exact wire bytes (None / IPv4 / IPv6 / cmsg), multi-cmsg round-trip, unknown-tag + truncation rejection |
+| socket_rpc | 19 | the fd-bearing `accept` decode over a mocked client — OK→(handle, peer, fd) in index order, OK-without-fd→error, ERROR→remote raise |
+| frame | 12 | the 16-MiB max-payload constant, the exact 4-byte length prefix, clean-EOF→None, partial-prefix rejection, and the partial-recv accumulation loop (dribble socket) |
+| dgram_bridge | 4 | RX pump survives a poll TimeoutError AND a transient OSError, then frames + delivers the datagram |
+| packet_bridge | 4 | RX pump survives a poll TimeoutError AND a transient OSError, then frames + delivers the captured frame |
+| fdpass | 3 | real SCM_RIGHTS round-trip (received fd live + distinct), no-fd→None, two-fd rejection |
+| socket_bridge | 2 | RX pump survives a poll TimeoutError (continue, not teardown) |
+
+#### The two highest-value findings were real gaps
+
+1. **The IPC wire format was tested by round-trip only**, which leaves
+   the bytes free — a tag value or field-length constant used
+   symmetrically in encode + decode survives a round trip, so a
+   client/server byte-drift would have passed. The datagram and frame
+   formats are now byte-pinned.
+2. **The fd-passing and passive-`accept` paths weren't unit-tested at
+   all** — a real SCM_RIGHTS round-trip now verifies the received
+   descriptor is a live, distinct fd, and the `accept` RPC decode is
+   driven through OK / OK-without-fd / ERROR.
+
+#### Irreducible residue (603 survivors, un-killable at unit level)
+
+- **PEP 604 annotation unions + decorator removals** — the dominant
+  class (`mux_client` alone is ~110 annotation mutants), never executed
+  under PEP 649.
+- **`except OSError: break` pump branches** — a `break`→`continue`
+  mutant spins on the failing recv forever; the outcome is a hang, not
+  an assertable result, so these are left untested by design.
+- **Comparison-on-bounded-domain equivalents** — `<`≡`!=` on a length
+  that is always `<` or `==` the bound; `% itemsize` on an fd array the
+  kernel only ever delivers in whole-fd multiples; interned-enum `is`
+  in the RPC response dispatch.
+- **fd-leak-only / adversarial-cmsg** — mutations whose only observable
+  difference is a leaked descriptor or that require a kernel-impossible
+  cmsg shape.
+
+The genuinely-killable-by-unit-test surface of the ipc shard is
+exhausted; the raw ceiling cannot rise further without daemon
+end-to-end integration mutation testing (out of Tier-2 scope).
