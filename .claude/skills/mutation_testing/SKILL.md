@@ -54,6 +54,14 @@ shapes that dominated the residual.
 - Re-confirming a package after a round of test additions
   (use the fast survivor-only re-scan, §8).
 
+**First, classify the shard's archetype (§6.5).** Thin-unit
+shards (fast unit baseline) are high-ROI — run the full scan
+and close gaps. Integration-saturated shards (session/fsm,
+packet handlers) are audit-only — sample against the *real*
+integration baseline, classify, close one demonstrator. Do
+not grind an integration-saturated shard against a slow or a
+seam-only baseline.
+
 ## When NOT to invoke
 
 - As a `make lint` / CI gate. Mutation testing is a
@@ -247,7 +255,11 @@ score badly understates the suite** because a large fraction
 of survivors are **equivalent mutants** that *no runtime test
 can ever kill*. Report raw AND equivalent-adjusted; the
 adjusted number is the honest one. (net_addr: 80.5 % raw but
-**95.2 %** once equivalents are excluded.)
+**95.2 %** once equivalents are excluded. pytcp Tier-2: ipc
+64→68 % raw / **~98 %** adjusted; socket drop-in 39 % raw /
+**~85 %** adjusted — the annotation-mutant fraction climbs
+even higher on the typed runtime, e.g. socket drop-in had
+~431 of 579 survivors in PEP 604 unions.)
 
 Classify survivors with the rule below. The first two classes
 are mechanically detectable; the rest require reading the
@@ -328,6 +340,63 @@ mutated line.
     non-negative). Killable only by an input the realistic
     wire never carries — usually low-value; confirm the
     coincidence arithmetically before deferring.
+12. **Bounded-domain enum/mode comparisons** (pytcp Tier-2) —
+    a `==` against one value of a small *closed* set, where
+    the other members make `==`≡`>=` or `==`≡`<=` over the
+    whole reachable domain. The canonical case is a sysctl
+    mode read: `arp_ignore == 8` → `>= 8` is equivalent
+    because the mode is one of `{0,1,2,8}` and 8 is the max;
+    `arp_ignore == 2` → `>= 2` is equivalent inside the
+    `else` arm where the domain is already narrowed to
+    `{0,1,2}`. Generalizes class 4 to enum-valued domains.
+    Killable only by a mode value the validator forbids —
+    low-value; confirm the domain before deferring.
+13. **`__debug__ and log(...)` guard operands** (pytcp) — the
+    pervasive `__debug__ and log("chan", f"...")` tracing
+    idiom. Tests mock `log`, so mutating the `and` → `or`,
+    the f-string interpolation (`<<` → `*` inside the
+    message), or the guard is invisible: the log call's
+    *effect* is never asserted. Any survivor whose source line
+    is inside a `__debug__ and log(` argument is equivalent.
+    Dominant alongside class 1 on the handler shards.
+14. **Idempotent re-assignment guards** (pytcp) — a `if x !=
+    computed_value: x = computed_value` shape where the guard
+    only gates a (mocked) log + a re-derivation that lands on
+    the *same* value. Mutating the guard comparison (`!=` →
+    `==`, `<<` → `^` in the RHS) changes only whether the
+    branch is *entered*; the branch body re-assigns the
+    correctly-computed value either way, so end state is
+    identical. The value-bearing assignment line (not the
+    guard) is the killable one — and it is usually already
+    killed. (ARP/UDP RX window-update; the `snd_wnd != win <<
+    wsc` guard.)
+15. **Defensively-unreachable `case _:` / parser-rejected
+    branches** (pytcp) — a handler `match` default that bumps
+    an `op_unknown__drop` counter, where the *parser* (e.g.
+    TX-strict `from_int(...).is_unknown`) already rejects the
+    bad value upstream, so the default is dead via any
+    realistic wire input. The `+= 1` NumberReplacer survives
+    because no frame reaches it. Distinguish from a real gap
+    by tracing whether the wire value can reach the line at
+    all (grep the parser's reject path first).
+16. **Keyword-only `*`-separator AST no-ops** (pytcp) —
+    cosmic-ray reports a `ReplaceBinaryOperator_Mul_Div` on a
+    `def f(self, *, arg)` line (the `*` is the kw-only marker,
+    not a binary op). The mutation either no-ops or turns
+    `*` into `/` (positional-only), and every call site passes
+    the arg *by keyword* anyway, so behaviour is unchanged.
+    Killable in principle by `inspect.signature(...).kind is
+    KEYWORD_ONLY` (see the tcp/state `KeywordOnlySignatures`
+    batch), but for runtime handlers the kw-only contract is
+    low-value ceremony — defer unless the signature is a
+    public API surface.
+17. **Never-wrapping modular masks** (pytcp) — `(a - b) &
+    0xFFFF_FFFF` on a sequence-delta / flight-size / RTT that
+    never actually wraps in the tested range, so dropping or
+    altering the mask (`& 0xFFFF_FFFF` → `// 0xFFFF_FFFF`,
+    `<<`) yields the same value. Killable only by a 32-bit-
+    wrap scenario the suite does not drive; usually equivalent
+    in practice. Class-4 cousin for explicit wrap masks.
 
 The remainder are **genuine gaps**. Triage each by reading
 the mutated line; propose the test that would catch it.
@@ -527,6 +596,90 @@ and prints each result; it never strands. Always
 
 ---
 
+## 6.5 Shard archetypes & baseline economics (pytcp Tier-2)
+
+The pytcp audit split into two archetypes with **opposite
+ROI**, and recognising which one you are in *before* spending
+compute is the single biggest Tier-2 lesson. The
+discriminator is the **test surface**, not the source.
+
+### Archetype A — thin-unit shards (high ROI, close gaps)
+
+`lib`, `tcp-math`, `tcp/state`, `ipc` value codecs, the
+`socket` drop-in. Logic reachable by a **fast unit test**
+(<1 s baseline) over a constructed object. Survivors are
+cheap to find and cheap to close; this is where mutation
+testing pays for itself (ipc closed 69 gaps, socket drop-in
+69). Run the full-scan workflow (§3) and close real gaps.
+
+**Mock-construct the wrapper to get a fast baseline.** A
+daemon-/IO-backed wrapper whose logic runs *before* the IO
+(the `socket` drop-in: type-guards, `makefile` mode parsing,
+factory dispatch, blocking-mode state) is unit-testable by
+constructing it over a `create_autospec(Collaborator,
+spec_set=True)` and patching the lazy accessor
+(`patch.object(mod, "_get_default_stack", ...)`). This turned
+a 6.7 s daemon-integration baseline into a 0.4 s unit
+baseline and let 69 gaps close fast. Always check whether the
+"needs a daemon/socket" surface actually needs one for the
+*branch under test*.
+
+### Archetype B — integration-saturated shards (audit, don't grind)
+
+`tcp/session`, `tcp/fsm`, `runtime/packet_handler`. Logic
+driven only by the integration suite (FSM state, wire RX→TX,
+stat counters). Two sub-cases:
+
+- **Baseline-bound (session/fsm)** — the *only* test surface
+  that exercises the logic is the slow whole-protocol suite
+  (TCP: 590 tests / 33 s). A per-collaborator *seam* test
+  (3 tests / 792 LOC) is **NOT a valid mutation baseline** —
+  it under-reports ~15× (ack: **4.7 % seam vs 33–73 %
+  full-suite** on the same survivors). Exhaustive closure is
+  ~46 h of serial compute and mostly re-confirms saturation.
+  **Audit, don't grind:** sample survivors against the *full*
+  suite to get the true rate, classify the residue, close
+  **one kill-proven demonstrator** (recover-marker decay),
+  and document the recommendation (opportunistic backlog).
+- **Per-protocol-auditable (packet_handler)** — each protocol
+  *does* have a green-in-isolation, fast suite (arp/udp
+  ~3.6 s), so a handler file mutation-tests cleanly against
+  its own protocol's suite. Worked examples (arp, udp) both
+  landed at **~76 % adjusted**: the suites assert exact
+  `packet_stats` counters on every branch, so branch/counter
+  mutations die. Residue is annotation (class 1) + log guards
+  (class 13) + bounded-mode (class 12) + low-density genuine
+  gaps on **under-tested branches the suite's topology never
+  reaches** (a sysctl mode on a single-subnet topology, a
+  multi-socket fan-out, an error-emit selection). Close those
+  *opportunistically* with a scenario test; a full 20-handler
+  sweep is auditable but low-yield.
+
+### The baseline-choice rule
+
+**Pick the smallest test surface that genuinely exercises the
+mutated logic.** A seam/parity test that only pins the
+*refactor boundary* (e.g. "the collaborator is wired in")
+exercises ~5 % of the code and yields a meaningless 5 % score.
+Before trusting a per-mutant number, sanity-check the baseline:
+grep the candidate test for assertions on the *behaviour* the
+mutated lines produce. If it only asserts wiring/identity,
+escalate to the protocol's full integration suite — and if
+*that* is the only adequate surface and it is slow, switch from
+"close every gap" to "sample + classify + one demonstrator".
+
+### Reporting integration-saturated shards
+
+Put them in the per-shard table with the real (sampled)
+adjusted rate, a `†`/`‡` footnote stating the baseline caveat
+(seam-under-reports / sampled-not-exhaustive), and a status of
+`AUDITED` rather than `DONE`. The honest deliverable is the
+*finding* (this code is integration-saturated; here is the
+true rate; here is one demonstrator; the rest is opportunistic)
+— not a forced exhaustive grind.
+
+---
+
 ## 7. Deliverable — the results document
 
 Write `docs/refactor/<pkg>_mutation_audit_results.md`:
@@ -622,6 +775,14 @@ characterised.
   `…_results.md` — the at-scale precedent (21 sharded runs,
   dependency-scoped test-commands, whole-file gaps, the
   per-shard score table + deep-TLV follow-up seam).
+- `docs/refactor/pytcp_mutation_audit_results.md` — the
+  Tier-1/Tier-2 precedent for the §6.5 archetype split:
+  thin-unit shards (lib / tcp-math / tcp-state / ipc / socket
+  drop-in, gaps closed) vs integration-saturated shards
+  (session/fsm baseline-bound + audited; packet_handler
+  per-protocol-auditable at ~76 % adjusted). Worked examples
+  of the mock-construct fast baseline and the seam-under-
+  reports caveat.
 - `.claude/rules/unit_testing.md` — test authoring (the
   corrections land as unit tests; §7.2 docstring audit, §6a
   mocking, tight assertions).
