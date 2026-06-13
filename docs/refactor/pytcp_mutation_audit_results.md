@@ -46,6 +46,7 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | ipc       | 1877    | 64.2 %     | 67.9 %    | ~98 %                 | 69                  | DONE   |
 | session/fsm | ~5000 | 4.7 %†     | n/a       | n/a                   | 1 (demonstrator)    | AUDITED — see note |
 | socket/dropin | 946 | 38.8 %   | 46.1 %    | ~85 %                 | 69                  | DONE   |
+| packet_handler‡ | 685 | 58.0 % | n/a       | ~76 %                 | 1 (demonstrator)    | AUDITED — per-protocol |
 
 (Updated per shard as the audit proceeds.)
 
@@ -55,6 +56,12 @@ real baseline is the full 590-test TCP integration suite (33 s/mutant),
 under which 33–73 % of parity-survivors die; the shard is
 integration-saturated, not under-tested. Exhaustive closure is a ~46 h
 low-ROI track. See "Shard: tcp/session + tcp/fsm" below.
+
+‡ packet_handler is sampled, not exhaustive: the 685 mutants /
+58.0 % raw are the arp (337) + udp (348) worked examples, both ~76 %
+adjusted. The shard is auditable per-protocol (fast green integration
+baselines) — unlike session/fsm — but a full 20-handler sweep is
+low-yield. See "Shard: runtime/packet_handler" below.
 
 ### tcp-math per-file breakdown
 
@@ -553,3 +560,66 @@ multi-address retry, the recv/send `EAGAIN` non-blocking arms) or are
 equivalents (interned-enum `is`, bounded-domain comparisons). They sit in
 the daemon-integration surface, not the fast unit surface, and are best
 closed opportunistically as the 3.0.8 daemon harness grows.
+
+---
+
+## Shard: runtime/packet_handler (per-protocol RX/TX handlers)
+
+The 20 RX/TX handler files under `runtime/packet_handler/` (~12.6k LOC
+incl. the 3951-LOC `__init__.py` assembler) are the wire-level dispatch
+plane. Crucially — and unlike session/fsm — they are **auditable**: each
+protocol's integration suite is **green-in-isolation and fast** (arp /
+udp ~3.6 s), so a handler file can be mutation-tested against its own
+protocol's suite as a clean per-protocol baseline. This shard does *not*
+hit the session/fsm baseline-economics wall.
+
+### Worked examples
+
+| Handler (rx+tx)        | Mutants | Raw    | Annotation+log equiv | Adjusted | Genuine gaps |
+|------------------------|--------:|-------:|---------------------:|---------:|-------------:|
+| arp (rx 288 + tx 241)  | 337     | 64.4 % | 53                   | ~76 %    | low-density  |
+| udp (rx 309 + tx 177)  | 348     | 52.0 % | 109                  | ~76 %    | low-density  |
+
+Both land at **~76 % adjusted**. The handlers are **integration-suite-
+saturated**: the integration tests assert exact `packet_stats_rx/tx`
+counters on every RX/TX branch, so the bulk of branch / counter / dispatch
+mutations die. The raw-vs-adjusted gap is dominated by PEP 604 union-
+annotation mutants (udp alone: 99 of 167 survivors are annotation, never
+executed under PEP 649) and `__debug__ and log(...)` guard operands.
+
+### Residue classification (survivors of the protocol suite)
+
+- **Equivalents** — annotation unions (dominant), `__debug__ and log`
+  f-string operands, **bounded-domain sysctl-mode comparisons** (e.g.
+  `arp_ignore == 8`≡`>= 8` and `== 2`≡`>= 2` over the closed {0,1,2,8}
+  mode set), keyword-only-`*`-separator AST no-ops, and defensively-
+  unreachable `case _:` counters (the unknown-ARP-oper drop is rejected
+  at the TX-strict parser before the handler's match-default, so its
+  counter is dead via normal wire input).
+- **Genuine, low-density gaps** — under-tested branches the protocol
+  suite's topology does not reach: per-interface **sysctl modes**
+  (arp.announce 1/2 subnet-match, run on a single-subnet topology),
+  **multi-X scenarios** (the UDP socket-match loop `continue`, multi-
+  socket fan-out), and **error-emit selection** paths (UDP
+  no-socket-match ICMPv4-vs-ICMPv6 rate-limiter pick, the native-echo
+  `UDP__ECHO_NATIVE` gate).
+
+### Demonstrated close (kill-proven, test-only)
+
+`test__arp__tx__announce_selection.py` — 2 tests over a two-subnet
+interface pinning the Linux `arp_announce` SPA selection
+(`packet_handler__arp__tx.py:75-80`), a genuine gap the single-subnet ARP
+suite never exercised. Kill-proven: `arp__tpa in host.network`→`not in`
+and the `in (1, 2)` mode gate→`(2,)` both fail the mode-1 test.
+
+### Recommendation
+
+The packet handlers are well-covered by their stat-counter-asserting
+integration suites (~76 % adjusted on two worked examples). The genuine
+residue is low-density under-tested edge branches — closed opportunistically
+by adding a scenario test (a sysctl mode, a multi-socket/multi-subnet
+topology, an error-emit path) as that handler is touched, exactly like the
+arp.announce demonstrator. A full per-protocol sweep across all 20 handler
+files is auditable but low-yield; the `__init__.py` assembler (3951 LOC)
+would need the broad multi-protocol integration baseline and is the one
+sub-surface that approaches the session/fsm economics.
