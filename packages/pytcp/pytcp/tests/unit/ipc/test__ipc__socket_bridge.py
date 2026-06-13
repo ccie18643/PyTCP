@@ -35,6 +35,7 @@ ver 3.0.8
 """
 
 import socket
+import time
 from typing import override
 from unittest import TestCase
 
@@ -162,4 +163,71 @@ class TestIpcSocketBridge(TestCase):
             self._stack_peer.recv(8),
             b"",
             msg="A client half-close must surface to the stack socket as a FIN.",
+        )
+
+
+class _ScriptedStackSocket:
+    """
+    A bridge stack-socket stub whose recv plays a scripted sequence: a
+    'TimeoutError' sentinel raises (a poll timeout), bytes are returned
+    as data, and the script's end yields b'' (a remote close) after a
+    short idle so the pump terminates.
+    """
+
+    def __init__(self, script: list[object], /) -> None:
+        self._script = script
+        self._index = 0
+
+    def recv(self, _bufsize: int, _timeout: float) -> bytes:
+        """Play the next scripted recv result (or idle-then-EOF)."""
+
+        if self._index < len(self._script):
+            item = self._script[self._index]
+            self._index += 1
+            if item is TimeoutError:
+                raise TimeoutError
+            assert isinstance(item, bytes)
+            return item
+        time.sleep(0.02)
+        return b""
+
+    def send(self, data: bytes) -> int:
+        """Discard sent bytes (the TX direction is not under test here)."""
+
+        return len(data)
+
+    def shutdown(self, _how: int, /) -> None:
+        """No-op shutdown."""
+
+
+class TestIpcSocketBridge__FaultInjection(TestCase):
+    """
+    Fault-injected pump behaviour that healthy socketpairs never reach:
+    the RX pump must treat a poll TimeoutError as a retry (continue),
+    not a teardown.
+    """
+
+    def test__socket_bridge__rx_pump_survives_poll_timeout(self) -> None:
+        """
+        Ensure the RX pump continues past a poll TimeoutError and still
+        delivers the data that follows it — pinning the 'except
+        TimeoutError: continue' branch against a teardown edit.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(data_end.close)
+        self.addCleanup(client_end.close)
+        client_end.settimeout(3.0)
+
+        stub = _ScriptedStackSocket([TimeoutError, b"after-timeout", b""])
+        bridge = SocketBridge(stub, data_end)
+        bridge.start()
+        self.addCleanup(bridge.stop)
+
+        self.assertEqual(
+            client_end.recv(64),
+            b"after-timeout",
+            msg="data following a poll timeout must still reach the client (the pump must continue).",
         )

@@ -147,3 +147,76 @@ class TestIpcPacketBridge(TestCase):
             (b"out-frame", sockaddr_ll),
             msg="The TX pump must replay a client frame as a sendto with its sockaddr_ll.",
         )
+
+
+class _ScriptedLinkSocket:
+    """
+    An AF_PACKET stack-socket stub whose recvfrom plays a scripted
+    sequence: a 'TimeoutError' / 'OSError' sentinel raises (a poll
+    timeout / transient capture error) and a tuple is delivered as a
+    captured frame. After the script it idles by raising 'TimeoutError'.
+    """
+
+    def __init__(self, script: list[object], /) -> None:
+        self._script = script
+        self._index = 0
+
+    def recvfrom(self, bufsize: int | None, timeout: float | None) -> tuple[bytes, SockAddrLl]:
+        """Play the next scripted recvfrom result (or idle-then-timeout)."""
+
+        if self._index < len(self._script):
+            item = self._script[self._index]
+            self._index += 1
+            if item is TimeoutError:
+                raise TimeoutError
+            if item is OSError:
+                raise OSError
+            assert isinstance(item, tuple)
+            frame, sockaddr_ll = item
+            return frame, sockaddr_ll
+        time.sleep(0.02)
+        raise TimeoutError
+
+    def sendto(self, data: bytes, address: SockAddrLl) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return len(data)
+
+
+class TestIpcPacketBridge__FaultInjection(TestCase):
+    """
+    Fault-injected RX-pump behaviour: the pump must treat a poll
+    TimeoutError AND a transient OSError as retries (continue), not a
+    teardown, and still deliver the frame that follows them.
+    """
+
+    def test__packet_bridge__rx_pump_survives_timeout_and_oserror(self) -> None:
+        """
+        Ensure the RX pump continues past both a poll TimeoutError and a
+        transient OSError, then frames and delivers the following
+        captured frame — pinning both 'except ...: continue' branches.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(data_end.close)
+        self.addCleanup(client_end.close)
+        client_end.settimeout(_DEADLINE__SEC)
+
+        sockaddr_ll = SockAddrLl(
+            ifindex=2,
+            ethertype=EtherType.ARP,
+            pkttype=PacketType.PACKET_HOST,
+            mac=MacAddress("02:00:00:00:00:91"),
+        )
+        stub = _ScriptedLinkSocket([TimeoutError, OSError, (b"a-frame", sockaddr_ll)])
+        bridge = PacketBridge(stub, data_end)
+        bridge.start()
+        self.addCleanup(bridge.stop)
+
+        self.assertEqual(
+            decode_packet(client_end.recv(65600)),
+            (sockaddr_ll, b"a-frame"),
+            msg="a frame after a timeout + OSError must still be framed and delivered (the pump must continue).",
+        )

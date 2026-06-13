@@ -185,3 +185,82 @@ class TestIpcDatagramBridge(TestCase):
             (b"conn", None),
             msg="The TX pump must replay an address-less datagram as a connected send.",
         )
+
+
+class _ScriptedDatagramSocket:
+    """
+    A datagram stack-socket stub whose recvmsg plays a scripted
+    sequence: a 'TimeoutError' / 'OSError' sentinel raises (a poll
+    timeout / transient receive error) and a tuple is delivered as a
+    datagram. After the script it idles by raising 'TimeoutError'.
+    """
+
+    def __init__(self, script: list[object], /) -> None:
+        self._script = script
+        self._index = 0
+
+    def recvmsg(
+        self,
+        bufsize: int | None,
+        ancbufsize: int,
+        flags: int,
+        timeout: float | None,
+    ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int]]:
+        """Play the next scripted recvmsg result (or idle-then-timeout)."""
+
+        if self._index < len(self._script):
+            item = self._script[self._index]
+            self._index += 1
+            if item is TimeoutError:
+                raise TimeoutError
+            if item is OSError:
+                raise OSError
+            assert isinstance(item, tuple)
+            data, ancdata, address = item
+            return data, ancdata, 0, address
+        time.sleep(0.02)
+        raise TimeoutError
+
+    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return len(data)
+
+    def send(self, data: bytes) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return len(data)
+
+
+class TestIpcDatagramBridge__FaultInjection(TestCase):
+    """
+    Fault-injected RX-pump behaviour: the pump must treat a poll
+    TimeoutError AND a transient OSError as retries (continue), not a
+    teardown, and still deliver the datagram that follows them.
+    """
+
+    def test__dgram_bridge__rx_pump_survives_timeout_and_oserror(self) -> None:
+        """
+        Ensure the RX pump continues past both a poll TimeoutError and a
+        transient OSError, then frames and delivers the following
+        datagram — pinning both 'except ...: continue' branches against
+        a teardown edit.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(data_end.close)
+        self.addCleanup(client_end.close)
+        client_end.settimeout(_DEADLINE__SEC)
+
+        stub = _ScriptedDatagramSocket([TimeoutError, OSError, (b"payload", [], ("10.0.0.1", 80))])
+        bridge = DatagramBridge(stub, data_end)
+        bridge.start()
+        self.addCleanup(bridge.stop)
+
+        self.assertEqual(
+            decode_dgram(client_end.recv(4096)),
+            (("10.0.0.1", 80), [], b"payload"),
+            msg="a datagram after a timeout + OSError must still be framed and delivered (the pump must continue).",
+        )
