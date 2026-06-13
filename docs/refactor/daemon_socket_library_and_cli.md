@@ -486,6 +486,18 @@ allowlist + client mirror.
   `_read_pidfile` helper. 3 unit tests (no-pidfile, stale-pidfile,
   running-but-unreachable) + 1 integration test (running + reachable
   renders the stack summary against the live IPC server). lint clean.
+- **2026-06-13** — B2 follow-up: `pytcp ping` (commit `d31545d0`). A
+  Linux-`ping`-style subcommand over the `pytcp.socket` drop-in
+  (unprivileged ICMP datagram socket, raw fallback / `-e` force; `-c -i
+  -W -s`; v4/v6 by destination; hostname via the daemon DNS resolver).
+  The ICMP Echo engine is extracted into a shipped, daemon-independent
+  `pytcp/cli/cli__ping.py` (wire helpers + an injectable-socket
+  `run_ping` generator yielding `PingOutcome` + plain formatters), shared
+  with `examples/ping.py` — the example is now a thin coloured Click
+  veneer over the engine (~150 dup lines removed). 20 unit tests (RFC
+  1071 checksum, RFC 792/4443 profile + request wire format, reply
+  parsing, the loop over a fake socket, formatters, two `main(["ping",
+  …])` command tests with the socket faked). lint clean.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
