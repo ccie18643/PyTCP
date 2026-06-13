@@ -45,6 +45,7 @@ surface): `tcp/fsm/` (broken in isolation), `tcp/session/` collaborators
 | stack     | 2521    | 44.3 %     | 50.8 %    | ~83 %                 | 165                 | PARTIAL |
 | ipc       | 1877    | 64.2 %     | 67.9 %    | ~98 %                 | 69                  | DONE   |
 | session/fsm | ~5000 | 4.7 %†     | n/a       | n/a                   | 1 (demonstrator)    | AUDITED — see note |
+| socket/dropin | 946 | 38.8 %   | 46.1 %    | ~85 %                 | 69                  | DONE   |
 
 (Updated per shard as the audit proceeds.)
 
@@ -496,3 +497,59 @@ exact-value assertions to the existing CC test families (cubic /
 hystart / cwnd / retransmit-dupack) as that code is touched — not as a
 dedicated sweep. The recover-marker test is the worked example of that
 pattern.
+
+---
+
+## Shard: socket drop-in (`pytcp.socket`, 3.0.8 daemon-backed)
+
+`socket__dropin.py` (821 LOC) is the stdlib-shaped `Socket` wrapper +
+`socket()` factory that fronts the daemon. Unlike the session/FSM code it
+is a **thin-unit-testable** shard: most of its daemon-independent logic
+(blocking-mode state, stream-only operation guards, `makefile` mode
+parsing + shared-fd refcount, factory family/type/proto dispatch) runs
+*before* any daemon I/O, so it is reachable by constructing the wrapper
+over a `create_autospec` client shim — no live daemon.
+
+### Score
+
+| Metric                              | Value                |
+|-------------------------------------|----------------------|
+| Mutants                             | 946                  |
+| Raw before                          | 38.8 % (367/946)     |
+| Raw after batch                     | 46.1 % (436/946)     |
+| Annotation/decorator survivors      | ~431 (un-killable)   |
+| Adjusted (equiv-excl)               | ~85 % of the 515 executable-mutant surface |
+| Genuine gaps closed (kill-proven)   | 69                   |
+
+The dominant survivor class is the PEP 604 union-annotation mutant: the
+three busiest survivor lines alone (`makefile` return-union, the
+`underlying:` ctor union, the `_control_sock` return-union) carry 44 / 44
+/ 33 annotation mutants each, never executed under PEP 649.
+
+### Genuine gaps closed (69, kill-proven, test-only)
+
+`test__socket__dropin__behaviour.py` — 13 fast no-daemon tests:
+
+- **Blocking-mode state** — `setblocking`/`getblocking` round-trip pins
+  `self._timeout != 0.0` (vs `==`) and the `None if flag else 0.0` set.
+- **Stream-only guards** — `listen`/`accept`/`shutdown`/`dup` on a
+  datagram socket must raise `OSError(EOPNOTSUPP)`; pins each
+  `self._type is not SocketType.STREAM` guard against an `is` edit.
+- **`makefile` mode parsing** — invalid-mode rejection (`set(mode) <=
+  {r,w,b}`), the `reading = "r" in mode or not writing` parse (an `and`
+  edit collapses `rwb` to write-only), unbuffered-non-binary rejection,
+  and the shared-fd refcount (`close()` with an outstanding stream defers
+  the real handle close until the stream decrefs).
+- **`socket()` factory dispatch** — RAW forwards proto, plain DGRAM drops
+  it to `None`, ICMP DGRAM forwards it (ping socket), `fileno=` raises.
+- **Module surface** — `has_ipv6 is True`.
+
+### Residue (79 non-annotation candidates left)
+
+The 79 still-surviving non-annotation candidates need either a live
+daemon round-trip to observe (the control-plane delegations:
+`bind`/`connect`/`setsockopt` pass-throughs, `create_connection`
+multi-address retry, the recv/send `EAGAIN` non-blocking arms) or are
+equivalents (interned-enum `is`, bounded-domain comparisons). They sit in
+the daemon-integration surface, not the fast unit surface, and are best
+closed opportunistically as the 3.0.8 daemon harness grows.
