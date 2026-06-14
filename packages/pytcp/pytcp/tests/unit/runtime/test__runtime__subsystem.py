@@ -329,6 +329,33 @@ class TestSubsystemLifecycle(TestCase):
         finally:
             subsystem.stop()
 
+    def test__subsystem__worker_thread_is_daemon(self) -> None:
+        """
+        Ensure 'start()' spawns the worker as a daemon thread so a
+        subsystem blocked in a syscall (e.g. a DHCPv4 client mid-recv)
+        can never wedge interpreter exit after the bounded join in
+        'stop()' times out and leaves it dangling.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        subsystem = _TestSubsystem()
+
+        try:
+            subsystem.start()
+
+            self.assertTrue(
+                subsystem._loop_event.wait(timeout=2.0),
+                msg="Precondition: the worker thread must be running.",
+            )
+            assert subsystem._thread is not None
+            self.assertTrue(
+                subsystem._thread.daemon,
+                msg="Subsystem.start() must spawn the worker as a daemon thread.",
+            )
+        finally:
+            subsystem.stop()
+
     def test__subsystem__stop_signals_event_and_fires_hook(self) -> None:
         """
         Ensure 'stop()' sets the stop event (terminating the loop) and

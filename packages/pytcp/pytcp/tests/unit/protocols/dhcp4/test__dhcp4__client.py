@@ -31,6 +31,7 @@ ver 3.0.8
 """
 
 import errno
+import threading
 from typing import Any, cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec, patch
@@ -1156,14 +1157,20 @@ class TestDhcp4ClientFetchInitialDelay(_Dhcp4ClientFixture):
         self._server.enqueue_offer()
         self._server.enqueue_ack()
 
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
         with (
             patch("pytcp.protocols.dhcp4.dhcp4__client.random.uniform", return_value=4.2) as mock_uniform,
+            patch.object(client._event__stop_subsystem, "wait") as mock_wait,
             patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep") as mock_sleep,
         ):
-            Dhcp4Client(mac_address=_DEFAULT_MAC).fetch()
+            client.fetch()
 
         mock_uniform.assert_any_call(1.0, 10.0)
-        mock_sleep.assert_any_call(4.2)
+        # The desync delay is an interruptible wait on the stop event, not
+        # an uninterruptible 'time.sleep', so a daemon-mode stop() during
+        # the window wakes it immediately.
+        mock_wait.assert_any_call(timeout=4.2)
+        mock_sleep.assert_not_called()
 
     def test__dhcp4_client__fetch_initial_delay_honours_custom_sysctl_bounds(self) -> None:
         """
@@ -1179,11 +1186,12 @@ class TestDhcp4ClientFetchInitialDelay(_Dhcp4ClientFixture):
         self._server.enqueue_offer()
         self._server.enqueue_ack()
 
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
         with (
             patch("pytcp.protocols.dhcp4.dhcp4__client.random.uniform", return_value=1.0) as mock_uniform,
-            patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep"),
+            patch.object(client._event__stop_subsystem, "wait"),
         ):
-            Dhcp4Client(mac_address=_DEFAULT_MAC).fetch()
+            client.fetch()
 
         # 500 ms / 1000 = 0.5 s; 2500 ms / 1000 = 2.5 s.
         mock_uniform.assert_any_call(0.5, 2.5)
@@ -1193,23 +1201,152 @@ class TestDhcp4ClientFetchInitialDelay(_Dhcp4ClientFixture):
         Ensure the startup desync delay is bypassed entirely when
         'dhcp.init_delay_max_ms' is 0 — the canonical
         disable-for-tests configuration that the fixture base
-        applies by default. 'time.sleep' must not be invoked from
-        the initial-delay path on the happy-path 'fetch()'.
+        applies by default. The interruptible stop-event wait must
+        not be invoked from the initial-delay path on the happy-path
+        'fetch()'.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         # Fixture base already sets both bounds to 0; no override
         # needed here. The Phase 1 backoff path uses 'recv__mv(timeout=)'
-        # rather than 'time.sleep', so 'time.sleep' should not be
-        # called at all during a happy-path fetch.
+        # rather than the stop-event wait, so the desync wait should not
+        # be called at all during a happy-path fetch.
         self._server.enqueue_offer()
         self._server.enqueue_ack()
 
-        with patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep") as mock_sleep:
-            Dhcp4Client(mac_address=_DEFAULT_MAC).fetch()
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        with patch.object(client._event__stop_subsystem, "wait") as mock_wait:
+            client.fetch()
 
+        mock_wait.assert_not_called()
+
+
+class TestDhcp4ClientStopResponsive(_Dhcp4ClientFixture):
+    """
+    The daemon-mode stop-responsiveness tests — the INIT acquisition
+    path must observe the stop event promptly so 'stack.stop()' is not
+    wedged by a DHCPv4 client mid-acquisition.
+    """
+
+    def test__dhcp4_client__do_init_to_bound_aborts_before_socket_when_stop_set(self) -> None:
+        """
+        Ensure '_do_init_to_bound' returns None without opening a client
+        socket when the stop event is already set, so a stop() arriving
+        during the startup desync window does not proceed to a wire
+        exchange.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        client._event__stop_subsystem.set()
+
+        result = client._do_init_to_bound()
+
+        self.assertIsNone(
+            result,
+            msg="A stop-signalled INIT must abandon acquisition and return None.",
+        )
+        self._socket_factory.assert_not_called()
+
+    def test__dhcp4_client__recv_backoff_bails_immediately_when_stop_set(self) -> None:
+        """
+        Ensure '_recv_with_backoff' returns None without issuing any
+        recv or invoking the resend callback when the stop event is
+        already set, so the retransmission storm halts the instant
+        stop() is requested.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        client._event__stop_subsystem.set()
+        resend = MagicMock()
+
+        result = client._recv_with_backoff(
+            self._sock,
+            expected_type=Dhcp4MessageType.ACK,
+            xid=_PINNED_XID,
+            resend=resend,
+        )
+
+        self.assertIsNone(
+            result,
+            msg="A stop-signalled recv backoff must return None without waiting.",
+        )
+        self._sock.recv__mv.assert_not_called()
+        resend.assert_not_called()
+
+    def test__dhcp4_client__initial_delay_waits_on_interruptible_stop_event(self) -> None:
+        """
+        Ensure the startup desync delay waits on the stop event (so it
+        is interruptible) rather than calling the uninterruptible
+        'time.sleep'.
+
+        Reference: RFC 2131 §4.4.1 (random startup desync delay).
+        """
+
+        self.enterContext(sysctl.override("dhcp.init_delay_min_ms", 1000))
+        self.enterContext(sysctl.override("dhcp.init_delay_max_ms", 10000))
+        self._server.enqueue_offer()
+        self._server.enqueue_ack()
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        with (
+            patch("pytcp.protocols.dhcp4.dhcp4__client.random.uniform", return_value=3.0),
+            patch.object(client._event__stop_subsystem, "wait") as mock_wait,
+            patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep") as mock_sleep,
+        ):
+            client.fetch()
+
+        mock_wait.assert_any_call(timeout=3.0)
         mock_sleep.assert_not_called()
+
+    def test__dhcp4_client__daemon_stop_during_init_delay_does_not_dangle(self) -> None:
+        """
+        Ensure a daemon-mode 'stop()' issued while the worker is parked
+        in the startup desync delay terminates the worker thread instead
+        of leaving it dangling for the full delay (the wedge that made
+        'pytcp stack start' unstoppable).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.enterContext(sysctl.override("dhcp.init_delay_min_ms", 5000))
+        self.enterContext(sysctl.override("dhcp.init_delay_max_ms", 5000))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+
+        reached_delay = threading.Event()
+
+        def _uniform(*args: float) -> float:
+            del args
+            reached_delay.set()
+            return 5.0
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        # Captured the instant stop() returns (after its bounded 2.0 s
+        # join) — BEFORE the cleanup join below, which would otherwise
+        # mask a wedged worker by waiting out the full desync delay.
+        alive_after_stop = True
+        with patch("pytcp.protocols.dhcp4.dhcp4__client.random.uniform", side_effect=_uniform):
+            client.start()
+            try:
+                self.assertTrue(
+                    reached_delay.wait(timeout=5.0),
+                    msg="Precondition: the worker must reach the desync delay.",
+                )
+                client.stop()
+                assert client._thread is not None
+                alive_after_stop = client._thread.is_alive()
+            finally:
+                if client._thread is not None:
+                    client._thread.join(timeout=10.0)
+
+        self.assertFalse(
+            alive_after_stop,
+            msg="stop() during the desync delay must terminate the worker promptly.",
+        )
 
 
 class TestDhcp4ClientFetchArpDad(_Dhcp4ClientFixture):
@@ -1415,15 +1552,18 @@ class TestDhcp4ClientFetchArpDad(_Dhcp4ClientFixture):
 
         acd = _acd_mock(probe_results=False, conflict_mac=MacAddress("02:00:00:00:00:99"))
 
-        with patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep") as mock_sleep:
-            Dhcp4Client(
-                mac_address=_DEFAULT_MAC,
-                acd=acd,
-            ).fetch()
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC, acd=acd)
+        with (
+            patch.object(client._event__stop_subsystem, "wait") as mock_wait,
+            patch("pytcp.protocols.dhcp4.dhcp4__client.time.sleep") as mock_sleep,
+        ):
+            client.fetch()
 
-        # Initial-delay sleep is disabled by the fixture; only the
-        # decline-backoff sleep should fire.
-        mock_sleep.assert_called_once_with(5.0)
+        # Initial-delay wait is disabled by the fixture; only the
+        # decline-backoff wait should fire — and as an interruptible
+        # stop-event wait, not an uninterruptible 'time.sleep'.
+        mock_wait.assert_called_once_with(timeout=5.0)
+        mock_sleep.assert_not_called()
 
 
 class TestDhcp4ClientFetchRfc4361Cid(_Dhcp4ClientFixture):

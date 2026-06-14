@@ -1351,6 +1351,10 @@ class Dhcp4Client(Subsystem):
         """
 
         self._initial_delay()
+        # A daemon-mode 'stop()' during the desync delay returns here
+        # without opening a socket or emitting any wire traffic.
+        if self._event__stop_subsystem.is_set():
+            return None
         self._fetch_started_at_monotonic = time.monotonic()
         __debug__ and log(
             "dhcp4",
@@ -1363,6 +1367,8 @@ class Dhcp4Client(Subsystem):
             client_socket.connect(("255.255.255.255", 67))
 
             for _ in range(dhcp4__constants.DHCP4__NAK_MAX_RESTARTS + 1):
+                if self._event__stop_subsystem.is_set():
+                    return None
                 outcome = self._discover_request_once(client_socket)
                 if not isinstance(outcome, _NakRestart):
                     if isinstance(outcome, Dhcp4Lease):
@@ -1484,7 +1490,9 @@ class Dhcp4Client(Subsystem):
             )
             backoff_s = dhcp4__constants.DHCP4__DECLINE_BACKOFF_MS / 1000.0
             if backoff_s > 0:
-                time.sleep(backoff_s)
+                # Interruptible wait so a daemon-mode 'stop()' during the
+                # post-DECLINE backoff is not wedged for the full window.
+                self._event__stop_subsystem.wait(timeout=backoff_s)
             return _NAK_RESTART
 
         t1_override, t2_override = self._extract_t1_t2_overrides(ack, ack.lease_time)
@@ -1529,6 +1537,12 @@ class Dhcp4Client(Subsystem):
         jitter_ms = dhcp4__constants.DHCP4__RETRANS_JITTER_MS
 
         for attempt in range(max_attempts):
+            # Bail between attempts so a daemon-mode 'stop()' halts the
+            # retransmission storm promptly instead of running the full
+            # backoff budget (which can span minutes against a silent
+            # server). The event is never set in sync 'fetch()'.
+            if self._event__stop_subsystem.is_set():
+                return None
             jitter_s = random.uniform(-jitter_ms / 1000.0, jitter_ms / 1000.0)
             timeout_s = max(0.001, delay_ms / 1000.0 + jitter_s)
             result = self._recv_within_window(
@@ -1828,7 +1842,11 @@ class Dhcp4Client(Subsystem):
         min_ms = dhcp4__constants.DHCP4__INIT_DELAY_MIN_MS
         delay_s = random.uniform(min_ms / 1000.0, max_ms / 1000.0)
         __debug__ and log("dhcp4", f"Initial desync delay: {delay_s:.2f}s")
-        time.sleep(delay_s)
+        # Interruptible wait, not 'time.sleep': in daemon mode a 'stop()'
+        # during the desync window must wake the worker immediately so
+        # 'stack.stop()' is not wedged for the full delay. In sync
+        # 'fetch()' the event is never set, so this behaves as a sleep.
+        self._event__stop_subsystem.wait(timeout=delay_s)
 
     def _elapsed_secs(self) -> int:
         """

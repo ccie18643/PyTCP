@@ -109,7 +109,13 @@ class Subsystem(ABC):
         )
 
         self._event__stop_subsystem.clear()
-        self._thread = threading.Thread(target=self._thread__subsystem)
+        # Daemon worker: 'stop()' joins it with a bounded 2.0 s timeout
+        # for a graceful exit, but a subclass blocked in a syscall (a
+        # DHCPv4 client mid-recv, a ring blocked on the TAP fd) can miss
+        # that window and be left dangling. A daemon thread is then
+        # abandoned at interpreter exit instead of wedging the process —
+        # the safety net behind the bounded join in 'stop()'.
+        self._thread = threading.Thread(target=self._thread__subsystem, daemon=True)
         self._thread.start()
         self._start()
 
