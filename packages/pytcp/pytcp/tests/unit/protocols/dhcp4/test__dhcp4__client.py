@@ -44,7 +44,7 @@ from pytcp.protocols.dhcp4.dhcp4__uid import build_client_id
 from pytcp.protocols.ip4.acd.ip4_acd import AcdResult, Ip4Acd
 from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.runtime.socket import AddressFamily
-from pytcp.runtime.subsystem import Subsystem
+from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 from pytcp.stack import sysctl
 from pytcp.stack.route import RouteApi
 from pytcp.tests.lib.dhcp4_mock_server import (
@@ -1346,6 +1346,189 @@ class TestDhcp4ClientStopResponsive(_Dhcp4ClientFixture):
         self.assertFalse(
             alive_after_stop,
             msg="stop() during the desync delay must terminate the worker promptly.",
+        )
+
+
+class TestDhcp4ClientRecvSlicing(_Dhcp4ClientFixture):
+    """
+    The daemon-mode recv-slicing tests — on the worker thread each
+    blocking recv is capped to a short poll slice and re-checks the stop
+    event, so a stack stop() is observed mid-recv rather than after the
+    full retransmission window.
+    """
+
+    def test__dhcp4_client__recv_within_window_slices_recv_on_worker(self) -> None:
+        """
+        Ensure that on the worker thread '_recv_within_window' caps each
+        blocking recv to the stop-poll slice and keeps re-issuing it until
+        the window deadline, so the recv is interruptible mid-window.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        self._sock.recv__mv.side_effect = TimeoutError
+
+        with patch.object(client, "_on_worker_thread", return_value=True):
+            result = client._recv_within_window(
+                self._sock,
+                expected_type=Dhcp4MessageType.ACK,
+                xid=_PINNED_XID,
+                timeout_s=1.0,
+                allow_nak=False,
+            )
+
+        self.assertIsNone(
+            result,
+            msg="A silent window must return None.",
+        )
+        self.assertGreater(
+            self._sock.recv__mv.call_count,
+            1,
+            msg="The worker-thread recv must be sliced into multiple short waits, not one long wait.",
+        )
+        for call_obj in self._sock.recv__mv.call_args_list:
+            self.assertLessEqual(
+                call_obj.kwargs["timeout"],
+                SUBSYSTEM_SLEEP_TIME__SEC,
+                msg="Each worker-thread recv slice must be capped at the stop-poll interval.",
+            )
+
+    def test__dhcp4_client__recv_within_window_bails_on_stop_when_on_worker(self) -> None:
+        """
+        Ensure that on the worker thread '_recv_within_window' returns
+        None without issuing a recv when the stop event is already set.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        client._event__stop_subsystem.set()
+        self._sock.recv__mv.side_effect = TimeoutError
+
+        with patch.object(client, "_on_worker_thread", return_value=True):
+            result = client._recv_within_window(
+                self._sock,
+                expected_type=Dhcp4MessageType.ACK,
+                xid=_PINNED_XID,
+                timeout_s=1.0,
+                allow_nak=False,
+            )
+
+        self.assertIsNone(
+            result,
+            msg="A stop-signalled worker recv must return None.",
+        )
+        self._sock.recv__mv.assert_not_called()
+
+    def test__dhcp4_client__recv_within_window_single_full_wait_off_worker(self) -> None:
+        """
+        Ensure that off the worker thread (sync 'fetch()' / tests)
+        '_recv_within_window' waits the whole window in a single recv, so
+        a server reply is awaited in one wait and the recv is not sliced.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        self._sock.recv__mv.side_effect = TimeoutError
+
+        result = client._recv_within_window(
+            self._sock,
+            expected_type=Dhcp4MessageType.ACK,
+            xid=_PINNED_XID,
+            timeout_s=2.0,
+            allow_nak=False,
+        )
+
+        self.assertIsNone(
+            result,
+            msg="A silent window must return None.",
+        )
+        self._sock.recv__mv.assert_called_once()
+        self.assertGreater(
+            self._sock.recv__mv.call_args.kwargs["timeout"],
+            SUBSYSTEM_SLEEP_TIME__SEC,
+            msg="The off-worker recv must wait the whole window in one call, not a poll slice.",
+        )
+
+
+class TestDhcp4ClientStopBlockedInRecv(TestCase):
+    """
+    The 'Dhcp4Client' stop-while-blocked-in-recv test — a real worker
+    blocked in the DISCOVER retransmission recv must exit promptly on
+    stop() rather than dangle for the full window.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Wire a fake socket whose 'recv__mv' blocks for the requested
+        timeout (a silent network) and a worker that reaches the DISCOVER
+        recv with the startup desync delay disabled. The blocking recv is
+        released on cleanup so a failing run cannot leave a dangling
+        worker.
+        """
+
+        self.enterContext(patch("pytcp.protocols.dhcp4.dhcp4__client.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+        self.enterContext(sysctl.override("dhcp.init_delay_min_ms", 0))
+        self.enterContext(sysctl.override("dhcp.init_delay_max_ms", 0))
+
+        self._random = self.enterContext(patch("pytcp.protocols.dhcp4.dhcp4__client.random"))
+        self._random.randint.return_value = _PINNED_XID
+        self._random.uniform.return_value = 0.0
+
+        self._socket_factory = autospec_dhcp4_socket()
+        self._sock = self._socket_factory.return_value
+        self.enterContext(patch("pytcp.protocols.dhcp4.dhcp4__client.socket", self._socket_factory))
+
+        self._recv_entered = threading.Event()
+        self._unblock_recv = threading.Event()
+
+        def _blocking_recv(bufsize: int | None = None, timeout: float | None = None) -> memoryview:
+            del bufsize
+            self._recv_entered.set()
+            self._unblock_recv.wait(timeout=timeout if timeout else 0.0)
+            raise TimeoutError
+
+        self._sock.recv__mv.side_effect = _blocking_recv
+
+        self._client = Dhcp4Client(mac_address=_DEFAULT_MAC)
+        self.addCleanup(self._release_worker)
+
+    def _release_worker(self) -> None:
+        """
+        Unblock any in-flight recv and stop the worker so a dangling
+        thread (e.g. from a pre-fix failing run) is reaped promptly.
+        """
+
+        self._unblock_recv.set()
+        self._client.stop()
+
+    def test__dhcp4_client__stop_exits_worker_blocked_in_recv(self) -> None:
+        """
+        Ensure stop() exits the worker thread promptly even while it is
+        blocked in the DISCOVER retransmission recv, rather than leaving
+        it dangling for the full retransmission window.
+
+        Reference: RFC 2131 §4.1 (client retransmission of DHCP messages).
+        """
+
+        self._client.start()
+
+        self.assertTrue(
+            self._recv_entered.wait(timeout=2.0),
+            msg="The worker must reach the blocking DISCOVER recv.",
+        )
+
+        self._client.stop()
+        thread = self._client._thread
+
+        assert thread is not None
+        self.assertFalse(
+            thread.is_alive(),
+            msg="stop() must exit the worker thread, not leave it dangling.",
         )
 
 

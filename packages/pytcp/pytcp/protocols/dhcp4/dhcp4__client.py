@@ -99,7 +99,7 @@ from pytcp.runtime.socket import (
     AddressFamily,
     socket,
 )
-from pytcp.runtime.subsystem import Subsystem
+from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
 from pytcp.stack.address import AddressApi
 from pytcp.stack.route import RouteApi
 
@@ -107,6 +107,11 @@ from pytcp.stack.route import RouteApi
 # since-acquisition seconds at UINT16_MAX so a long-lived restart
 # loop cannot overflow.
 _DHCP4__SECS_MAX: int = 0xFFFF
+
+# On the subsystem worker thread, each blocking recv is capped to this
+# slice so a stack stop() is observed within one poll interval rather
+# than after the full (up to multi-second) retransmission window.
+_DHCP4__STOP_POLL_INTERVAL_S: float = SUBSYSTEM_SLEEP_TIME__SEC
 
 
 class Dhcp4State(Enum):
@@ -1564,6 +1569,16 @@ class Dhcp4Client(Subsystem):
                 delay_ms = min(delay_ms * 2, max_ms)
         return None
 
+    def _on_worker_thread(self) -> bool:
+        """
+        Whether the current call is running on the subsystem worker
+        thread. The stop-responsive recv slicing engages only here; a
+        sync-mode caller (CLI / tests calling 'fetch()' inline) keeps the
+        single-recv-per-window wait.
+        """
+
+        return self._thread is not None and threading.current_thread() is self._thread
+
     def _recv_within_window(
         self,
         client_socket: socket,
@@ -1581,25 +1596,42 @@ class Dhcp4Client(Subsystem):
         valid NAK if 'allow_nak' is True, or None if the deadline
         elapses with no valid response.
 
-        The first 'recv__mv' call uses 'timeout_s' directly so the
-        caller's intended window value reaches the socket layer
-        verbatim; subsequent iterations (only entered after dropping
-        a bogus packet) compute the remaining budget against a
-        monotonic deadline anchored at the start of the window.
+        On the subsystem worker thread each blocking recv is capped to a
+        short poll slice and the stop event is re-checked each slice, so
+        a stack stop() is observed within one slice rather than after the
+        full (up to multi-second) retransmission window. A sync-mode
+        caller waits the whole window in a single recv so a server reply
+        is awaited in one wait (and the unit-test mock socket is driven
+        one-recv-per-window).
         """
 
         deadline = time.monotonic() + timeout_s
-        remaining = timeout_s
+        on_worker = self._on_worker_thread()
         first_iter = True
         while True:
-            if not first_iter:
+            if first_iter and not on_worker:
+                # Off-worker (sync 'fetch()' / tests): the first recv uses
+                # 'timeout_s' verbatim so the caller's intended window
+                # reaches the socket layer exactly (the backoff sequence
+                # stays exact, and the mock socket is driven one-recv-per-
+                # window). Subsequent iterations (after dropping a bogus
+                # packet) compute the remaining budget.
+                recv_timeout = timeout_s
+            else:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     return None
+                if on_worker and self._event__stop_subsystem.is_set():
+                    return None
+                recv_timeout = min(remaining, _DHCP4__STOP_POLL_INTERVAL_S) if on_worker else remaining
             first_iter = False
             try:
-                packet = Dhcp4Parser(client_socket.recv__mv(timeout=remaining))
+                packet = Dhcp4Parser(client_socket.recv__mv(timeout=recv_timeout))
             except TimeoutError:
+                if on_worker:
+                    # Slice expired with no reply — re-check the window /
+                    # stop event and keep waiting until the deadline.
+                    continue
                 return None
             except Dhcp4IntegrityError, Dhcp4SanityError:
                 __debug__ and log(
