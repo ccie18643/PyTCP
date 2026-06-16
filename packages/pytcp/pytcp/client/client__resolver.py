@@ -77,6 +77,13 @@ class ClientResolver(_ClientApiProxy):
 
         return cast(tuple[_AnyAddress, ...], self._call("resolve", {"host": host, "family": family}))
 
+    def get_dns_server(self) -> _AnyAddress:
+        """
+        Get the daemon's configured upstream DNS server address.
+        """
+
+        return cast(_AnyAddress, self._call("get_dns_server", {}))
+
     def gethostbyname(self, hostname: str, /) -> str:
         """
         Resolve 'hostname' to its first IPv4 address, mirroring stdlib

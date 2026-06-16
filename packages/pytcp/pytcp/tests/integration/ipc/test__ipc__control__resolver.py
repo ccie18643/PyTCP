@@ -68,7 +68,24 @@ class TestIpcControlResolver(IpcControlTestCase):
 
         resolver = create_autospec(DnsResolver, spec_set=True)
         resolver.resolve.side_effect = lambda host, record_type: _TABLE.get((host, record_type), [])
+        resolver.server = Ip4Address("9.9.9.9")
         stack.resolver = ResolverApi(resolver=resolver)
+
+    def test__control_resolver__get_dns_server_returns_configured_server(self) -> None:
+        """
+        Ensure a 'get_dns_server' call over the control channel returns
+        the daemon's configured upstream DNS server address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        client = self._connect()
+
+        self.assertEqual(
+            client.resolver.get_dns_server(),
+            Ip4Address("9.9.9.9"),
+            msg="get_dns_server() over IPC must return the daemon's configured DNS server.",
+        )
 
     def test__control_resolver__resolve_returns_addresses(self) -> None:
         """

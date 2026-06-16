@@ -87,3 +87,10 @@ class ResolverApi:
             raise errors[0]
 
         return tuple(addresses)
+
+    def get_dns_server(self) -> Ip4Address | Ip6Address:
+        """
+        Return the resolver's configured upstream DNS server address.
+        """
+
+        return self._resolver.server

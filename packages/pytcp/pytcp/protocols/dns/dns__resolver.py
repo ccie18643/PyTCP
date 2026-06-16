@@ -168,6 +168,14 @@ class DnsResolver:
         self._cache: dict[tuple[str, DnsRecordType], _CacheEntry] = {}
         self._lock = threading.Lock()
 
+    @property
+    def server(self) -> DnsAddress:
+        """
+        Get the configured upstream DNS server address.
+        """
+
+        return self._server
+
     def resolve(self, name: str, record_type: DnsRecordType, /) -> list[DnsAddress]:
         """
         Resolve 'name' to a list of addresses of the given record type,

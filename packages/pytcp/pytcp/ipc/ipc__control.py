@@ -83,7 +83,7 @@ _ALLOWED_METHODS: dict[str, frozenset[str]] = {
     "address": frozenset({"add", "remove", "replace", "list_ifaddrs"}),
     "neighbor": frozenset({"add", "remove", "flush", "list_neighbors"}),
     "membership": frozenset({"join", "leave", "list_memberships"}),
-    "resolver": frozenset({"resolve"}),
+    "resolver": frozenset({"resolve", "get_dns_server"}),
     "socket_introspect": frozenset({"list_sockets"}),
     "activity_introspect": frozenset({"list_activity"}),
 }
