@@ -36,7 +36,7 @@ ver 3.0.8
 
 import io
 import struct
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from typing import override
 from unittest import TestCase
 from unittest.mock import patch
@@ -556,3 +556,35 @@ class TestCliPingCommand(TestCase):
         self.assertEqual(exit_code, 1, msg="A run where every request timed out must exit non-zero.")
         self.assertIn("Request timeout for icmp_seq 1", output, msg="The timeout line must be printed.")
         self.assertIn("100% packet loss", output, msg="The summary must report 100% loss.")
+
+    def test__cli__ping__unreachable_daemon_reports_cleanly(self) -> None:
+        """
+        Ensure 'pytcp ping' against a daemon whose control socket is
+        absent prints a clean diagnostic and exits non-zero, rather than
+        crashing with the unhandled connect traceback that escapes from
+        the data-plane drop-in socket, matching the graceful failure of
+        the observation subcommands.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with patch.object(
+            cli_main,
+            "open_ping_socket",
+            side_effect=FileNotFoundError(2, "No such file or directory"),
+        ):
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = cli_main.main(["ping", "10.0.1.1"])
+
+        self.assertEqual(
+            exit_code,
+            1,
+            msg="An unreachable daemon must exit 1, not raise.",
+        )
+        self.assertIn(
+            "daemon",
+            stderr.getvalue().lower(),
+            msg="The diagnostic must mention the daemon so the operator knows what failed.",
+        )

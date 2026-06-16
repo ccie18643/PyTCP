@@ -642,11 +642,24 @@ def _cmd_ping(args: argparse.Namespace, /) -> int:
     is_ipv6, address = resolve_destination(args.destination)
     profile = icmp_echo_profile(is_ipv6=is_ipv6)
     identifier = default_identifier(args.identifier)
-    sock, use_cmsg, match_identifier = open_ping_socket(
-        is_ipv6=is_ipv6,
-        force_raw=args.identifier is not None,
-        identifier=identifier,
-    )
+    try:
+        sock, use_cmsg, match_identifier = open_ping_socket(
+            is_ipv6=is_ipv6,
+            force_raw=args.identifier is not None,
+            identifier=identifier,
+        )
+    except OSError as error:
+        # 'ping' opens its socket through the data-plane drop-in rather
+        # than the control client, so it bypasses '_run_with_client'.
+        # Mirror that handler's clean diagnostic instead of letting the
+        # daemon-connect traceback escape.
+        reason = error.strerror or str(error)
+        print(
+            f"pytcp: cannot reach the PyTCP stack daemon at {args.ipc_socket!r}: {reason}. "
+            f"Is it running? Start it with 'pytcp stack start'.",
+            file=sys.stderr,
+        )
+        return 1
 
     print(f"PING {args.destination} ({address}): {args.size} data bytes")
     outcomes: list[PingOutcome] = []
