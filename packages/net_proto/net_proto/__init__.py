@@ -218,6 +218,14 @@ from net_proto.protocols.dns.dns__name import (
 )
 from net_proto.protocols.dns.dns__parser import DnsParser
 from net_proto.protocols.dns.dns__question import DnsQuestion
+from net_proto.protocols.dns.dns__rdata import (
+    DnsRdata,
+    DnsRdataMx,
+    DnsRdataName,
+    DnsRdataSoa,
+    DnsRdataTxt,
+    decode_rdata,
+)
 from net_proto.protocols.dns.dns__resource_record import DnsResourceRecord
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ethernet.ethernet__base import EthernetPayload
@@ -732,12 +740,18 @@ __all__ = [
     "DnsOpcode",
     "DnsParser",
     "DnsQuestion",
+    "DnsRdata",
+    "DnsRdataMx",
+    "DnsRdataName",
+    "DnsRdataSoa",
+    "DnsRdataTxt",
     "DnsRecordClass",
     "DnsRecordType",
     "DnsResourceRecord",
     "DnsResponseCode",
     "DnsSanityError",
     "decode_name",
+    "decode_rdata",
     "encode_name",
     "ETHERNET_802_3__HEADER__LEN",
     "ETHERNET_802_3__PACKET__MAX_LEN",

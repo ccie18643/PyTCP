@@ -34,7 +34,13 @@ from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
 from net_proto.protocols.dns.dns__enums import DnsRecordClass, DnsRecordType
+from net_proto.protocols.dns.dns__rdata import DnsRdataName
 from net_proto.protocols.dns.dns__resource_record import DnsResourceRecord
+
+# A 13-octet "example.com" name at offset 0, the compression target for
+# the CNAME RDATA fixture below:
+#   Bytes 0-12 : 0x07 'example' 0x03 'com' 0x00 -> example.com
+_ANCHOR = b"\x07example\x03com\x00"
 
 
 class TestDnsResourceRecordAddress(TestCase):
@@ -171,4 +177,84 @@ class TestDnsResourceRecordAddress(TestCase):
         self.assertIsNone(
             record.address,
             msg="A non-A/AAAA record must report no address.",
+        )
+
+
+class TestDnsResourceRecordRdataDecoded(TestCase):
+    """
+    The DNS resource-record 'rdata_decoded' typed-RDATA wiring tests.
+    """
+
+    def test__dns__resource_record__from_frame_populates_rdata_decoded(self) -> None:
+        """
+        Ensure 'from_frame' decodes a name-bearing record's RDATA into a
+        typed object exposed on 'rdata_decoded', resolving compression
+        against the full message.
+
+        Reference: RFC 1035 §3.3.1 (CNAME RDATA format).
+        """
+
+        # CNAME record at offset 13 over the example.com anchor:
+        #   Bytes 13-28 : name ptr->0, CNAME, IN, ttl 300, rdlen 6,
+        #                 0x03 'www' 0xc0 0x00 -> www.example.com
+        frame = _ANCHOR + b"\xc0\x00\x00\x05\x00\x01\x00\x00\x01\x2c\x00\x06\x03www\xc0\x00"
+
+        record, _offset = DnsResourceRecord.from_frame(frame, 13)
+
+        self.assertEqual(
+            record.rdata_decoded,
+            DnsRdataName(name="www.example.com"),
+            msg="from_frame must populate rdata_decoded with the typed CNAME RDATA.",
+        )
+
+    def test__dns__resource_record__direct_construction_defaults_rdata_decoded_none(self) -> None:
+        """
+        Ensure a directly-constructed record (the assembler path, which
+        has no frame) defaults 'rdata_decoded' to None.
+
+        Reference: RFC 1035 §4.1.3 (Resource record format).
+        """
+
+        record = DnsResourceRecord(
+            name="example.com",
+            rtype=DnsRecordType.A,
+            rclass=DnsRecordClass.IN,
+            ttl=300,
+            rdata=b"\x5d\xb8\xd8\x22",
+        )
+
+        self.assertIsNone(
+            record.rdata_decoded,
+            msg="A directly-constructed record must default rdata_decoded to None.",
+        )
+
+    def test__dns__resource_record__rdata_decoded_excluded_from_equality(self) -> None:
+        """
+        Ensure 'rdata_decoded' is excluded from equality so a parse-built
+        record compares equal to a hand-built one carrying the same raw
+        rdata.
+
+        Reference: RFC 1035 §4.1.3 (Resource record format).
+        """
+
+        decoded = DnsResourceRecord(
+            name="example.com",
+            rtype=DnsRecordType.PTR,
+            rclass=DnsRecordClass.IN,
+            ttl=300,
+            rdata=b"\x04host\x07example\x03com\x00",
+            rdata_decoded=DnsRdataName(name="host.example.com"),
+        )
+        bare = DnsResourceRecord(
+            name="example.com",
+            rtype=DnsRecordType.PTR,
+            rclass=DnsRecordClass.IN,
+            ttl=300,
+            rdata=b"\x04host\x07example\x03com\x00",
+        )
+
+        self.assertEqual(
+            decoded,
+            bare,
+            msg="Records with equal raw rdata must compare equal regardless of rdata_decoded.",
         )

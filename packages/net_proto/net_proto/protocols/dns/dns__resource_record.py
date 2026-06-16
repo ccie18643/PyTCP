@@ -31,7 +31,7 @@ ver 3.0.8
 """
 
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Self
 
 from net_addr import Buffer, Ip4Address, Ip6Address
@@ -39,6 +39,14 @@ from net_proto.lib.int_checks import is_uint16, is_uint32
 from net_proto.protocols.dns.dns__enums import DnsRecordClass, DnsRecordType
 from net_proto.protocols.dns.dns__errors import DnsIntegrityError
 from net_proto.protocols.dns.dns__name import decode_name, encode_name
+from net_proto.protocols.dns.dns__rdata import (
+    DnsRdata,
+    DnsRdataMx,
+    DnsRdataName,
+    DnsRdataSoa,
+    DnsRdataTxt,
+    decode_rdata,
+)
 
 # A DNS resource record [RFC 1035 §4.1.3]: a domain name, then a 2-octet
 # TYPE, 2-octet CLASS, 4-octet TTL, 2-octet RDLENGTH, and RDLENGTH octets
@@ -63,6 +71,12 @@ class DnsResourceRecord:
     rclass: DnsRecordClass
     ttl: int
     rdata: bytes
+    # The typed RDATA view for name-bearing / structured records, decoded
+    # against the full message in 'from_frame' (None for A / AAAA, which
+    # use 'address', and for unknown types). Excluded from equality so a
+    # parse-built record still compares equal to a hand-built one carrying
+    # the same raw 'rdata'.
+    rdata_decoded: DnsRdata | None = field(default=None, compare=False)
 
     def __post_init__(self) -> None:
         """
@@ -70,6 +84,10 @@ class DnsResourceRecord:
         """
 
         assert isinstance(self.name, str), f"The 'name' field must be a string. Got: {type(self.name)!r}"
+
+        assert self.rdata_decoded is None or isinstance(
+            self.rdata_decoded, (DnsRdataName, DnsRdataMx, DnsRdataSoa, DnsRdataTxt)
+        ), f"The 'rdata_decoded' field must be a DnsRdata or None. Got: {type(self.rdata_decoded)!r}"
 
         assert isinstance(
             self.rtype, DnsRecordType
@@ -132,14 +150,16 @@ class DnsResourceRecord:
             raise DnsIntegrityError(f"The resource-record RDATA at offset {offset} runs past the end of the message.")
 
         rdata = bytes(memoryview(frame)[offset : offset + rdlength])
+        record_type = DnsRecordType.from_int(rtype)
 
         return (
             cls(
                 name=name,
-                rtype=DnsRecordType.from_int(rtype),
+                rtype=record_type,
                 rclass=DnsRecordClass.from_int(rclass),
                 ttl=ttl,
                 rdata=rdata,
+                rdata_decoded=decode_rdata(rtype=record_type, frame=frame, rdata_offset=offset, rdlength=rdlength),
             ),
             offset + rdlength,
         )
