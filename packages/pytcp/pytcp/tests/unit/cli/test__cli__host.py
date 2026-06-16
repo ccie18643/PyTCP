@@ -32,8 +32,12 @@ packages/pytcp/pytcp/tests/unit/cli/test__cli__host.py
 ver 3.0.8
 """
 
+import io
+from contextlib import redirect_stderr, redirect_stdout
 from unittest import TestCase
+from unittest.mock import patch
 
+import pytcp.cli.__main__ as cli_main
 from net_addr import Ip4Address, Ip6Address
 from net_proto import (
     DnsHeader,
@@ -675,4 +679,205 @@ class TestHostRunHost(TestCase):
             results[0].status,
             HostStatus.TIMEOUT,
             msg="run_host must yield TIMEOUT when no response arrives.",
+        )
+
+
+class _EchoDnsSocket:
+    """
+    A UDP socket double that answers every query by echoing its
+    transaction id and serving the configured records (and response code)
+    for the question's record type — a deterministic stand-in for a real
+    server, so the command's random transaction ids always match.
+    """
+
+    def __init__(
+        self,
+        *,
+        answers: dict[DnsRecordType, tuple[DnsResourceRecord, ...]],
+        rcodes: dict[DnsRecordType, DnsResponseCode] | None = None,
+    ) -> None:
+        self.sent: list[tuple[bytes, tuple[str, int]]] = []
+        self._answers = answers
+        self._rcodes = rcodes or {}
+        self._last_query = b""
+
+    def settimeout(self, timeout: float, /) -> None:
+        """Accept the per-recv timeout (ignored by the double)."""
+
+    def sendto(self, data: bytes, address: tuple[str, int], /) -> int:
+        """Record the sent query and keep it for the echo response."""
+
+        self.sent.append((data, address))
+        self._last_query = data
+        return len(data)
+
+    def recvfrom(self, bufsize: int, /) -> tuple[bytes, tuple[str, int]]:
+        """Echo a response for the last query's id, name, and type."""
+
+        query = DnsParser(memoryview(self._last_query))
+        question = query.questions[0]
+        frame = _response_frame(
+            query_id=query.id,
+            qname=question.qname,
+            qtype=question.qtype,
+            answers=self._answers.get(question.qtype, ()),
+            rcode=self._rcodes.get(question.qtype, DnsResponseCode.NOERROR),
+        )
+        return frame, ("9.9.9.9", 53)
+
+    def close(self) -> None:
+        """Accept the command's socket teardown (a no-op for the double)."""
+
+
+class _FakeClientResolver:
+    """The resolver surface of a faked control client."""
+
+    def __init__(self, server: Ip4Address | Ip6Address, /) -> None:
+        self._server = server
+
+    def get_dns_server(self) -> Ip4Address | Ip6Address:
+        """Return the configured upstream server."""
+
+        return self._server
+
+
+class _FakeClient:
+    """A faked control client exposing only what 'host' uses."""
+
+    def __init__(self, server: Ip4Address | Ip6Address, /) -> None:
+        self.resolver = _FakeClientResolver(server)
+        self.closed = False
+
+    def close(self) -> None:
+        """Mark the client closed."""
+
+        self.closed = True
+
+
+class TestCliHostCommand(TestCase):
+    """
+    The 'pytcp host' command-wiring tests (UDP socket + control client
+    faked, no daemon).
+    """
+
+    def _run(
+        self,
+        *argv: str,
+        sock: _EchoDnsSocket,
+        server: Ip4Address = Ip4Address("9.9.9.9"),
+    ) -> tuple[int, str, str, _FakeClient]:
+        """
+        Run 'main(["host", *argv])' with 'open_dns_socket' returning the
+        echo socket and 'connect' returning a faked client, capturing
+        '(exit_code, stdout, stderr, fake_client)'.
+        """
+
+        out, err = io.StringIO(), io.StringIO()
+        fake_client = _FakeClient(server)
+        with (
+            patch.object(cli_main, "open_dns_socket", autospec=True, return_value=sock),
+            patch.object(cli_main, "connect", autospec=True, return_value=fake_client),
+        ):
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli_main.main(["host", *argv])
+        return code, out.getvalue(), err.getvalue(), fake_client
+
+    def test__cli__host__command_renders_answer_and_exits_zero(self) -> None:
+        """
+        Ensure 'pytcp host NAME SERVER -t A' against a replying server
+        prints the address line and exits zero, having queried the
+        server.
+
+        Reference: RFC 1035 §3.4.1 (A RDATA format).
+        """
+
+        answer = _record(DnsRecordType.A, "example.com", bytes(Ip4Address("93.184.216.34")))
+        sock = _EchoDnsSocket(answers={DnsRecordType.A: (answer,)})
+
+        code, out, _err, _client = self._run("example.com", "9.9.9.9", "-t", "A", sock=sock)
+
+        self.assertEqual(
+            (code, out.strip(), sock.sent[0][1]),
+            (0, "example.com has address 93.184.216.34", ("9.9.9.9", 53)),
+            msg="A replying A query must print the address line, exit 0, and hit the server.",
+        )
+
+    def test__cli__host__command_reverse_lookup_renders_pointer(self) -> None:
+        """
+        Ensure 'pytcp host IP SERVER' issues a reverse PTR lookup and
+        renders the 'domain name pointer' line.
+
+        Reference: RFC 1035 §3.5 (IN-ADDR.ARPA domain).
+        """
+
+        answer = _record(DnsRecordType.PTR, "8.8.8.8.in-addr.arpa", encode_name("dns.google"))
+        sock = _EchoDnsSocket(answers={DnsRecordType.PTR: (answer,)})
+
+        code, out, _err, _client = self._run("8.8.8.8", "9.9.9.9", sock=sock)
+
+        self.assertEqual(
+            (code, out.strip()),
+            (0, "8.8.8.8.in-addr.arpa domain name pointer dns.google"),
+            msg="An IP target must issue a reverse PTR lookup and render the pointer line.",
+        )
+
+    def test__cli__host__command_uses_daemon_server_when_no_server_arg(self) -> None:
+        """
+        Ensure 'pytcp host NAME' with no SERVER reads the daemon's
+        configured resolver over the control client and closes it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        answer = _record(DnsRecordType.A, "example.com", bytes(Ip4Address("93.184.216.34")))
+        sock = _EchoDnsSocket(answers={DnsRecordType.A: (answer,)})
+
+        code, out, _err, client = self._run("example.com", "-t", "A", sock=sock)
+
+        self.assertEqual(
+            (code, out.strip(), client.closed),
+            (0, "example.com has address 93.184.216.34", True),
+            msg="A query with no SERVER must use the daemon's resolver and close the client.",
+        )
+
+    def test__cli__host__command_nxdomain_exits_one(self) -> None:
+        """
+        Ensure an NXDOMAIN response prints the 'not found' line and exits
+        non-zero.
+
+        Reference: RFC 1035 §4.1.1 (RCODE values).
+        """
+
+        sock = _EchoDnsSocket(answers={}, rcodes={DnsRecordType.A: DnsResponseCode.NXDOMAIN})
+
+        code, out, _err, _client = self._run("nope.example", "9.9.9.9", "-t", "A", sock=sock)
+
+        self.assertEqual(
+            (code, out.strip()),
+            (1, "Host nope.example not found: 3(NXDOMAIN)"),
+            msg="An NXDOMAIN response must print the 'not found' line and exit 1.",
+        )
+
+    def test__cli__host__command_unreachable_daemon_reports_cleanly(self) -> None:
+        """
+        Ensure 'pytcp host' against a daemon whose data socket cannot open
+        prints a clean diagnostic and exits non-zero rather than crashing.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        out, err = io.StringIO(), io.StringIO()
+        with patch.object(
+            cli_main,
+            "open_dns_socket",
+            autospec=True,
+            side_effect=FileNotFoundError(2, "No such file or directory"),
+        ):
+            with redirect_stdout(out), redirect_stderr(err):
+                code = cli_main.main(["host", "example.com", "9.9.9.9"])
+
+        self.assertEqual(
+            (code, "daemon" in err.getvalue().lower()),
+            (1, True),
+            msg="An unreachable daemon must exit 1 with a diagnostic mentioning the daemon.",
         )

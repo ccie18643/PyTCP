@@ -67,6 +67,19 @@ from pytcp.cli.cli__format import (
     format_socket_table,
     format_sysctl,
 )
+from pytcp.cli.cli__host import (
+    DNS__PORT,
+    HOST__DEFAULT_RETRIES,
+    HOST__DEFAULT_TIMEOUT__SEC,
+    HostError,
+    HostStatus,
+    build_query_plan,
+    format_host_result,
+    open_dns_socket,
+    parse_ip_literal,
+    record_type_from_name,
+    run_host,
+)
 from pytcp.cli.cli__ping import (
     PingOutcome,
     default_identifier,
@@ -653,12 +666,7 @@ def _cmd_ping(args: argparse.Namespace, /) -> int:
         # than the control client, so it bypasses '_run_with_client'.
         # Mirror that handler's clean diagnostic instead of letting the
         # daemon-connect traceback escape.
-        reason = error.strerror or str(error)
-        print(
-            f"pytcp: cannot reach the PyTCP stack daemon at {args.ipc_socket!r}: {reason}. "
-            f"Is it running? Start it with 'pytcp stack start'.",
-            file=sys.stderr,
-        )
+        _report_daemon_unreachable(args.ipc_socket, error)
         return 1
 
     print(f"PING {args.destination} ({address}): {args.size} data bytes")
@@ -685,6 +693,90 @@ def _cmd_ping(args: argparse.Namespace, /) -> int:
 
     print(format_ping_summary(args.destination, outcomes))
     return 0 if any(not outcome.timed_out for outcome in outcomes) else 1
+
+
+def _host_server(args: argparse.Namespace, /) -> Ip4Address | Ip6Address | None:
+    """
+    Resolve the upstream DNS server for a 'host' query: the explicit
+    SERVER argument (an IP literal) when given, otherwise the daemon's
+    configured resolver read over the control channel. Print a clean
+    diagnostic and return None on failure.
+    """
+
+    if args.server is not None:
+        if (literal := parse_ip_literal(args.server)) is not None:
+            return literal
+        print(f"pytcp: server must be an IP address. Got: {args.server!r}", file=sys.stderr)
+        return None
+
+    try:
+        client = connect(socket_path=args.ipc_socket)
+    except OSError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return None
+    try:
+        return client.resolver.get_dns_server()
+    except IpcRemoteError as error:
+        print(f"pytcp: {error}", file=sys.stderr)
+        return None
+    finally:
+        client.close()
+
+
+def _cmd_host(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'host' command — resolve a name (A/AAAA/MX by default, or an
+    explicit '-t' type) or reverse-resolve an IP literal (PTR) through
+    the daemon's UDP socket, rendering answers in the style of the Linux
+    'host' utility. The upstream server defaults to the daemon's
+    configured resolver (read over the control channel) and may be
+    overridden by the optional SERVER argument. Exits non-zero when no
+    answer is obtained.
+    """
+
+    try:
+        record_type = record_type_from_name(args.type) if args.type is not None else None
+    except HostError as error:
+        print(f"pytcp: {error}", file=sys.stderr)
+        return 1
+
+    server = _host_server(args)
+    if server is None:
+        return 1
+
+    questions = build_query_plan(target=args.name, record_type=record_type)
+
+    try:
+        sock = open_dns_socket(is_ipv6=isinstance(server, Ip6Address))
+    except OSError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+
+    show_nodata = record_type is not None
+    answered = False
+    previous: str | None = None
+    try:
+        for result in run_host(
+            sock,
+            server=server,
+            port=DNS__PORT,
+            questions=questions,
+            timeout=args.timeout,
+            retries=HOST__DEFAULT_RETRIES,
+        ):
+            if result.status is HostStatus.OK:
+                answered = True
+            for line in format_host_result(result, show_nodata=show_nodata):
+                # Collapse consecutive identical lines so a default-plan
+                # query to a missing name prints one 'not found' line, not
+                # one per question type.
+                if line != previous:
+                    print(line)
+                    previous = line
+    finally:
+        sock.close()
+
+    return 0 if answered else 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -819,6 +911,31 @@ def build_parser() -> argparse.ArgumentParser:
         help="ICMP identifier (0-65535); implies a raw socket.",
     )
     parser_ping.set_defaults(func=_cmd_ping, needs_client=False)
+
+    parser_host = subparsers.add_parser("host", help="Look up DNS records (Linux 'host').")
+    parser_host.add_argument("name", help="Host name to look up, or an IP address for a reverse lookup.")
+    parser_host.add_argument(
+        "server",
+        nargs="?",
+        default=None,
+        help="DNS server IP to query (default: the daemon's configured resolver).",
+    )
+    parser_host.add_argument(
+        "-t",
+        "--type",
+        default=None,
+        metavar="TYPE",
+        help="Record type to look up: A, AAAA, NS, CNAME, SOA, PTR, MX, TXT (default: A, AAAA, MX).",
+    )
+    parser_host.add_argument(
+        "-W",
+        "--timeout",
+        type=float,
+        default=HOST__DEFAULT_TIMEOUT__SEC,
+        metavar="SEC",
+        help=f"Seconds to wait per query (default: {HOST__DEFAULT_TIMEOUT__SEC}).",
+    )
+    parser_host.set_defaults(func=_cmd_host, needs_client=False)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(
@@ -987,6 +1104,21 @@ def _cmd_stack_status(args: argparse.Namespace, /) -> int:
     return _stack_status(pidfile_path=args.pidfile, socket_path=args.ipc_socket)
 
 
+def _report_daemon_unreachable(socket_path: str, error: OSError, /) -> None:
+    """
+    Print the canonical 'cannot reach the daemon' diagnostic for a failed
+    connect / data-socket open, shared by every command that talks to the
+    daemon outside the control client.
+    """
+
+    reason = error.strerror or str(error)
+    print(
+        f"pytcp: cannot reach the PyTCP stack daemon at {socket_path!r}: {reason}. "
+        f"Is it running? Start it with 'pytcp stack start'.",
+        file=sys.stderr,
+    )
+
+
 def _run_with_client(args: argparse.Namespace, /) -> int:
     """
     Connect to the daemon, run the selected 'args.func' handler against
@@ -998,12 +1130,7 @@ def _run_with_client(args: argparse.Namespace, /) -> int:
     try:
         client = connect(socket_path=args.ipc_socket)
     except OSError as error:
-        reason = error.strerror or str(error)
-        print(
-            f"pytcp: cannot reach the PyTCP stack daemon at {args.ipc_socket!r}: {reason}. "
-            f"Is it running? Start it with 'pytcp stack start'.",
-            file=sys.stderr,
-        )
+        _report_daemon_unreachable(args.ipc_socket, error)
         return 1
 
     try:
