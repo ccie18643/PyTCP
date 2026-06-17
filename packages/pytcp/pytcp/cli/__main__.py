@@ -80,6 +80,21 @@ from pytcp.cli.cli__host import (
     record_type_from_name,
     run_host,
 )
+from pytcp.cli.cli__nc import (
+    NC__BUFSIZE,
+    NC__DEFAULT_TIMEOUT__SEC,
+    NcError,
+    connect_endpoint,
+    format_scan_result,
+    format_verbose_connect,
+    listen_endpoint,
+    parse_port,
+    parse_port_range,
+    relay,
+    scan_port,
+    stdin_stream,
+    udp_relay,
+)
 from pytcp.cli.cli__ping import (
     PingOutcome,
     default_identifier,
@@ -779,6 +794,156 @@ def _cmd_host(args: argparse.Namespace, /) -> int:
     return 0 if answered else 1
 
 
+def _cmd_nc(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'nc' command — dispatch to outbound connect, '-l' listen, or
+    '-z' scan over the daemon's data-plane socket, in the style of the
+    Linux 'nc' utility. Argument errors are reported cleanly.
+    """
+
+    try:
+        if args.zero:
+            return _nc_scan(args)
+        if args.listen:
+            return _nc_listen(args)
+        return _nc_connect(args)
+    except NcError as error:
+        print(f"pytcp: {error}", file=sys.stderr)
+        return 1
+
+
+def _nc_connect(args: argparse.Namespace, /) -> int:
+    """
+    Connect to 'host port' and relay stdin/stdout over the socket. A
+    daemon-connect failure (the data socket cannot be opened) reports the
+    canonical 'daemon unreachable' diagnostic; a TCP connect failure
+    reports the netcat-style 'connect failed' line.
+    """
+
+    if args.port is None:
+        raise NcError("a port is required for an outbound connection")
+    host, port = args.host, parse_port(args.port)
+    proto = "udp" if args.udp else "tcp"
+
+    try:
+        sock, _family, address = connect_endpoint(
+            host=host,
+            port=port,
+            is_udp=args.udp,
+            timeout=args.timeout if args.timeout is not None else NC__DEFAULT_TIMEOUT__SEC,
+            prefer_ipv6=args.ipv6,
+        )
+    except FileNotFoundError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+    except OSError as error:
+        print(f"nc: connect to {host} port {port} ({proto}) failed: {error.strerror or error}", file=sys.stderr)
+        return 1
+
+    if args.verbose:
+        print(format_verbose_connect(host=host, port=port, is_udp=args.udp), file=sys.stderr)
+
+    try:
+        if args.udp:
+            udp_relay(
+                sock,
+                peer=(address, port),
+                input_stream=stdin_stream(),
+                output_stream=sys.stdout.buffer,
+                idle_timeout=args.timeout,
+            )
+        else:
+            relay(sock, input_stream=stdin_stream(), output_stream=sys.stdout.buffer)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        sock.close()
+    return 0
+
+
+def _nc_listen(args: argparse.Namespace, /) -> int:
+    """
+    Listen for one inbound connection (or learn the first UDP peer) and
+    relay stdin/stdout over it. 'nc -l PORT' binds the wildcard address;
+    'nc -l HOST PORT' binds the given address.
+    """
+
+    if args.port is None:
+        bind_host = "::" if args.ipv6 else "0.0.0.0"
+        port = parse_port(args.host)
+    else:
+        bind_host, port = args.host, parse_port(args.port)
+
+    try:
+        listener, _family = listen_endpoint(host=bind_host, port=port, is_udp=args.udp)
+    except FileNotFoundError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+    except OSError as error:
+        print(f"nc: bind to {bind_host} port {port} failed: {error.strerror or error}", file=sys.stderr)
+        return 1
+
+    if args.verbose:
+        print(f"Listening on {bind_host} {port}", file=sys.stderr)
+
+    try:
+        if args.udp:
+            data, peer = listener.recvfrom(NC__BUFSIZE)
+            sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+            udp_relay(
+                listener,
+                peer=peer,
+                input_stream=stdin_stream(),
+                output_stream=sys.stdout.buffer,
+                idle_timeout=args.timeout,
+            )
+        else:
+            conn, peer = listener.accept()
+            if args.verbose:
+                print(f"Connection received on {peer[0]} {peer[1]}", file=sys.stderr)
+            try:
+                relay(conn, input_stream=stdin_stream(), output_stream=sys.stdout.buffer)
+            finally:
+                conn.close()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        listener.close()
+    return 0
+
+
+def _nc_scan(args: argparse.Namespace, /) -> int:
+    """
+    Scan a TCP port (or 'LOW-HIGH' range) and report each open port,
+    exiting zero when at least one port is open.
+    """
+
+    if args.udp:
+        raise NcError("UDP port scanning is not supported")
+    if args.port is None:
+        raise NcError("a port or port range is required for a scan")
+
+    low, high = parse_port_range(args.port)
+    timeout = args.timeout if args.timeout is not None else NC__DEFAULT_TIMEOUT__SEC
+    any_open = False
+    try:
+        for port in range(low, high + 1):
+            try:
+                is_open = scan_port(host=args.host, port=port, timeout=timeout, prefer_ipv6=args.ipv6)
+            except FileNotFoundError as error:
+                _report_daemon_unreachable(args.ipc_socket, error)
+                return 1
+            if is_open:
+                any_open = True
+                print(format_scan_result(host=args.host, port=port, is_open=True))
+            elif args.verbose:
+                print(format_scan_result(host=args.host, port=port, is_open=False), file=sys.stderr)
+    except KeyboardInterrupt:
+        pass
+    return 0 if any_open else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the 'pytcp' multitool argument parser.
@@ -936,6 +1101,34 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Seconds to wait per query (default: {HOST__DEFAULT_TIMEOUT__SEC}).",
     )
     parser_host.set_defaults(func=_cmd_host, needs_client=False)
+
+    parser_nc = subparsers.add_parser("nc", help="netcat: connect, listen, or scan (Linux 'nc').")
+    parser_nc.add_argument("host", help="Host/address to connect to or scan, or the bind address for '-l'.")
+    parser_nc.add_argument(
+        "port",
+        nargs="?",
+        default=None,
+        help="Port (or LOW-HIGH range for '-z'); omit only for 'nc -l PORT'.",
+    )
+    parser_nc.add_argument("-l", "--listen", action="store_true", help="Listen for an inbound connection.")
+    parser_nc.add_argument("-u", "--udp", action="store_true", help="Use UDP instead of TCP.")
+    parser_nc.add_argument("-z", "--zero", action="store_true", help="Zero-I/O TCP port scan (no data transfer).")
+    parser_nc.add_argument(
+        "-w",
+        "--timeout",
+        type=float,
+        default=None,
+        metavar="SEC",
+        help="Connect / scan timeout, and UDP idle timeout, in seconds.",
+    )
+    parser_nc.add_argument(
+        "-6",
+        dest="ipv6",
+        action="store_true",
+        help="Prefer IPv6 for name resolution and the wildcard listen bind.",
+    )
+    parser_nc.add_argument("-v", "--verbose", action="store_true", help="Verbose status output to stderr.")
+    parser_nc.set_defaults(func=_cmd_nc, needs_client=False)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(

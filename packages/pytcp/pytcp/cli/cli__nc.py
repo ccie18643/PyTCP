@@ -46,8 +46,9 @@ packages/pytcp/pytcp/cli/cli__nc.py
 ver 3.0.8
 """
 
+import sys
 import threading
-from typing import Protocol
+from typing import Protocol, cast
 
 from net_addr import (
     Ip4Address,
@@ -86,6 +87,17 @@ class _Writable(Protocol):
     def write(self, data: bytes, /) -> int: ...
 
     def flush(self) -> None: ...
+
+
+def stdin_stream() -> _Readable:
+    """
+    Return the process stdin as a binary relay input stream. The runtime
+    buffer is a 'BufferedReader' (it has the 'read1' the pumps use for
+    line-responsive input); the cast pins that, since stdlib types its
+    static type as a bare 'BinaryIO'.
+    """
+
+    return cast(_Readable, sys.stdin.buffer)
 
 
 def parse_port(text: str, /) -> int:
@@ -223,7 +235,13 @@ def scan_port(*, host: str, port: int, timeout: float, prefer_ipv6: bool = False
     except OSError:
         return False
     finally:
-        sock.close()
+        # Closing a probe socket whose connect timed out can itself time
+        # out on the daemon round-trip; a close failure must never crash
+        # the scan, so swallow it.
+        try:
+            sock.close()
+        except OSError:
+            pass
     return True
 
 
