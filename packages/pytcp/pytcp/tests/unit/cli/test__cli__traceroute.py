@@ -33,9 +33,14 @@ packages/pytcp/pytcp/tests/unit/cli/test__cli__traceroute.py
 ver 3.0.8
 """
 
+import io
 import struct
+from contextlib import redirect_stderr, redirect_stdout
 from unittest import TestCase
+from unittest.mock import create_autospec, patch
 
+import pytcp.cli.__main__ as cli_main
+from pytcp import socket
 from pytcp.cli.cli__traceroute import (
     HopResult,
     ProbeResult,
@@ -351,4 +356,90 @@ class TestTracerouteRunTraceroute(TestCase):
             ),
             (3, "10.0.0.1", None, "10.0.0.3", True, [1, 2, 3]),
             msg="The trace must walk hop 1, time out at hop 2, reach the destination at hop 3, and stop.",
+        )
+
+
+class TestCliTracerouteCommand(TestCase):
+    """
+    The 'pytcp traceroute' command-wiring tests (raw socket + generator
+    faked, no daemon).
+    """
+
+    def _run(self, *argv: str) -> tuple[int, str, str]:
+        """
+        Run 'main(["traceroute", *argv])', capturing '(exit_code, stdout,
+        stderr)'.
+        """
+
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = cli_main.main(["traceroute", *argv])
+        return code, out.getvalue(), err.getvalue()
+
+    def test__cli__traceroute__command_prints_hops_and_exits_zero(self) -> None:
+        """
+        Ensure a trace that reaches the destination prints the header and
+        each hop line and exits zero.
+
+        Reference: RFC 792 (ICMP Time Exceeded / Echo Reply).
+        """
+
+        hops = [
+            HopResult(ttl=1, probes=(ProbeResult("10.0.0.1", 1.0),), reached=False),
+            HopResult(ttl=2, probes=(ProbeResult("10.0.0.3", 2.0),), reached=True),
+        ]
+        sock = create_autospec(socket.Socket, spec_set=True)
+        with (
+            patch.object(cli_main, "resolve_destination", autospec=True, return_value=(False, "10.0.0.3")),
+            patch.object(cli_main, "open_traceroute_socket", autospec=True, return_value=sock),
+            patch.object(cli_main, "run_traceroute", autospec=True, return_value=iter(hops)),
+        ):
+            code, out, _err = self._run("example.com")
+
+        self.assertEqual(code, 0, msg="A trace reaching the destination must exit 0.")
+        self.assertIn("traceroute to example.com (10.0.0.3)", out, msg="The header must name the destination.")
+        self.assertIn("10.0.0.3", out, msg="The reached hop must be printed.")
+        sock.close.assert_called_once_with()
+
+    def test__cli__traceroute__command_unreached_exits_one(self) -> None:
+        """
+        Ensure a trace that never reaches the destination exits non-zero.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        hops = [HopResult(ttl=1, probes=(ProbeResult(None, None),), reached=False)]
+        sock = create_autospec(socket.Socket, spec_set=True)
+        with (
+            patch.object(cli_main, "resolve_destination", autospec=True, return_value=(False, "10.0.0.3")),
+            patch.object(cli_main, "open_traceroute_socket", autospec=True, return_value=sock),
+            patch.object(cli_main, "run_traceroute", autospec=True, return_value=iter(hops)),
+        ):
+            code, _out, _err = self._run("example.com")
+
+        self.assertEqual(code, 1, msg="A trace that never reaches the destination must exit 1.")
+
+    def test__cli__traceroute__command_daemon_down_reports_cleanly(self) -> None:
+        """
+        Ensure a missing daemon raw socket prints the canonical daemon
+        diagnostic and exits non-zero.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with (
+            patch.object(cli_main, "resolve_destination", autospec=True, return_value=(False, "10.0.0.3")),
+            patch.object(
+                cli_main,
+                "open_traceroute_socket",
+                autospec=True,
+                side_effect=FileNotFoundError(2, "No such file or directory"),
+            ),
+        ):
+            code, _out, err = self._run("example.com")
+
+        self.assertEqual(
+            (code, "daemon" in err.lower()),
+            (1, True),
+            msg="A down daemon must exit 1 with a diagnostic mentioning the daemon.",
         )

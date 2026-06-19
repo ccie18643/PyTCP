@@ -105,6 +105,15 @@ from pytcp.cli.cli__ping import (
     resolve_destination,
     run_ping,
 )
+from pytcp.cli.cli__traceroute import (
+    TRACEROUTE__DEFAULT_MAX_HOPS,
+    TRACEROUTE__DEFAULT_PROBES,
+    TRACEROUTE__DEFAULT_TIMEOUT__SEC,
+    format_hop_line,
+    open_traceroute_socket,
+    run_traceroute,
+    traceroute_profile,
+)
 from pytcp.client import ClientStack, connect
 from pytcp.daemon.daemon import (
     default_pidfile_path,
@@ -944,6 +953,48 @@ def _nc_scan(args: argparse.Namespace, /) -> int:
     return 0 if any_open else 1
 
 
+def _cmd_traceroute(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'traceroute' command — trace the path to a host with
+    TTL-laddered ICMP Echo probes over a raw socket, in the style of the
+    Linux 'traceroute -I' utility. Exits non-zero if the destination is
+    not reached within the hop limit.
+    """
+
+    try:
+        is_ipv6, address = resolve_destination(args.destination)
+    except OSError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+
+    try:
+        sock = open_traceroute_socket(is_ipv6=is_ipv6)
+    except OSError as error:
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+
+    print(f"traceroute to {args.destination} ({address}), {args.max_hops} hops max")
+    reached = False
+    try:
+        for hop in run_traceroute(
+            sock,
+            dest_address=address,
+            profile=traceroute_profile(is_ipv6=is_ipv6),
+            identifier=os.getpid() & 0xFFFF,
+            max_hops=args.max_hops,
+            probes_per_hop=args.queries,
+            timeout=args.timeout,
+        ):
+            print(format_hop_line(hop))
+            if hop.reached:
+                reached = True
+    except KeyboardInterrupt:
+        print()
+    finally:
+        sock.close()
+    return 0 if reached else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the 'pytcp' multitool argument parser.
@@ -1129,6 +1180,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser_nc.add_argument("-v", "--verbose", action="store_true", help="Verbose status output to stderr.")
     parser_nc.set_defaults(func=_cmd_nc, needs_client=False)
+
+    parser_traceroute = subparsers.add_parser("traceroute", help="Trace the path to a host (Linux 'traceroute -I').")
+    parser_traceroute.add_argument("destination", help="IPv4 / IPv6 address or hostname to trace.")
+    parser_traceroute.add_argument(
+        "-m",
+        "--max-hops",
+        type=int,
+        default=TRACEROUTE__DEFAULT_MAX_HOPS,
+        metavar="HOPS",
+        help=f"Maximum TTL / hops to probe (default: {TRACEROUTE__DEFAULT_MAX_HOPS}).",
+    )
+    parser_traceroute.add_argument(
+        "-q",
+        "--queries",
+        type=int,
+        default=TRACEROUTE__DEFAULT_PROBES,
+        metavar="N",
+        help=f"Probes per hop (default: {TRACEROUTE__DEFAULT_PROBES}).",
+    )
+    parser_traceroute.add_argument(
+        "-w",
+        "--timeout",
+        type=float,
+        default=TRACEROUTE__DEFAULT_TIMEOUT__SEC,
+        metavar="SEC",
+        help=f"Seconds to wait per probe (default: {TRACEROUTE__DEFAULT_TIMEOUT__SEC}).",
+    )
+    parser_traceroute.set_defaults(func=_cmd_traceroute, needs_client=False)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(
