@@ -109,8 +109,15 @@ from pytcp.cli.cli__traceroute import (
     TRACEROUTE__DEFAULT_MAX_HOPS,
     TRACEROUTE__DEFAULT_PROBES,
     TRACEROUTE__DEFAULT_TIMEOUT__SEC,
+    TRACEROUTE__UDP_BASE_PORT,
+    ProbeClassifier,
+    ProbeFactory,
+    build_probe,
+    classify_icmp,
+    classify_udp,
     format_hop_line,
-    open_traceroute_socket,
+    open_icmp_socket,
+    open_udp_socket,
     run_traceroute,
     traceroute_profile,
 )
@@ -124,6 +131,7 @@ from pytcp.daemon.daemon import (
 from pytcp.ipc.ipc__errors import IpcRemoteError
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.socket import Socket
 
 
 def _parse_sysctl_value(text: str, /) -> bool | int | str:
@@ -953,12 +961,56 @@ def _nc_scan(args: argparse.Namespace, /) -> int:
     return 0 if any_open else 1
 
 
+def _traceroute_probers(
+    args: argparse.Namespace,
+    *,
+    is_ipv6: bool,
+    address: str,
+) -> tuple[Socket, Socket, ProbeFactory, ProbeClassifier]:
+    """
+    Open the send / receive sockets and build the '(make_probe,
+    classify)' pair for the selected traceroute mode. ICMP ('-I') sends
+    and receives on one raw ICMP socket; UDP (default) sends on a bound
+    UDP socket and receives on a separate raw ICMP socket, correlating
+    by the embedded source / per-probe destination port.
+    """
+
+    profile = traceroute_profile(is_ipv6=is_ipv6)
+
+    if args.icmp:
+        sock = open_icmp_socket(is_ipv6=is_ipv6)
+        identifier = os.getpid() & 0xFFFF
+
+        def make_probe_icmp(sequence: int, /) -> tuple[bytes, tuple[str, int]]:
+            return build_probe(profile, identifier=identifier, sequence=sequence), (address, 0)
+
+        def classify_icmp_response(data: bytes, sequence: int, /) -> str | None:
+            return classify_icmp(data, profile=profile, identifier=identifier, sequence=sequence)
+
+        return sock, sock, make_probe_icmp, classify_icmp_response
+
+    send_sock = open_udp_socket(is_ipv6=is_ipv6)
+    recv_sock = open_icmp_socket(is_ipv6=is_ipv6)
+    local_port = send_sock.getsockname()[1]
+
+    def make_probe_udp(sequence: int, /) -> tuple[bytes, tuple[str, int]]:
+        return b"", (address, TRACEROUTE__UDP_BASE_PORT + sequence)
+
+    def classify_udp_response(data: bytes, sequence: int, /) -> str | None:
+        return classify_udp(
+            data, profile=profile, local_port=local_port, dest_port=TRACEROUTE__UDP_BASE_PORT + sequence
+        )
+
+    return send_sock, recv_sock, make_probe_udp, classify_udp_response
+
+
 def _cmd_traceroute(args: argparse.Namespace, /) -> int:
     """
     Run the 'traceroute' command — trace the path to a host with
-    TTL-laddered ICMP Echo probes over a raw socket, in the style of the
-    Linux 'traceroute -I' utility. Exits non-zero if the destination is
-    not reached within the hop limit.
+    TTL-laddered probes, in the style of the Linux 'traceroute' utility.
+    UDP probes by default; ICMP Echo probes with '-I'. Both ride a raw
+    ICMP socket for the returned Time Exceeded / Unreachable. Exits
+    non-zero if the destination is not reached within the hop limit.
     """
 
     try:
@@ -967,8 +1019,9 @@ def _cmd_traceroute(args: argparse.Namespace, /) -> int:
         _report_daemon_unreachable(args.ipc_socket, error)
         return 1
 
+    profile = traceroute_profile(is_ipv6=is_ipv6)
     try:
-        sock = open_traceroute_socket(is_ipv6=is_ipv6)
+        send_sock, recv_sock, make_probe, classify = _traceroute_probers(args, is_ipv6=is_ipv6, address=address)
     except OSError as error:
         _report_daemon_unreachable(args.ipc_socket, error)
         return 1
@@ -977,13 +1030,15 @@ def _cmd_traceroute(args: argparse.Namespace, /) -> int:
     reached = False
     try:
         for hop in run_traceroute(
-            sock,
-            dest_address=address,
-            profile=traceroute_profile(is_ipv6=is_ipv6),
-            identifier=os.getpid() & 0xFFFF,
+            send_sock,
+            recv_sock,
+            ttl_level=profile.ttl_level,
+            ttl_optname=profile.ttl_optname,
             max_hops=args.max_hops,
             probes_per_hop=args.queries,
             timeout=args.timeout,
+            make_probe=make_probe,
+            classify=classify,
         ):
             print(format_hop_line(hop))
             if hop.reached:
@@ -991,7 +1046,9 @@ def _cmd_traceroute(args: argparse.Namespace, /) -> int:
     except KeyboardInterrupt:
         print()
     finally:
-        sock.close()
+        recv_sock.close()
+        if send_sock is not recv_sock:
+            send_sock.close()
     return 0 if reached else 1
 
 
@@ -1181,8 +1238,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser_nc.add_argument("-v", "--verbose", action="store_true", help="Verbose status output to stderr.")
     parser_nc.set_defaults(func=_cmd_nc, needs_client=False)
 
-    parser_traceroute = subparsers.add_parser("traceroute", help="Trace the path to a host (Linux 'traceroute -I').")
+    parser_traceroute = subparsers.add_parser("traceroute", help="Trace the path to a host (Linux 'traceroute').")
     parser_traceroute.add_argument("destination", help="IPv4 / IPv6 address or hostname to trace.")
+    parser_traceroute.add_argument(
+        "-I",
+        "--icmp",
+        action="store_true",
+        help="Use ICMP Echo probes instead of the default UDP probes.",
+    )
     parser_traceroute.add_argument(
         "-m",
         "--max-hops",

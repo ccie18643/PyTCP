@@ -23,24 +23,35 @@
 
 
 """
-This module contains the ICMP traceroute engine behind the 'pytcp
+This module contains the traceroute engine behind the 'pytcp
 traceroute' CLI subcommand, built on the daemon-backed 'pytcp.socket'
 drop-in and the shared ICMP Echo helpers from 'cli__ping'.
 
-It mirrors 'traceroute -I' / Windows 'tracert': it sends ICMP Echo
-Requests with an increasing IP TTL / IPv6 Hop Limit; each intermediate
-router answers with an ICMP Time Exceeded (its source address is the
-hop), and the destination answers with an Echo Reply (the trace ends).
-Both directions ride a single raw ICMP socket — the same 'raw_local
-_deliver' path 'ping' uses for its raw fallback — so no daemon control
-op is needed.
+It mirrors the classic Linux 'traceroute': probes are sent with an
+increasing IP TTL / IPv6 Hop Limit, each intermediate router answers
+with an ICMP Time Exceeded (its source address is the hop), and the
+destination answers in a way that ends the trace. Two modes share the
+TTL ladder:
+
+  - UDP (default): a UDP datagram is sent to an unlikely high port that
+    increments per probe; the destination answers with an ICMP
+    Destination Unreachable (Port). A UDP send socket carries the
+    probes; a separate raw ICMP socket receives the errors.
+  - ICMP ('-I'): an ICMP Echo Request is sent; the destination answers
+    with an Echo Reply. A single raw ICMP socket both sends and
+    receives.
+
+Both ride the 'raw_local_deliver' path 'ping' uses for its raw
+fallback (every inbound ICMP packet is cloned to a matching raw
+socket), so no daemon control op is needed.
 
 The engine is split so its wire logic is unit-testable without a
 daemon: 'traceroute_profile', 'build_probe', 'parse_probe_response',
-and 'format_hop_line' are pure functions, and 'run_traceroute' drives a
-*caller-supplied* socket and yields one 'HopResult' per TTL (so a fake
-socket exercises it). 'open_traceroute_socket' is the only
-daemon-touching helper.
+'classify_icmp', 'classify_udp', and 'format_hop_line' are pure
+functions, and 'run_traceroute' drives caller-supplied sockets plus a
+probe / classify pair (so socket doubles exercise it).
+'open_icmp_socket' / 'open_udp_socket' are the only daemon-touching
+helpers.
 
 packages/pytcp/pytcp/cli/cli__traceroute.py
 
@@ -59,13 +70,20 @@ TRACEROUTE__DEFAULT_MAX_HOPS: int = 30
 TRACEROUTE__DEFAULT_PROBES: int = 3
 TRACEROUTE__DEFAULT_TIMEOUT__SEC: float = 3.0
 TRACEROUTE__RECV_LEN: int = 2048
+# RFC-era traceroute base UDP port; each probe adds its sequence so the
+# embedded destination port uniquely identifies the probe a returned
+# ICMP error refers to.
+TRACEROUTE__UDP_BASE_PORT: int = 33434
 
-# Embedded-original offsets inside an ICMP Time Exceeded body: the
-# 8-octet Time Exceeded header is followed by the IP packet that
-# triggered it. The embedded IPv6 header is a fixed 40 octets; the
-# embedded IPv4 header length is read from its IHL nibble.
-_TIME_EXCEEDED__HEADER_LEN: int = 8
+# Embedded-original offsets inside an ICMP error body: the 8-octet
+# Time Exceeded / Destination Unreachable header is followed by the IP
+# packet that triggered it. The embedded IPv6 header is a fixed 40
+# octets; the embedded IPv4 header length is read from its IHL nibble.
+_ICMP_ERROR__HEADER_LEN: int = 8
 _IP6__HEADER_LEN: int = 40
+
+type ProbeFactory = Callable[[int], tuple[bytes, tuple[str, int]]]
+type ProbeClassifier = Callable[[bytes, int], str | None]
 
 
 class TracerouteProfile(NamedTuple):
@@ -77,6 +95,7 @@ class TracerouteProfile(NamedTuple):
     echo_request: int  # ICMPv4 8 / ICMPv6 128
     echo_reply: int  # ICMPv4 0 / ICMPv6 129
     time_exceeded: int  # ICMPv4 11 / ICMPv6 3
+    dest_unreachable: int  # ICMPv4 3 / ICMPv6 1
     compute_checksum: bool  # v4: build it; v6: the stack fills the ICMPv6 checksum
     ttl_level: int  # IPPROTO_IP / IPPROTO_IPV6 (setsockopt level)
     ttl_optname: int  # IP_TTL / IPV6_UNICAST_HOPS (setsockopt optname)
@@ -96,7 +115,7 @@ class ProbeResult(NamedTuple):
 class HopResult(NamedTuple):
     """
     The result for one TTL: its probe results and whether the
-    destination's Echo Reply arrived (the trace is complete).
+    destination answered (the trace is complete).
     """
 
     ttl: int
@@ -115,6 +134,7 @@ def traceroute_profile(*, is_ipv6: bool) -> TracerouteProfile:
             echo_request=128,
             echo_reply=129,
             time_exceeded=3,
+            dest_unreachable=1,
             compute_checksum=False,
             ttl_level=int(socket.IPPROTO_IPV6),
             ttl_optname=int(socket.IPV6_UNICAST_HOPS),
@@ -125,6 +145,7 @@ def traceroute_profile(*, is_ipv6: bool) -> TracerouteProfile:
         echo_request=8,
         echo_reply=0,
         time_exceeded=11,
+        dest_unreachable=3,
         compute_checksum=True,
         ttl_level=int(socket.IPPROTO_IP),
         ttl_optname=int(socket.IP_TTL),
@@ -144,6 +165,15 @@ def build_probe(profile: TracerouteProfile, /, *, identifier: int, sequence: int
     return struct.pack(ICMP__HEADER__STRUCT, profile.echo_request, 0, checksum, identifier, sequence)
 
 
+def _icmp_offset(data: bytes, profile: TracerouteProfile, /) -> int:
+    """
+    Return the offset of the ICMP message within a raw-socket datagram —
+    past the IPv4 header (its IHL) for v4, or zero for v6.
+    """
+
+    return ((data[0] & 0x0F) * 4) if profile.ip_header_included and data else 0
+
+
 def _echo_id_seq(buffer: bytes, offset: int, /) -> tuple[int, int] | None:
     """
     Read the ICMP Echo '(identifier, sequence)' at 'offset', or None when
@@ -156,6 +186,21 @@ def _echo_id_seq(buffer: bytes, offset: int, /) -> tuple[int, int] | None:
     return identifier, sequence
 
 
+def _embedded_l4_offset(data: bytes, profile: TracerouteProfile, icmp: int, /) -> int | None:
+    """
+    Return the offset of the embedded transport header inside an ICMP
+    error: past the 8-octet error header and the embedded IP header (v4
+    IHL / v6 fixed 40), or None when the buffer is too short.
+    """
+
+    embedded = icmp + _ICMP_ERROR__HEADER_LEN
+    if len(data) <= embedded:
+        return None
+    if profile.ip_header_included:
+        return embedded + (data[embedded] & 0x0F) * 4
+    return embedded + _IP6__HEADER_LEN
+
+
 def parse_probe_response(
     data: bytes,
     /,
@@ -165,43 +210,88 @@ def parse_probe_response(
     sequence: int,
 ) -> str | None:
     """
-    Classify a received raw-socket datagram against our outstanding
-    probe: return 'reply' for our Echo Reply (destination reached),
-    'time_exceeded' for a Time Exceeded carrying our embedded Echo
-    Request (an intermediate hop), or None for any unrelated message. A
-    v4 raw socket prepends the IPv4 header (skipped via its IHL); a v6
-    raw socket delivers the ICMPv6 message at offset 0.
+    Classify an ICMP-mode datagram against our outstanding probe: return
+    'reply' for our Echo Reply (destination reached), 'time_exceeded'
+    for a Time Exceeded carrying our embedded Echo Request (an
+    intermediate hop), or None for any unrelated message.
     """
 
-    icmp = ((data[0] & 0x0F) * 4) if profile.ip_header_included and data else 0
+    icmp = _icmp_offset(data, profile)
     if len(data) < icmp + 8:
         return None
     icmp_type = data[icmp]
 
     if icmp_type == profile.echo_reply:
-        if _echo_id_seq(data, icmp) == (identifier, sequence):
-            return "reply"
-        return None
+        return "reply" if _echo_id_seq(data, icmp) == (identifier, sequence) else None
 
     if icmp_type == profile.time_exceeded:
-        embedded = icmp + _TIME_EXCEEDED__HEADER_LEN
-        if len(data) <= embedded:
-            return None
-        if profile.ip_header_included:
-            embedded_icmp = embedded + (data[embedded] & 0x0F) * 4
-        else:
-            embedded_icmp = embedded + _IP6__HEADER_LEN
-        if _echo_id_seq(data, embedded_icmp) == (identifier, sequence):
+        embedded_icmp = _embedded_l4_offset(data, profile, icmp)
+        if embedded_icmp is not None and _echo_id_seq(data, embedded_icmp) == (identifier, sequence):
             return "time_exceeded"
 
     return None
 
 
-def open_traceroute_socket(*, is_ipv6: bool) -> socket.Socket:
+def classify_icmp(
+    data: bytes,
+    /,
+    *,
+    profile: TracerouteProfile,
+    identifier: int,
+    sequence: int,
+) -> str | None:
     """
-    Open the raw ICMP socket the trace rides — the same 'raw_local
-    _deliver' path that delivers inbound Time Exceeded and Echo Reply
-    messages to a matching raw socket.
+    Classify an ICMP-mode datagram as 'reached' (our Echo Reply), 'hop'
+    (a Time Exceeded for our probe), or None (unrelated).
+    """
+
+    match parse_probe_response(data, profile=profile, identifier=identifier, sequence=sequence):
+        case "reply":
+            return "reached"
+        case "time_exceeded":
+            return "hop"
+        case _:
+            return None
+
+
+def classify_udp(
+    data: bytes,
+    /,
+    *,
+    profile: TracerouteProfile,
+    local_port: int,
+    dest_port: int,
+) -> str | None:
+    """
+    Classify a UDP-mode datagram as 'reached' (a Destination Unreachable
+    for our probe), 'hop' (a Time Exceeded for our probe), or None. The
+    embedded original UDP header's source / destination ports must match
+    our probe (the destination port increments per probe, so it pins the
+    exact probe a returned error refers to).
+    """
+
+    icmp = _icmp_offset(data, profile)
+    if len(data) < icmp + 8:
+        return None
+    icmp_type = data[icmp]
+    if icmp_type not in (profile.time_exceeded, profile.dest_unreachable):
+        return None
+
+    embedded_udp = _embedded_l4_offset(data, profile, icmp)
+    if embedded_udp is None or len(data) < embedded_udp + 4:
+        return None
+    src_port, dst_port = struct.unpack_from("!HH", data, embedded_udp)
+    if src_port != local_port or dst_port != dest_port:
+        return None
+
+    return "reached" if icmp_type == profile.dest_unreachable else "hop"
+
+
+def open_icmp_socket(*, is_ipv6: bool) -> socket.Socket:
+    """
+    Open the raw ICMP socket the trace receives on (and, in ICMP mode,
+    sends on) — the 'raw_local_deliver' path that clones every inbound
+    ICMP packet to a matching raw socket.
     """
 
     family = socket.AF_INET6 if is_ipv6 else socket.AF_INET
@@ -209,84 +299,98 @@ def open_traceroute_socket(*, is_ipv6: bool) -> socket.Socket:
     return socket.socket(family, socket.SOCK_RAW, proto)
 
 
+def open_udp_socket(*, is_ipv6: bool) -> socket.Socket:
+    """
+    Open and bind a UDP socket for sending TTL-laddered UDP probes; the
+    bound local port pins the embedded source port the returned ICMP
+    errors must carry.
+    """
+
+    family = socket.AF_INET6 if is_ipv6 else socket.AF_INET
+    sock = socket.socket(family, socket.SOCK_DGRAM)
+    sock.bind(("::" if is_ipv6 else "0.0.0.0", 0))
+    return sock
+
+
 def _await_probe(
-    sock: socket.Socket,
+    recv_sock: socket.Socket,
     /,
     *,
-    profile: TracerouteProfile,
-    identifier: int,
+    classify: ProbeClassifier,
     sequence: int,
     timeout: float,
     start: float,
     time_fn: Callable[[], float],
-) -> ProbeResult:
+) -> tuple[ProbeResult, bool]:
     """
     Wait up to 'timeout' seconds for the response to one probe, ignoring
-    unrelated ICMP traffic. Return the responding hop and round-trip
-    time, or '(None, None)' on timeout.
+    unrelated ICMP traffic. Return the '(result, reached)' pair — the
+    responding hop and round-trip time (or '(None, None)' on timeout),
+    and whether the response ended the trace.
     """
 
     deadline = start + timeout
     while (remaining := deadline - time_fn()) > 0:
-        sock.settimeout(remaining)
+        recv_sock.settimeout(remaining)
         try:
-            data, address = sock.recvfrom(TRACEROUTE__RECV_LEN)
+            data, address = recv_sock.recvfrom(TRACEROUTE__RECV_LEN)
         except TimeoutError:
             break
-        kind = parse_probe_response(data, profile=profile, identifier=identifier, sequence=sequence)
+        kind = classify(data, sequence)
         if kind is None:
             continue
-        return ProbeResult(hop=address[0], rtt_ms=(time_fn() - start) * 1000.0)
-    return ProbeResult(hop=None, rtt_ms=None)
+        return ProbeResult(hop=address[0], rtt_ms=(time_fn() - start) * 1000.0), kind == "reached"
+    return ProbeResult(hop=None, rtt_ms=None), False
 
 
 def run_traceroute(
-    sock: socket.Socket,
+    send_sock: socket.Socket,
+    recv_sock: socket.Socket,
     /,
     *,
-    dest_address: str,
-    profile: TracerouteProfile,
-    identifier: int,
+    ttl_level: int,
+    ttl_optname: int,
     max_hops: int,
     probes_per_hop: int,
     timeout: float,
+    make_probe: ProbeFactory,
+    classify: ProbeClassifier,
     time_fn: Callable[[], float] = time.monotonic,
 ) -> Iterator[HopResult]:
     """
-    Drive 'sock' through the TTL ladder against 'dest_address', yielding
-    one 'HopResult' per TTL until the destination's Echo Reply arrives or
-    'max_hops' is reached. The caller owns socket construction, teardown,
-    and output formatting; this generator owns the per-probe TTL set,
-    send, and bounded wait. 'time_fn' is a zero-argument clock (injected
-    in tests).
+    Drive the TTL ladder, yielding one 'HopResult' per TTL until the
+    destination answers or 'max_hops' is reached. 'make_probe(sequence)'
+    returns the '(payload, target)' to send; 'classify(data, sequence)'
+    maps a received datagram to 'reached' / 'hop' / None. The TTL is set
+    on the send socket; responses are read on the receive socket (the
+    same object in ICMP mode). The caller owns socket construction and
+    teardown.
     """
 
     sequence = 0
     for ttl in range(1, max_hops + 1):
-        sock.setsockopt(profile.ttl_level, profile.ttl_optname, ttl)
+        send_sock.setsockopt(ttl_level, ttl_optname, ttl)
         results: list[ProbeResult] = []
         reached = False
         for _ in range(probes_per_hop):
             sequence += 1
-            probe = build_probe(profile, identifier=identifier, sequence=sequence)
+            payload, target = make_probe(sequence)
             start = time_fn()
             try:
-                sock.sendto(probe, (dest_address, 0))
+                send_sock.sendto(payload, target)
             except OSError:
                 results.append(ProbeResult(hop=None, rtt_ms=None))
                 continue
-            result = _await_probe(
-                sock,
-                profile=profile,
-                identifier=identifier,
+            result, hit = _await_probe(
+                recv_sock,
+                classify=classify,
                 sequence=sequence,
                 timeout=timeout,
                 start=start,
                 time_fn=time_fn,
             )
             results.append(result)
-            if result.hop == dest_address:
-                reached = True
+            reached = reached or hit
         yield HopResult(ttl=ttl, probes=tuple(results), reached=reached)
         if reached:
             return
