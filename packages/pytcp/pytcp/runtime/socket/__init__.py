@@ -149,6 +149,7 @@ class SolSocketOption(IntEnum):
     """
 
     SO_REUSEADDR = 2  # bool: bypass "address in use" on rebind
+    SO_ERROR = 4  # int: pending socket error, read-and-clear (getsockopt only; non-blocking connect SO_ERROR edge)
     SO_BROADCAST = 6  # bool: allow UDP broadcast send
     SO_SNDBUF = 7  # int: send-buffer cap (storage only)
     SO_RCVBUF = 8  # int: recv-buffer cap (storage only)
@@ -161,6 +162,7 @@ class SolSocketOption(IntEnum):
 
 
 SO_REUSEADDR = SolSocketOption.SO_REUSEADDR
+SO_ERROR = SolSocketOption.SO_ERROR
 SO_BROADCAST = SolSocketOption.SO_BROADCAST
 SO_SNDBUF = SolSocketOption.SO_SNDBUF
 SO_RCVBUF = SolSocketOption.SO_RCVBUF
