@@ -708,6 +708,124 @@ class TestSocketDropinEcho(TcpTestCase):
             msg="connect_ex must return 0 once the handshake completes.",
         )
 
+    def _wait_for_writable(self, sock: Socket) -> None:
+        """
+        Block until 'sock' becomes select-writable, nudging the virtual
+        clock so the daemon connect worker can resolve the handshake and
+        drain the priming filler.
+        """
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        while time.monotonic() < deadline:
+            if select.select([], [sock], [], 0)[1]:
+                return
+            self._advance(ms=10)
+            time.sleep(0.01)
+        raise AssertionError("The non-blocking connect socket never became writable.")
+
+    def test__socket_dropin__nonblocking_connect_einprogress_then_writable(self) -> None:
+        """
+        Ensure a non-blocking drop-in connect raises
+        BlockingIOError(EINPROGRESS), keeps the socket not-writable
+        until the SYN-ACK completes the handshake, then flips writable
+        with SO_ERROR cleared to zero — all without the caller blocking
+        the main thread on connect.
+
+        Reference: RFC 9293 §3.5 (Connection establishment).
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        self._force_iss(_ISS)
+        sock.bind(("0.0.0.0", _LOCAL_PORT))
+        sock.setblocking(False)
+
+        with self.assertRaises(BlockingIOError) as ctx:
+            sock.connect((str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EINPROGRESS,
+            msg="A non-blocking connect in progress must raise BlockingIOError(EINPROGRESS).",
+        )
+
+        self.assertEqual(
+            select.select([], [sock], [], 0)[1],
+            [],
+            msg="The connecting socket must not be select-writable before the handshake completes.",
+        )
+
+        self._wait_for_local_syn()
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=_PEER_ISS,
+                ack=_ISS + 1,
+                flags=("SYN", "ACK"),
+                win=_PEER_WIN,
+            )
+        )
+
+        self._wait_for_writable(sock)
+        self.assertEqual(
+            select.select([], [sock], [], _DEADLINE__SEC)[1],
+            [sock],
+            msg="The socket must become select-writable once the handshake completes.",
+        )
+        self.assertEqual(
+            sock.getsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_ERROR),
+            0,
+            msg="SO_ERROR must read 0 once the non-blocking connect succeeds.",
+        )
+
+    def test__socket_dropin__nonblocking_connect_econnrefused_on_rst(self) -> None:
+        """
+        Ensure a non-blocking drop-in connect refused by a peer RST
+        flips the socket writable and surfaces ECONNREFUSED through
+        getsockopt(SO_ERROR) — the BSD failed-connect readiness edge.
+
+        Reference: RFC 9293 §3.5 (Connection establishment).
+        Reference: RFC 9293 §3.10.7.3 (RST handling in SYN-SENT).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        self._force_iss(_ISS)
+        sock.bind(("0.0.0.0", _LOCAL_PORT))
+        sock.setblocking(False)
+
+        with self.assertRaises(BlockingIOError) as ctx:
+            sock.connect((str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EINPROGRESS,
+            msg="A non-blocking connect in progress must raise BlockingIOError(EINPROGRESS).",
+        )
+
+        self._wait_for_local_syn()
+        self._drive_rx(
+            frame=build_tcp4(
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=STACK__IP4_HOST.address,
+                sport=_REMOTE_PORT,
+                dport=_LOCAL_PORT,
+                seq=0,
+                ack=_ISS + 1,
+                flags=("RST", "ACK"),
+                win=0,
+            )
+        )
+
+        self._wait_for_writable(sock)
+        self.assertEqual(
+            sock.getsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_ERROR),
+            errno.ECONNREFUSED,
+            msg="SO_ERROR must read ECONNREFUSED after a non-blocking connect is refused by RST.",
+        )
+
     def _wait_for_any_syn(self, *, dport: int) -> TcpProbe:
         """
         Block until a SYN (no ACK) is emitted to 'dport' from any local

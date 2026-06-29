@@ -407,6 +407,15 @@ class Socket:
         Connect the socket to a remote address.
         """
 
+        if self._timeout == 0.0 and self._type is SocketType.STREAM:
+            # Non-blocking stream connect (A3.3): manufacture not-writable
+            # backpressure and kick off the daemon-side async handshake,
+            # then report in-progress per BSD non-blocking connect. The fd
+            # flips writable on resolution; the result reads through
+            # getsockopt(SOL_SOCKET, SO_ERROR).
+            cast("ClientTcpSocket", self._control_sock()).connect_start(address)
+            raise BlockingIOError(errno.EINPROGRESS, os.strerror(errno.EINPROGRESS))
+
         self._control_sock().connect(address)
 
     def connect_ex(self, address: tuple[str, int], /) -> int:

@@ -50,6 +50,13 @@ from pytcp.runtime.socket import AddressFamily, SocketType
 # backlog (mirrors the daemon-side 'TCP__DEFAULT_BACKLOG').
 IPC__CLIENT_TCP__DEFAULT_BACKLOG: int = 16
 
+# Non-blocking connect priming (A3.3): shrink the data channel's send
+# buffer and fill it so the client fd reads not-writable until the daemon
+# drains the filler on handshake resolution — the manufactured backpressure
+# behind the BSD writable-on-connect edge.
+IPC__CLIENT_CONNECT__PRIME_SNDBUF: int = 4096
+IPC__CLIENT_CONNECT__PRIME_CHUNK: bytes = bytes(4096)
+
 
 class ClientTcpSocket:
     """
@@ -119,6 +126,46 @@ class ClientTcpSocket:
         """
 
         socket_call(self._client, method="connect", handle=self._handle, args={"address": address})
+
+    def connect_start(self, address: tuple[str, int]) -> None:
+        """
+        Begin a non-blocking connect: prime the send buffer to manufacture
+        not-writable backpressure, then kick off the daemon-side async
+        handshake, which drains exactly the primed bytes on resolution to
+        flip this fd writable.
+        """
+
+        filler_len = self._prime_send_buffer()
+        socket_call(
+            self._client,
+            method="connect_start",
+            handle=self._handle,
+            args={"address": address, "filler_len": filler_len},
+        )
+
+    def _prime_send_buffer(self) -> int:
+        """
+        Shrink the data channel's send buffer and fill it to EAGAIN so the
+        client fd reads not-writable, returning the exact filler byte count
+        the daemon worker must drain to release the writable edge.
+        """
+
+        self._data_socket.setsockopt(
+            stdlib_socket.SOL_SOCKET,
+            stdlib_socket.SO_SNDBUF,
+            IPC__CLIENT_CONNECT__PRIME_SNDBUF,
+        )
+        prior_timeout = self._data_socket.gettimeout()
+        self._data_socket.setblocking(False)
+        written = 0
+        try:
+            while True:
+                written += self._data_socket.send(IPC__CLIENT_CONNECT__PRIME_CHUNK)
+        except BlockingIOError:
+            pass
+        finally:
+            self._data_socket.settimeout(prior_timeout)
+        return written
 
     def listen(self, *, backlog: int = IPC__CLIENT_TCP__DEFAULT_BACKLOG) -> None:
         """

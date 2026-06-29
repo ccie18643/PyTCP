@@ -59,14 +59,22 @@ from pytcp.ipc.ipc__dgram_bridge import DatagramBridge
 from pytcp.ipc.ipc__enums import IpcMessageKind
 from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__packet_bridge import PacketBridge
-from pytcp.ipc.ipc__socket_bridge import SocketBridge
+from pytcp.ipc.ipc__socket_bridge import (
+    IPC__BRIDGE__JOIN_TIMEOUT__SEC,
+    SocketBridge,
+)
 from pytcp.ipc.ipc__socket_rpc import (
     SocketRequest,
     decode_socket_request,
     encode_exception,
     encode_socket_ok,
 )
-from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import (
+    SO_ERROR,
+    SOL_SOCKET,
+    AddressFamily,
+    SocketType,
+)
 from pytcp.runtime.socket import socket as pytcp_socket
 from pytcp.runtime.socket.packet__socket import PacketSocket
 from pytcp.runtime.socket.ping__socket import PingSocket
@@ -80,6 +88,7 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "socket",
         "bind",
         "connect",
+        "connect_start",
         "listen",
         "accept",
         "setsockopt",
@@ -115,6 +124,11 @@ class _DaemonSocket:
         self._socket = sock
         self._bridge = bridge
         self._bridge_started = False
+        # Non-blocking connect (A3.3): the pending read-and-clear SO_ERROR
+        # the worker publishes once the async handshake resolves, plus the
+        # worker thread itself.
+        self._so_error: int | None = None
+        self._connect_thread: threading.Thread | None = None
 
     @property
     def socket(self) -> TcpSocket | UdpSocket | RawSocket | PingSocket:
@@ -135,6 +149,57 @@ class _DaemonSocket:
             self._bridge.start()
             self._bridge_started = True
 
+    def start_connect_async(self, address: tuple[str, int], filler_len: int, /) -> None:
+        """
+        Run a non-blocking connect on a background worker so the dispatch
+        thread returns at once (A3.3). The worker drives the blocking
+        handshake, publishes the resulting SO_ERROR, and — on success —
+        starts the data bridge.
+        """
+
+        self._connect_thread = threading.Thread(
+            target=self._run_connect,
+            args=(address, filler_len),
+            name="IPC-Connect",
+            daemon=True,
+        )
+        self._connect_thread.start()
+
+    def _run_connect(self, address: tuple[str, int], filler_len: int, /) -> None:
+        """
+        Worker body: drive the blocking handshake, capture its errno
+        (0 on success), drain the client's priming filler so its fd flips
+        writable on both success and failure, then start the bridge when
+        the connection established.
+        """
+
+        # The non-blocking connect path is stream-only (the session gates
+        # 'connect_start' to a TcpSocket), so the bridge is always a
+        # SocketBridge with the priming-drain affordance.
+        assert isinstance(self._bridge, SocketBridge)
+
+        try:
+            self._socket.connect(address)
+            so_error = 0
+        except OSError as error:
+            so_error = error.errno if error.errno is not None else errno.ECONNREFUSED
+
+        # Publish the result before flipping the client fd writable so a
+        # select-writable-then-read sequence observes the final SO_ERROR.
+        self._so_error = so_error
+        self._bridge.prime_drain(filler_len)
+        if so_error == 0:
+            self.start_bridge()
+
+    def take_so_error(self) -> int:
+        """
+        Return and clear the pending non-blocking-connect SO_ERROR,
+        defaulting to 0 (no error) — the BSD read-once SO_ERROR semantics.
+        """
+
+        so_error, self._so_error = self._so_error, None
+        return so_error if so_error is not None else 0
+
     def close(self, *, abort: bool) -> None:
         """
         Stop the bridge and tear down the connection. A TCP connection
@@ -151,6 +216,12 @@ class _DaemonSocket:
                     self._socket.close()
         else:
             self._socket.close()
+
+        # Reap a non-blocking connect worker — aborting / closing the stack
+        # socket above cancels any in-flight handshake, so the worker
+        # unblocks and exits promptly.
+        if self._connect_thread is not None:
+            self._connect_thread.join(timeout=IPC__BRIDGE__JOIN_TIMEOUT__SEC)
 
 
 class _DaemonPacketSocket:
@@ -297,6 +368,11 @@ class SocketSession:
                 sock.connect(request.args["address"])
                 daemon_socket.start_bridge()
                 return None, None
+            case "connect_start":
+                if not isinstance(sock, TcpSocket):
+                    raise OSError("connect_start() is supported only on a stream socket.")
+                daemon_socket.start_connect_async(request.args["address"], request.args["filler_len"])
+                return None, None
             case "listen":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("listen() is supported only on a stream socket.")
@@ -310,7 +386,14 @@ class SocketSession:
                 sock.setsockopt(request.args["level"], request.args["optname"], request.args["value"])
                 return None, None
             case "getsockopt":
-                return sock.getsockopt(request.args["level"], request.args["optname"]), None
+                level = request.args["level"]
+                optname = request.args["optname"]
+                # The non-blocking-connect SO_ERROR edge is owned by the
+                # daemon socket, not the stack socket: return-and-clear the
+                # worker-published handshake result (0 when none pending).
+                if level == SOL_SOCKET and optname == SO_ERROR:
+                    return daemon_socket.take_so_error(), None
+                return sock.getsockopt(level, optname), None
             case "shutdown":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("shutdown() is not supported on a datagram socket.")
