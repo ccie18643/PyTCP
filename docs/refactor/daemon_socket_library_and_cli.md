@@ -82,7 +82,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A3.0  | Feasibility: TcpSocket tx-writable signal + bridge pump (read-only) | **done** |
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | **done (validated)** |
 | A3.2  | Backpressure bridge + non-blocking data-phase readiness baseline | **done** |
-| A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | —      |
+| A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | **done** |
 | A3.4  | Non-blocking accept (listener readiness + accept_take)     | —      |
 | P2    | Proof point — real asyncio TCP client+server over the daemon | —    |
 
@@ -498,6 +498,29 @@ allowlist + client mirror.
   1071 checksum, RFC 792/4443 profile + request wire format, reply
   parsing, the loop over a fake socket, formatters, two `main(["ping",
   …])` command tests with the socket faked). lint clean.
+- **2026-06-29** — A3.3 non-blocking connect (two commits: `d66d45ec`
+  SO_ERROR constant + the previously-missing `SolSocketOption` parity
+  test; `d23752a7` the core). Re-verified the filler trick empirically
+  before building (fresh socketpair end writable; prime 4096 →
+  not-writable; drain 4096 → writable), settling a doc-vs-recon conflict
+  in the doc's favour — the data fd is *not* honestly selectable on the
+  connect edge, the trick is required. Landed exactly the §8 design:
+  client `ClientTcpSocket.connect_start` shrinks `SO_SNDBUF` + fills to
+  EAGAIN + sends a `connect_start` RPC carrying the filler length;
+  drop-in `Socket.connect` takes this path when non-blocking and raises
+  `BlockingIOError(EINPROGRESS)`; daemon `_DaemonSocket.start_connect_async`
+  spawns a per-handle worker so the dispatch thread returns at once; the
+  worker runs the blocking handshake, drains exactly the filler via the
+  new deadline-bounded `SocketBridge.prime_drain` (flips the fd writable
+  on success *and* failure), and starts the bridge on success; the
+  session intercepts `getsockopt(SOL_SOCKET, SO_ERROR)` to return-and-
+  clear the worker-published result. Two integration tests (EINPROGRESS
+  + not-writable → SYN-ACK → writable + SO_ERROR==0; EINPROGRESS → RST →
+  writable + SO_ERROR==ECONNREFUSED), neither needing a background
+  connect thread. Deferred-with-rationale: `SO_SNDBUF` stays shrunk
+  post-connect (invisible through the public getsockopt, which hits the
+  stack socket; the bridge drains continuously). lint clean, 111 ipc
+  integration + 464 socket unit passing. Remaining: A3.4 + P2.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
@@ -565,6 +588,9 @@ commits, head `20d2f3ec`). What's left is the fragile non-blocking
 spec so the work can resume cold.
 
 ### A3.3 — non-blocking connect (EINPROGRESS + worker + filler + SO_ERROR)
+
+**SHIPPED 2026-06-29** (commits `d66d45ec` + `d23752a7`) — the spec below
+was implemented as written; see the 2026-06-29 progress-log entry above.
 
 The hardest, most fragile piece. Mechanism (the A3.1-validated filler
 trick; see §7 "the trick"):
