@@ -207,18 +207,27 @@ class IpcServer(Subsystem):
         drops its reference whether or not the send succeeded.
         """
 
-        response, fd_socket = session.handle(request)
+        response, fd_obj = session.handle(request)
+        # The passed descriptor is either a socketpair end (a socket.socket,
+        # the data channel) or a raw fd (the listener's dup'd accept-
+        # readiness eventfd, A3.4); both ride SCM_RIGHTS by fileno.
+        fd = fd_obj.fileno() if isinstance(fd_obj, socket.socket) else fd_obj
         try:
-            if fd_socket is not None:
-                send_frame_with_fd(conn, response.to_bytes(), fd_socket.fileno())
+            if fd is not None:
+                send_frame_with_fd(conn, response.to_bytes(), fd)
             else:
                 send_frame(conn, response.to_bytes())
         except OSError:
             return False
         finally:
-            if fd_socket is not None:
+            if isinstance(fd_obj, socket.socket):
                 try:
-                    fd_socket.close()
+                    fd_obj.close()
+                except OSError:
+                    pass
+            elif fd_obj is not None:
+                try:
+                    os.close(fd_obj)
                 except OSError:
                     pass
         return True

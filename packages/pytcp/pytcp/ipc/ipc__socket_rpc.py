@@ -285,3 +285,68 @@ def accept_socket(client: IpcClient, /, *, handle: int) -> tuple[int, tuple[str,
     raise IpcConnectionError(
         f"Daemon returned an unexpected response kind {response.kind!r} to an accept call.",
     )
+
+
+def listen_socket(client: IpcClient, /, *, handle: int, backlog: int) -> int:
+    """
+    Issue the fd-bearing 'listen' call and return the accept-readiness
+    descriptor — the listener's eventfd, select-readable while the accept
+    queue is non-empty — which the client owns and polls for non-blocking
+    accept.
+
+    Raises 'IpcRemoteError' on a remote failure (the fd-less error path)
+    and closes any stray passed descriptor before raising.
+    """
+
+    response, fd = client.request_with_fd(
+        IpcOp.SOCKET_CALL,
+        body=encode_socket_request(method="listen", handle=handle, args={"backlog": backlog}),
+    )
+
+    if response.kind is IpcMessageKind.RESPONSE_OK:
+        if fd is None:
+            raise IpcConnectionError("Daemon marked a socket listening but passed no accept-readiness descriptor.")
+        return fd
+
+    if fd is not None:
+        os.close(fd)
+
+    if response.kind is IpcMessageKind.RESPONSE_ERROR:
+        raise_socket_error(response.body)
+
+    raise IpcConnectionError(
+        f"Daemon returned an unexpected response kind {response.kind!r} to a listen call.",
+    )
+
+
+def accept_take_socket(client: IpcClient, /, *, handle: int) -> tuple[int, tuple[str, int], int]:
+    """
+    Issue the non-blocking fd-bearing 'accept_take' call and return
+    '(child_handle, peer_address, data_fd)' for a queued child, or raise
+    'BlockingIOError(EAGAIN)' (via the remote error path) when the accept
+    queue is empty.
+
+    Closes any stray passed descriptor before raising.
+    """
+
+    response, fd = client.request_with_fd(
+        IpcOp.SOCKET_CALL,
+        body=encode_socket_request(method="accept_take", handle=handle, args={}),
+    )
+
+    if response.kind is IpcMessageKind.RESPONSE_OK:
+        if fd is None:
+            raise IpcConnectionError("Daemon accepted a connection but passed no data-channel descriptor.")
+        value = decode_socket_value(response.body)
+        peer = value["peer"]
+        return int(value["handle"]), (peer[0], peer[1]), fd
+
+    if fd is not None:
+        os.close(fd)
+
+    if response.kind is IpcMessageKind.RESPONSE_ERROR:
+        raise_socket_error(response.body)
+
+    raise IpcConnectionError(
+        f"Daemon returned an unexpected response kind {response.kind!r} to an accept_take call.",
+    )

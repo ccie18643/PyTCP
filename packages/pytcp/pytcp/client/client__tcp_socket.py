@@ -38,11 +38,18 @@ pytcp/client/client__tcp_socket.py
 ver 3.0.8
 """
 
+import os
 from typing import Self
 
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
-from pytcp.ipc.ipc__socket_rpc import accept_socket, open_socket, socket_call
+from pytcp.ipc.ipc__socket_rpc import (
+    accept_socket,
+    accept_take_socket,
+    listen_socket,
+    open_socket,
+    socket_call,
+)
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 from pytcp.runtime.socket import AddressFamily, SocketType
 
@@ -73,14 +80,19 @@ class ClientTcpSocket:
         handle, data_fd = open_socket(client, family=family, type_=SocketType.STREAM)
         self._handle = handle
         self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM, fileno=data_fd)
+        # Accept-readiness fd (A3.4): the listener's eventfd, received at
+        # listen(); None until then. select / poll / epoll on a listener
+        # poll this for a queued child, not the (data-less) data channel.
+        self._accept_fd: int | None = None
 
     def fileno(self) -> int:
         """
-        Return the data-channel descriptor, selectable with select / poll
-        / epoll.
+        Return the descriptor selectable with select / poll / epoll: the
+        accept-readiness eventfd for a listener, otherwise the data
+        channel.
         """
 
-        return self._data_socket.fileno()
+        return self._accept_fd if self._accept_fd is not None else self._data_socket.fileno()
 
     def settimeout(self, timeout: float | None, /) -> None:
         """
@@ -170,10 +182,21 @@ class ClientTcpSocket:
     def listen(self, *, backlog: int = IPC__CLIENT_TCP__DEFAULT_BACKLOG) -> None:
         """
         Mark the daemon socket as a passive listener with an accept queue
-        bounded by 'backlog'.
+        bounded by 'backlog', adopting the accept-readiness eventfd the
+        daemon passes back so select / poll can wait for a queued child.
         """
 
-        socket_call(self._client, method="listen", handle=self._handle, args={"backlog": backlog})
+        self._accept_fd = listen_socket(self._client, handle=self._handle, backlog=backlog)
+
+    def accept_nonblocking(self) -> tuple[Self, tuple[str, int]]:
+        """
+        Take one queued child without blocking, returning a new
+        'ClientTcpSocket' and the peer's '(host, port)' address, or raise
+        'BlockingIOError(EAGAIN)' when the accept queue is empty (A3.4).
+        """
+
+        child_handle, peer, data_fd = accept_take_socket(self._client, handle=self._handle)
+        return self._adopt(self._client, child_handle, data_fd), peer
 
     def accept(self) -> tuple[Self, tuple[str, int]]:
         """
@@ -197,6 +220,7 @@ class ClientTcpSocket:
         instance._client = client
         instance._handle = handle
         instance._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM, fileno=data_fd)
+        instance._accept_fd = None
         return instance
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
@@ -268,3 +292,9 @@ class ClientTcpSocket:
             socket_call(self._client, method="close", handle=self._handle, args={})
         finally:
             self._data_socket.close()
+            if self._accept_fd is not None:
+                try:
+                    os.close(self._accept_fd)
+                except OSError:
+                    pass
+                self._accept_fd = None

@@ -446,7 +446,14 @@ class Socket:
 
         if self._type is not SocketType.STREAM:
             raise OSError(errno.EOPNOTSUPP, "accept() is only supported on a stream socket.")
-        child, peer = cast("ClientTcpSocket", self._control_sock()).accept()
+        listener = cast("ClientTcpSocket", self._control_sock())
+        # Non-blocking accept (A3.4): take a queued child or raise
+        # BlockingIOError(EAGAIN); the listener fd is select-readable
+        # (its accept-readiness eventfd) when a child is waiting.
+        if self._timeout == 0.0:
+            child, peer = listener.accept_nonblocking()
+        else:
+            child, peer = listener.accept()
         return Socket(child, family=self._family, type=self._type, proto=self._proto), peer
 
     def send(self, data: bytes, /) -> int:

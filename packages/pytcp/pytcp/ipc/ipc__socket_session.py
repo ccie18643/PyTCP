@@ -50,6 +50,7 @@ ver 3.0.8
 """
 
 import errno
+import os
 import socket
 import threading
 from typing import Any
@@ -91,6 +92,7 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "connect_start",
         "listen",
         "accept",
+        "accept_take",
         "setsockopt",
         "getsockopt",
         "shutdown",
@@ -284,7 +286,7 @@ class SocketSession:
         self._next_handle = 0
         self._stop_event = stop_event
 
-    def handle(self, request: IpcMessage, /) -> tuple[IpcMessage, socket.socket | None]:
+    def handle(self, request: IpcMessage, /) -> tuple[IpcMessage, socket.socket | int | None]:
         """
         Serve one SOCKET_CALL request, returning the response and — for
         the 'socket' call — the client-end socket to pass alongside it.
@@ -333,7 +335,7 @@ class SocketSession:
                 pass
         self._sockets.clear()
 
-    def _invoke(self, request: SocketRequest, /) -> tuple[Any, socket.socket | None]:
+    def _invoke(self, request: SocketRequest, /) -> tuple[Any, socket.socket | int | None]:
         """
         Route an allowlisted socket method to the addressed handle.
         """
@@ -377,11 +379,19 @@ class SocketSession:
                 if not isinstance(sock, TcpSocket):
                     raise OSError("listen() is supported only on a stream socket.")
                 sock.listen(backlog=request.args["backlog"])
-                return None, None
+                # Pass the listener's accept-readiness eventfd (A3.4) so the
+                # client can select for a queued child. A dup'd eventfd
+                # shares the kernel counter, so the daemon's accept-side
+                # drain reflects on the client's fd with no watcher thread.
+                return None, os.dup(sock.fileno())
             case "accept":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("accept() is supported only on a stream socket.")
                 return self._accept(sock)
+            case "accept_take":
+                if not isinstance(sock, TcpSocket):
+                    raise OSError("accept_take() is supported only on a stream socket.")
+                return self._accept_take(sock)
             case "setsockopt":
                 sock.setsockopt(request.args["level"], request.args["optname"], request.args["value"])
                 return None, None
@@ -415,7 +425,7 @@ class SocketSession:
         daemon_socket: _DaemonPacketSocket,
         request: SocketRequest,
         /,
-    ) -> tuple[Any, socket.socket | None]:
+    ) -> tuple[Any, socket.socket | int | None]:
         """
         Route an AF_PACKET socket's call. A link-layer socket addresses
         with a 'sockaddr_ll' and supports only 'bind' / 'close' as control
@@ -446,18 +456,46 @@ class SocketSession:
                 child, peer = listening.accept(timeout=IPC__SESSION__ACCEPT_POLL__SEC)
             except TimeoutError:
                 continue
-
-            assert isinstance(child, TcpSocket)
-            data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
-            child_socket = _DaemonSocket(child, SocketBridge(child, data_end))
-            child_socket.start_bridge()
-
-            handle = self._next_handle
-            self._next_handle += 1
-            self._sockets[handle] = child_socket
-            return {"handle": handle, "peer": peer}, client_end
+            return self._build_accepted_child(child, peer)
 
         raise OSError("accept() interrupted by daemon shutdown.")
+
+    def _accept_take(self, listening: TcpSocket, /) -> tuple[dict[str, Any], socket.socket]:
+        """
+        Non-blocking accept (A3.4): take one queued child without blocking
+        the dispatch thread, or raise 'BlockingIOError(EAGAIN)' when the
+        accept queue is empty. The client gates this on the listener's
+        select-readable accept-readiness fd; the take itself drains that
+        eventfd when it removes the last queued child.
+        """
+
+        try:
+            child, peer = listening.accept(timeout=0)
+        except TimeoutError as error:
+            raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN)) from error
+        return self._build_accepted_child(child, peer)
+
+    def _build_accepted_child(
+        self,
+        child: pytcp_socket,
+        peer: tuple[str, int],
+        /,
+    ) -> tuple[dict[str, Any], socket.socket]:
+        """
+        Wrap an accepted child stack socket in a started data bridge,
+        register its handle, and return the handle and peer address with
+        the client end to pass.
+        """
+
+        assert isinstance(child, TcpSocket)
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        child_socket = _DaemonSocket(child, SocketBridge(child, data_end))
+        child_socket.start_bridge()
+
+        handle = self._next_handle
+        self._next_handle += 1
+        self._sockets[handle] = child_socket
+        return {"handle": handle, "peer": peer}, client_end
 
     def _open(
         self,
