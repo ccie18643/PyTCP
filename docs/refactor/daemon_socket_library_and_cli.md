@@ -83,7 +83,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A3.1  | Prototype the writable-on-connect edge (throwaway)         | **done (validated)** |
 | A3.2  | Backpressure bridge + non-blocking data-phase readiness baseline | **done** |
 | A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | **done** |
-| A3.4  | Non-blocking accept (listener readiness + accept_take)     | —      |
+| A3.4  | Non-blocking accept (listener readiness + accept_take)     | **done** |
 | P2    | Proof point — real asyncio TCP client+server over the daemon | —    |
 
 **A3.0 findings (read-only, 2026-06-01):** the existing `SocketBridge`
@@ -521,6 +521,27 @@ allowlist + client mirror.
   post-connect (invisible through the public getsockopt, which hits the
   stack socket; the bridge drains continuously). lint clean, 111 ipc
   integration + 464 socket unit passing. Remaining: A3.4 + P2.
+- **2026-06-29** — A3.4 non-blocking accept (commit `95142ec2`). Landed a
+  *cleaner* mechanism than the §8 spec's polling-watcher + queue: the
+  in-daemon `TcpSocket` listener **already** maintains accept-readiness as
+  a level-triggered OS eventfd (`fileno()`) — the FSM signals it readable
+  when `tcp__fsm__syn_rcvd` queues a child and `accept()` drains it when
+  the queue empties. So instead of a watcher thread duplicating the accept
+  queue, the daemon `dup()`s that eventfd at `listen()` and passes it to
+  the client via SCM_RIGHTS; dup'd eventfds share the kernel counter, so
+  the daemon's accept-side drain reflects on the client fd with **no
+  watcher thread and no handle-table locking** (verified empirically:
+  signal → readable, drain → not-readable across dups). `listen` is now
+  fd-bearing; `ClientTcpSocket.fileno()` returns the eventfd for a
+  listener (data channel otherwise); `accept_take` is a non-blocking
+  dispatch-thread accept returning the child or `BlockingIOError(EAGAIN)`,
+  sharing child-building with blocking `_accept`. The `handle()` fd-pass
+  contract widened to `socket.socket | int | None` so the raw eventfd
+  rides SCM_RIGHTS (it cannot be socket-wrapped — ENOTSOCK). Integration
+  test proves empty→EAGAIN/not-readable → driven passive handshake →
+  readable + child(peer) → not-readable, no background accept thread. 112
+  ipc integration + 110 ipc unit + 464 socket unit passing. Only P2
+  (asyncio proof point) remains on the A3 track.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
@@ -642,6 +663,16 @@ readiness eventfd) — needs `ipc__fdpass` generalised to an fd array; bigger
 change, flagged not-default.
 
 ### A3.4 — non-blocking accept (listener readiness + accept_take)
+
+**SHIPPED 2026-06-29** (commit `95142ec2`) — implemented with a *simpler*
+mechanism than the sketch below: rather than a polling watcher that
+duplicates the accept queue + writes a separate eventfd, the daemon
+shares the listener's **existing** stack-socket accept-readiness eventfd
+(`TcpSocket.fileno()`) with the client by `dup()`+SCM_RIGHTS at
+`listen()`; the shared kernel counter means the daemon's accept-side
+drain flips the client fd not-readable with no watcher thread. See the
+2026-06-29 progress-log entry. The original sketch is retained below for
+context.
 
 Listener fd must be **readable** when a child is queued. Daemon: on a
 non-blocking listener, a watcher polls `TcpSocket.accept`, builds the child
