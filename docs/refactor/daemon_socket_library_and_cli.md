@@ -84,7 +84,7 @@ clean backpressure design is, and the honest limits of "100% asyncio /
 | A3.2  | Backpressure bridge + non-blocking data-phase readiness baseline | **done** |
 | A3.3  | Non-blocking connect (connect-as-window-0 + SO_ERROR)      | **done** |
 | A3.4  | Non-blocking accept (listener readiness + accept_take)     | **done** |
-| P2    | Proof point — real asyncio TCP client+server over the daemon | —    |
+| P2    | Proof point — real asyncio TCP client+server over the daemon | **done** |
 
 **A3.0 findings (read-only, 2026-06-01):** the existing `SocketBridge`
 *already* does data-phase backpressure — its TX pump stops draining the
@@ -542,6 +542,23 @@ allowlist + client mirror.
   readable + child(peer) → not-readable, no background accept thread. 112
   ipc integration + 110 ipc unit + 464 socket unit passing. Only P2
   (asyncio proof point) remains on the A3 track.
+- **2026-06-29** — P2 asyncio proof point (commit `62b98dec`), closing
+  the A3 non-blocking readiness track. Two integration tests drive
+  asyncio's low-level primitives against daemon-backed drop-in sockets
+  with the synthetic wire as peer: `loop.sock_connect`+`sock_sendall`+
+  `sock_recv` echo (exercises A3.3 + A3.2) and `loop.sock_accept`+
+  `sock_recv` (exercises A3.4). The asyncio loop runs on a background
+  thread — its selector polls the drop-in's real data-channel fd /
+  accept-readiness eventfd in real time — while the main thread plays
+  the wire. Verified asyncio's `loop.sock_*` are duck-typed (only
+  `_check_ssl_socket` + a debug `gettimeout` check), so the drop-in
+  `Socket` works where the stubs name `socket.socket` (bridged with a
+  documented `cast`). No source change — a pure proof over the
+  A3.2/A3.3/A3.4 surface. 114 ipc integration passing, deterministic
+  across repeat runs. **The A3 track (non-blocking / asyncio readiness)
+  is complete.** Remaining daemon-track work is the long-tail
+  follow-ups in §8 (TLS, datagram asyncio, sendmsg/recvmsg cmsg on the
+  drop-in, every setsockopt honored, B2 output-parity polish).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
@@ -684,6 +701,13 @@ Blocking `accept` keeps the existing RPC. Tests:
 `test__ipc__nonblocking_accept.py`.
 
 ### P2 — asyncio proof point
+
+**SHIPPED 2026-06-29** (commit `62b98dec`) — realized as two focused
+proofs (asyncio client echo + asyncio server accept) driving asyncio's
+low-level `loop.sock_*` primitives against the drop-in over the
+synthetic wire, rather than a full two-asyncio-endpoints echo (the mock
+harness has no loopback for a same-stack client+server). The A3 track is
+complete; see the 2026-06-29 progress-log entry.
 
 A real `asyncio` TCP echo client+server over the daemon (the
 `sys.modules['socket'] = pytcp.socket` monkeypatch path + an event loop),
