@@ -3,11 +3,12 @@ ROOT_PATH:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 PYTCP_PATH := packages/pytcp/pytcp
 NET_ADDR_PATH := packages/net_addr/net_addr
 NET_PROTO_PATH := packages/net_proto/net_proto
-EXAMPLES_PATH := examples_legacy
+EXAMPLES_PATH := examples
+EXAMPLES_LEGACY_PATH := examples_legacy
 PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 NET_ADDR_FILES := $(shell find ${NET_ADDR_PATH} -name '*.py')
 NET_PROTO_FILES := $(shell find ${NET_PROTO_PATH} -name '*.py')
-EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
+EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} ${EXAMPLES_LEGACY_PATH} -name '*.py')
 ROOT_FILES := tests_runner.py
 
 # Every linted file in one list (codespell / isort / black / flake8
@@ -17,7 +18,7 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # mypy '-p' takes import names, not paths. net_addr now lives at
 # packages/net_addr/net_addr (resolved via its editable install in
 # the 'venv' target), so its name is decoupled from its path here.
-MYPY_PACKAGES := pytcp net_addr net_proto examples_legacy
+MYPY_PACKAGES := pytcp net_addr net_proto examples examples_legacy
 
 # The entire pylint configuration — which checks fire AND which paths
 # are exempt — lives in pyproject.toml ([tool.pylint.*]: 'disable = all'
