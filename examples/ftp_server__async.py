@@ -46,7 +46,7 @@ Needs a running daemon that owns the TAP interface. 'pytcp stack start'
 autoconfigures via DHCPv4, so either run a DHCP server on the link or boot
 the daemon with a static address ('run_daemon(..., ip4_host=...)'). Then:
 
-    PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server.py \
+    PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server__async.py \
         --host <stack-ip> --root /srv/ftp
     ftp <stack-ip>          # any FTP client, passive mode
 
@@ -54,7 +54,7 @@ Verified live end-to-end (real TAP + real 'ftplib' client, control +
 PASV-data connections, byte-exact binary transfer); the full reproducible
 recipe is in 'docs/refactor/daemon_socket_library_and_cli.md' (§9).
 
-examples/ftp_server.py
+examples/ftp_server__async.py
 
 ver 3.0.8
 """
@@ -173,7 +173,7 @@ async def _open_pasv(session: _Session, host: str, make_socket: MakeSocket) -> i
 
     server = await asyncio.start_server(_on_data, sock=listener)
     session.pasv = _PasvData(server=server, incoming=incoming, port=port)
-    return port
+    return int(port)
 
 
 async def _take_data_writer(session: _Session) -> tuple[asyncio.StreamReader, asyncio.StreamWriter] | None:

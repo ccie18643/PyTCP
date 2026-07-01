@@ -725,7 +725,7 @@ column alignment parity with real `ip`/`ss`).
 ## 9. Live verification — async FTP over a real stack (2026-06-30)
 
 The asyncio integration (streams + `start_server`, control + PASV-data
-connections) was confirmed **live** end-to-end: the `examples/ftp_server.py`
+connections) was confirmed **live** end-to-end: the `examples/ftp_server__async.py`
 async FTP server, run over a real PyTCP daemon on a TAP interface, served a
 full session to a real `ftplib` client over the wire. The committed example
 needed **zero code changes**.
@@ -751,7 +751,7 @@ python -c 'from net_addr import Ip4IfAddr; \
 ping -c1 192.168.100.2          # sanity: ICMP over the TAP
 
 # 3. The async FTP server against that daemon, and a real client.
-PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server.py \
+PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server__async.py \
     --host 192.168.100.2 --root /srv/ftp &
 python -c 'import ftplib; f=ftplib.FTP(); f.connect("192.168.100.2",21); \
   f.login("anonymous","x"); print(f.pwd()); f.retrlines("LIST"); \
