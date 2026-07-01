@@ -41,6 +41,9 @@ pytcp/client/client__datagram_socket.py
 ver 3.0.8
 """
 
+from collections.abc import Iterable
+
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__dgram_bridge import IPC__DGRAM_BRIDGE__CHUNK_SIZE
@@ -110,6 +113,29 @@ class _ClientDatagramBase:
 
         self._data_socket.send(encode_dgram(None, data))
         return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
+        flags: int = 0,
+        address: tuple[str, int] | None = None,
+        /,
+    ) -> int:
+        """
+        Send a datagram from the scatter-gather 'buffers' with optional
+        ancillary control messages, mirroring stdlib 'socket.sendmsg'. The
+        cmsg (e.g. an IPv4 IP_TOS / IPv6 IPV6_TCLASS entry) is framed
+        alongside the payload; the daemon applies it via the stack
+        socket's 'sendmsg'. 'flags' is accepted for signature parity and
+        ignored (no send flags apply over the datagram bridge).
+        """
+
+        _ = flags
+        payload = b"".join(bytes(buffer) for buffer in buffers)
+        cmsg = [(level, ctype, bytes(cdata)) for level, ctype, cdata in ancdata]
+        self._data_socket.send(encode_dgram(address, payload, cmsg))
+        return len(payload)
 
     def recvfrom(self, bufsize: int = IPC__CLIENT_DGRAM__MAX_PAYLOAD) -> tuple[bytes, tuple[str, int]]:
         """

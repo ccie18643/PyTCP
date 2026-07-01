@@ -39,9 +39,11 @@ ver 3.0.8
 import queue
 import socket
 import time
+from collections.abc import Iterable
 from typing import override
 from unittest import TestCase
 
+from net_addr import Buffer
 from pytcp.ipc.ipc__dgram_bridge import DatagramBridge
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 
@@ -56,6 +58,7 @@ class _DatagramSocketStub:
     def __init__(self) -> None:
         self._inbound: queue.Queue[tuple[bytes, list[tuple[int, int, bytes]], tuple[str, int]]] = queue.Queue()
         self.outbound: list[tuple[bytes, tuple[str, int] | None]] = []
+        self.sendmsg_calls: list[tuple[bytes, list[tuple[int, int, bytes]], tuple[str, int] | None]] = []
 
     def inject(
         self,
@@ -86,6 +89,17 @@ class _DatagramSocketStub:
     def send(self, data: bytes) -> int:
         self.outbound.append((data, None))
         return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]],
+        flags: int,
+        address: tuple[str, int] | None,
+    ) -> int:
+        payload = b"".join(bytes(buffer) for buffer in buffers)
+        self.sendmsg_calls.append((payload, [(level, ctype, bytes(cdata)) for level, ctype, cdata in ancdata], address))
+        return len(payload)
 
 
 class TestIpcDatagramBridge(TestCase):
@@ -186,6 +200,34 @@ class TestIpcDatagramBridge(TestCase):
             msg="The TX pump must replay an address-less datagram as a connected send.",
         )
 
+    def test__ipc__dgram_bridge__tx_with_cmsg_routes_to_sendmsg(self) -> None:
+        """
+        Ensure a datagram the client writes WITH ancillary control
+        messages is replayed into the stack as a 'sendmsg' carrying the
+        cmsg (so the stack can honour an IP_TOS / IPV6_TCLASS byte),
+        rather than the cmsg-less sendto path.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        cmsg = [(0, 1, b"\x28")]  # IPPROTO_IP / IP_TOS -> TOS 0x28.
+        self._client_end.send(encode_dgram(("10.0.1.7", 80), b"marked", cmsg))
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        while time.monotonic() < deadline and not self._stack.sendmsg_calls:
+            time.sleep(0.01)
+
+        self.assertEqual(
+            self._stack.sendmsg_calls[0] if self._stack.sendmsg_calls else None,
+            (b"marked", cmsg, ("10.0.1.7", 80)),
+            msg="The TX pump must route a datagram with cmsg through sendmsg with the cmsg intact.",
+        )
+        self.assertEqual(
+            self._stack.outbound,
+            [],
+            msg="A datagram with cmsg must not also take the cmsg-less sendto path.",
+        )
+
 
 class _ScriptedDatagramSocket:
     """
@@ -230,6 +272,17 @@ class _ScriptedDatagramSocket:
         """Discard sent bytes (TX is not under test here)."""
 
         return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]],
+        flags: int,
+        address: tuple[str, int] | None,
+    ) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return sum(len(bytes(buffer)) for buffer in buffers)
 
 
 class TestIpcDatagramBridge__FaultInjection(TestCase):

@@ -57,9 +57,11 @@ import errno
 import io
 import os
 import threading
+from collections.abc import Iterable
 from types import TracebackType
 from typing import TYPE_CHECKING, Self, cast, override
 
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket as _stdlib_socket
 from pytcp.runtime.socket import AddressFamily, SocketType
@@ -480,6 +482,26 @@ class Socket:
         if self._type not in (SocketType.DGRAM, SocketType.RAW):
             raise OSError(errno.EOPNOTSUPP, "sendto() is only supported on a datagram or raw socket.")
         return cast("ClientUdpSocket | ClientRawSocket | ClientPingSocket", self._control_sock()).sendto(data, address)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
+        flags: int = 0,
+        address: tuple[str, int] | None = None,
+        /,
+    ) -> int:
+        """
+        Send a datagram from the scatter-gather 'buffers' with optional
+        ancillary control messages, mirroring stdlib 'socket.sendmsg'. An
+        IPv4 IP_TOS / IPv6 IPV6_TCLASS cmsg sets the outbound datagram's
+        DSCP + ECN (the send-direction mirror of the IP_RECVTOS recvmsg
+        path). Datagram sockets only.
+        """
+
+        if self._type is not SocketType.DGRAM:
+            raise OSError(errno.EOPNOTSUPP, "sendmsg() is only supported on a datagram socket.")
+        return cast("ClientUdpSocket", self._control_sock()).sendmsg(buffers, ancdata, flags, address)
 
     def recv(self, bufsize: int, /) -> bytes:
         """

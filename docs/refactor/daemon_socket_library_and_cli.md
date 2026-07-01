@@ -574,6 +574,23 @@ allowlist + client mirror.
   `send()` with no destination and the reply was silently dropped. Fixed
   in `runtime/socket/__init__.py::getpeername` (raise `ENOTCONN` when the
   remote port is zero) with a base-socket unit test. lint clean.
+- **2026-07-01** — `sendmsg` cmsg on the drop-in (one §8 long-tail item
+  closed). The drop-in `Socket` gained `sendmsg` (datagram; it already had
+  `recvmsg`), and a per-send IP_TOS (IPv4) / IPV6_TCLASS (IPv6) ancillary
+  control message now round-trips end-to-end: drop-in `Socket.sendmsg` →
+  `ClientUdpSocket.sendmsg` (frames the cmsg via `encode_dgram`) → the
+  datagram bridge `_pump_tx` (routes a framed cmsg through the stack
+  socket's `sendmsg` instead of the cmsg-less `sendto`) → `UdpSocket.sendmsg`,
+  which now honours the per-send TOS byte by overriding the outbound DSCP +
+  ECN (the send-direction mirror of the IP_RECVTOS `recvmsg` path; flips
+  that method's `# Phase 2` marker for TOS — IP_TTL / IP_PKTINFO remain
+  deferred). `send` / `sendto` were refactored into thin wrappers over
+  private `_send` / `_sendto` helpers taking explicit dscp/ecn, so the
+  public overrides keep their signatures. Tests-first: a stack unit test
+  (IP_TOS cmsg → outbound DSCP/ECN; unknown cmsg ignored), a bridge unit
+  test (framed cmsg routes to `sendmsg`), and two daemon integration tests
+  (`ClientUdpSocket` + drop-in `Socket` sendmsg IP_TOS → wire DSCP). lint
+  clean.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
@@ -732,11 +749,11 @@ common options), not a turnkey gate (see §7).
 
 ### Long-tail follow-ups (tracked, out of A3 scope)
 
-TLS over the drop-in; `sendmsg`/`recvmsg` cmsg on the drop-in `Socket`;
-every `setsockopt` *honored* (not merely accepted); errno-exactness
-sweep; B2 polish (`pytcp addr` JSON/`-j`, column alignment parity with
-real `ip`/`ss`). (Datagram-endpoint asyncio — **done** 2026-07-01, see the
-§6 phase log.)
+TLS over the drop-in; every `setsockopt` *honored* (not merely
+accepted); errno-exactness sweep; B2 polish (`pytcp addr` JSON/`-j`,
+column alignment parity with real `ip`/`ss`). (Datagram-endpoint asyncio
+— **done** 2026-07-01; `sendmsg`/`recvmsg` cmsg on the drop-in `Socket` —
+**done** 2026-07-01; see the §6 phase log.)
 
 ## 9. Live verification — async FTP over a real stack (2026-06-30)
 

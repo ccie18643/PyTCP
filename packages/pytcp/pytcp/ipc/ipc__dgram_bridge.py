@@ -43,8 +43,10 @@ ver 3.0.8
 
 import socket
 import threading
+from collections.abc import Iterable
 from typing import Protocol
 
+from net_addr import Buffer
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 from pytcp.ipc.ipc__errors import IpcFrameError
 
@@ -85,6 +87,21 @@ class DatagramSocket(Protocol):
     def send(self, data: bytes) -> int:
         """
         Send 'data' as a datagram to the connected peer.
+        """
+
+        ...
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]],
+        flags: int,
+        address: tuple[str, int] | None,
+    ) -> int:
+        """
+        Send a datagram from 'buffers' with ancillary control messages,
+        honouring an IP_TOS / IPV6_TCLASS cmsg, to 'address' (or the
+        connected peer when 'address' is None).
         """
 
         ...
@@ -164,14 +181,17 @@ class DatagramBridge:
                 continue
 
             try:
-                # The send side honours no cmsg in PyTCP, so the framed
-                # ancillary data (if any) is decoded and ignored here.
-                address, _cmsg, payload = decode_dgram(blob)
+                address, cmsg, payload = decode_dgram(blob)
             except IpcFrameError:
                 continue
 
             try:
-                if address is None:
+                if cmsg:
+                    # Honour a per-send cmsg (IP_TOS / IPV6_TCLASS) via the
+                    # stack socket's sendmsg — it sets the outbound DSCP +
+                    # ECN. With no cmsg, keep the plain send / sendto path.
+                    self._dgram_socket.sendmsg([payload], cmsg, 0, address)
+                elif address is None:
                     self._dgram_socket.send(payload)
                 else:
                     self._dgram_socket.sendto(payload, address)

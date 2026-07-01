@@ -50,6 +50,7 @@ from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
 from pytcp import stack
 from pytcp.ipc.ipc__server import IpcServer
+from pytcp.runtime.socket import IP_TOS, IPPROTO_IP
 from pytcp.socket.socket__dropin import _reset_default_stack
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
@@ -217,4 +218,43 @@ class TestSocketDropinUdp(UdpTestCase):
             (probe.payload, probe.dport, str(probe.ip_dst)),
             (b"pong", _REMOTE_PORT, str(HOST_A__IP4_ADDRESS)),
             msg="A datagram sent via the drop-in sendto() must reach the wire addressed to the peer.",
+        )
+
+    def test__socket_dropin_udp__sendmsg_ip_tos_marks_the_wire_dscp(self) -> None:
+        """
+        Ensure a datagram written through the drop-in's stdlib-shaped
+        'sendmsg' with an IPv4 IP_TOS ancillary control message carries
+        that DSCP in the outbound IPv4 header — the send-direction mirror
+        of the IP_RECVTOS recvmsg path.
+
+        Reference: RFC 1122 §4.1.4 (application control of the TOS byte).
+        Reference: RFC 2474 §3 (DSCP is the high 6 bits of the TOS byte).
+        """
+
+        sock = self._bound_socket()
+        # TOS 0x28 -> DSCP 0x0a (40 >> 2 = 10).
+        sock.sendmsg(
+            [b"marked"],
+            [(int(IPPROTO_IP), int(IP_TOS), b"\x28")],
+            0,
+            (str(HOST_A__IP4_ADDRESS), _REMOTE_PORT),
+        )
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        probe = None
+        while time.monotonic() < deadline:
+            for frame in list(self._frames_tx):
+                candidate = self._parse_tx(frame)
+                if candidate.sport == _LOCAL_PORT and candidate.payload == b"marked":
+                    probe = candidate
+                    break
+            if probe is not None:
+                break
+            time.sleep(0.01)
+
+        assert probe is not None, "The drop-in sendmsg datagram never reached the wire."
+        self.assertEqual(
+            probe.ip_dscp,
+            0x0A,
+            msg="A drop-in sendmsg IP_TOS cmsg must mark the outbound datagram's DSCP.",
         )
