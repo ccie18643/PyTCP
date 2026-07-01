@@ -81,6 +81,14 @@ class PacketRx:
         # RFC 6980 §5.
         self.was_fragmented: bool = False
 
+        # Set to True by the loopback interface's RX consumer on a
+        # packet it delivers internally. The IPv4 / IPv6 parsers
+        # consult it to skip the RFC 1122 §3.2.1.3(g) loopback-source
+        # martian check — a wire-ingress policy that must not apply to
+        # traffic looped inside the host (where loopback addresses are
+        # the whole point).
+        self.from_loopback: bool = False
+
         self.ethernet: EthernetParser
         self.ethernet_802_3: Ethernet8023Parser
         self.llc: LlcParser

@@ -61,6 +61,10 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
         """
 
         self._frame = packet_rx.frame
+        # Whether this packet was looped internally by the loopback
+        # interface — used by '_validate_sanity' to skip the
+        # loopback-source martian check (a wire-ingress-only policy).
+        self._from_loopback = packet_rx.from_loopback
 
         self._validate_integrity()
         self._parse()
@@ -146,8 +150,11 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
         # IPv4 §3.2.1.3(g) loopback ban; Linux enforces the same
         # rule. The unspecified address (::) is deliberately not
         # rejected here so DAD-style NS messages (RFC 4861 §4.3)
-        # can reach the ICMPv6 RX path.
-        if (src := self.src).is_loopback:
+        # can reach the ICMPv6 RX path. The check is skipped when the
+        # RX consumer marked the packet 'from_loopback' — a packet
+        # looped internally by the loopback interface legitimately
+        # carries a ::1 source.
+        if not self._from_loopback and (src := self.src).is_loopback:
             raise Ip6SanityError(
                 f"The 'src' field must not be a loopback address. Got: {src!r}",
                 pointer=IP6__POINTER__SRC,

@@ -4076,7 +4076,13 @@ class PacketHandlerLoopback(
         Deliver a queued loopback packet into the IPv4 or IPv6 RX path by
         its IP version nibble. Unlike the TUN path there is no PI /
         EtherType prefix — the enqueued frame is a bare IP packet.
+
+        Marks the packet 'from_loopback' so the IP parser skips the
+        loopback-source martian check (a wire-ingress policy that must
+        not apply to internally-looped traffic).
         """
+
+        packet_rx.from_loopback = True
 
         match packet_rx.frame[0] >> 4:
             case 4:
@@ -4088,6 +4094,28 @@ class PacketHandlerLoopback(
                     "stack",
                     f"<WARN>Loopback received unknown IP version {version}, dropping packet</>",
                 )
+
+    @override
+    def _marshal_tx(self, run: Callable[[], TxStatus], /) -> TxStatus:
+        """
+        Run a '_phtx_*' pipeline inline. 'lo' has no TX ring — every
+        packet its '_phtx_ip4/6' assembles is diverted onto the loopback
+        delivery ring (a thread-safe, lock-guarded enqueue), so there is
+        no wire single-writer to marshal onto. Per-interface TX state
+        ('_ip4_id', the sharded stat counters, the copy-on-write ifaddr
+        lists) stays safe under concurrent callers without the ring.
+        """
+
+        return run()
+
+    @override
+    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+        """
+        Fire-and-forget variant of '_marshal_tx' for the loopback
+        interface — run the pipeline inline (see '_marshal_tx').
+        """
+
+        run()
 
     @override
     def _accepts_local_dst_ip4(self, dst: Ip4Address, /) -> bool:

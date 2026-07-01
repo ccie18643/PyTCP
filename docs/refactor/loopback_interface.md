@@ -182,4 +182,27 @@ registry-gains-`lo` fixups).
 
 ## 7. Phase log
 
-_(append one entry per landed phase: commit hash + one-line summary)_
+- **P0** `9efd9f7d` — `InterfaceLayer.LOOPBACK` enum member + Link API
+  `_FLAGS_BY_LAYER` mapping to `{LinkFlag.LOOPBACK}`.
+- **P1** `b3890ea8` — `LoopbackRing` (deque+eventfd queue) +
+  `PacketHandlerLoopback` (subclasses `PacketHandlerL3` for zero
+  union-type churn; owns 127.0.0.1/8 + ::1/128; `_subsystem_loop` drains
+  the ring and dispatches by IP version). `INTERFACE__LOOPBACK__MTU`.
+- **P2+P3** `b4d26586` — lifecycle wiring: `init()` always registers `lo`
+  (after any boot interface); start/stop guards for the LOOPBACK layer;
+  `stack.loopback_handler()`; opt-in `mock__loopback` +
+  `NetworkTestCase._register_loopback` / `drive_loopback` harness
+  helpers; `LoopbackRing.__del__` fd safety net.
+- **P4** `6e30832b` — IP-TX loopback diversion: `_phtx_ip4/6` enqueue a
+  locally-destined packet onto the ring and return
+  `PASSED__IP{4,6}__LOOPBACK`; `_effective_ip6_hop_limit` override.
+- **P5** `5f335f7c` — RX acceptance hook `_accepts_local_dst_ip4/6`
+  (base = membership test; lo override accepts 127/8 · ::1 · own-IP),
+  called from `_forward_or_deliver_ip4/6`.
+- **P6** — end-to-end TCP-over-loopback proofs (127.0.0.1 and own-IP
+  handshakes complete, no wire frames). Prerequisites discovered and
+  fixed: `PacketHandlerLoopback._marshal_tx` runs inline (lo has no TX
+  ring), and a `PacketRx.from_loopback` flag lets the IPv4/IPv6 parsers
+  skip the RFC 1122 §3.2.1.3(g) / RFC 4291 §2.5.3 loopback-source
+  martian check for internally-looped traffic (a wire-ingress-only
+  policy).
