@@ -38,6 +38,7 @@ pytcp/client/client__tcp_socket.py
 ver 3.0.8
 """
 
+import errno
 import os
 from typing import Self
 
@@ -195,6 +196,7 @@ class ClientTcpSocket:
         'BlockingIOError(EAGAIN)' when the accept queue is empty (A3.4).
         """
 
+        self._require_listening()
         child_handle, peer, data_fd = accept_take_socket(self._client, handle=self._handle)
         return self._adopt(self._client, child_handle, data_fd), peer
 
@@ -205,8 +207,21 @@ class ClientTcpSocket:
         the passed descriptor) and the peer's '(host, port)' address.
         """
 
+        self._require_listening()
         child_handle, peer, data_fd = accept_socket(self._client, handle=self._handle)
         return self._adopt(self._client, child_handle, data_fd), peer
+
+    def _require_listening(self) -> None:
+        """
+        Raise 'OSError(EINVAL)' when 'accept()' is called on a socket that
+        was never placed into the LISTEN state (no 'listen()' call, so no
+        accept-readiness fd) — matching the stdlib / BSD 'accept(2)'
+        contract, which rejects a non-listening socket rather than
+        blocking or returning a spurious child.
+        """
+
+        if self._accept_fd is None:
+            raise OSError(errno.EINVAL, os.strerror(errno.EINVAL))
 
     @classmethod
     def _adopt(cls, client: IpcClient, handle: int, data_fd: int, /) -> Self:

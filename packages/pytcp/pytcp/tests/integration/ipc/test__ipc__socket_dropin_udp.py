@@ -39,6 +39,7 @@ pytcp/tests/integration/ipc/test__ipc__socket_dropin_udp.py
 ver 3.0.8
 """
 
+import errno
 import os
 import tempfile
 import time
@@ -218,6 +219,63 @@ class TestSocketDropinUdp(UdpTestCase):
             (probe.payload, probe.dport, str(probe.ip_dst)),
             (b"pong", _REMOTE_PORT, str(HOST_A__IP4_ADDRESS)),
             msg="A datagram sent via the drop-in sendto() must reach the wire addressed to the peer.",
+        )
+
+    def test__socket_dropin_udp__send_unconnected_raises_edestaddrreq(self) -> None:
+        """
+        Ensure 'send' (no destination) on an unconnected datagram socket
+        raises OSError(EDESTADDRREQ) — matching stdlib — rather than
+        silently accepting the datagram the fire-and-forget bridge would
+        otherwise drop for having no destination.
+
+        Reference: RFC 768 (UDP — a send needs a destination).
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+
+        with self.assertRaises(OSError) as ctx:
+            sock.send(b"nowhere")
+
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EDESTADDRREQ,
+            msg="send() on an unconnected datagram socket must raise OSError(EDESTADDRREQ).",
+        )
+
+    def test__socket_dropin_udp__connected_send_reaches_the_wire(self) -> None:
+        """
+        Ensure 'send' on a CONNECTED datagram socket (after connect())
+        still reaches the wire — the connected-send path stays functional
+        alongside the unconnected-send EDESTADDRREQ guard.
+
+        Reference: RFC 768 (UDP — send to the connected peer).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.connect((str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
+
+        sock.send(b"connected")
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        probe = None
+        while time.monotonic() < deadline:
+            for frame in list(self._frames_tx):
+                candidate = self._parse_tx(frame)
+                if candidate.payload == b"connected":
+                    probe = candidate
+                    break
+            if probe is not None:
+                break
+            time.sleep(0.01)
+
+        assert probe is not None, "The connected send() datagram never reached the wire."
+        self.assertEqual(
+            (probe.dport, str(probe.ip_dst)),
+            (_REMOTE_PORT, str(HOST_A__IP4_ADDRESS)),
+            msg="A connected send() must reach the wire addressed to the connected peer.",
         )
 
     def test__socket_dropin_udp__sendmsg_ip_tos_marks_the_wire_dscp(self) -> None:

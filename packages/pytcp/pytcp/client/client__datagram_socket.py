@@ -41,6 +41,8 @@ pytcp/client/client__datagram_socket.py
 ver 3.0.8
 """
 
+import errno
+import os
 from collections.abc import Iterable
 
 from net_addr import Buffer
@@ -73,6 +75,10 @@ class _ClientDatagramBase:
         self._handle = handle
         self._family = family
         self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_DGRAM, fileno=data_fd)
+        # Whether 'connect()' has set a default peer. 'send()' (no
+        # destination) requires it — matching stdlib, which raises
+        # EDESTADDRREQ on a connection-less datagram send.
+        self._connected = False
 
     def fileno(self) -> int:
         """
@@ -111,6 +117,8 @@ class _ClientDatagramBase:
         Send 'data' as a datagram to the connected peer.
         """
 
+        if not self._connected:
+            raise OSError(errno.EDESTADDRREQ, os.strerror(errno.EDESTADDRREQ))
         self._data_socket.send(encode_dgram(None, data))
         return len(data)
 
@@ -192,6 +200,7 @@ class _ClientDatagramBase:
         """
 
         socket_call(self._client, method="connect", handle=self._handle, args={"address": address})
+        self._connected = True
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """

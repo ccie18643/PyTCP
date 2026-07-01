@@ -179,6 +179,32 @@ class TestIpcNonblockingAccept(TcpTestCase):
             time.sleep(0.01)
         raise AssertionError("The non-blocking listener never became select-readable.")
 
+    def test__nonblocking_accept__on_non_listening_socket_raises_einval(self) -> None:
+        """
+        Ensure accept() on a socket that was never placed into the LISTEN
+        state (no listen() call) raises OSError(EINVAL) — matching stdlib
+        — rather than blocking forever or returning a spurious child.
+
+        Reference: RFC 9293 §3.9 (User/TCP interface).
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.bind((str(STACK__IP4_HOST.address), _LISTEN_PORT))
+        # Non-blocking so a missing guard surfaces immediately (as the
+        # wrong error) instead of hanging the test.
+        sock.setblocking(False)
+
+        with self.assertRaises(OSError) as ctx:
+            sock.accept()
+
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EINVAL,
+            msg="accept() on a non-listening socket must raise OSError(EINVAL).",
+        )
+
     def test__nonblocking_accept__eagain_then_readable_then_child(self) -> None:
         """
         Ensure a non-blocking listening drop-in socket is not

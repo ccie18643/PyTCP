@@ -591,6 +591,29 @@ allowlist + client mirror.
   test (framed cmsg routes to `sendmsg`), and two daemon integration tests
   (`ClientUdpSocket` + drop-in `Socket` sendmsg IP_TOS → wire DSCP). lint
   clean.
+- **2026-07-01** — errno-exactness sweep (partial). Probed the drop-in
+  against real stdlib sockets across ~14 error conditions (closed-fd,
+  unknown sockopt, wrong-state ops, unconnected send/recv). Most already
+  match (EBADF on closed, ENOPROTOOPT on unknown option, ENOTSUP on
+  listen/accept over UDP, ENOTCONN on `getpeername`). Two wrong-state
+  mismatches — where the async/fire-and-forget bridge either silently
+  accepted or **hung** instead of raising — fixed:
+  - `accept()` on a socket that never `listen()`ed now raises
+    `OSError(EINVAL)` (`ClientTcpSocket._require_listening`, keyed off the
+    listen-time accept-readiness fd) instead of blocking forever /
+    returning `EAGAIN`.
+  - `send()` (no destination) on an unconnected datagram socket now raises
+    `OSError(EDESTADDRREQ)` (`ClientUdpSocket` gains a `_connected` flag set
+    by `connect()`) instead of silently dropping the datagram.
+  Tests-first for both, plus a connected-`send()` regression. **Deferred**
+  (documented, not fixed): TCP `send`/`recv` on a never-connected,
+  never-listened socket should raise `EPIPE` / `ENOTCONN` but currently
+  returns OK / blocks. Fixing needs a client-side connected-state flag on
+  `ClientTcpSocket` that must interlock with the A3.3 non-blocking-connect
+  path (which has no client-side completion callback — a naïve flag would
+  wrongly reject a post-`connect_start` `send`/`recv`); left for a
+  dedicated pass so the hard-won non-blocking-connect machinery is not
+  destabilised.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
