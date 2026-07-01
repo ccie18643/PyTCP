@@ -665,6 +665,35 @@ class PacketHandler(Subsystem, ABC):
 
         return ip4_broadcast
 
+    def _accepts_local_dst_ip4(self, dst: Ip4Address, /) -> bool:
+        """
+        Return whether an inbound IPv4 datagram destined to 'dst' is for
+        this interface to deliver locally — the RFC 1812 §5.2.1
+        host-deliver test. True when no unicast is configured yet (the
+        DHCP-client accept-all bootstrap) or 'dst' is one of this
+        interface's unicast / joined-multicast / broadcast addresses.
+        The loopback interface overrides this to also accept the whole
+        127.0.0.0/8 range and any of the host's own unicast addresses.
+        """
+
+        return (not self._ip4_unicast) or dst in {
+            *self._ip4_unicast,
+            *self._ip4_multicast,
+            *self._ip4_broadcast,
+        }
+
+    def _accepts_local_dst_ip6(self, dst: Ip6Address, /) -> bool:
+        """
+        Return whether an inbound IPv6 datagram destined to 'dst' is for
+        this interface to deliver locally — the host-deliver test. True
+        when 'dst' is one of this interface's unicast or joined-multicast
+        addresses (the latter covers link-local, solicited-node, and the
+        all-nodes group). The loopback interface overrides this to also
+        accept ::1 and any of the host's own unicast addresses.
+        """
+
+        return dst in {*self._ip6_unicast, *self._ip6_multicast}
+
     @override
     def _start(self) -> None:
         """
@@ -4059,6 +4088,28 @@ class PacketHandlerLoopback(
                     "stack",
                     f"<WARN>Loopback received unknown IP version {version}, dropping packet</>",
                 )
+
+    @override
+    def _accepts_local_dst_ip4(self, dst: Ip4Address, /) -> bool:
+        """
+        Accept local delivery for the whole 127.0.0.0/8 loopback range
+        and for any address the host owns (own-IP loops), on top of the
+        base membership test. 'lo' owns only 127.0.0.1 as an interface
+        address, so 'is_loopback' is what covers the rest of 127/8, and
+        'stack.local_ip4_unicast()' covers a packet looped to one of the
+        host's routable addresses.
+        """
+
+        return dst.is_loopback or dst in stack.local_ip4_unicast() or super()._accepts_local_dst_ip4(dst)
+
+    @override
+    def _accepts_local_dst_ip6(self, dst: Ip6Address, /) -> bool:
+        """
+        Accept local delivery for ::1 and for any address the host owns
+        (own-IP loops), on top of the base membership test.
+        """
+
+        return dst.is_loopback or dst in stack.local_ip6_unicast() or super()._accepts_local_dst_ip6(dst)
 
     @override
     def _effective_ip6_hop_limit(self) -> int:

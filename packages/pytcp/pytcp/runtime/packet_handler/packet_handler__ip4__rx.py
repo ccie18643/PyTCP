@@ -95,12 +95,7 @@ class Ip4RxHandler:
         # with the forwarding plane).
         """
 
-        deliver_locally = (not self._if._ip4_unicast) or packet_rx.ip4.dst in {
-            *self._if._ip4_unicast,
-            *self._if._ip4_multicast,
-            *self._if._ip4_broadcast,
-        }
-        if deliver_locally:
+        if self._if._accepts_local_dst_ip4(packet_rx.ip4.dst):
             return True
 
         self._if._packet_stats_rx.ip4__dst_unknown__drop += 1

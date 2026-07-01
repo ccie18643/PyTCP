@@ -121,6 +121,15 @@ class _StubInterface:
     def _ip6_unicast(self) -> list[Ip6Address]:
         return self._ip6_unicast_list
 
+    def _accepts_local_dst_ip6(self, dst: Ip6Address, /) -> bool:
+        """
+        Mirror the base 'PacketHandler._accepts_local_dst_ip6' host-deliver
+        membership test the refactored '_forward_or_deliver_ip6' delegates
+        to.
+        """
+
+        return dst in {*self._ip6_unicast, *self._ip6_multicast}
+
     def _phrx_ip6_frag(self, packet_rx: PacketRx, /) -> None:
         self.dispatched.append("ip6_frag")
 

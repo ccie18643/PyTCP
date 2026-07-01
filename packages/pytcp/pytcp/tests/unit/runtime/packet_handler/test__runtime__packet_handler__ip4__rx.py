@@ -148,6 +148,19 @@ class _StubInterface:
 
         return self._ip4_broadcast_list
 
+    def _accepts_local_dst_ip4(self, dst: Ip4Address, /) -> bool:
+        """
+        Mirror the base 'PacketHandler._accepts_local_dst_ip4' host-deliver
+        membership test the refactored '_forward_or_deliver_ip4' delegates
+        to.
+        """
+
+        return (not self._ip4_unicast) or dst in {
+            *self._ip4_unicast,
+            *self._ip4_multicast,
+            *self._ip4_broadcast,
+        }
+
     def _phrx_icmp4(self, packet_rx: PacketRx, /) -> None:
         self.dispatched.append("icmp4")
 

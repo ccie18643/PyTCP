@@ -126,7 +126,7 @@ class Ip6RxHandler:
         # 'ip6__dst_unknown__drop').
         """
 
-        if packet_rx.ip6.dst in {*self._if._ip6_unicast, *self._if._ip6_multicast}:
+        if self._if._accepts_local_dst_ip6(packet_rx.ip6.dst):
             return True
 
         self._if._packet_stats_rx.ip6__dst_unknown__drop += 1
