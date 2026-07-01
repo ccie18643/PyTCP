@@ -559,6 +559,21 @@ allowlist + client mirror.
   is complete.** Remaining daemon-track work is the long-tail
   follow-ups in §8 (TLS, datagram asyncio, sendmsg/recvmsg cmsg on the
   drop-in, every setsockopt honored, B2 output-parity polish).
+- **2026-07-01** — Datagram-endpoint asyncio (one §8 long-tail item
+  closed). Tests-first integration proof that
+  `loop.create_datagram_endpoint(protocol_factory, sock=<drop-in UDP>)`
+  works over the daemon: a peer datagram on the synthetic wire reaches
+  the `DatagramProtocol.datagram_received` (data + sender address), and
+  the protocol's `transport.sendto` reply reaches the wire addressed to
+  the peer (`test__ipc__asyncio_datagram.py`, mirrors the streams proof —
+  asyncio loop on a background thread, wire driven from the main thread).
+  The proof drove out a real stdlib-parity bug: the stack socket's
+  `getpeername()` returned `('0.0.0.0', 0)` for an unconnected socket
+  instead of raising `OSError(ENOTCONN)`, so asyncio's datagram transport
+  (which calls `getpeername()` to detect a connected socket) sent via
+  `send()` with no destination and the reply was silently dropped. Fixed
+  in `runtime/socket/__init__.py::getpeername` (raise `ENOTCONN` when the
+  remote port is zero) with a base-socket unit test. lint clean.
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 
@@ -717,10 +732,11 @@ common options), not a turnkey gate (see §7).
 
 ### Long-tail follow-ups (tracked, out of A3 scope)
 
-TLS over the drop-in; datagram-endpoint asyncio; `sendmsg`/`recvmsg` cmsg
-on the drop-in `Socket`; every `setsockopt` *honored* (not merely
-accepted); errno-exactness sweep; B2 polish (`pytcp addr` JSON/`-j`,
-column alignment parity with real `ip`/`ss`).
+TLS over the drop-in; `sendmsg`/`recvmsg` cmsg on the drop-in `Socket`;
+every `setsockopt` *honored* (not merely accepted); errno-exactness
+sweep; B2 polish (`pytcp addr` JSON/`-j`, column alignment parity with
+real `ip`/`ss`). (Datagram-endpoint asyncio — **done** 2026-07-01, see the
+§6 phase log.)
 
 ## 9. Live verification — async FTP over a real stack (2026-06-30)
 
