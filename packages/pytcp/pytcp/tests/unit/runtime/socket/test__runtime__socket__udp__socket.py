@@ -678,21 +678,53 @@ class TestUdpSocketSendmsg(_UdpSocketTestCase):
                 msg="sendmsg(address=...) must send like sendto() and return the byte count.",
             )
 
-    def test__udp_socket__sendmsg_accepts_and_ignores_ancdata(self) -> None:
+    def test__udp_socket__sendmsg_honors_ip_tos_cmsg(self) -> None:
         """
-        Ensure sendmsg() accepts a well-formed ancillary-data list and
-        silently ignores it (Phase-1 honours no send-side cmsg type,
-        matching Linux's silent-ignore of unhandled cmsgs).
+        Ensure sendmsg() with an IPv4 IP_TOS ancillary control message
+        marks the outbound datagram's DSCP + ECN from that per-send TOS
+        byte (the send-direction mirror of the IP_RECVTOS recvmsg path),
+        overriding the socket's default TOS.
+
+        Reference: RFC 1122 §4.1.4 (application control of the TOS byte).
+        Reference: RFC 2474 §3 (DSCP is the high 6 bits of the TOS byte).
+        """
+
+        s = self._connected_socket()
+        captured = self._capture_payload()
+
+        # TOS 0x2a -> DSCP 0x0a (42 >> 2 = 10), ECN 0x02 (42 & 3).
+        s.sendmsg([b"x"], [(int(IPPROTO_IP), int(IP_TOS), b"\x2a")])
+
+        self.assertEqual(
+            (captured["ip__dscp"], captured["ip__ecn"]),
+            (0x0A, 0x02),
+            msg="sendmsg() must set the outbound DSCP + ECN from the IP_TOS cmsg.",
+        )
+
+    def test__udp_socket__sendmsg_ignores_unknown_cmsg(self) -> None:
+        """
+        Ensure sendmsg() accepts a well-formed but unrecognised
+        ancillary-data list and silently ignores it (matching Linux's
+        silent-ignore of unhandled cmsgs), leaving the socket's default
+        TOS in place.
 
         Reference: socket(7) sendmsg (ancillary-data ignore).
         """
 
         s = self._connected_socket()
+        captured = self._capture_payload()
 
+        # An unknown (level, type) cmsg — not IP_TOS — must not alter the
+        # datagram's DSCP (the default 0 from an unset IP_TOS option).
         self.assertEqual(
-            s.sendmsg([b"x"], [(int(IPPROTO_IP), int(IP_TOS), b"\x10")]),
+            s.sendmsg([b"x"], [(0xFFFF, 0xFFFF, b"\x10")]),
             1,
-            msg="sendmsg() must accept a valid cmsg 3-tuple and send the payload regardless.",
+            msg="sendmsg() must accept an unknown cmsg 3-tuple and send the payload regardless.",
+        )
+        self.assertEqual(
+            captured["ip__dscp"],
+            0,
+            msg="An unknown cmsg must not change the outbound DSCP.",
         )
 
     def test__udp_socket__sendmsg_rejects_malformed_ancdata(self) -> None:

@@ -448,6 +448,15 @@ class UdpSocket(socket):
         Send the data to connected remote host.
         """
 
+        return self._send(data, dscp=self._effective_ip_dscp(), ecn=self._effective_ip_ecn())
+
+    def _send(self, data: bytes, *, dscp: int, ecn: int) -> int:
+        """
+        Send 'data' to the connected peer with an explicit DSCP / ECN —
+        the shared body of 'send' (socket-default TOS) and 'sendmsg' (a
+        per-send IP_TOS / IPV6_TCLASS cmsg overriding the default).
+        """
+
         # The 'send' call requires 'connect' call to be run prior to it.
         if self._remote_ip_address.is_unspecified or self._remote_port == 0:
             raise OSError(
@@ -489,8 +498,8 @@ class UdpSocket(socket):
             udp__payload=data,
             udp__no_cksum=self._udp_no_check6_tx,
             ip__ttl=self._effective_ip_ttl(),
-            ip__ecn=self._effective_ip_ecn(),
-            ip__dscp=self._effective_ip_dscp(),
+            ip__ecn=ecn,
+            ip__dscp=dscp,
             ip4__options=self._effective_ip4_options(),
         )
 
@@ -513,6 +522,15 @@ class UdpSocket(socket):
     def sendto(self, data: bytes, address: tuple[str, int]) -> int:
         """
         Send the data to remote host.
+        """
+
+        return self._sendto(data, address, dscp=self._effective_ip_dscp(), ecn=self._effective_ip_ecn())
+
+    def _sendto(self, data: bytes, address: tuple[str, int], *, dscp: int, ecn: int) -> int:
+        """
+        Send 'data' to 'address' with an explicit DSCP / ECN — the shared
+        body of 'sendto' (socket-default TOS) and 'sendmsg' (a per-send
+        IP_TOS / IPV6_TCLASS cmsg overriding the default).
         """
 
         # The 'sendto' call will bind socket to specific local port,
@@ -562,8 +580,8 @@ class UdpSocket(socket):
             udp__payload=data,
             udp__no_cksum=self._udp_no_check6_tx,
             ip__ttl=self._effective_ip_ttl(),
-            ip__ecn=self._effective_ip_ecn(),
-            ip__dscp=self._effective_ip_dscp(),
+            ip__ecn=ecn,
+            ip__dscp=dscp,
             ip4__options=self._effective_ip4_options(),
         )
 
@@ -592,19 +610,53 @@ class UdpSocket(socket):
         UDP payload; when 'address' is given the call behaves like
         sendto(), otherwise like send() on a connected socket.
 
-        Phase-1 PyTCP honours no send-side cmsg type, so 'ancdata' is
-        validated for shape then ignored (Linux silently ignores
-        unhandled cmsgs).
+        An IPv4 IP_TOS (one byte) or IPv6 IPV6_TCLASS (4-byte int)
+        ancillary control message overrides the outbound datagram's DSCP
+        + ECN for this send only (RFC 1122 §4.1.4 / RFC 3542 §6.5 — the
+        send-direction mirror of the IP_RECVTOS recvmsg path). Any other
+        cmsg type is validated for shape then silently ignored, matching
+        Linux's handling of unrecognised control messages.
+
+        Phase 2: honour per-send IP_TTL / IP_PKTINFO cmsg as well.
         """
 
-        # Phase 2: honour per-send IP_TOS / IP_TTL / IP_PKTINFO cmsg.
+        ancdata = list(ancdata)
         self._validate_sendmsg_ancdata(ancdata)
 
         payload = b"".join(bytes(buffer) for buffer in buffers)
 
+        tos = self._sendmsg_tos_override(ancdata)
+        if tos is None:
+            dscp, ecn = self._effective_ip_dscp(), self._effective_ip_ecn()
+        else:
+            dscp, ecn = (tos >> 2) & 0x3F, tos & 0x03
+
         if address is not None:
-            return self.sendto(payload, address)
-        return self.send(payload)
+            return self._sendto(payload, address, dscp=dscp, ecn=ecn)
+        return self._send(payload, dscp=dscp, ecn=ecn)
+
+    def _sendmsg_tos_override(self, ancdata: list[tuple[int, int, Buffer]], /) -> int | None:
+        """
+        Return the per-send TOS / Traffic-Class byte carried by an IPv4
+        IP_TOS (one byte) or IPv6 IPV6_TCLASS (4-byte int) ancillary
+        control message, or None when no such cmsg is present. The last
+        matching cmsg wins, matching Linux's last-writer semantics. The
+        cmsg family is matched against the socket's own family, so an
+        IP_TOS cmsg on an IPv6 socket (or vice versa) is ignored.
+        """
+
+        tos: int | None = None
+        for level, ctype, cdata in ancdata:
+            data = bytes(cdata)
+            if not data:
+                continue
+            if self._address_family is AddressFamily.INET4 and level == int(IPPROTO_IP) and ctype == int(IP_TOS):
+                tos = data[0]
+            elif (
+                self._address_family is AddressFamily.INET6 and level == int(IPPROTO_IPV6) and ctype == int(IPV6_TCLASS)
+            ):
+                tos = int.from_bytes(data, "big") & 0xFF
+        return tos
 
     @override
     def recv(self, bufsize: int | None = None, timeout: float | None = None) -> bytes:
