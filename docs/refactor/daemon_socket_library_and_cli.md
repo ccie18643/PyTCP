@@ -788,10 +788,13 @@ a `loop.sock_connect`'d PyTCP socket) was confirmed **live** with the two
 examples talking to each other over real PyTCP stacks — `examples/
 ftp_client__async.py` driving `examples/ftp_server__async.py`.
 
-PyTCP has **no intra-stack loopback**: a socket connecting to its own stack's IP
-sends the SYN out the interface and nothing loops it back, so server + client on
-one stack (to `192.168.100.2` from `.2`) hangs. The confirmation therefore uses
-**two independent stacks on one isolated L2 bridge**:
+At the time, PyTCP had **no intra-stack loopback**: a socket connecting to its
+own stack's IP sent the SYN out the interface and nothing looped it back, so
+server + client on one stack (to `192.168.100.2` from `.2`) hung. The
+confirmation therefore used **two independent stacks on one isolated L2 bridge**.
+(A real loopback interface has since landed — see the single-stack subsection
+below — so the two-stack setup is **no longer required**; it is kept here as the
+historical record.)
 
 ```bash
 # Isolated bridge (do NOT reuse a bridge that carries a physical NIC).
@@ -828,3 +831,37 @@ data channel `192.168.100.2/<ephemeral> <-> 192.168.100.3/<ephemeral>`.
 This closes the last high-level-surface gap: both directions of the asyncio
 streams API (`start_server` **and** `open_connection`) are now proven live over
 real PyTCP stacks, including multi-connection PASV data transfer.
+
+### Single-stack async client ↔ server over loopback (2026-07-01)
+
+With the loopback interface shipped (`docs/refactor/loopback_interface.md`,
+phases P0–P6), the two-stack bridge is no longer needed: a single PyTCP daemon
+can host both the async FTP server and the client, with traffic looping inside
+the stack over `lo`. Confirmed **live** on one daemon:
+
+```bash
+# One TAP just so the daemon has a device to boot on; loopback traffic never
+# touches it. Give the daemon a static address (no DHCP server on the link).
+ip tuntap add name tap8 mode tap
+ip addr add 192.168.100.1/24 dev tap8 && ip link set dev tap8 up
+python -c 'from net_addr import Ip4IfAddr; from pytcp.daemon.daemon import \
+  run_daemon; run_daemon(socket_path="/tmp/pytcp.sock", interfaces=["tap8"], \
+  ip4_host=Ip4IfAddr("192.168.100.2/24"), ip6_support=False)' &
+# Boot log now shows: "Interface lo listening on unicast IPv4 addresses: 127.0.0.1"
+
+# Server AND client on the SAME daemon — both the own routable IP and 127.0.0.1.
+PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server__async.py \
+    --host 192.168.100.2 --root /srv/ftp &      # (or --host 127.0.0.1)
+PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_client__async.py \
+    --host 192.168.100.2 --get blob.bin > got.bin
+```
+
+**Result (confirmed):** `LIST` + `RETR` of an 8192-byte binary, **SHA-256
+byte-exact**, for BOTH the stack's own routable address (`192.168.100.2 → .2`)
+AND the pure loopback address (`127.0.0.1 → 127.0.0.1`), on a single stack with
+no bridge and no second daemon. Both the FTP control connection and the PASV
+data connection loop internally through `lo`. The `127.0.0.1` case is
+conclusive — that address cannot traverse the TAP wire, so it must have looped
+inside the stack, and it completed instead of hanging.
+
+This retires the two-stack workaround above for same-host async testing.
