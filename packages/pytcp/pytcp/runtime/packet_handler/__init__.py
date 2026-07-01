@@ -103,6 +103,7 @@ from pytcp.protocols.igmp import igmp__constants
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.protocols.ip.ip_frag_table import IpFragTable
 from pytcp.runtime.fib import RouteProtocol
+from pytcp.runtime.loopback_ring import LoopbackRing
 from pytcp.runtime.rx_ring import RxRing
 from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.subsystem import Subsystem
@@ -3949,3 +3950,136 @@ class PacketHandlerL3(
             # RFC 3376 §5.1 — announce the departure with a state-change
             # Report describing the 'old'→INCLUDE{} transition.
             self._send_igmp_state_change(ip4_multicast, old=old, new=_IP4_MULTICAST__NONMEMBER)
+
+
+class PacketHandlerLoopback(
+    PacketHandlerL3,
+):
+    """
+    The loopback ('lo') interface handler — delivers locally-destined
+    IP traffic internally instead of on the wire, the PyTCP analogue of
+    the Linux 'lo' device. Owns 127.0.0.1/8 + ::1/128 and reports the
+    LOOPBACK interface layer.
+
+    Subclasses 'PacketHandlerL3' to reuse the no-Ethernet / no-DAD /
+    synchronous-address-assignment plumbing (a loopback device has no
+    L2, no neighbors, and its addresses need no acquisition). The
+    behavioural discriminator is '_interface_layer = InterfaceLayer.
+    LOOPBACK', not the class: the TX 'match self._interface_layer' arms
+    are never reached because the IP-TX layer diverts locally-destined
+    traffic onto the loopback ring BEFORE the L2/L3 split (see the
+    loopback diversion in 'packet_handler__ip4__tx' / '…ip6__tx'), and
+    the Link API surfaces the LOOPBACK flag from the layer. Reusing the
+    L3 base keeps loopback inside the existing 'PacketHandlerL2 |
+    PacketHandlerL3' interface union with no type-churn.
+
+    Delivery is queue-based (never inline TX->RX->TX): the TX diversion
+    'enqueue_loopback's the assembled IP packet onto '_lo_ring'; this
+    handler's own subsystem thread drains it in '_subsystem_loop' and
+    dispatches into the IP RX path. Two threads ping-pong via the queue
+    so a whole handshake / transfer never nests in one call stack.
+    """
+
+    _interface_layer = InterfaceLayer.LOOPBACK
+    _lo_ring: LoopbackRing
+
+    @override
+    def __init__(
+        self,
+        *,
+        interface_mtu: int,
+        interface_name: str = "lo",
+        ip4_support: bool = True,
+        ip6_support: bool = True,
+    ) -> None:
+        """
+        Construct the loopback interface: build the delivery ring and
+        self-assign the fixed loopback addresses.
+        """
+
+        super().__init__(
+            interface_mtu=interface_mtu,
+            interface_name=interface_name,
+            ip4_support=ip4_support,
+            ip6_support=ip6_support,
+        )
+
+        # In-process delivery queue; the consumer is this handler's own
+        # subsystem thread ('_subsystem_loop' -> 'LoopbackRing.dequeue').
+        self._lo_ring = LoopbackRing()
+
+        # The loopback addresses are fixed constants with no acquisition
+        # (no DHCP / SLAAC / DAD), so assign them directly at construction
+        # rather than through the '_create_stack_ip*_addressing' acquire
+        # threads. Assign IPv6 ::1 directly, NOT via '_assign_ip6_host'
+        # (which would join a solicited-node multicast group and emit an
+        # MLD report — 'lo' has no multicast plane).
+        if ip4_support:
+            self._assign_ip4_host(Ip4IfAddr("127.0.0.1/8"))
+        if ip6_support:
+            with self._lock__addr_config:
+                self._ip6_ifaddr = [*self._ip6_ifaddr, Ip6IfAddr("::1/128")]
+
+    @override
+    def _subsystem_loop(self) -> None:
+        """
+        Drain one locally-destined packet from the loopback ring and
+        deliver it to the IP RX path. Blocks up to
+        'SUBSYSTEM_SLEEP_TIME__SEC' inside 'dequeue' so the loop stays
+        stop-responsive.
+        """
+
+        if (packet_rx := self._lo_ring.dequeue()) is not None:
+            self._deliver_loopback(packet_rx)
+
+    def enqueue_loopback(self, packet_rx: PacketRx, /) -> None:
+        """
+        Enqueue a locally-destined IP packet for internal delivery on the
+        loopback interface — the public producer surface the IP-TX
+        layer's loopback diversion calls. Keeps the '_lo_ring' queue
+        private to this handler (Phase-3 boundary).
+        """
+
+        self._lo_ring.enqueue(packet_rx)
+
+    def _deliver_loopback(self, packet_rx: PacketRx, /) -> None:
+        """
+        Deliver a queued loopback packet into the IPv4 or IPv6 RX path by
+        its IP version nibble. Unlike the TUN path there is no PI /
+        EtherType prefix — the enqueued frame is a bare IP packet.
+        """
+
+        match packet_rx.frame[0] >> 4:
+            case 4:
+                self._phrx_ip4(packet_rx)
+            case 6:
+                self._phrx_ip6(packet_rx)
+            case version:
+                __debug__ and log(
+                    "stack",
+                    f"<WARN>Loopback received unknown IP version {version}, dropping packet</>",
+                )
+
+    @override
+    def _create_stack_ip4_addressing(self) -> None:
+        """
+        No-op: the loopback IPv4 address (127.0.0.1/8) is assigned
+        directly at construction (deterministic, nothing to acquire).
+        """
+
+    @override
+    def _create_stack_ip6_addressing(self) -> None:
+        """
+        No-op: the loopback IPv6 address (::1/128) is assigned directly
+        at construction (deterministic, nothing to acquire).
+        """
+
+    @override
+    def _stop(self) -> None:
+        """
+        Release the loopback ring's eventfd back to the kernel on stack
+        teardown.
+        """
+
+        super()._stop()
+        self._lo_ring.close()

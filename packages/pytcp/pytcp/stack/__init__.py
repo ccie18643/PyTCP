@@ -173,6 +173,12 @@ TCP__FASTOPEN_CACHE_MAX_SIZE: int = 1024
 # Interface configuration.
 INTERFACE__TAP__MTU = 1500
 INTERFACE__TUN__MTU = 1500
+# The loopback ('lo') interface carries no wire framing, so its MTU is
+# the uint16 wire ceiling (the largest IPv4 'Total Length', RFC 791
+# §3.1; also the Link API's LINK_API__MTU__MAX). Linux's 'lo' uses
+# 65536, but PyTCP caps at 65535 so an internally-delivered datagram
+# still fits the IPv4 length field.
+INTERFACE__LOOPBACK__MTU = 65535
 
 # Addresses configuration.
 MAC_ADDRESS: str = "02:00:00:{x}{x}:{x}{x}:{x}{x}"
