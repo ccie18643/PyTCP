@@ -780,3 +780,51 @@ multi-connection PASV) genuinely works over the PyTCP daemon.
   wrong device).
 - Don't `pkill -f <launcher>` from a shell whose own command line contains
   that string — it kills the shell. Track the daemon by PID instead.
+
+### Two-stack async client ↔ async server (2026-06-30)
+
+The **high-level asyncio client** path (`asyncio.open_connection(sock=...)` over
+a `loop.sock_connect`'d PyTCP socket) was confirmed **live** with the two
+examples talking to each other over real PyTCP stacks — `examples/
+ftp_client__async.py` driving `examples/ftp_server__async.py`.
+
+PyTCP has **no intra-stack loopback**: a socket connecting to its own stack's IP
+sends the SYN out the interface and nothing loops it back, so server + client on
+one stack (to `192.168.100.2` from `.2`) hangs. The confirmation therefore uses
+**two independent stacks on one isolated L2 bridge**:
+
+```bash
+# Isolated bridge (do NOT reuse a bridge that carries a physical NIC).
+ip link add name brftp type bridge && ip link set brftp type bridge stp_state 0
+ip link set brftp up
+ip tuntap add name tap20 mode tap && ip link set tap20 master brftp && ip link set tap20 up
+ip tuntap add name tap21 mode tap && ip link set tap21 master brftp && ip link set tap21 up
+
+# Two daemons, static addresses + explicit MACs. (The name-derived MAC needs a
+# single hex char at name[3:5], e.g. 'tap7'; multi-digit names like 'tap20'
+# require an explicit mac_address — passed here.)
+python -c 'from net_addr import Ip4IfAddr, MacAddress; from pytcp.daemon.daemon \
+  import run_daemon; run_daemon(socket_path="/tmp/pytcp_srv.sock", \
+  interfaces=["tap20"], mac_address=MacAddress("02:00:00:00:00:02"), \
+  ip4_host=Ip4IfAddr("192.168.100.2/24"), ip6_support=False)' &
+python -c 'from net_addr import Ip4IfAddr, MacAddress; from pytcp.daemon.daemon \
+  import run_daemon; run_daemon(socket_path="/tmp/pytcp_cli.sock", \
+  interfaces=["tap21"], mac_address=MacAddress("02:00:00:00:00:03"), \
+  ip4_host=Ip4IfAddr("192.168.100.3/24"), ip6_support=False)' &
+
+# Server on stack .2, client on stack .3 -> connects to .2 over the bridge.
+PYTCP_DAEMON_SOCKET=/tmp/pytcp_srv.sock ./examples/ftp_server__async.py \
+    --host 192.168.100.2 --root /srv/ftp &
+PYTCP_DAEMON_SOCKET=/tmp/pytcp_cli.sock ./examples/ftp_client__async.py \
+    --host 192.168.100.2 --get pub/payload.bin > got.bin
+```
+
+**Result (confirmed):** `LIST`, `RETR` of a text file, and `RETR` of an
+8192-byte binary (**SHA-256 byte-exact**) — `TWO-STACK ASYNC FTP: PASS`. The
+server stack's TCP-session log shows both connections between the stacks: the
+control channel `192.168.100.2/21 <-> 192.168.100.3/<ephemeral>` and the PASV
+data channel `192.168.100.2/<ephemeral> <-> 192.168.100.3/<ephemeral>`.
+
+This closes the last high-level-surface gap: both directions of the asyncio
+streams API (`start_server` **and** `open_connection`) are now proven live over
+real PyTCP stacks, including multi-connection PASV data transfer.
