@@ -614,6 +614,27 @@ allowlist + client mirror.
   wrongly reject a post-`connect_start` `send`/`recv`); left for a
   dedicated pass so the hard-won non-blocking-connect machinery is not
   destabilised.
+- **2026-07-01** — setsockopt-honored sweep (partial). Audited every
+  option the UDP/TCP/base sockets accept for whether the stored value is
+  actually READ in a behavior path (TX/RX/bind/close) or merely stored for
+  a getsockopt round-trip. Reassuring result: the vast majority are
+  honored — all TCP options (TCP_NODELAY/MAXSEG/KEEPIDLE/KEEPINTVL/KEEPCNT/
+  USER_TIMEOUT/FASTOPEN), IP_TTL/IP_TOS/IP_OPTIONS/IP_RECV*, IPV6 hops/
+  tclass/recv*, SO_BROADCAST, SO_RCVTIMEO, SO_LINGER, SO_BINDTODEVICE,
+  SO_REUSEADDR/PORT. Only three base options were accepted-but-stored-only
+  (the enum even comments them "storage only"): SO_RCVBUF, SO_SNDBUF,
+  SO_SNDTIMEO. **SO_RCVBUF is now honored** on the drop-in: the client
+  applies it to its socketpair `_data_socket` (the real kernel AF_UNIX
+  socket that IS the effective client-side receive buffer), so
+  set/getsockopt now returns the kernel-adjusted (doubled/clamped) value a
+  plain socket reports rather than echoing the request — exact stdlib
+  parity because it is a real kernel socket. Tests-first for both UDP and
+  TCP (compared against a control stdlib socketpair). **Deferred**
+  (documented): SO_SNDBUF (applying it to the socketpair would collide with
+  the A3.3 non-blocking-connect filler-trick that manipulates the same
+  send buffer) and SO_SNDTIMEO (needs a blocking-send accounting path that
+  does not exist — UDP send is fire-and-forget, TCP send does not yet block
+  on a full send buffer).
 
 ## 7. Design discussion — readiness, the "trick", and compat limits
 

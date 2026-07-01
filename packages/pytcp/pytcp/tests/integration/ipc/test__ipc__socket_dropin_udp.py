@@ -41,6 +41,7 @@ ver 3.0.8
 
 import errno
 import os
+import socket as stdlib_socket
 import tempfile
 import time
 from typing import override
@@ -242,6 +243,33 @@ class TestSocketDropinUdp(UdpTestCase):
             ctx.exception.errno,
             errno.EDESTADDRREQ,
             msg="send() on an unconnected datagram socket must raise OSError(EDESTADDRREQ).",
+        )
+
+    def test__socket_dropin_udp__so_rcvbuf_sizes_a_real_buffer(self) -> None:
+        """
+        Ensure setsockopt(SO_RCVBUF) sizes a real kernel receive buffer
+        (the client's socketpair end — the effective client-side datagram
+        buffer) rather than being merely stored on the daemon: getsockopt
+        reports the same kernel-adjusted value a plain datagram socket
+        gives, not the verbatim requested size.
+
+        Reference: socket(7) SO_RCVBUF (the kernel doubles and clamps the
+        requested buffer size).
+        """
+
+        control = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_DGRAM)
+        self.addCleanup(control.close)
+        control.setsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF, 8192)
+        expected = control.getsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF)
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_DGRAM)
+        self.addCleanup(sock.close)
+        sock.setsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_RCVBUF, 8192)
+
+        self.assertEqual(
+            sock.getsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_RCVBUF),
+            expected,
+            msg="SO_RCVBUF must size a real kernel buffer (kernel-adjusted value), not echo the request.",
         )
 
     def test__socket_dropin_udp__connected_send_reaches_the_wire(self) -> None:

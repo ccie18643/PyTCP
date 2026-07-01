@@ -236,6 +236,34 @@ class TestSocketDropinEcho(TcpTestCase):
             msg="The drop-in socket must expose a real data-channel file descriptor.",
         )
 
+    def test__socket_dropin__so_rcvbuf_sizes_a_real_buffer(self) -> None:
+        """
+        Ensure setsockopt(SO_RCVBUF) on a stream drop-in socket sizes a
+        real kernel receive buffer (the client's socketpair end — the
+        effective client-side stream buffer) rather than being merely
+        stored on the daemon: getsockopt reports the same kernel-adjusted
+        value a plain stream socket gives, not the verbatim requested
+        size.
+
+        Reference: socket(7) SO_RCVBUF (the kernel doubles and clamps the
+        requested buffer size).
+        """
+
+        control = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(control.close)
+        control.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 8192)
+        expected = control.getsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF)
+
+        sock = pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        sock.setsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_RCVBUF, 8192)
+
+        self.assertEqual(
+            sock.getsockopt(pytcp_socket.SOL_SOCKET, pytcp_socket.SO_RCVBUF),
+            expected,
+            msg="SO_RCVBUF must size a real kernel buffer (kernel-adjusted value), not echo the request.",
+        )
+
     def test__socket_dropin__recv_delivers_peer_data(self) -> None:
         """
         Ensure data a peer sends on the wire is delivered to a drop-in

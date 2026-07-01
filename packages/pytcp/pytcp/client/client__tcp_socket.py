@@ -52,7 +52,7 @@ from pytcp.ipc.ipc__socket_rpc import (
     socket_call,
 )
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
-from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import SO_RCVBUF, SOL_SOCKET, AddressFamily, SocketType
 
 # Default accept-queue depth when 'listen' is called without an explicit
 # backlog (mirrors the daemon-side 'TCP__DEFAULT_BACKLOG').
@@ -243,6 +243,15 @@ class ClientTcpSocket:
         Set a socket option on the daemon stdlib_socket.
         """
 
+        if isinstance(level, int) and level == SOL_SOCKET and optname == SO_RCVBUF and isinstance(value, int):
+            # SO_RCVBUF is honoured on the real receive buffer — the
+            # client's socketpair end is the effective client-side stream
+            # buffer — rather than only stored on the daemon. The
+            # socketpair is a real kernel socket, so the kernel doubling /
+            # clamps match stdlib exactly.
+            self._data_socket.setsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF, value)
+            return
+
         socket_call(
             self._client,
             method="setsockopt",
@@ -254,6 +263,11 @@ class ClientTcpSocket:
         """
         Get a socket option from the daemon stdlib_socket.
         """
+
+        if isinstance(level, int) and level == SOL_SOCKET and optname == SO_RCVBUF:
+            # Report the real socketpair buffer size (kernel-adjusted),
+            # matching what 'setsockopt(SO_RCVBUF)' applied above.
+            return self._data_socket.getsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF)
 
         result: int | bytes = socket_call(
             self._client,
