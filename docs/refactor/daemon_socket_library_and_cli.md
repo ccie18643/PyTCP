@@ -721,3 +721,62 @@ TLS over the drop-in; datagram-endpoint asyncio; `sendmsg`/`recvmsg` cmsg
 on the drop-in `Socket`; every `setsockopt` *honored* (not merely
 accepted); errno-exactness sweep; B2 polish (`pytcp addr` JSON/`-j`,
 column alignment parity with real `ip`/`ss`).
+
+## 9. Live verification — async FTP over a real stack (2026-06-30)
+
+The asyncio integration (streams + `start_server`, control + PASV-data
+connections) was confirmed **live** end-to-end: the `examples/ftp_server.py`
+async FTP server, run over a real PyTCP daemon on a TAP interface, served a
+full session to a real `ftplib` client over the wire. The committed example
+needed **zero code changes**.
+
+### Reproducible recipe (point-to-point TAP, static address)
+
+`pytcp stack start` autoconfigures via DHCPv4, so with no DHCP server on the
+link give the daemon a **static** address via `run_daemon`. The stack and the
+host sit on opposite ends of one TAP's L2 segment (no bridge needed).
+
+```bash
+# 1. Host side of the link (the interface name MUST start with tap/tun).
+ip tuntap add name tap8 mode tap
+ip addr add 192.168.100.1/24 dev tap8
+ip link set dev tap8 up
+
+# 2. Stack side: a daemon with a static host address on tap8.
+python -c 'from net_addr import Ip4IfAddr; \
+  from pytcp.daemon.daemon import run_daemon; \
+  run_daemon(socket_path="/tmp/pytcp.sock", interfaces=["tap8"], \
+             ip4_host=Ip4IfAddr("192.168.100.2/24"), ip6_support=False)' &
+# wait for "Interface tap8 listening on unicast IPv4 addresses: 192.168.100.2"
+ping -c1 192.168.100.2          # sanity: ICMP over the TAP
+
+# 3. The async FTP server against that daemon, and a real client.
+PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server.py \
+    --host 192.168.100.2 --root /srv/ftp &
+python -c 'import ftplib; f=ftplib.FTP(); f.connect("192.168.100.2",21); \
+  f.login("anonymous","x"); print(f.pwd()); f.retrlines("LIST"); \
+  buf=bytearray(); f.retrbinary("RETR readme.txt", buf.extend); print(buf); f.quit()'
+```
+
+### Result (confirmed)
+
+- `ping 192.168.100.2` → 0% loss (ICMP over the real TAP, not loopback).
+- Raw TCP connect to `192.168.100.2:21` → real 3-way handshake accepted.
+- Full `ftplib` session: `220` greeting, `USER`/`PASS` login, `SYST`, `PWD`,
+  `LIST` (over a **PASV data connection** — a second TCP conn to the stack),
+  `RETR` of a text file **and** a 4096-byte binary (**SHA-256 byte-exact**),
+  `CWD` into a subdir, `SIZE`, `QUIT`. `>>> LIVE FTP RESULT: PASS`.
+
+This upgrades the P2 / streams proofs (§6, mock-wire harness) to a real-stack
+confirmation: high-level asyncio (`start_server` + `StreamReader`/`Writer` +
+multi-connection PASV) genuinely works over the PyTCP daemon.
+
+### Setup gotchas (so the next run avoids them)
+
+- The interface name **must** start with `tap`/`tun` (`_resolve_interface`
+  rejects others) — `ftpXXX` fails.
+- Host and stack addresses must share the subnet; a leftover second interface
+  carrying the same `/24` steals the route (`ip neigh` shows `FAILED` on the
+  wrong device).
+- Don't `pkill -f <launcher>` from a shell whose own command line contains
+  that string — it kills the shell. Track the daemon by PID instead.

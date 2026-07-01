@@ -42,13 +42,17 @@ The socket source is injectable ('make_socket') so the same server logic
 is exercised over real loopback sockets in the project's test suite; the
 'main' entry point wires it to PyTCP daemon sockets.
 
-Needs a running daemon (it owns the TAP interface), e.g.:
+Needs a running daemon that owns the TAP interface. 'pytcp stack start'
+autoconfigures via DHCPv4, so either run a DHCP server on the link or boot
+the daemon with a static address ('run_daemon(..., ip4_host=...)'). Then:
 
-    sudo make tap7 && sudo make bridge
-    pytcp stack start -i tap7
-    ./examples/ftp_server.py --root /srv/ftp
+    PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock ./examples/ftp_server.py \
+        --host <stack-ip> --root /srv/ftp
+    ftp <stack-ip>          # any FTP client, passive mode
 
-Then connect with any FTP client, e.g. 'ftp <stack-ip>' (passive mode).
+Verified live end-to-end (real TAP + real 'ftplib' client, control +
+PASV-data connections, byte-exact binary transfer); the full reproducible
+recipe is in 'docs/refactor/daemon_socket_library_and_cli.md' (§9).
 
 examples/ftp_server.py
 
