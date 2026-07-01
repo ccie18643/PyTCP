@@ -47,6 +47,8 @@ from net_proto import (
     Tracker,
     UdpAssembler,
 )
+from net_proto.lib.packet_rx import PacketRx
+from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -205,6 +207,25 @@ class Ip4TxHandler:
             ip4__options=ip4__options,
             ip4__payload=ip4__payload,
         )
+
+        # Loopback diversion: a locally-destined packet — one to
+        # 127.0.0.0/8 or to one of THIS host's own unicast addresses — is
+        # delivered internally through the loopback interface, never on
+        # the wire. This is the PyTCP analogue of Linux routing local
+        # traffic through 'lo'; it also fixes the own-IP path, which used
+        # to ARP-resolve the host's own address and drop on the cache
+        # miss. Enqueue the assembled packet onto the loopback ring; its
+        # consumer thread drains it into the RX path, so a whole exchange
+        # never nests TX -> RX -> TX in one call stack.
+        # Phase 2: a FIB HOST-scope local route supersedes this membership
+        # shortcut (activating the currently-dead 'RouteScope.HOST').
+        if (loopback := stack.loopback_handler()) is not None and (
+            ip4__dst.is_loopback or ip4__dst in stack.local_ip4_unicast()
+        ):
+            self._if._packet_stats_tx.ip4__loopback__send += 1
+            __debug__ and log("ip4", f"{ip4_packet_tx.tracker} - Loopback delivery of {ip4_packet_tx}")
+            loopback.enqueue_loopback(PacketRx(bytes(ip4_packet_tx)))
+            return TxStatus.PASSED__IP4__LOOPBACK
 
         # Send packet out if it's size doesn't exceed mtu.
         if len(ip4_packet_tx) <= self._if._interface_mtu:

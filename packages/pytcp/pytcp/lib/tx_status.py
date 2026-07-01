@@ -57,6 +57,7 @@ class TxStatus(NameEnum):
     DROPPED__ARP__NO_PROTOCOL_SUPPORT = auto()
 
     PASSED__IP4__TO_TX_RING = auto()
+    PASSED__IP4__LOOPBACK = auto()
 
     DROPPED__IP4__NO_PROTOCOL_SUPPORT = auto()
     DROPPED__IP4__SRC_NOT_OWNED = auto()
@@ -69,6 +70,7 @@ class TxStatus(NameEnum):
     DROPPED__IP4__UNKNOWN = auto()
 
     PASSED__IP6__TO_TX_RING = auto()
+    PASSED__IP6__LOOPBACK = auto()
 
     DROPPED__IP6__NO_PROTOCOL_SUPPORT = auto()
     DROPPED__IP6__SRC_NOT_OWNED = auto()

@@ -46,6 +46,8 @@ from net_proto import (
     RawAssembler,
     Tracker,
 )
+from net_proto.lib.packet_rx import PacketRx
+from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -153,6 +155,22 @@ class Ip6TxHandler:
             ip6__flow=ip6__flow,
             ip6__payload=ip6__payload,
         )
+
+        # Loopback diversion: a locally-destined packet — one to ::1 or to
+        # one of THIS host's own unicast addresses — is delivered
+        # internally through the loopback interface, never on the wire
+        # (the PyTCP analogue of Linux routing local traffic through 'lo';
+        # see the IPv4 counterpart). Enqueue the assembled packet onto the
+        # loopback ring; its consumer thread drains it into the RX path,
+        # so a whole exchange never nests TX -> RX -> TX in one call stack.
+        # Phase 2: a FIB HOST-scope local route supersedes this shortcut.
+        if (loopback := stack.loopback_handler()) is not None and (
+            ip6__dst.is_loopback or ip6__dst in stack.local_ip6_unicast()
+        ):
+            self._if._packet_stats_tx.ip6__loopback__send += 1
+            __debug__ and log("ip6", f"{ip6_packet_tx.tracker} - Loopback delivery of {ip6_packet_tx}")
+            loopback.enqueue_loopback(PacketRx(bytes(ip6_packet_tx)))
+            return TxStatus.PASSED__IP6__LOOPBACK
 
         # Check if IP packet can be sent out without fragmentation,
         # if so send it out.

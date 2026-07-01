@@ -363,6 +363,7 @@ class PacketStatsTx(PacketStats):
     ip4__dst_broadcast_disallowed__drop: int = 0
     ip4__link_local_scope_mismatch__drop: int = 0
     ip4__mtu_ok__send: int = 0
+    ip4__loopback__send: int = 0
     ip4__mtu_exceed__frag: int = 0
     ip4__mtu_exceed__frag__send: int = 0
     ip4__mtu_exceed__df_set__drop: int = 0
@@ -380,6 +381,7 @@ class PacketStatsTx(PacketStats):
     ip6__src_scope_mismatch__drop: int = 0
     ip6__dst_unspecified__drop: int = 0
     ip6__mtu_ok__send: int = 0
+    ip6__loopback__send: int = 0
     ip6__mtu_exceed__frag: int = 0
 
     ip6_frag__pre_assemble: int = 0

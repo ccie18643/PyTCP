@@ -4061,6 +4061,20 @@ class PacketHandlerLoopback(
                 )
 
     @override
+    def _effective_ip6_hop_limit(self) -> int:
+        """
+        Return the default IPv6 hop limit for internally-delivered
+        loopback traffic. 'lo' has no Router-Advertisement state (the
+        L2-only '_icmp6_ra_parameters' the base reads is never set on the
+        loopback handler), and a loopback packet is never forwarded, so
+        the hop limit is a formality — the default is correct.
+        """
+
+        from net_proto import IP6__DEFAULT_HOP_LIMIT
+
+        return IP6__DEFAULT_HOP_LIMIT
+
+    @override
     def _create_stack_ip4_addressing(self) -> None:
         """
         No-op: the loopback IPv4 address (127.0.0.1/8) is assigned
