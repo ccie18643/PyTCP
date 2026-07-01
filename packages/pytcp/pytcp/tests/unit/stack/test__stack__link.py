@@ -199,6 +199,35 @@ class _FakePacketHandlerL3:
         self._interface_mtu = mtu
 
 
+class _FakePacketHandlerLoopback:
+    """
+    Minimal loopback packet-handler stand-in for 'LinkApi' tests —
+    layer LOOPBACK, no MAC (the 'lo' device has no Ethernet layer).
+    """
+
+    _interface_layer: InterfaceLayer = InterfaceLayer.LOOPBACK
+
+    def __init__(self, *, interface_mtu: int = 65535, interface_name: str | None = "lo") -> None:
+        self._interface_mtu = interface_mtu
+        self._interface_name = interface_name
+
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        return None
+
+
 class TestLinkApiMacAddress(TestCase):
     """
     'LinkApi.mac_address' returns the bound packet handler's
@@ -501,6 +530,24 @@ class TestLinkApiFlags(TestCase):
             api.flags,
             frozenset({LinkFlag.POINTOPOINT}),
             msg="L3 LinkApi.flags must equal {POINTOPOINT}.",
+        )
+
+    def test__link_api__flags__loopback(self) -> None:
+        """
+        Ensure 'flags' for a LOOPBACK (lo) handler equals {LOOPBACK} —
+        the loopback device carries neither broadcast/multicast nor
+        point-to-point semantics.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        handler = _FakePacketHandlerLoopback()
+        api = LinkApi(packet_handler=cast("PacketHandlerL3", handler))
+
+        self.assertEqual(
+            api.flags,
+            frozenset({LinkFlag.LOOPBACK}),
+            msg="LOOPBACK LinkApi.flags must equal {LOOPBACK}.",
         )
 
     def test__link_api__flags__returns_frozenset(self) -> None:

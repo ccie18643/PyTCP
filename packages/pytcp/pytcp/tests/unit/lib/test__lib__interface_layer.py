@@ -54,18 +54,19 @@ class TestInterfaceLayer(TestCase):
             msg="InterfaceLayer must derive from enum.Enum.",
         )
 
-    def test__interface_layer__has_exactly_l2_and_l3(self) -> None:
+    def test__interface_layer__has_exactly_l2_l3_and_loopback(self) -> None:
         """
-        Ensure the enum exposes exactly the two canonical members 'L2' (TAP)
-        and 'L3' (TUN), so an accidental addition is caught immediately.
+        Ensure the enum exposes exactly the three canonical members 'L2'
+        (TAP), 'L3' (TUN), and 'LOOPBACK' (lo), so an accidental addition
+        is caught immediately.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         self.assertEqual(
             {member.name for member in InterfaceLayer},
-            {"L2", "L3"},
-            msg="InterfaceLayer must expose exactly the 'L2' and 'L3' members.",
+            {"L2", "L3", "LOOPBACK"},
+            msg="InterfaceLayer must expose exactly 'L2', 'L3', and 'LOOPBACK'.",
         )
 
     def test__interface_layer__l2_value(self) -> None:
@@ -96,18 +97,33 @@ class TestInterfaceLayer(TestCase):
             msg="InterfaceLayer.L3 must be the second auto() value (2).",
         )
 
-    def test__interface_layer__members_are_distinct(self) -> None:
+    def test__interface_layer__loopback_value(self) -> None:
         """
-        Ensure the 'L2' and 'L3' members are distinct enum singletons so
-        code that branches on identity never collapses both layers.
+        Ensure 'InterfaceLayer.LOOPBACK' carries the third 'auto()' value so
+        the enum's ordering stays stable across releases.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
-        self.assertIsNot(
-            InterfaceLayer.L2,
-            InterfaceLayer.L3,
-            msg="InterfaceLayer.L2 and InterfaceLayer.L3 must be distinct singletons.",
+        self.assertEqual(
+            InterfaceLayer.LOOPBACK.value,
+            3,
+            msg="InterfaceLayer.LOOPBACK must be the third auto() value (3).",
+        )
+
+    def test__interface_layer__members_are_distinct(self) -> None:
+        """
+        Ensure the 'L2', 'L3', and 'LOOPBACK' members are distinct enum
+        singletons so code that branches on identity never collapses any
+        two layers.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            len({InterfaceLayer.L2, InterfaceLayer.L3, InterfaceLayer.LOOPBACK}),
+            3,
+            msg="InterfaceLayer.L2, L3, and LOOPBACK must be distinct singletons.",
         )
 
     def test__interface_layer__l2_lookup_by_name(self) -> None:
@@ -136,4 +152,18 @@ class TestInterfaceLayer(TestCase):
             InterfaceLayer["L3"],
             InterfaceLayer.L3,
             msg="InterfaceLayer['L3'] must return the same singleton as the attribute.",
+        )
+
+    def test__interface_layer__loopback_lookup_by_name(self) -> None:
+        """
+        Ensure 'InterfaceLayer['LOOPBACK']' resolves to the same singleton
+        as the attribute access, so reflective lookups stay consistent.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            InterfaceLayer["LOOPBACK"],
+            InterfaceLayer.LOOPBACK,
+            msg="InterfaceLayer['LOOPBACK'] must return the same singleton as the attribute.",
         )

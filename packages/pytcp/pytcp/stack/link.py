@@ -66,9 +66,8 @@ class LinkFlag(Enum):
                     (Ethernet on TAP).
     - MULTICAST   — interface carries multicast traffic
                     (Ethernet on TAP; IPv6 ND requires it).
-    - LOOPBACK    — loopback interface (no consumer today;
-                    listed for forward-compat with a future
-                    loopback adapter).
+    - LOOPBACK    — loopback interface (the 'lo' device;
+                    internal delivery only, never on the wire).
     - POINTOPOINT — point-to-point link (TUN; no L2 broadcast
                     domain).
 
@@ -86,6 +85,7 @@ class LinkFlag(Enum):
 _FLAGS_BY_LAYER: dict[InterfaceLayer, frozenset[LinkFlag]] = {
     InterfaceLayer.L2: frozenset({LinkFlag.BROADCAST, LinkFlag.MULTICAST}),
     InterfaceLayer.L3: frozenset({LinkFlag.POINTOPOINT}),
+    InterfaceLayer.LOOPBACK: frozenset({LinkFlag.LOOPBACK}),
 }
 
 
@@ -497,10 +497,9 @@ class LinkApi:
 
         Phase-1 derives the set from 'interface_layer':
         L2 (TAP) carries BROADCAST + MULTICAST; L3 (TUN)
-        carries POINTOPOINT. A future commit may add
-        runtime-configurable flags (e.g. LOOPBACK when a
-        loopback adapter lands, NOARP / DEBUG / PROMISC
-        when consumers materialise).
+        carries POINTOPOINT; LOOPBACK (lo) carries LOOPBACK.
+        A future commit may add runtime-configurable flags
+        (NOARP / DEBUG / PROMISC) when consumers materialise.
 
         Returns a 'frozenset' (immutable, copy-by-value)
         so the caller cannot mutate stack-internal state

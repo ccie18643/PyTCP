@@ -40,3 +40,4 @@ class InterfaceLayer(Enum):
 
     L2 = auto()  # Layer 2 (TAP)
     L3 = auto()  # Layer 3 (TUN)
+    LOOPBACK = auto()  # Loopback (lo) — internal delivery, no wire
