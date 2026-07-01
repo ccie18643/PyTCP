@@ -199,7 +199,7 @@ registry-gains-`lo` fixups).
 - **P5** `5f335f7c` — RX acceptance hook `_accepts_local_dst_ip4/6`
   (base = membership test; lo override accepts 127/8 · ::1 · own-IP),
   called from `_forward_or_deliver_ip4/6`.
-- **P6** — end-to-end TCP-over-loopback proofs (127.0.0.1 and own-IP
+- **P6** `f7e40612` — end-to-end TCP-over-loopback proofs (127.0.0.1 and own-IP
   handshakes complete, no wire frames). Prerequisites discovered and
   fixed: `PacketHandlerLoopback._marshal_tx` runs inline (lo has no TX
   ring), and a `PacketRx.from_loopback` flag lets the IPv4/IPv6 parsers
