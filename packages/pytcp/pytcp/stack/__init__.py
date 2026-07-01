@@ -58,7 +58,11 @@ from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
 from pytcp.protocols.tcp.tcp__stack import TcpStack
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler import (
+    PacketHandlerL2,
+    PacketHandlerL3,
+    PacketHandlerLoopback,
+)
 from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.socket.packet__socket_table import PacketSocketTable
 from pytcp.runtime.socket.ping__socket import PingSocket
@@ -912,6 +916,23 @@ def connected_ip6_networks() -> tuple[tuple[Ip6Network, int], ...]:
         for host in handler.ip6_host:
             networks.append((host.network, ifindex))
     return tuple(networks)
+
+
+def loopback_handler() -> PacketHandlerLoopback | None:
+    """
+    Return the registered loopback ('lo') interface handler, or None if
+    no loopback interface is registered (e.g. a bare unit-test harness
+    that did not enable it). Resolves by interface layer — the loopback
+    handler is not pinned to a fixed ifindex, so consumers must not
+    assume 'interfaces[1]'. Read surface for the IP-TX loopback
+    diversion; the '_lo_ring' delivery queue stays private to the
+    handler (reach it via 'enqueue_loopback').
+    """
+
+    for handler in interfaces.values():
+        if isinstance(handler, PacketHandlerLoopback):
+            return handler
+    return None
 
 
 # RFC 1812 §4.3.2.8 / RFC 4443 §2.4(f) outbound ICMP error rate

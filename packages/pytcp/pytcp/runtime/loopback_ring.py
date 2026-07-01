@@ -173,3 +173,12 @@ class LoopbackRing:
             os.close(self._lo_event_fd)
         except OSError:
             pass
+
+    def __del__(self) -> None:
+        """
+        GC safety net: release the eventfd if a ring is dropped without an
+        explicit 'close' (e.g. a short-lived 'stack.init()' in a unit test
+        that never runs 'stack.stop()'). Idempotent with 'close'.
+        """
+
+        self.close()

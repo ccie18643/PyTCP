@@ -62,7 +62,11 @@ from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.runtime.fib import RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler import (
+    PacketHandlerL2,
+    PacketHandlerL3,
+    PacketHandlerLoopback,
+)
 from pytcp.runtime.rx_ring import RxRing
 from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.timer import Timer
@@ -90,9 +94,17 @@ def mock__init(
     mock__route: RouteApi | None = None,
     mock__dhcp4_client: Dhcp4Client | None = None,
     mock__dhcp6_client: Dhcp6Client | None = None,
+    mock__loopback: bool = False,
 ) -> None:
     """
     Initialize stack components for unit testing.
+
+    'mock__loopback' opts a test into a real loopback interface
+    registered in 'stack.interfaces' alongside the mocked boot handler —
+    off by default so the broad harness suite is unaffected by the extra
+    interface. The integration harness registers 'lo' via its own
+    '_register_loopback' helper instead (after snapshotting the registry
+    so tearDown removes it).
     """
 
     import pytcp.stack as _stack
@@ -225,6 +237,14 @@ def mock__init(
     # through its own unit tests, not through the integration
     # harness in Phase 1.
     _stack.link_local = None
+
+    # Opt-in loopback interface (off by default so the broad harness
+    # suite is unaffected). Build a fresh registry first when no boot
+    # handler was passed, so 'lo' is not appended to a stale table.
+    if mock__loopback:
+        if mock__packet_handler is None:
+            _stack.interfaces = InterfaceTable(first_ifindex=_stack.STACK__DEFAULT_IFINDEX)
+        _add_loopback()
 
 
 def add_interface(
@@ -449,6 +469,31 @@ def add_interface(
         _start_interface(packet_handler)
 
     return ifindex
+
+
+def _add_loopback() -> int:
+    """
+    Construct the loopback ('lo') interface and register it in
+    'stack.interfaces', returning its allocated ifindex. Like Linux,
+    'lo' is always present: 'init()' calls this so every stack — even
+    the daemon's zero-physical-device resting state — has an interface
+    for local delivery of 127.0.0.0/8 + ::1 (and own-IP) traffic.
+
+    'lo' has no fd, no rings, no neighbour caches and no MAC; it owns
+    its own in-process 'LoopbackRing' and delivers on its own subsystem
+    thread. Registered AFTER any boot interface so a physical interface
+    keeps 'STACK__DEFAULT_IFINDEX'; in the zero-device path 'lo' takes
+    that index itself (Linux 'lo' == ifindex 1).
+    """
+
+    import pytcp.stack as _stack
+
+    handler = PacketHandlerLoopback(
+        interface_mtu=_stack.INTERFACE__LOOPBACK__MTU,
+        interface_name="lo",
+    )
+    handler.set_log_interface("lo")
+    return _stack.interfaces.add(handler)
 
 
 def _purge_interface_state(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
@@ -680,6 +725,12 @@ def init(
             ip6_lla_autoconfig=ip6_lla_autoconfig,
         )
 
+    # Loopback interface — always present (Linux 'lo'). Registered AFTER
+    # the boot interface so a physical device keeps 'STACK__DEFAULT_IFINDEX';
+    # in the zero-device daemon path 'lo' takes that index. Enables local
+    # delivery of 127.0.0.0/8 + ::1 (and own-IP) traffic.
+    _add_loopback()
+
     _stack.stack_initialized = True
 
 
@@ -691,6 +742,12 @@ def _start_interface(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     Shared by 'stack.start()' (boot, every registered interface) and
     'add_interface' (runtime add to an already-running stack).
     """
+
+    # The loopback interface has no fd-bound rings and no neighbour
+    # caches — only its own consumer thread. Start the handler and stop.
+    if iface.interface_layer is InterfaceLayer.LOOPBACK:
+        iface.start()
+        return
 
     if iface.arp_cache is not None:
         iface.arp_cache.start()
@@ -711,6 +768,13 @@ def _stop_interface(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     its own global ordering — all handlers, then the shared timer, then
     all rings/caches — so it does not call this per-interface helper.)
     """
+
+    # The loopback interface has no rings or neighbour caches to stop —
+    # only its own consumer thread (which 'iface.stop()' winds down,
+    # closing the LoopbackRing eventfd via its '_stop').
+    if iface.interface_layer is InterfaceLayer.LOOPBACK:
+        iface.stop()
+        return
 
     iface.stop()
     assert iface.rx_ring is not None and iface.tx_ring is not None
@@ -841,6 +905,11 @@ def stop() -> None:
         iface.stop()
     _stack.timer.stop()
     for iface in _stack.interfaces.values():
+        # The loopback interface has no rings or neighbour caches — its
+        # consumer thread and LoopbackRing eventfd were wound down by
+        # 'iface.stop()' above.
+        if iface.interface_layer is InterfaceLayer.LOOPBACK:
+            continue
         assert iface.rx_ring is not None and iface.tx_ring is not None
         iface.rx_ring.stop()
         iface.tx_ring.stop()

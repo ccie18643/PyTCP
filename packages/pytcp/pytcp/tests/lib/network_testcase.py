@@ -62,6 +62,7 @@ from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.runtime.packet_handler import (
     PacketHandlerL2,
     PacketHandlerL3,
+    PacketHandlerLoopback,
     packet_handler__ip6_frag__tx,
 )
 from pytcp.runtime.rx_ring import RxRing
@@ -102,6 +103,11 @@ STACK__IP4_HOST__CANDIDATE = Ip4IfAddr("10.0.1.5/24")
 STACK__IP6_HOST__CANDIDATE = Ip6IfAddr("2001:db8:0:1::5/64")
 
 # Set the PyTCP stack addressing.
+# Backstop iteration cap for 'drive_loopback' — a conversation driven
+# over the loopback ring should quiesce in far fewer round-trips; the
+# cap only guards against a non-terminating exchange in a buggy test.
+_LOOPBACK__DRIVE_MAX_ITERS: int = 10000
+
 STACK__MAC_ADDRESS = MacAddress("02:00:00:00:00:07")
 STACK__IP4_HOST = Ip4IfAddr("10.0.1.7/24")
 STACK__IP4_GATEWAY = Ip4Address("10.0.1.1")
@@ -534,6 +540,47 @@ class NetworkTestCase(TestCase):
         stack.interfaces.add(handler)
 
         return AddedInterface(handler=handler, frames_tx=frames_tx)
+
+    def _register_loopback(self) -> PacketHandlerLoopback:
+        """
+        Register a real loopback ('lo') interface alongside the boot
+        interface and return its handler — the opt-in local-delivery
+        affordance for tests that exercise 'connect(("127.0.0.1", ...))'
+        / own-IP loops. Registered AFTER the setUp interface snapshot, so
+        'tearDown' drops it from the registry; its ring eventfd is closed
+        via 'addCleanup'.
+        """
+
+        lo = PacketHandlerLoopback(interface_mtu=stack.INTERFACE__LOOPBACK__MTU)
+        self.addCleanup(lo._lo_ring.close)
+        stack.interfaces.add(lo)
+        return lo
+
+    def drive_loopback(self, *, lo: PacketHandlerLoopback) -> int:
+        """
+        Synchronously drain the loopback ring and deliver each queued
+        packet into the IP RX path, returning the number delivered.
+        Keeps loopback integration tests single-threaded / deterministic
+        — no consumer thread — matching the harness's inline-TX model.
+
+        Replies generated during delivery re-enqueue onto the same ring
+        (the TX diversion), so a single call drives a conversation
+        (handshake, request/response) to quiescence. A generous
+        iteration cap is a backstop against a non-terminating exchange.
+        """
+
+        delivered = 0
+        for _ in range(_LOOPBACK__DRIVE_MAX_ITERS):
+            if lo._lo_ring.qsize == 0:
+                break
+            packet_rx = lo._lo_ring.dequeue()
+            if packet_rx is None:
+                break
+            lo._deliver_loopback(packet_rx)
+            delivered += 1
+        else:
+            raise AssertionError(f"drive_loopback did not quiesce within {_LOOPBACK__DRIVE_MAX_ITERS} iterations.")
+        return delivered
 
     @override
     def tearDown(self) -> None:

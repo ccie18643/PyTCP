@@ -1888,26 +1888,74 @@ class TestStackInitZeroInterface(TestCase):
             else:
                 setattr(stack, name, value)
 
-    def test__stack__init_zero_interface_registers_no_interface(self) -> None:
+    def test__stack__init_no_device_registers_only_loopback(self) -> None:
         """
         Ensure 'stack.init()' called with no fd / layer brings the stack
-        up with an empty interface registry — the daemon's valid resting
-        state before any device attaches.
+        up with exactly the loopback interface — like Linux, 'lo' is
+        always present, and it is the daemon's resting state before any
+        physical device attaches.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         stack.init()
+        self.addCleanup(self._close_loopback_ring)
 
         self.assertEqual(
             len(stack.interfaces),
-            0,
-            msg="Zero-interface init() must register no interfaces.",
+            1,
+            msg="No-device init() must register exactly the loopback interface.",
+        )
+        lo = stack.loopback_handler()
+        self.assertIsNotNone(
+            lo,
+            msg="No-device init() must register a loopback interface.",
+        )
+        assert lo is not None  # narrowed for mypy / pyright; asserted above
+        self.assertIs(
+            lo.interface_layer,
+            InterfaceLayer.LOOPBACK,
+            msg="The sole registered interface must be the loopback interface.",
         )
         self.assertTrue(
             stack.stack_initialized,
-            msg="Zero-interface init() must still mark the stack initialized.",
+            msg="No-device init() must still mark the stack initialized.",
         )
+
+    def test__stack__init_loopback_owns_loopback_addresses(self) -> None:
+        """
+        Ensure the loopback interface 'stack.init()' brings up owns the
+        IPv4 and IPv6 loopback addresses (127.0.0.1 and ::1) so local
+        delivery has a receiving address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.init()
+        self.addCleanup(self._close_loopback_ring)
+
+        lo = stack.loopback_handler()
+        assert lo is not None  # narrowed for mypy; asserted above
+        self.assertEqual(
+            lo.ip4_unicast,
+            [Ip4Address("127.0.0.1")],
+            msg="The loopback interface must own 127.0.0.1.",
+        )
+        self.assertEqual(
+            lo.ip6_unicast,
+            [Ip6Address("::1")],
+            msg="The loopback interface must own ::1.",
+        )
+
+    def _close_loopback_ring(self) -> None:
+        """
+        Close the loopback ring's eventfd if a loopback interface is
+        registered — keeps a real-'init()' test from leaking the fd.
+        """
+
+        lo = stack.loopback_handler()
+        if lo is not None:
+            lo._lo_ring.close()
 
     def test__stack__init_zero_interface_builds_unbound_tools(self) -> None:
         """
@@ -2015,6 +2063,71 @@ class TestStackInitZeroInterface(TestCase):
             ifindex,
             stack.interfaces,
             msg="add_interface after zero-interface init() must register the device.",
+        )
+
+
+class TestStackLoopbackLifecycle(TestCase):
+    """
+    The loopback interface start / stop lifecycle tests — 'lo's own
+    consumer thread comes up with 'stack.start()' and winds down with
+    'stack.stop()'.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Snapshot the module-level singletons the lifecycle rebinds and
+        suppress the subsystem-init log lines.
+        """
+
+        self.enterContext(patch("pytcp.stack.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+
+        self._sentinel = object()
+        self._snapshot = {
+            name: getattr(stack, name, self._sentinel)
+            for name in ("timer", "interfaces", "stack_initialized", "stack_running")
+        }
+
+    @override
+    def tearDown(self) -> None:
+        """
+        Stop the stack if a test left it running, then restore the
+        snapshot so a follow-up test starts clean.
+        """
+
+        if getattr(stack, "stack_running", False):
+            stack.stop()
+        for name, value in self._snapshot.items():
+            if value is self._sentinel:
+                if hasattr(stack, name):
+                    delattr(stack, name)
+            else:
+                setattr(stack, name, value)
+
+    def test__stack__loopback_thread_starts_and_stops(self) -> None:
+        """
+        Ensure 'stack.start()' brings the loopback interface's consumer
+        thread up and 'stack.stop()' winds it down, so locally-delivered
+        traffic is serviced only while the stack is running.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.init()
+        lo = stack.loopback_handler()
+        assert lo is not None  # narrowed for mypy; init() always registers lo
+
+        stack.start(wait_for_dhcp_bind=False)
+        self.assertTrue(
+            lo._thread is not None and lo._thread.is_alive(),
+            msg="stack.start() must bring the loopback consumer thread up.",
+        )
+
+        stack.stop()
+        self.assertFalse(
+            lo._thread is not None and lo._thread.is_alive(),
+            msg="stack.stop() must wind the loopback consumer thread down.",
         )
 
 
