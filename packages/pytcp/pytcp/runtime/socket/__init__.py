@@ -1651,7 +1651,18 @@ class socket(ABC):
         Get the remote address and port. Reads through the
         'remote_ip_address' property — dual-stack accepted children
         return the IPv4-mapped IPv6 string form.
+
+        Raises 'OSError(ENOTCONN)' when the socket is not connected (no
+        peer — a bound-only / listening socket has a zero remote port),
+        matching the BSD / stdlib 'getpeername(2)' contract. asyncio's
+        transport relies on this: it calls 'getpeername()' to decide
+        whether a datagram socket is connected (use 'send') or not (use
+        'sendto') — returning a zero peer instead of raising made
+        'create_datagram_endpoint' send with no destination.
         """
+
+        if self._remote_port == 0:
+            raise OSError(errno.ENOTCONN, os.strerror(errno.ENOTCONN))
 
         return str(self.remote_ip_address), self._remote_port
 

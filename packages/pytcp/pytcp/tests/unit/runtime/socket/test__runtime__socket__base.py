@@ -1013,6 +1013,28 @@ class TestSocketGetSockName(TestCase):
             msg="socket.getpeername() must return a (remote_str_ip, remote_port) tuple.",
         )
 
+    def test__socket__getpeername_unconnected_raises_enotconn(self) -> None:
+        """
+        Ensure 'getpeername()' on an unconnected socket (zero remote port)
+        raises 'OSError(ENOTCONN)', matching the BSD / stdlib
+        'getpeername(2)' contract — asyncio's datagram transport relies on
+        this to distinguish an unconnected socket (use 'sendto') from a
+        connected one (use 'send').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        s = _StubSocket(remote_port=0)
+
+        with self.assertRaises(OSError) as ctx:
+            s.getpeername()
+
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.ENOTCONN,
+            msg="An unconnected socket's getpeername() must raise OSError(ENOTCONN).",
+        )
+
 
 class TestSocketPlaceholders(TestCase):
     """
