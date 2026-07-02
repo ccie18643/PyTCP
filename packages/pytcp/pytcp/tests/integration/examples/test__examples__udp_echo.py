@@ -158,6 +158,26 @@ class TestUdpEchoServer(IsolatedAsyncioTestCase):
             msg="A 'malpi' request must be answered with the monkey over the endpoint.",
         )
 
+    async def test__udp_echo__server_drops_empty_datagram(self) -> None:
+        """
+        Ensure a zero-length datagram is silently dropped (no reply),
+        matching the legacy echo service's 'if message:' guard rather than
+        echoing an empty datagram back.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        loop = asyncio.get_running_loop()
+        host, port = await self._start_server()
+
+        client = _udp_socket()
+        client.setblocking(False)
+        self.addCleanup(client.close)
+        await loop.sock_sendto(client, b"", (host, port))
+
+        with self.assertRaises(TimeoutError):
+            await asyncio.wait_for(loop.sock_recvfrom(client, 65535), timeout=0.5)
+
     async def test__udp_echo__client_and_server_interoperate(self) -> None:
         """
         Ensure the example client ('echo_once') and the async server

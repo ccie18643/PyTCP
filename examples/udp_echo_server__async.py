@@ -117,9 +117,13 @@ class _EchoServerProtocol(asyncio.DatagramProtocol):
     @override
     def datagram_received(self, data: bytes, addr: tuple[str | Any, int]) -> None:
         """
-        Echo 'data' (or the matching monkey) back to the sender 'addr'.
+        Echo 'data' (or the matching monkey) back to the sender 'addr'. A
+        zero-length datagram is silently dropped (legacy echo-service
+        parity — an empty request gets no reply).
         """
 
+        if not data:
+            return
         assert self._transport is not None  # connection_made runs first
         self._transport.sendto(echo_reply(data), addr)
 
