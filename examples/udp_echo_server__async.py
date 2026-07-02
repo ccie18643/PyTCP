@@ -64,7 +64,7 @@ from typing import Any, cast, override
 
 import click
 
-from examples.malpi import malpa, malpi, malpka
+from examples.malpi import echo_reply
 from net_addr import Ip4Address
 from pytcp import socket as pytcp_socket
 
@@ -73,24 +73,6 @@ from pytcp import socket as pytcp_socket
 type MakeSocket = Callable[[], socket.socket]
 
 ECHO__PORT: int = 7
-
-
-def echo_reply(message: bytes, /) -> bytes:
-    """
-    Build the echo reply for 'message': the message itself, unless it names
-    a monkey ('malpka' / 'malpa' / 'malpi'), in which case the matching
-    ASCII-art monkey is returned. 'malpka' is tested before 'malpa' so the
-    more specific name wins.
-    """
-
-    lowered = message.strip().lower()
-    if b"malpka" in lowered:
-        return malpka
-    if b"malpa" in lowered:
-        return malpa
-    if b"malpi" in lowered:
-        return malpi
-    return message
 
 
 class _EchoServerProtocol(asyncio.DatagramProtocol):

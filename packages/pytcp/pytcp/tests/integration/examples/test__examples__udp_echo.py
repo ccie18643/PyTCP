@@ -37,9 +37,9 @@ import asyncio
 import socket
 from unittest import IsolatedAsyncioTestCase, TestCase
 
-from examples.malpi import malpa, malpi, malpka
+from examples.malpi import echo_reply, malpa, malpi, malpka
 from examples.udp_echo_client import echo_once
-from examples.udp_echo_server__async import echo_reply, serve
+from examples.udp_echo_server__async import serve
 
 
 def _udp_socket() -> socket.socket:

@@ -25,7 +25,8 @@
 """
 This module contains the test monkeys used as easter-egg payloads in the
 echo examples (a 'malpa' / 'malpka' / 'malpi' request is answered with the
-matching ASCII-art monkey). Carried over from the legacy examples.
+matching ASCII-art monkey) plus the shared 'echo_reply' selector both the
+UDP and TCP echo servers use. Carried over from the legacy examples.
 
 examples/malpi.py
 
@@ -81,3 +82,23 @@ malpa: bytes = (
 
 
 malpi: bytes = b"".join([_ + __ + b"\n" for _, __ in zip(malpka.split(b"\n"), malpa.split(b"\n"))])
+
+
+def echo_reply(message: bytes, /) -> bytes:
+    """
+    Build the echo reply for 'message': the message itself, unless it names
+    a monkey ('malpka' / 'malpa' / 'malpi'), in which case the matching
+    ASCII-art monkey is returned instead. The three names are tested in
+    'malpka' -> 'malpa' -> 'malpi' order, matching the legacy echo service.
+    Matching is case-insensitive and ignores surrounding whitespace; the
+    echoed bytes for a non-monkey message are the original, unstripped.
+    """
+
+    lowered = message.strip().lower()
+    if b"malpka" in lowered:
+        return malpka
+    if b"malpa" in lowered:
+        return malpa
+    if b"malpi" in lowered:
+        return malpi
+    return message
