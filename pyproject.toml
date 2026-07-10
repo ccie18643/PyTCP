@@ -49,6 +49,17 @@ python_version = "3.14"
 strict = true
 disallow_any_unimported = true
 show_error_codes = true
+# Non-incremental by design. mypy's incremental cache can MASK whole-file
+# diagnostics — most notably 'unused-ignore' (warn_unused_ignores): a module
+# loaded from a warm '.mypy_cache' is not re-analysed, so a stale
+# '# type: ignore[code]' whose underlying error code has shifted (e.g.
+# [misc] -> [call-arg] across a mypy release) is silently not re-flagged.
+# The result is a non-deterministic gate: a warm cache passes 'make lint'
+# while a cold checkout (a CI fresh clone) fails on identical source.
+# Disabling the cache makes every run — the gate, CI, and ad-hoc CLI —
+# deterministic and identical to a cold check. Full non-incremental mypy is
+# ~6 s per package here; negligible for a gate that runs occasionally.
+incremental = false
 enable_error_code = [
     "explicit-override",
     "ignore-without-code",
