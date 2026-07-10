@@ -42,6 +42,7 @@ import os
 import re
 import signal
 import sys
+import time
 from collections.abc import Callable
 from typing import Any, cast, override
 
@@ -105,6 +106,7 @@ from pytcp.cli.cli__ping import (
     resolve_destination,
     run_ping,
 )
+from pytcp.cli.cli__tcpdump import run_tcpdump
 from pytcp.cli.cli__traceroute import (
     TRACEROUTE__DEFAULT_MAX_HOPS,
     TRACEROUTE__DEFAULT_PROBES,
@@ -121,7 +123,7 @@ from pytcp.cli.cli__traceroute import (
     run_traceroute,
     traceroute_profile,
 )
-from pytcp.client import ClientStack, connect
+from pytcp.client import ClientPacketSocket, ClientStack, connect
 from pytcp.daemon.daemon import (
     default_pidfile_path,
     default_socket_path,
@@ -130,7 +132,8 @@ from pytcp.daemon.daemon import (
 )
 from pytcp.ipc.ipc__errors import IpcRemoteError
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
-from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.socket import Socket
 
 
@@ -1052,6 +1055,57 @@ def _cmd_traceroute(args: argparse.Namespace, /) -> int:
     return 0 if reached else 1
 
 
+def _capture_timestamp() -> str:
+    """
+    Render the current wall-clock time as 'HH:MM:SS.microseconds' — the
+    leading field of each capture line, in tcpdump style.
+    """
+
+    now = time.time()
+    return time.strftime("%H:%M:%S", time.localtime(now)) + f".{int(now % 1 * 1_000_000):06d}"
+
+
+def _cmd_tcpdump(args: argparse.Namespace, /) -> int:
+    """
+    Run the 'tcpdump' command — open an AF_PACKET capture socket on the
+    daemon and stream decoded, direction-tagged frame summaries in the
+    style of the Linux 'tcpdump' utility, until Ctrl-C or '-c COUNT'
+    frames. Both ingress and the stack's own egress (its replies) are
+    shown, via the AF_PACKET TX tap.
+    """
+
+    try:
+        client = connect(socket_path=args.ipc_socket)
+    except OSError as error:
+        # Like 'ping', tcpdump streams over its own socket rather than the
+        # collect-and-print '_run_with_client' path, so it reports an
+        # unreachable daemon itself.
+        _report_daemon_unreachable(args.ipc_socket, error)
+        return 1
+
+    captured = 0
+    try:
+        sock = client.socket(AddressFamily.PACKET, SocketType.RAW, ETH_P_ALL)
+        assert isinstance(sock, ClientPacketSocket)
+        if args.interface is not None:
+            ifindex = _resolve_interface(client, args.interface, command="tcpdump")
+            sock.bind(SockAddrLl(ifindex=ifindex, ethertype=ETH_P_ALL))
+        print(f"tcpdump: listening on {args.interface or 'all interfaces'} (Ctrl-C to stop)")
+        try:
+            for line in run_tcpdump(sock, count=args.count):
+                print(f"{_capture_timestamp()} {line}")
+                captured += 1
+        except KeyboardInterrupt:
+            print()
+        finally:
+            sock.close()
+    finally:
+        client.close()
+
+    print(f"{captured} packets captured")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """
     Build the 'pytcp' multitool argument parser.
@@ -1271,6 +1325,25 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"Seconds to wait per probe (default: {TRACEROUTE__DEFAULT_TIMEOUT__SEC}).",
     )
     parser_traceroute.set_defaults(func=_cmd_traceroute, needs_client=False)
+
+    parser_tcpdump = subparsers.add_parser("tcpdump", help="Capture and decode frames (Linux 'tcpdump').")
+    parser_tcpdump.add_argument(
+        "-i",
+        "--interface",
+        dest="interface",
+        default=None,
+        metavar="IFACE",
+        help="Interface to capture on (default: all interfaces).",
+    )
+    parser_tcpdump.add_argument(
+        "-c",
+        "--count",
+        type=int,
+        default=None,
+        metavar="COUNT",
+        help="Exit after capturing COUNT frames.",
+    )
+    parser_tcpdump.set_defaults(func=_cmd_tcpdump, needs_client=False)
 
     parser_stack = subparsers.add_parser("stack", help="Manage the PyTCP stack daemon.")
     stack_subparsers = parser_stack.add_subparsers(

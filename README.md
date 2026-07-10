@@ -48,7 +48,7 @@ Contributions are welcome.
  - Homegrown high-performance logger (no third-party logging dependency).
  - Berkeley-sockets-style API for TCP / UDP / RAW / `AF_PACKET`: `fileno()`/eventfd + `selectors` integration, blocking & non-blocking modes, errno-mapped `OSError`, `getaddrinfo` family, common `setsockopt` options, `IP_RECVERR`/`MSG_ERRQUEUE` error queue.
  - Runs as a **daemon**: out-of-process clients open real (SCM_RIGHTS-passed) socket fds and drive the control APIs over an AF_UNIX boundary, either through the explicit `pytcp.client` API or a **1:1 stdlib-`socket` drop-in** (`import pytcp.socket as socket`) that runs off-the-shelf blocking and `asyncio` programs unmodified, with DNS resolved through the stack.
- - Single `pytcp` CLI multitool (zero-dependency): `daemon` / `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute`.
+ - Single `pytcp` CLI multitool (zero-dependency): `daemon` / `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute` / `tcpdump` (a daemon-native capture that decodes both ingress and the stack's own egress).
  - Loopback interface (`lo`): 127.0.0.0/8 · ::1 and own-address local delivery, traffic looping inside the stack with no wire frames.
  - Native `unittest` suite (~13,400 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
 
@@ -294,7 +294,9 @@ TCP/UDP echo, multicast service discovery, ping — live in
 [`examples/`](examples/). And a single **`pytcp` CLI** drives the whole
 thing: `pytcp daemon start/stop/status`, the control-plane introspectors
 `pytcp ss / link / addr / route / neigh / sysctl`, and the network tools
-`pytcp ping / host / nc / traceroute`.
+`pytcp ping / host / nc / traceroute`, and `pytcp tcpdump` — a
+daemon-native packet capture that decodes each frame with `net_proto`
+and shows both directions, including the stack's own replies.
 
 #### Stack startup — IPv6 SLAAC + DAD, MLDv2, IPv4 ACD
 

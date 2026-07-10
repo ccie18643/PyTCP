@@ -179,7 +179,8 @@ A single zero-dependency `pytcp` command (console script; also
 Linux-tool-lookalike subcommands: `pytcp daemon start / stop / status`,
 the control-plane introspectors `pytcp ss / link / addr / route / neigh
 / sysctl` (faithful, parseable layouts), and the batteries-included
-network tools `pytcp ping / host / nc / traceroute`.
+network tools `pytcp ping / host / nc / traceroute / tcpdump` (the last a
+daemon-native capture that decodes both ingress and egress).
 
 ## Install
 

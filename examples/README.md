@@ -95,7 +95,7 @@ inside the stack over `lo`. The full reproducible recipe is in
   bootstrap reference (`stack.py`), the raw `pytcp.client` out-of-process
   control API demo (`client__tcp_echo_ipc.py`), and the in-process service
   programs the `tools/capture` live-demo harness drives.
-- **The `pytcp` CLI** — `pytcp ping / host / nc / traceroute` are
+- **The `pytcp` CLI** — `pytcp ping / host / nc / traceroute / tcpdump` are
   batteries-included tools over the same daemon; `pytcp ss / link / addr /
   route / neigh / sysctl` introspect and drive the control plane.
 - The main [`README.md`](../README.md) — live wire captures of the stack in
