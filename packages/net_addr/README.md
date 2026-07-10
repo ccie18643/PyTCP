@@ -135,9 +135,9 @@ pip install "PyTCP-net_addr[cli]"   # adds click; exposes the net_addr ClickType
 Python **3.14+** (the library uses PEP 695 generics and modern
 typing).
 
-## Current state (3.0.7)
+## Current state (3.0.8)
 
-- 23 source modules; **2610 unit tests**, ~99% source coverage (the
+- 23 source modules; **2636 unit tests**, ~99% source coverage (the
   remaining lines are `@abstractmethod` stub bodies, a documented
   unreachable `NoReturn` guard, and the lazy-`click` `__getattr__`
   exercised in subprocess probes).

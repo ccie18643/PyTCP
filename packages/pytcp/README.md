@@ -82,7 +82,7 @@ talks to its kernel:
 
 | API | Linux equivalent |
 |---|---|
-| `pytcp.socket` — BSD `socket()` factory + methods (TCP / UDP / raw / `AF_PACKET`) | `socket(2)` |
+| `pytcp.runtime.socket` (in-process) / `pytcp.socket` daemon drop-in — BSD `socket()` factory + methods (TCP / UDP / raw / `AF_PACKET`) | `socket(2)` |
 | `pytcp.stack.sysctl` — runtime-tunable policy registry | `/proc/sys/net/` |
 | `pytcp.stack.link` — per-interface MAC / MTU / state / counters | `ip link` / `RTM_*LINK` |
 | `pytcp.stack.address` — assign / remove IPv4 / IPv6 host addresses | `ip addr` / `RTM_*ADDR` |
@@ -102,17 +102,22 @@ daemon / multi-homed shape.
 
 ### Sockets
 
-`pytcp.socket` mirrors the stdlib `socket` module: a `socket(...)`
-factory returns `TcpSocket` / `UdpSocket` / `RawSocket` /
-`PacketSocket`, with `bind` / `listen` / `accept` / `connect` /
-`send` / `recv` / `close`, `fileno()` + eventfd for `selectors`
-integration, blocking & non-blocking modes, errno-mapped `OSError`,
-`getaddrinfo`, common `setsockopt` options, IPv4/IPv6 multicast group
-membership and source-filter options (`IP_ADD_MEMBERSHIP`,
-`IP_ADD_SOURCE_MEMBERSHIP`, `IPV6_JOIN_GROUP`, …), and an
-`IP_RECVERR` / `MSG_ERRQUEUE` error queue. Stdlib-parity constants
-(`AF_INET`, `SOCK_STREAM`, `IP_*`, `SO_*`, `MSG_*`) are exposed as
-bare module names backed by `IntEnum`s.
+The in-process socket facade, `pytcp.runtime.socket`, mirrors the
+stdlib `socket` module: a `socket(...)` factory returns `TcpSocket` /
+`UdpSocket` / `RawSocket` / `PacketSocket`, with `bind` / `listen` /
+`accept` / `connect` / `send` / `recv` / `close`, `fileno()` + eventfd
+for `selectors` integration, blocking & non-blocking modes,
+errno-mapped `OSError`, `getaddrinfo`, common `setsockopt` options,
+IPv4/IPv6 multicast group membership and source-filter options
+(`IP_ADD_MEMBERSHIP`, `IP_ADD_SOURCE_MEMBERSHIP`, `IPV6_JOIN_GROUP`, …),
+and an `IP_RECVERR` / `MSG_ERRQUEUE` error queue. Stdlib-parity
+constants (`AF_INET`, `SOCK_STREAM`, `IP_*`, `SO_*`, `MSG_*`) are
+exposed as bare module names backed by `IntEnum`s.
+
+The top-level **`pytcp.socket`** name is the daemon-backed **1:1
+stdlib-`socket` drop-in** (see *Daemon mode* below): the same surface,
+but each socket is opened on a running daemon and off-the-shelf code
+adopts it by changing one import line.
 
 ## Daemon mode — out-of-process clients
 
@@ -152,6 +157,30 @@ sockets, and `client.sysctl` / `.route` / `.link` / `.address` /
 the boundary. See
 [`examples_legacy/client__tcp_echo_ipc.py`](https://github.com/ccie18643/PyTCP/blob/master/examples_legacy/client__tcp_echo_ipc.py).
 
+### The 1:1 stdlib-`socket` drop-in
+
+For off-the-shelf programs that expect the standard `socket` module,
+the top-level **`pytcp.socket`** package is a daemon-backed drop-in — an
+app runs over the daemon by changing one import line
+(`import pytcp.socket as socket`, or `sys.modules["socket"] =
+pytcp.socket`). It covers blocking **and** non-blocking / `select` /
+`selectors` use, `connect_ex` / `EINPROGRESS`, non-blocking `accept`,
+faithful `errno` / exception reconstruction, `makefile` / `dup` /
+`detach`, and DNS resolved *through* the daemon's own stack
+(`getaddrinfo` / `gethostbyname`). Real stdlib `http.client` and
+`asyncio` client/server programs run unmodified over it. The runnable
+apps live in [`examples/`](https://github.com/ccie18643/PyTCP/tree/master/examples)
+(async FTP, TCP/UDP echo, multicast discovery).
+
+### The `pytcp` CLI multitool
+
+A single zero-dependency `pytcp` command (console script; also
+`python -m pytcp.cli`) manages and drives the daemon with
+Linux-tool-lookalike subcommands: `pytcp daemon start / stop / status`,
+the control-plane introspectors `pytcp ss / link / addr / route / neigh
+/ sysctl` (faithful, parseable layouts), and the batteries-included
+network tools `pytcp ping / host / nc / traceroute`.
+
 ## Install
 
 ```bash
@@ -185,29 +214,41 @@ needing no bridge, are also available — `make tun3`
 interfaces and add / remove them at runtime, so any mix of taps and
 tuns can be attached to one running stack.
 
-PyTCP is consumed as a library through the `stack` lifecycle API and
-the `pytcp.socket` BSD-sockets API. See
+In-process, PyTCP is consumed through the `stack` lifecycle API and the
+`pytcp.runtime.socket` BSD-sockets API; out-of-process, through the
+daemon-backed `pytcp.socket` drop-in or the explicit `pytcp.client`
+API. See
 [`examples_legacy/`](https://github.com/ccie18643/PyTCP/tree/master/examples_legacy) — `examples_legacy/stack.py` is the complete
-runnable reference (TAP/TUN open, `stack.init(...)`, multi-interface
-bind, runtime interface removal on SIGUSR1).
+runnable in-process reference (TAP/TUN open, `stack.init(...)`,
+multi-interface bind, runtime interface removal on SIGUSR1) — and
+[`examples/`](https://github.com/ccie18643/PyTCP/tree/master/examples)
+for daemon-backed applications over the drop-in.
 
 ## Requirements
 
 Python **3.14+**, Linux (TAP/TUN), POSIX.
 
-## Current state (3.0.7)
+## Current state (3.0.8)
 
-- ~210 source modules; 3.0.7 adds the kernel/userspace IPC layer (an
-  `ipc` AF_UNIX RPC + SCM_RIGHTS fd-passing core, a `client`
-  out-of-process mirror, and a first-class `daemon` entry point). The
-  pytcp suite runs ~4,000 unit + integration tests (the full repo
-  suite, across all three packages + examples, is ~12,500). Lint clean
-  (codespell + isort + black + flake8 + mypy strict + pylint).
-- Host-stack feature-complete (North Star Phase 1), now reachable both
-  in-process and over an out-of-process **daemon** boundary (AF_UNIX
+- ~230 source modules. On top of the 3.0.7 kernel/userspace IPC layer
+  (`ipc` AF_UNIX RPC + SCM_RIGHTS fd-passing, a `client` out-of-process
+  mirror, a first-class `daemon` entry point), 3.0.8 adds the two
+  user-facing layers on top of that boundary: the **1:1 stdlib-`socket`
+  drop-in** (`pytcp.socket`, blocking + non-blocking / asyncio, DNS
+  through the daemon) and the **`pytcp` CLI multitool** (`daemon` /
+  `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` + `ping` /
+  `host` / `nc` / `traceroute`), plus a **loopback interface** (`lo`,
+  127.0.0.0/8 · ::1, own-IP local delivery). The pytcp suite runs
+  ~4,750 unit + integration tests (the full repo suite, across all
+  three packages + examples, is ~13,400). Lint clean (codespell +
+  isort + black + flake8 + mypy strict + pylint + pyright +
+  import-linter).
+- Host-stack feature-complete (North Star Phase 1), reachable
+  in-process, over an out-of-process **daemon** boundary (AF_UNIX
   control plane + SCM_RIGHTS socket-fd passing for TCP / UDP / raw /
-  `AF_PACKET`). Phase-2 router/forwarding sits behind the
-  `forward_or_deliver` seam as a stub. Authoring contracts in
+  `AF_PACKET`), and as a one-line stdlib-`socket` swap. Phase-2
+  router/forwarding sits behind the `forward_or_deliver` seam as a
+  stub. Authoring contracts in
   [`.claude/rules/pytcp.md`](https://github.com/ccie18643/PyTCP/blob/master/.claude/rules/pytcp.md); per-RFC
   adherence in [`docs/rfc/`](https://github.com/ccie18643/PyTCP/tree/master/docs/rfc).
 

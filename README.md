@@ -20,7 +20,7 @@ The stack covers Ethernet II and IEEE 802.3 framing, ARP, IPv4 and IPv6 (extensi
 
 The project's goal is a pure-Python stack that is feature-equivalent to the Linux kernel network stack. RFC text is the primary authority; where a spec is silent or offers a choice, PyTCP follows Linux. Host-stack parity is the current scope; router-grade forwarding is planned.
 
-Behaviour is covered by roughly 12,500 unit and integration tests and tracked against more than 125 per-RFC adherence audits kept in the repository under `docs/rfc/`.
+Behaviour is covered by roughly 13,400 unit and integration tests and tracked against more than 125 per-RFC adherence audits kept in the repository under `docs/rfc/`.
 
 The stack has zero runtime dependencies (standard library only) and exposes a Berkeley-sockets-style API so it can be used in place of the standard socket layer. It is organised as three independently-published, strictly-layered packages — each usable on its own:
 
@@ -47,7 +47,10 @@ Contributions are welcome.
  - Per-protocol packet-flow stat counters; TX-path feedback so send failures reach sockets.
  - Homegrown high-performance logger (no third-party logging dependency).
  - Berkeley-sockets-style API for TCP / UDP / RAW / `AF_PACKET`: `fileno()`/eventfd + `selectors` integration, blocking & non-blocking modes, errno-mapped `OSError`, `getaddrinfo` family, common `setsockopt` options, `IP_RECVERR`/`MSG_ERRQUEUE` error queue.
- - Native `unittest` suite (~12,500 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
+ - Runs as a **daemon**: out-of-process clients open real (SCM_RIGHTS-passed) socket fds and drive the control APIs over an AF_UNIX boundary, either through the explicit `pytcp.client` API or a **1:1 stdlib-`socket` drop-in** (`import pytcp.socket as socket`) that runs off-the-shelf blocking and `asyncio` programs unmodified, with DNS resolved through the stack.
+ - Single `pytcp` CLI multitool (zero-dependency): `daemon` / `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute`.
+ - Loopback interface (`lo`): 127.0.0.0/8 · ::1 and own-address local delivery, traffic looping inside the stack with no wire frames.
+ - Native `unittest` suite (~13,400 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
 
 #### Ethernet
 
@@ -188,15 +191,21 @@ sudo ip link set dev br0 up
 sudo ip link set dev tap7 master br0
 ```
 
-PyTCP is consumed as a library through the ```pytcp.stack``` lifecycle API
-(```stack.init(...)``` → ```stack.start()``` → ```stack.stop()```) and the
-```pytcp.socket``` Berkeley-sockets-style API. The subsystems run in their own
-threads; after ```start()``` control returns to your code.
+PyTCP is consumed in-process as a library through the ```pytcp.stack```
+lifecycle API (```stack.init(...)``` → ```stack.start()``` →
+```stack.stop()```) and the ```pytcp.runtime.socket```
+Berkeley-sockets-style API. The subsystems run in their own threads; after
+```start()``` control returns to your code. Out-of-process, a **daemon**
+exposes the same surfaces over an AF_UNIX boundary — driven by the
+daemon-backed ```pytcp.socket``` 1:1 stdlib-`socket` drop-in, the explicit
+```pytcp.client``` API, or the ```pytcp``` CLI multitool.
 
-For a complete, runnable reference — opening the TAP/TUN file descriptor,
-calling ```stack.init(...)```, and driving the stack — see
-[```examples_legacy/stack.py```](examples_legacy/stack.py) and the other programs in the
-[```examples_legacy/```](examples_legacy/) directory.
+For a complete, runnable in-process reference — opening the TAP/TUN file
+descriptor, calling ```stack.init(...)```, and driving the stack — see
+[```examples_legacy/stack.py```](examples_legacy/stack.py) and the other
+programs in the [```examples_legacy/```](examples_legacy/) directory. For
+daemon-backed applications over the drop-in (async FTP, TCP/UDP echo,
+multicast discovery, ping), see [```examples/```](examples/).
 
 ---
 
@@ -273,6 +282,19 @@ in-process subsystem form in
 `client.socket(...)` factory returns UDP / raw / AF_PACKET sockets, and
 `client.sysctl` / `.route` / `.link` / `.address` / `.neighbor` /
 `.membership` mirror the in-process control APIs across the boundary.
+
+For off-the-shelf programs, `pytcp.socket` is a **1:1 stdlib-`socket`
+drop-in** over the same daemon — an app adopts it by changing one import
+line (`import pytcp.socket as socket`). It supports blocking **and**
+non-blocking / `select` / `asyncio` use, `connect_ex`, faithful
+`errno`/exception reconstruction, `makefile`/`dup`, and DNS resolved
+through the daemon's own stack; real stdlib `http.client` and `asyncio`
+servers/clients run over it unchanged. The runnable apps — async FTP,
+TCP/UDP echo, multicast service discovery, ping — live in
+[`examples/`](examples/). And a single **`pytcp` CLI** drives the whole
+thing: `pytcp daemon start/stop/status`, the control-plane introspectors
+`pytcp ss / link / addr / route / neigh / sysctl`, and the network tools
+`pytcp ping / host / nc / traceroute`.
 
 #### Stack startup — IPv6 SLAAC + DAD, MLDv2, IPv4 ACD
 

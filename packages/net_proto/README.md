@@ -43,6 +43,7 @@ dataclass, with integrity + sanity validation and typed wire enums.
 | UDP | RFC 768 |
 | DHCPv4 (+ options) | RFC 2131 / 2132 |
 | DHCPv6 (+ options) | RFC 8415 |
+| DNS (A / AAAA query + response, name compression) | RFC 1035 |
 
 ## The six-file pattern
 
@@ -112,9 +113,9 @@ library) — no other runtime dependencies. Fully typed (ships
 Python **3.14+** (PEP 695 generics on the assembler stacking,
 modern typing throughout).
 
-## Current state (3.0.7)
+## Current state (3.0.8)
 
-- ~260 source modules; **5770 unit tests**, ~99% source coverage
+- ~270 source modules; **6024 unit tests**, ~99% source coverage
   (the remaining lines are protocol dunders, `from_buffer`
   unpacking, and a few integrity-rejection branches with no
   dedicated rejection test — test-completeness, not defects).
