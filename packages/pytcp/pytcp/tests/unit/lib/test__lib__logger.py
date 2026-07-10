@@ -397,7 +397,7 @@ class TestLoggerSignature(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            log("stack", "msg", 1)  # type: ignore[misc]
+            log("stack", "msg", 1)  # type: ignore[call-arg]
 
 
 class TestLoggerInterfaceTag(TestCase):

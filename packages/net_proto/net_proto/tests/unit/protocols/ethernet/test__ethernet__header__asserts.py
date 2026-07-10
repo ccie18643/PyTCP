@@ -345,7 +345,7 @@ class TestEthernetHeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            EthernetHeader(  # type: ignore[misc]
+            EthernetHeader(  # type: ignore[call-arg]
                 MacAddress(),
                 MacAddress(),
                 EtherType.RAW,

@@ -165,7 +165,7 @@ class TestNetProtoLibProtoStructDataclassConfig(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            _ConcreteStruct(1)  # type: ignore[misc]
+            _ConcreteStruct(1)  # type: ignore[call-arg]
 
     def test__net_proto__lib__proto_struct__subclass_has_slots(self) -> None:
         """

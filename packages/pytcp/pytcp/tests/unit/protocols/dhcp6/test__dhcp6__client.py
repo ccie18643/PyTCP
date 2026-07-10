@@ -90,7 +90,7 @@ class TestDhcp6ClientInit(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp6Client(_DEFAULT_MAC)  # type: ignore[misc]
+            Dhcp6Client(_DEFAULT_MAC)  # type: ignore[call-arg]
 
 
 class TestDhcp6ClientFetch(TestCase):

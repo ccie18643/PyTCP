@@ -894,7 +894,7 @@ class TestDhcp4HeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp4Header(  # type: ignore[misc]
+            Dhcp4Header(  # type: ignore[call-arg]
                 Dhcp4Operation.REQUEST,
                 0,
                 0,

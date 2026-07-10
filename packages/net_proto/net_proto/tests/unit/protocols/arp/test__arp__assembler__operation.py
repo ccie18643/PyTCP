@@ -484,7 +484,7 @@ class TestArpAssemblerDefaults(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            ArpAssembler(ArpOperation.REQUEST)  # type: ignore[misc]
+            ArpAssembler(ArpOperation.REQUEST)  # type: ignore[call-arg]
 
 
 class TestArpAssemblerTracker(TestCase):

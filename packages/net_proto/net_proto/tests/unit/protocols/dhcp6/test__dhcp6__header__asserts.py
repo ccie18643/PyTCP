@@ -330,7 +330,7 @@ class TestDhcp6HeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp6Header(  # type: ignore[misc]
+            Dhcp6Header(  # type: ignore[call-arg]
                 Dhcp6MessageType.SOLICIT,
                 0xAABBCC,
             )

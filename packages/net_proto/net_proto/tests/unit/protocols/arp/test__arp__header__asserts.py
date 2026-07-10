@@ -472,7 +472,7 @@ class TestArpHeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            ArpHeader(  # type: ignore[misc]
+            ArpHeader(  # type: ignore[call-arg]
                 ArpOperation.REQUEST,
                 MacAddress(),
                 Ip4Address(),

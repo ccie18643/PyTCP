@@ -119,7 +119,7 @@ class TestDhcp4ClientInit(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp4Client(_DEFAULT_MAC)  # type: ignore[misc]
+            Dhcp4Client(_DEFAULT_MAC)  # type: ignore[call-arg]
 
 
 class _Dhcp4ClientFixture(TestCase):

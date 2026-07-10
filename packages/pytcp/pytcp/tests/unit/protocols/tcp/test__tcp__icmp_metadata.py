@@ -205,7 +205,7 @@ class TestIcmpMetadata(TestCase):
             TypeError,
             msg="IcmpMetadata must reject positional arguments (kw_only=True).",
         ):
-            IcmpMetadata(IcmpCategory.DEST_UNREACHABLE, 3, 3, ip_version=4)  # type: ignore[misc]
+            IcmpMetadata(IcmpCategory.DEST_UNREACHABLE, 3, 3, ip_version=4)  # type: ignore[call-arg]
 
 
 class TestIcmpMetadataMutationGoldens(TestCase):

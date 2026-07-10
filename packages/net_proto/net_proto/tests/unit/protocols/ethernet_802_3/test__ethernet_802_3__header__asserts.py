@@ -401,7 +401,7 @@ class TestEthernet8023HeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Ethernet8023Header(  # type: ignore[misc]
+            Ethernet8023Header(  # type: ignore[call-arg]
                 MacAddress(),
                 MacAddress(),
                 0,
