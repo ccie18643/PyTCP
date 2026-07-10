@@ -38,7 +38,7 @@ import asyncio
 import socket
 from unittest import IsolatedAsyncioTestCase
 
-from examples.malpi import malpi
+from examples.lib.malpi import malpi
 from examples.tcp_echo_client import echo_once
 from examples.tcp_echo_server__async import FAREWELL__PEER_CLOSED, GREETING, serve
 

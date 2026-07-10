@@ -28,7 +28,7 @@ echo examples (a 'malpa' / 'malpka' / 'malpi' request is answered with the
 matching ASCII-art monkey) plus the shared 'echo_reply' selector both the
 UDP and TCP echo servers use. Carried over from the legacy examples.
 
-examples/malpi.py
+examples/lib/malpi.py
 
 ver 3.0.8
 """

@@ -63,7 +63,7 @@ from typing import cast
 
 import click
 
-from examples.malpi import echo_reply
+from examples.lib.malpi import echo_reply
 from net_addr import Ip4Address
 from pytcp import socket as pytcp_socket
 
