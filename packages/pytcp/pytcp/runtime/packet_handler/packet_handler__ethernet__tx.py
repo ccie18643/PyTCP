@@ -46,6 +46,9 @@ from net_proto import (
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
+from pytcp.runtime.socket import PacketType
+from pytcp.runtime.socket.packet__metadata import PacketMetadata
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2
@@ -347,8 +350,48 @@ class EthernetTxHandler:
 
     def __send_out_packet(self, ethernet_packet_tx: EthernetAssembler) -> None:
         __debug__ and log("ether", f"{ethernet_packet_tx.tracker} - {ethernet_packet_tx}")
+        # AF_PACKET egress tap — fan a copy of the outbound frame to every
+        # bound packet socket whose filter matches, tagged PACKET_OUTGOING
+        # (Linux 'dev_queue_xmit_nit'). The tap is parallel to transmission
+        # (a packet socket observes egress; it does not intercept it).
+        self._deliver_tx_to_packet_sockets(ethernet_packet_tx)
         assert self._if._tx_ring is not None, "PacketHandler must have an injected TX ring to send."
         self._if._tx_ring.enqueue(ethernet_packet_tx)
+
+    def _deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        Fan a copy of an outbound assembled frame to every AF_PACKET socket
+        whose '(ifindex, ethertype)' filter matches, tagged PACKET_OUTGOING.
+        Mirrors the RX-side '_deliver_to_packet_sockets'; a cheap
+        empty-registry check keeps the no-packet-socket send path free. Each
+        socket gets a detached 'bytes' copy of the complete link-layer frame
+        exactly as serialized for the wire (same 'assemble' path the TX ring
+        uses, so checksums match).
+        """
+
+        if not stack.packet_sockets:
+            return
+
+        matches = stack.packet_sockets.matching(
+            ifindex=self._if._ifindex,
+            ethertype=ethernet_packet_tx.type,
+        )
+        if not matches:
+            return
+
+        buffers: list[Buffer] = []
+        ethernet_packet_tx.assemble(buffers)
+        frame = b"".join(bytes(buffer) for buffer in buffers)
+
+        sockaddr_ll = SockAddrLl(
+            ifindex=self._if._ifindex,
+            ethertype=ethernet_packet_tx.type,
+            pkttype=PacketType.PACKET_OUTGOING,
+            mac=ethernet_packet_tx.src,
+        )
+        packet_tx_md = PacketMetadata(frame=frame, sockaddr_ll=sockaddr_ll)
+        for sock in matches:
+            sock.process_packet(packet_tx_md)
 
     def send_link_frame(self, frame: Buffer, /) -> None:
         """

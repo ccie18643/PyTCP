@@ -35,7 +35,7 @@ ver 3.0.8
 from typing import override
 from unittest.mock import patch
 
-from net_addr import MacAddress
+from net_addr import Ip4Address, MacAddress
 from net_proto import ArpAssembler, ArpOperation, EthernetAssembler, EtherType
 from net_proto.lib.packet_rx import PacketRx
 from pytcp.runtime.socket import (
@@ -51,6 +51,7 @@ from pytcp.runtime.socket.packet__socket import PacketSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,
+    HOST_B__IP4_ADDRESS,
     MAC__BROADCAST,
     STACK__IP4_HOST,
     STACK__MAC_ADDRESS,
@@ -62,12 +63,17 @@ from pytcp.tests.lib.network_testcase import (
 _MULTICAST_MAC = MacAddress("01:00:5e:00:00:01")
 
 
-def _arp_request_frame(*, ethernet_dst: MacAddress = STACK__MAC_ADDRESS) -> bytes:
+def _arp_request_frame(
+    *,
+    ethernet_dst: MacAddress = STACK__MAC_ADDRESS,
+    arp_target: Ip4Address = STACK__IP4_HOST.address,
+) -> bytes:
     """
-    Build an ARP request from HOST_A asking for the stack's IPv4
-    address, addressed at the link layer to 'ethernet_dst' (defaults to
-    the stack MAC — a frame that elicits an ARP reply so normal delivery
-    is observable). Carries the ARP ethertype so packet-socket filters
+    Build an ARP request from HOST_A, addressed at the link layer to
+    'ethernet_dst' (defaults to the stack MAC) and asking for 'arp_target'
+    (defaults to the stack's IPv4 address — a frame that elicits an ARP
+    reply so normal delivery is observable; target a foreign address to
+    suppress the reply). Carries the ARP ethertype so packet-socket filters
     can be exercised.
     """
 
@@ -79,7 +85,7 @@ def _arp_request_frame(*, ethernet_dst: MacAddress = STACK__MAC_ADDRESS) -> byte
                 arp__oper=ArpOperation.REQUEST,
                 arp__sha=HOST_A__MAC_ADDRESS,
                 arp__spa=HOST_A__IP4_ADDRESS,
-                arp__tpa=STACK__IP4_HOST.address,
+                arp__tpa=arp_target,
             ),
         )
     )
@@ -185,7 +191,9 @@ class TestPacketSocketRxTap(NetworkTestCase):
         addressed at the link layer relative to this interface: the
         stack's unicast MAC is HOST, the broadcast MAC is BROADCAST, a
         multicast group MAC is MULTICAST, and any other unicast MAC is
-        OTHERHOST.
+        OTHERHOST. The ARP request targets a foreign address so the stack
+        emits no reply, isolating the ingress classification from the
+        egress (PACKET_OUTGOING) tap.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -199,7 +207,9 @@ class TestPacketSocketRxTap(NetworkTestCase):
             (HOST_A__MAC_ADDRESS, PacketType.PACKET_OTHERHOST),
         ):
             with self.subTest(dst=dst_mac):
-                self._packet_handler._phrx_ethernet(PacketRx(_arp_request_frame(ethernet_dst=dst_mac)))
+                self._packet_handler._phrx_ethernet(
+                    PacketRx(_arp_request_frame(ethernet_dst=dst_mac, arp_target=HOST_B__IP4_ADDRESS)),
+                )
                 _, addr = sock.recvfrom()
                 self.assertEqual(
                     addr.pkttype,
