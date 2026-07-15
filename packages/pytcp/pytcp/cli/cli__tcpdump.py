@@ -37,7 +37,7 @@ pytcp/cli/cli__tcpdump.py
 ver 3.0.8
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Protocol
 
 from net_addr import IpAddress
@@ -51,6 +51,8 @@ from net_proto import (
 )
 from net_proto.protocols.arp.arp__base import Arp
 from net_proto.protocols.arp.arp__parser import ArpParser
+from net_proto.protocols.icmp4.icmp4__parser import Icmp4Parser
+from net_proto.protocols.icmp6.icmp6__parser import Icmp6Parser
 from net_proto.protocols.ip4.ip4__parser import Ip4Parser
 from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.tcp.tcp__base import Tcp
@@ -132,6 +134,14 @@ def _describe_ip(packet_rx: PacketRx, /, *, is_ip6: bool) -> str:
         udp = packet_rx.udp
         return f"{src}.{udp.sport} > {dst}.{udp.dport}: UDP, length {len(udp.payload)}"
 
+    if proto is IpProto.ICMP4:
+        Icmp4Parser(packet_rx)
+        return f"{src} > {dst}: {packet_rx.icmp4.message}"
+
+    if proto is IpProto.ICMP6:
+        Icmp6Parser(packet_rx)
+        return f"{src} > {dst}: {packet_rx.icmp6.message}"
+
     return f"{src} > {dst}: {proto}, length {packet_rx.ip.payload_len}"
 
 
@@ -166,29 +176,46 @@ def describe_frame(frame: bytes, /) -> str:
         return f"{ethertype}, length {len(frame)} (truncated)"
 
 
-def format_capture_line(*, pkttype: PacketType, frame: bytes) -> str:
+def format_capture_line(*, pkttype: PacketType, frame: bytes, timestamp: float | None = None) -> str:
     """
-    Format one capture line: a direction tag — 'Out' for an egress frame
+    Format one capture line: an optional fixed-width relative-seconds
+    timestamp column, then a direction tag — 'Out' for an egress frame
     (pkttype PACKET_OUTGOING, the direction the AF_PACKET TX tap makes
     visible), 'In' otherwise — followed by the decoded frame summary.
     """
 
     direction = "Out" if pkttype is PacketType.PACKET_OUTGOING else "In"
-    return f"{direction} {describe_frame(frame)}"
+    stamp = "" if timestamp is None else f"{timestamp:9.6f} "
+    return f"{stamp}{direction} {describe_frame(frame)}"
 
 
-def run_tcpdump(sock: CaptureSocket, /, *, count: int | None = None) -> Iterator[str]:
+def run_tcpdump(
+    sock: CaptureSocket,
+    /,
+    *,
+    count: int | None = None,
+    clock: Callable[[], float] | None = None,
+) -> Iterator[str]:
     """
     Stream decoded capture lines off 'sock' until 'count' frames have been
     emitted (or forever when 'count' is None). A read that times out is
-    retried so a timeout-armed socket stays responsive to interruption.
+    retried so a timeout-armed socket stays responsive to interruption. When
+    'clock' is supplied, each line carries a relative-seconds timestamp
+    rebased so the first captured frame reads 0.0 s.
     """
 
     emitted = 0
+    epoch: float | None = None
     while count is None or emitted < count:
         try:
             frame, sockaddr_ll = sock.recvfrom()
         except BlockingIOError, TimeoutError:
             continue
-        yield format_capture_line(pkttype=sockaddr_ll.pkttype, frame=frame)
+        timestamp: float | None = None
+        if clock is not None:
+            now = clock()
+            if epoch is None:
+                epoch = now
+            timestamp = now - epoch
+        yield format_capture_line(pkttype=sockaddr_ll.pkttype, frame=frame, timestamp=timestamp)
         emitted += 1

@@ -41,6 +41,11 @@ from net_proto import (
     ArpAssembler,
     ArpOperation,
     EthernetAssembler,
+    Icmp4Assembler,
+    Icmp4MessageEchoReply,
+    Icmp4MessageEchoRequest,
+    Icmp6Assembler,
+    Icmp6MessageEchoRequest,
     Ip4Assembler,
     Ip6Assembler,
 )
@@ -111,6 +116,69 @@ def _ip6_udp_frame() -> bytes:
                 ip6__src=Ip6Address("fd00:1::7"),
                 ip6__dst=Ip6Address("fd00:1::1"),
                 ip6__payload=UdpAssembler(udp__sport=7, udp__dport=12345, udp__payload=b"hello"),
+            ),
+        )
+    )
+
+
+def _icmp4_echo_request_frame() -> bytes:
+    """
+    Build an IPv4/ICMPv4 Echo Request from 10.0.1.91 to 10.0.1.7, id
+    0x1234, seq 1, with a 4-byte payload.
+    """
+
+    return bytes(
+        EthernetAssembler(
+            ethernet__src=_DST_MAC,
+            ethernet__dst=_SRC_MAC,
+            ethernet__payload=Ip4Assembler(
+                ip4__src=_DST4,
+                ip4__dst=_SRC4,
+                ip4__payload=Icmp4Assembler(
+                    icmp4__message=Icmp4MessageEchoRequest(id=0x1234, seq=1, data=b"ping"),
+                ),
+            ),
+        )
+    )
+
+
+def _icmp4_echo_reply_frame() -> bytes:
+    """
+    Build an IPv4/ICMPv4 Echo Reply from 10.0.1.7 to 10.0.1.91, id
+    0x1234, seq 1, with a 4-byte payload.
+    """
+
+    return bytes(
+        EthernetAssembler(
+            ethernet__src=_SRC_MAC,
+            ethernet__dst=_DST_MAC,
+            ethernet__payload=Ip4Assembler(
+                ip4__src=_SRC4,
+                ip4__dst=_DST4,
+                ip4__payload=Icmp4Assembler(
+                    icmp4__message=Icmp4MessageEchoReply(id=0x1234, seq=1, data=b"ping"),
+                ),
+            ),
+        )
+    )
+
+
+def _icmp6_echo_request_frame() -> bytes:
+    """
+    Build an IPv6/ICMPv6 Echo Request from fd00:1::1 to fd00:1::7, id
+    0x1234, seq 7, with a 4-byte payload.
+    """
+
+    return bytes(
+        EthernetAssembler(
+            ethernet__src=_DST_MAC,
+            ethernet__dst=_SRC_MAC,
+            ethernet__payload=Ip6Assembler(
+                ip6__src=Ip6Address("fd00:1::1"),
+                ip6__dst=Ip6Address("fd00:1::7"),
+                ip6__payload=Icmp6Assembler(
+                    icmp6__message=Icmp6MessageEchoRequest(id=0x1234, seq=7, data=b"ping"),
+                ),
             ),
         )
     )
@@ -202,6 +270,48 @@ class TestCliTcpdumpDescribeFrame(TestCase):
             msg="An IPv6/UDP datagram must render with the IP6 prefix.",
         )
 
+    def test__cli__tcpdump__describe_ipv4_icmp_echo_request(self) -> None:
+        """
+        Ensure an IPv4/ICMPv4 Echo Request renders its endpoints and the
+        message's type, id, seq, and length.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_icmp4_echo_request_frame()),
+            "IP 10.0.1.91 > 10.0.1.7: ICMPv4 Echo Request, id 4660, seq 1, len 12 (8+4)",
+            msg="An IPv4/ICMPv4 Echo Request must render type, id, seq, and length.",
+        )
+
+    def test__cli__tcpdump__describe_ipv4_icmp_echo_reply(self) -> None:
+        """
+        Ensure an IPv4/ICMPv4 Echo Reply renders as a reply rather than a
+        bare next-protocol name.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_icmp4_echo_reply_frame()),
+            "IP 10.0.1.7 > 10.0.1.91: ICMPv4 Echo Reply, id 4660, seq 1, len 12 (8+4)",
+            msg="An IPv4/ICMPv4 Echo Reply must render as a reply.",
+        )
+
+    def test__cli__tcpdump__describe_ipv6_icmp_echo_request(self) -> None:
+        """
+        Ensure an IPv6/ICMPv6 Echo Request renders with the 'IP6' prefix and
+        the ICMPv6 message detail.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_icmp6_echo_request_frame()),
+            "IP6 fd00:1::1 > fd00:1::7: ICMPv6 Echo Request, id 4660, seq 7, len 12 (8+4)",
+            msg="An IPv6/ICMPv6 Echo Request must render with the IP6 prefix and message detail.",
+        )
+
     def test__cli__tcpdump__describe_arp_request(self) -> None:
         """
         Ensure an ARP request renders in tcpdump 'who-has ... tell ...' form.
@@ -277,6 +387,20 @@ class TestCliTcpdumpFormatLine(TestCase):
             msg="An inbound frame must be prefixed 'In'.",
         )
 
+    def test__cli__tcpdump__timestamp_is_prepended_when_supplied(self) -> None:
+        """
+        Ensure a supplied relative timestamp is rendered as a fixed-width
+        seconds column ahead of the direction tag.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            format_capture_line(pkttype=PacketType.PACKET_HOST, frame=_udp_frame(), timestamp=1.5),
+            " 1.500000 In IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5",
+            msg="A supplied timestamp must render as a fixed-width seconds column.",
+        )
+
 
 class _FakeCaptureSocket:
     """
@@ -337,3 +461,24 @@ class TestCliTcpdumpRunLoop(TestCase):
         lines = list(run_tcpdump(_FakeCaptureSocket(self._packets), count=1))
 
         self.assertEqual(len(lines), 1, msg="run_tcpdump must stop after 'count' frames.")
+
+    def test__cli__tcpdump__run_rebases_timestamps_to_first_frame(self) -> None:
+        """
+        Ensure a supplied clock is rebased so the first captured frame reads
+        0.0 s and later frames carry their delta from it.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        clock = iter([100.0, 100.25]).__next__
+
+        lines = list(run_tcpdump(_FakeCaptureSocket(self._packets), count=2, clock=clock))
+
+        self.assertEqual(
+            lines,
+            [
+                " 0.000000 Out IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5",
+                " 0.250000 In ARP, Request who-has 10.0.1.7 tell 10.0.1.91",
+            ],
+            msg="run_tcpdump must rebase a supplied clock to the first captured frame.",
+        )
