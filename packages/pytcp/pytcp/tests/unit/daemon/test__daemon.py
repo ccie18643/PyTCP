@@ -119,6 +119,24 @@ class TestDaemonCli(TestCase):
             ip6_support=True,
             ip6_host=None,
             on_ready=ANY,
+            capture_path=None,
+        )
+
+    def test__main__threads_capture_path_to_run_daemon(self) -> None:
+        """
+        Ensure 'main' threads the '--capture' option through to
+        'run_daemon' so the daemon streams boot-time capture to the sink.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("pytcp.daemon.__main__.run_daemon", autospec=True) as run_daemon:
+            main(["--ipc-socket", "/tmp/x.sock", "--interface", "tap9", "--capture", "-"])
+
+        self.assertEqual(
+            run_daemon.call_args.kwargs["capture_path"],
+            "-",
+            msg="main must thread --capture through to run_daemon's capture_path.",
         )
 
 

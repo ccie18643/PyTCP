@@ -41,15 +41,20 @@ ver 3.0.8
 
 import os
 import signal
+import sys
 import tempfile
 import threading
 from collections.abc import Callable
-from typing import Any
+from typing import Any, TextIO
 
 from net_addr import Ip4IfAddr, Ip6IfAddr, MacAddress
 from pytcp import stack
+from pytcp.daemon.daemon__capture import DaemonCapture
 from pytcp.ipc.ipc__server import IpcServer
 from pytcp.lib.logger import log
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import socket as pytcp_socket
+from pytcp.runtime.socket.packet__socket import PacketSocket
 
 IPC__DAEMON__SOCKET_NAME: str = "pytcp.sock"
 IPC__DAEMON__PIDFILE_NAME: str = "pytcp.pid"
@@ -114,6 +119,45 @@ def _resolve_interface(interface_name: str, *, mac_address: MacAddress | None) -
     raise ValueError(f"Unsupported interface type {interface_name[:3]!r}; only 'tap' and 'tun' are supported.")
 
 
+def _start_capture(capture_path: str, /) -> tuple[DaemonCapture, PacketSocket, TextIO | None]:
+    """
+    Open the capture sink ('-' = stdout, else a line-buffered file), bind
+    an internal capture-all AF_PACKET socket, and start the drain writer.
+    Return the writer, the socket, and the file to close on teardown
+    ('None' for stdout). Called after 'stack.init()' and before
+    'stack.start()' so the writer sees the stack's boot from frame one.
+    """
+
+    sink: TextIO
+    owned_file: TextIO | None
+    if capture_path == "-":
+        sink = sys.stdout
+        owned_file = None
+    else:
+        sink = open(capture_path, "w", buffering=1, encoding="ascii")  # noqa: SIM115
+        owned_file = sink
+
+    # Construct through the sanctioned socket factory (the user/kernel
+    # transition), not by instantiating PacketSocket directly.
+    capture_socket = pytcp_socket(family=AddressFamily.PACKET, type=SocketType.RAW)
+    assert isinstance(capture_socket, PacketSocket)
+    capture = DaemonCapture(capture_socket=capture_socket, sink=sink)
+    capture.start()
+    return capture, capture_socket, owned_file
+
+
+def _stop_capture(capture: DaemonCapture, capture_socket: PacketSocket, owned_file: TextIO | None, /) -> None:
+    """
+    Stop the drain writer, close the capture socket, and close the sink
+    file if the daemon opened one (never stdout).
+    """
+
+    capture.stop()
+    capture_socket.close()
+    if owned_file is not None:
+        owned_file.close()
+
+
 def run_daemon(
     *,
     socket_path: str,
@@ -125,6 +169,7 @@ def run_daemon(
     ip6_host: Ip6IfAddr | None = None,
     on_ready: Callable[[str], None] | None = None,
     pidfile_path: str | None = None,
+    capture_path: str | None = None,
 ) -> None:
     """
     Run the PyTCP daemon: boot the stack on one or more interfaces, serve
@@ -140,6 +185,13 @@ def run_daemon(
     server is listening. When 'pidfile_path' is given the process id is
     written there for the lifetime of the daemon (removed on exit) so
     'pytcp daemon stop' can signal it.
+
+    When 'capture_path' is given the daemon binds an internal AF_PACKET
+    capture socket before the stack starts and streams decoded,
+    direction-tagged tcpdump-style lines to that file ('-' for stdout).
+    Binding before 'stack.start()' captures the stack's own boot —
+    IPv6 DAD / RS / RA, RFC 5227 ARP Probe / Announcement, DHCPv4 —
+    which a client-attached 'pytcp tcpdump' cannot see.
     """
 
     stop = threading.Event()
@@ -159,6 +211,7 @@ def run_daemon(
 
     server: IpcServer | None = None
     stack_started = False
+    capture_state: tuple[DaemonCapture, PacketSocket, TextIO | None] | None = None
     try:
         stack.init()
         # Per-interface static MAC / host arguments only apply to a
@@ -194,6 +247,11 @@ def run_daemon(
                 ip6_host=iface_ip6_host,
                 ip6_gua_autoconfig=ip6_support and iface_ip6_host is None,
             )
+        # Bind the capture writer before 'stack.start()' so it records the
+        # stack's own autoconfiguration (DAD / RS / RA / ARP ACD / DHCPv4)
+        # from the first frame.
+        if capture_path is not None:
+            capture_state = _start_capture(capture_path)
         # Do not block the daemon's bring-up on the DHCPv4 lease: start the
         # lifecycle and let the lease land in the background so the control
         # socket is reachable immediately (clients poll the address state).
@@ -212,5 +270,9 @@ def run_daemon(
             server.stop()
         if stack_started:
             stack.stop()
+        # Stop the capture after 'stack.stop()' so the writer also records
+        # the stack's graceful shutdown frames (IGMP / MLD leave, etc.).
+        if capture_state is not None:
+            _stop_capture(*capture_state)
         if pidfile_path is not None:
             remove_pidfile(pidfile_path)

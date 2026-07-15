@@ -130,6 +130,13 @@ def build_parser() -> argparse.ArgumentParser:
         dest="ip6_support",
         help="Disable IPv6 support.",
     )
+    parser.add_argument(
+        "--capture",
+        metavar="PATH",
+        default=None,
+        help="Stream decoded, direction-tagged tcpdump-style capture lines to PATH "
+        "('-' for stdout), starting from the stack's own boot (DAD / ARP ACD / DHCP).",
+    )
     return parser
 
 
@@ -149,6 +156,7 @@ def main(argv: list[str] | None = None) -> None:
         ip6_support=args.ip6_support,
         ip6_host=args.ip6_address,
         on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
+        capture_path=args.capture,
     )
 
 
