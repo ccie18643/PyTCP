@@ -65,7 +65,7 @@ from typing import Any, cast, override
 import click
 
 from examples.lib.malpi import echo_reply
-from net_addr import Ip4Address
+from net_addr import Ip4Address, Ip6Address
 from pytcp import socket as pytcp_socket
 
 # A 'make_socket' returns a fresh, unbound AF_INET datagram socket. The
@@ -110,16 +110,17 @@ class _EchoServerProtocol(asyncio.DatagramProtocol):
         self._transport.sendto(echo_reply(data), addr)
 
 
-def _pytcp_make_socket() -> socket.socket:
+def _pytcp_make_socket(family: int) -> socket.socket:
     """
-    Create a fresh PyTCP daemon-backed AF_INET datagram socket (typed as a
-    'socket.socket' for the duck-typed asyncio datagram plumbing).
+    Create a fresh PyTCP daemon-backed datagram socket of the given
+    address family (typed as a 'socket.socket' for the duck-typed asyncio
+    datagram plumbing).
     """
 
     # The drop-in Socket is a duck-typed stand-in for the 'socket.socket'
     # asyncio names; asyncio drives it through fileno / recvfrom / sendto /
     # setblocking, all of which the drop-in implements.
-    return cast(socket.socket, pytcp_socket.socket(pytcp_socket.AF_INET, pytcp_socket.SOCK_DGRAM))
+    return cast(socket.socket, pytcp_socket.socket(family, pytcp_socket.SOCK_DGRAM))
 
 
 async def serve(*, host: str, port: int, make_socket: MakeSocket) -> None:
@@ -138,7 +139,7 @@ async def serve(*, host: str, port: int, make_socket: MakeSocket) -> None:
 
 
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
-@click.option("--host", default=None, help="Stack IPv4 address to bind (the daemon's configured host).")
+@click.option("--host", default=None, help="Stack IPv4 / IPv6 address to bind (the daemon's configured host).")
 @click.option("--port", type=click.IntRange(1, 0xFFFF), default=ECHO__PORT, show_default=True)
 def udp_echo_server(host: str | None, port: int) -> None:
     """
@@ -146,12 +147,20 @@ def udp_echo_server(host: str | None, port: int) -> None:
     """
 
     if host is None:
-        raise click.UsageError("--host is required (the stack IPv4 address the daemon is configured with).")
-    Ip4Address(host)  # validate; raises a clear net_addr error on a bad literal
+        raise click.UsageError("--host is required (the stack IPv4 / IPv6 address the daemon is configured with).")
+    # An IPv6 literal (contains ':') binds an AF_INET6 socket; otherwise
+    # AF_INET. Validate against the matching net_addr type for a clear
+    # error on a bad literal.
+    if ":" in host:
+        Ip6Address(host)
+        family = pytcp_socket.AF_INET6
+    else:
+        Ip4Address(host)
+        family = pytcp_socket.AF_INET
 
     click.echo(f"PyTCP async UDP echo server on {host}:{port} (send 'malpi' for a surprise)")
     try:
-        asyncio.run(serve(host=host, port=port, make_socket=_pytcp_make_socket))
+        asyncio.run(serve(host=host, port=port, make_socket=lambda: _pytcp_make_socket(family)))
     except KeyboardInterrupt:
         click.echo("\nShutting down.")
 
