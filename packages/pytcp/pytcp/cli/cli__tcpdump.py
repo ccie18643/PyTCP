@@ -123,6 +123,13 @@ def _describe_ip(packet_rx: PacketRx, /, *, is_ip6: bool) -> str:
     else:
         ip4 = packet_rx.ip4
         src, dst, proto = ip4.src, ip4.dst, ip4.proto
+        # An IPv4 fragment (non-zero offset, or MF set on the first
+        # fragment) carries no complete L4 header, so render it as a
+        # fragment — id, this-fragment length, byte offset, '+' for more —
+        # rather than mis-parsing a partial L4 header.
+        if ip4.offset > 0 or ip4.flag_mf:
+            more = "+" if ip4.flag_mf else ""
+            return f"{src} > {dst}: {proto}, frag {ip4.id}:{ip4.payload_len}@{ip4.offset}{more}"
 
     if proto is IpProto.TCP:
         TcpParser(packet_rx)

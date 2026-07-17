@@ -47,7 +47,9 @@ from net_proto import (
     Icmp6Assembler,
     Icmp6MessageEchoRequest,
     Ip4Assembler,
+    Ip4FragAssembler,
     Ip6Assembler,
+    IpProto,
 )
 from net_proto.protocols.tcp.tcp__assembler import TcpAssembler
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
@@ -184,6 +186,29 @@ def _icmp6_echo_request_frame() -> bytes:
     )
 
 
+def _ip4_fragment_frame(*, offset: int, flag_mf: bool, proto: IpProto) -> bytes:
+    """
+    Build an IPv4 fragment from 10.0.1.91 to 10.0.1.7 with id 0x1234 and a
+    520-byte payload, at 'offset' with the given 'flag_mf' / next-protocol.
+    """
+
+    return bytes(
+        EthernetAssembler(
+            ethernet__src=_DST_MAC,
+            ethernet__dst=_SRC_MAC,
+            ethernet__payload=Ip4FragAssembler(
+                ip4_frag__src=_DST4,
+                ip4_frag__dst=_SRC4,
+                ip4_frag__id=0x1234,
+                ip4_frag__offset=offset,
+                ip4_frag__flag_mf=flag_mf,
+                ip4_frag__proto=proto,
+                ip4_frag__payload=b"x" * 520,
+            ),
+        )
+    )
+
+
 def _arp_request_frame() -> bytes:
     """
     Build an ARP request: who-has 10.0.1.7, tell 10.0.1.91.
@@ -310,6 +335,50 @@ class TestCliTcpdumpDescribeFrame(TestCase):
             describe_frame(_icmp6_echo_request_frame()),
             "IP6 fd00:1::1 > fd00:1::7: ICMPv6 Echo Request, id 4660, seq 7, len 12 (8+4)",
             msg="An IPv6/ICMPv6 Echo Request must render with the IP6 prefix and message detail.",
+        )
+
+    def test__cli__tcpdump__describe_ipv4_first_fragment(self) -> None:
+        """
+        Ensure the first fragment of a fragmented datagram (offset 0, MF
+        set) renders as a fragment — id, this-fragment length, offset, and
+        a trailing '+' for more — rather than being mis-parsed as a
+        complete L4 datagram on partial data.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_ip4_fragment_frame(offset=0, flag_mf=True, proto=IpProto.UDP)),
+            "IP 10.0.1.91 > 10.0.1.7: UDP, frag 4660:520@0+",
+            msg="A first IPv4 fragment must render as a fragment, not a parsed L4 datagram.",
+        )
+
+    def test__cli__tcpdump__describe_ipv4_middle_fragment(self) -> None:
+        """
+        Ensure a non-first fragment (offset > 0, MF set — no L4 header)
+        renders as a fragment with its byte offset and a trailing '+'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_ip4_fragment_frame(offset=1480, flag_mf=True, proto=IpProto.ICMP4)),
+            "IP 10.0.1.91 > 10.0.1.7: ICMPv4, frag 4660:520@1480+",
+            msg="A middle IPv4 fragment must render with its offset and a trailing '+'.",
+        )
+
+    def test__cli__tcpdump__describe_ipv4_last_fragment(self) -> None:
+        """
+        Ensure the last fragment (offset > 0, MF clear) renders without the
+        trailing '+' that marks more fragments.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            describe_frame(_ip4_fragment_frame(offset=1480, flag_mf=False, proto=IpProto.ICMP4)),
+            "IP 10.0.1.91 > 10.0.1.7: ICMPv4, frag 4660:520@1480",
+            msg="A last IPv4 fragment must render without a trailing '+'.",
         )
 
     def test__cli__tcpdump__describe_arp_request(self) -> None:
