@@ -197,6 +197,12 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
         assert self._owner is not None, "ARP cache must be bound to an interface handler before flushing."
         assert self._owner.tx_ring is not None, "Owning interface handler must have a TX ring to flush."
         packet.dst = mac_address
+        # AF_PACKET egress tap: the flush bypasses '__send_out_packet'
+        # (it enqueues to the TX ring directly), so re-invoke the tap here
+        # or a queued-then-flushed frame — e.g. a TCP SYN-ACK to an
+        # unresolved peer — would never be observed on egress (Linux
+        # 'dev_queue_xmit_nit' taps neighbor-queued frames too).
+        self._owner.deliver_tx_to_packet_sockets(packet)
         # Phase 4: this direct enqueue becomes a ring-handoff TX
         # request once the per-interface TX worker owns the
         # send-out pipeline.

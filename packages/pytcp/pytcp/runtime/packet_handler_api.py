@@ -41,6 +41,7 @@ ver 3.0.8
 from typing import Protocol
 
 from net_addr import Buffer, Ip4Address, Ip6Address, MacAddress
+from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip4.options.ip4__options import Ip4Options
 from pytcp.runtime.tx_ring import TxRing
 
@@ -80,6 +81,14 @@ class ArpCacheOwner(Protocol):
 
         ...
 
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        Fan a queued-then-flushed frame to bound AF_PACKET sockets so it is
+        observed on egress (the flush path bypasses '__send_out_packet').
+        """
+
+        ...
+
 
 class NdCacheOwner(Protocol):
     """
@@ -106,6 +115,14 @@ class NdCacheOwner(Protocol):
     def send_icmp6_neighbor_solicitation_unicast(self, *, icmp6_ns_target_address: Ip6Address) -> None:
         """
         Enqueue a unicast ICMPv6 ND Neighbor Solicitation via the owning handler.
+        """
+
+        ...
+
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        Fan a queued-then-flushed frame to bound AF_PACKET sockets so it is
+        observed on egress (the flush path bypasses '__send_out_packet').
         """
 
         ...

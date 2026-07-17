@@ -354,11 +354,11 @@ class EthernetTxHandler:
         # bound packet socket whose filter matches, tagged PACKET_OUTGOING
         # (Linux 'dev_queue_xmit_nit'). The tap is parallel to transmission
         # (a packet socket observes egress; it does not intercept it).
-        self._deliver_tx_to_packet_sockets(ethernet_packet_tx)
+        self.deliver_tx_to_packet_sockets(ethernet_packet_tx)
         assert self._if._tx_ring is not None, "PacketHandler must have an injected TX ring to send."
         self._if._tx_ring.enqueue(ethernet_packet_tx)
 
-    def _deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
         """
         Fan a copy of an outbound assembled frame to every AF_PACKET socket
         whose '(ifindex, ethertype)' filter matches, tagged PACKET_OUTGOING.
@@ -367,6 +367,14 @@ class EthernetTxHandler:
         socket gets a detached 'bytes' copy of the complete link-layer frame
         exactly as serialized for the wire (same 'assemble' path the TX ring
         uses, so checksums match).
+
+        Public because the ARP / ND caches call it on the queued-packet
+        flush path (a packet queued pending neighbor resolution is sent by
+        the cache's flush callback straight to the TX ring, bypassing
+        '__send_out_packet'; the cache re-invokes this tap so a
+        queued-then-flushed frame — e.g. a TCP SYN-ACK to an unresolved
+        peer — is still observed on egress, matching Linux
+        'dev_queue_xmit_nit').
         """
 
         if not stack.packet_sockets:

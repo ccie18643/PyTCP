@@ -55,6 +55,7 @@ from net_proto import (
     ETHERNET_802_3__PACKET__MAX_LEN,
     ArpOperation,
     Ethernet8023Payload,
+    EthernetAssembler,
     EthernetPayload,
     EtherType,
     Icmp4Message,
@@ -2849,6 +2850,16 @@ class PacketHandler(Subsystem, ABC):
             ip6__dscp=ip6__dscp,
         )
 
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        AF_PACKET egress-tap surface required by the ARP / ND cache flush
+        callbacks (the 'ArpCacheOwner' / 'NdCacheOwner' seams). The base
+        implementation is a no-op: a Layer 3 (TUN) interface has no
+        link-layer tap, and ND on such an interface never queues an
+        Ethernet frame, so this is never reached there. 'PacketHandlerL2'
+        overrides it to fan the frame to bound packet sockets.
+        """
+
 
 class PacketHandlerL2(
     PacketHandler,
@@ -3198,6 +3209,17 @@ class PacketHandlerL2(
         """
 
         self._ethernet_tx.send_link_frame(frame)
+
+    @override
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        Fan a queued-then-flushed outbound frame to every bound AF_PACKET
+        socket (delegates to the Ethernet TX sub-handler's egress tap).
+        Called by the ARP / ND cache flush callbacks so a frame queued
+        pending neighbor resolution is still observed on egress.
+        """
+
+        self._ethernet_tx.deliver_tx_to_packet_sockets(ethernet_packet_tx)
 
     @override
     def _subsystem_loop(self) -> None:

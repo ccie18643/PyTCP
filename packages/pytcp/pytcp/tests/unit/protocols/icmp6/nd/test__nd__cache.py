@@ -40,12 +40,14 @@ ver 3.0.8
 
 from typing import override
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 from net_addr import Ip6Address, MacAddress
+from net_proto import EthernetAssembler
 from pytcp.lib.neighbor import NudState
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.runtime.packet_handler import PacketHandlerL2
+from pytcp.runtime.tx_ring import TxRing
 from pytcp.stack import sysctl as sysctl_module
 
 
@@ -293,3 +295,23 @@ class TestNdCacheConstruction(_NdCacheFixture):
             self._cache._flush_packet,
             msg="NdCache must wire '_flush_packet' as the queued-packet flush hook.",
         )
+
+    def test__nd_cache__flush_taps_packet_sockets(self) -> None:
+        """
+        Ensure '_flush_packet' fans the queued-then-flushed frame to bound
+        AF_PACKET sockets (via the owner's egress tap) so a frame queued
+        pending ND resolution is still observed on egress, matching Linux
+        'dev_queue_xmit_nit'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        eth = EthernetAssembler()
+        mac = MacAddress("02:00:00:00:00:01")
+
+        handler = MagicMock(spec=PacketHandlerL2)
+        handler.tx_ring = create_autospec(TxRing, spec_set=True)
+        self._cache._owner = handler
+        self._cache._flush_packet(eth, mac)
+
+        handler.deliver_tx_to_packet_sockets.assert_called_once_with(eth)
