@@ -36,7 +36,6 @@ import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import Harness, common_options, make_config
 
 
@@ -49,15 +48,9 @@ def command(**kwargs: Any) -> None:
 
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
-        # No --stack-ip4-address ⇒ stack.init() runs the DHCPv4
-        # client (ip4_dhcp defaults True when no static IPv4).
-        harness.start_capture("arp or port 67 or port 68")
-        harness.start_example(
-            "examples.stack",
-            "--stack-interface",
-            cfg.iface,
-            "--stack-no-ip6",
-        )
+        # No static IPv4 ⇒ the daemon runs the DHCPv4 client (ip4_dhcp
+        # defaults on when no static IPv4 is configured).
+        harness.start_stack(ip4="auto", ip6="off")
         # The DHCPv4 client logs 'Lease acquired' on BOUND; the
         # ARP-ACD path additionally logs 'Successfully claimed
         # IPv4 address' once the leased host is announced. Accept
@@ -67,28 +60,10 @@ def command(**kwargs: Any) -> None:
             cfg.claim_timeout,
         )
         time.sleep(1)
-        harness.stop_example()
+        harness.stop_all()
         harness.log_highlights(
             r"Found cached lease|DHCP|Initial desync|Successfully claimed IPv4|Sent out ARP Announcement",
             20,
         )
-        harness.wire(
-            "-Y",
-            "dhcp || bootp || arp",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "_ws.col.Protocol",
-            "-e",
-            "ip.src",
-            "-e",
-            "ip.dst",
-            "-e",
-            "arp.src.proto_ipv4",
-            "-e",
-            "arp.dst.proto_ipv4",
-            "-e",
-            "_ws.col.Info",
-        )
+        # DHCPv4 is UDP 67/68; keep those plus ARP (the post-lease ACD).
+        harness.wire(r"ARP,|\.67 |\.68 |\.67:|\.68:")

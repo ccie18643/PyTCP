@@ -31,11 +31,11 @@ tools/capture/scenarios/ip6_icmp_echo.py
 ver 3.0.8
 """
 
+import re
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import Harness, common_options, make_config
 
 
@@ -50,34 +50,12 @@ def command(*, count: int, **kwargs: Any) -> None:
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
         harness.add_host_v6()
-        harness.start_capture("ip6 or arp")
-        harness.start_example(
-            "examples.stack",
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip6-address",
-            cfg.ip6,
-            "--stack-no-ip4",
-        )
+        harness.start_stack(ip4="off", ip6="static")
         harness.wait_for(f"Successfully claimed IPv6 address {cfg.ip6_addr}", cfg.claim_timeout)
         time.sleep(1)
         harness.ping(cfg.ip6_addr, ipv6=True, count=count)
         time.sleep(1)
-        harness.stop_example()
+        harness.stop_all()
         harness.print_client_output(f"host ping6 ({cfg.peer6} -> {cfg.ip6_addr})")
-        harness.wire(
-            "-Y",
-            f"ipv6.addr=={cfg.ip6_addr} || icmpv6",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "_ws.col.Protocol",
-            "-e",
-            "ipv6.src",
-            "-e",
-            "ipv6.dst",
-            "-e",
-            "_ws.col.Info",
-        )
+        # Neighbor Discovery plus the Echo exchange with the host peer.
+        harness.wire(rf"ICMPv6|{re.escape(cfg.ip6_addr)}|{re.escape(cfg.peer6)}")

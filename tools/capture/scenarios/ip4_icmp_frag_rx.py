@@ -32,11 +32,11 @@ tools/capture/scenarios/ip4_icmp_frag_rx.py
 ver 3.0.8
 """
 
+import re
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import Harness, common_options, make_config
 
 
@@ -51,48 +51,13 @@ def command(*, count: int, size: int, **kwargs: Any) -> None:
 
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
-        # Capture by host, not BPF 'icmp': a transport/proto BPF
-        # filter only matches the FIRST IPv4 fragment, so the
-        # later fragments of a fragmented Echo would be invisible
-        # and inbound reassembly could not be shown.
-        harness.start_capture(f"arp or host {cfg.ip4_addr}")
-        harness.start_example(
-            "examples.stack",
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip4-address",
-            cfg.ip4,
-            "--stack-ip4-gateway",
-            cfg.gw4,
-            "--stack-no-ip6",
-        )
+        harness.start_stack(ip4="static", ip6="off")
         harness.wait_for(f"Successfully claimed IPv4 address {cfg.ip4_addr}", cfg.claim_timeout)
         time.sleep(1)
         harness.ping(cfg.ip4_addr, ipv6=False, count=count, size=size)
         time.sleep(1)
-        harness.stop_example()
+        harness.stop_all()
         harness.print_client_output(f"host ping -s {size} (-> {cfg.ip4_addr})")
-        harness.wire(
-            "-Y",
-            f"arp || ip.addr=={cfg.ip4_addr}",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "ip.src",
-            "-e",
-            "ip.dst",
-            "-e",
-            "arp.src.proto_ipv4",
-            "-e",
-            "arp.dst.proto_ipv4",
-            "-e",
-            "ip.id",
-            "-e",
-            "ip.flags.mf",
-            "-e",
-            "ip.frag_offset",
-            "-e",
-            "_ws.col.Info",
-        )
+        # ARP plus every frame to / from the stack (the inbound Echo
+        # fragments and the stack's reassembled reply).
+        harness.wire(rf"ARP,|{re.escape(cfg.ip4_addr)}")

@@ -32,7 +32,6 @@ ver 3.0.8
 """
 
 import click
-
 from tools.capture.scenarios import (
     arp_acd,
     boot,
