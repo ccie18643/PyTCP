@@ -106,7 +106,9 @@ from pytcp.protocols.ip.ip_frag_table import IpFragTable
 from pytcp.runtime.fib import RouteProtocol
 from pytcp.runtime.loopback_ring import LoopbackRing
 from pytcp.runtime.rx_ring import RxRing
-from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily, PacketType
+from pytcp.runtime.socket.packet__metadata import PacketMetadata
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.runtime.subsystem import Subsystem
 from pytcp.runtime.timer import TimerHandle
 from pytcp.runtime.tx_ring import TxRing
@@ -4106,6 +4108,13 @@ class PacketHandlerLoopback(
 
         packet_rx.from_loopback = True
 
+        # AF_PACKET tap: fan a synthetic-framed copy to bound packet
+        # sockets BEFORE the RX path consumes the frame, so the in-stack
+        # 'pytcp tcpdump' observes stack-internal loopback traffic — the
+        # one thing an external capture tool watching the TAP device
+        # cannot see (loopback never reaches the wire).
+        self._deliver_loopback_to_packet_sockets(packet_rx)
+
         match packet_rx.frame[0] >> 4:
             case 4:
                 self._phrx_ip4(packet_rx)
@@ -4116,6 +4125,43 @@ class PacketHandlerLoopback(
                     "stack",
                     f"<WARN>Loopback received unknown IP version {version}, dropping packet</>",
                 )
+
+    def _deliver_loopback_to_packet_sockets(self, packet_rx: PacketRx, /) -> None:
+        """
+        Fan a copy of a looped IP packet to every AF_PACKET socket whose
+        '(ifindex, ethertype)' filter matches the loopback interface,
+        tagged PACKET_HOST (a looped packet is locally destined). The
+        loopback interface has no link layer, so the frame delivered is the
+        bare IP packet (DLT_RAW-style); 'sockaddr_ll.ethertype' carries the
+        IP version, and the capture decoder renders a bare IP packet
+        directly. A cheap empty-registry check keeps the no-packet-socket
+        delivery path free.
+        """
+
+        if not stack.packet_sockets:
+            return
+
+        match packet_rx.frame[0] >> 4:
+            case 4:
+                ethertype = EtherType.IP4
+            case 6:
+                ethertype = EtherType.IP6
+            case _:
+                return
+
+        matches = stack.packet_sockets.matching(ifindex=self._ifindex, ethertype=ethertype)
+        if not matches:
+            return
+
+        sockaddr_ll = SockAddrLl(
+            ifindex=self._ifindex,
+            ethertype=ethertype,
+            pkttype=PacketType.PACKET_HOST,
+            mac=MacAddress(),
+        )
+        packet_md = PacketMetadata(frame=bytes(packet_rx.frame), sockaddr_ll=sockaddr_ll)
+        for sock in matches:
+            sock.process_packet(packet_md)
 
     @override
     def _marshal_tx(self, run: Callable[[], TxStatus], /) -> TxStatus:

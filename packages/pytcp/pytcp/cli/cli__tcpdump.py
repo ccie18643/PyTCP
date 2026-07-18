@@ -152,18 +152,49 @@ def _describe_ip(packet_rx: PacketRx, /, *, is_ip6: bool) -> str:
     return f"{src} > {dst}: {proto}, length {packet_rx.ip.payload_len}"
 
 
+def _describe_raw_ip(frame: bytes, /) -> str:
+    """
+    Render a bare IP packet — a capture with no link-layer header, as the
+    loopback interface delivers (DLT_RAW-style). The IP version nibble
+    selects the parser. Falls back to a length-tagged line on anything
+    that is not a parseable IPv4 / IPv6 packet.
+    """
+
+    packet_rx = PacketRx(frame)
+    # A bare IP capture is loopback / DLT_RAW traffic, where a loopback
+    # source address (127.0.0.1 / ::1) is legitimate; mark it so the IP
+    # parser skips the wire-ingress loopback-source martian check.
+    packet_rx.from_loopback = True
+    try:
+        match frame[0] >> 4 if frame else 0:
+            case 4:
+                Ip4Parser(packet_rx)
+                return "IP " + _describe_ip(packet_rx, is_ip6=False)
+            case 6:
+                Ip6Parser(packet_rx)
+                return "IP6 " + _describe_ip(packet_rx, is_ip6=True)
+            case _:
+                return f"(unparsable frame, length {len(frame)})"
+    except PacketValidationError:
+        return f"(unparsable frame, length {len(frame)})"
+
+
 def describe_frame(frame: bytes, /) -> str:
     """
-    Decode a complete link-layer frame into a compact, tcpdump-style
-    one-line summary. Never raises: a frame the parsers reject yields a
-    length-tagged fallback so a capture loop cannot die on a bad frame.
+    Decode a captured frame into a compact, tcpdump-style one-line
+    summary. Handles both Ethernet II frames and bare IP packets (the
+    loopback interface has no link layer). Never raises: a frame the
+    parsers reject yields a length-tagged fallback so a capture loop
+    cannot die on a bad frame.
     """
 
     packet_rx = PacketRx(frame)
     try:
         EthernetParser(packet_rx)
     except PacketValidationError:
-        return f"(unparsable frame, length {len(frame)})"
+        # Not an Ethernet frame — decode it as a bare IP packet (loopback
+        # / DLT_RAW capture), else a length-tagged fallback.
+        return _describe_raw_ip(frame)
 
     ethertype = packet_rx.ethernet.type
     try:
@@ -178,6 +209,12 @@ def describe_frame(frame: bytes, /) -> str:
                 Ip6Parser(packet_rx)
                 return "IP6 " + _describe_ip(packet_rx, is_ip6=True)
             case _:
+                # An unknown ethertype on a frame whose first nibble is an
+                # IP version is a bare IP packet mis-read as Ethernet — a
+                # loopback / DLT_RAW capture (no link layer). Decode it as
+                # raw IP rather than as an opaque unknown-ethertype frame.
+                if frame and frame[0] >> 4 in (4, 6):
+                    return _describe_raw_ip(frame)
                 return f"{ethertype}, length {len(frame)}"
     except PacketValidationError:
         return f"{ethertype}, length {len(frame)} (truncated)"

@@ -381,6 +381,51 @@ class TestCliTcpdumpDescribeFrame(TestCase):
             msg="A last IPv4 fragment must render without a trailing '+'.",
         )
 
+    def test__cli__tcpdump__describe_raw_ipv4_no_link_header(self) -> None:
+        """
+        Ensure a bare IPv4 packet with no link-layer header (a loopback /
+        DLT_RAW capture) decodes as IPv4, including a loopback source
+        address that a wire-ingress check would reject.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        raw_ip = bytes(
+            Ip4Assembler(
+                ip4__src=Ip4Address("127.0.0.1"),
+                ip4__dst=Ip4Address("127.0.0.1"),
+                ip4__payload=UdpAssembler(udp__sport=12345, udp__dport=7, udp__payload=b"lo"),
+            )
+        )
+
+        self.assertEqual(
+            describe_frame(raw_ip),
+            "IP 127.0.0.1.12345 > 127.0.0.1.7: UDP, length 2",
+            msg="A bare IPv4 packet (no link header) must decode as raw IP.",
+        )
+
+    def test__cli__tcpdump__describe_raw_ipv6_no_link_header(self) -> None:
+        """
+        Ensure a bare IPv6 packet with no link-layer header decodes as
+        IPv6.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        raw_ip = bytes(
+            Ip6Assembler(
+                ip6__src=Ip6Address("::1"),
+                ip6__dst=Ip6Address("::1"),
+                ip6__payload=UdpAssembler(udp__sport=12345, udp__dport=7, udp__payload=b"lo"),
+            )
+        )
+
+        self.assertEqual(
+            describe_frame(raw_ip),
+            "IP6 ::1.12345 > ::1.7: UDP, length 2",
+            msg="A bare IPv6 packet (no link header) must decode as raw IP.",
+        )
+
     def test__cli__tcpdump__describe_arp_request(self) -> None:
         """
         Ensure an ARP request renders in tcpdump 'who-has ... tell ...' form.
