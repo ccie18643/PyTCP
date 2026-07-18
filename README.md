@@ -213,26 +213,24 @@ multicast discovery, ping), see [```examples/```](examples/).
 ### Examples
 
 All output below is captured from a live stack on a Linux `tap7`
-interface. Most wire captures are the **stack's own** — the daemon
-decodes its own traffic through the shipped `pytcp tcpdump` engine (an
-internal AF_PACKET socket bound before the stack starts, so it sees
-autoconfiguration from the first frame), no external tool involved. Each
-line is:
+interface. The frames are captured by the **stack itself** — the daemon
+binds an internal AF_PACKET socket before the stack starts (so it sees
+autoconfiguration from the first frame, and stack-internal loopback
+traffic no external tool can reach) and writes a libpcap file — and
+decoded by **`tshark`**, whose dissectors give the rich detail below
+(TCP options, IPv4 / IPv6 fragment reassembly, ND option payloads, ICMP
+request/reply cross-refs). This is exactly what the shipped `pytcp
+tcpdump` produces: it captures with the stack and pipes to `tshark`
+(falling back to a built-in decoder when `tshark` is absent). Timestamps
+are relative to the first frame shown; RFC back-off delays (RFC 5227
+ACD, RFC 4862 DAD) are visible in them.
 
-```text
-time(s)   Out|In   <decoded frame>
-```
-
-`Out` is a frame the stack transmits, `In` one it receives; the decoded
-form mirrors Linux `tcpdump` (`IP src.port > dst.port: …`, `ARP,
-Request/Reply …`, ICMP type + id/seq, `frag id:len@offset` for IPv4
-fragments). Three captures are explicitly marked as taken with an
-**external** `tshark` instead — ACD and DHCP because they run over a raw
-AF_PACKET link socket the in-stack tap does not observe (and DHCP needs a
-real server), and the packet-loss run because `tshark`'s
-retransmission / SACK analysis annotations make the recovery legible.
-RFC back-off delays (RFC 5227 ACD, RFC 4862 DAD) are visible in the
-timestamps.
+Two captures are explicitly taken over a raw AF_PACKET link socket the
+in-stack tap does not observe: ACD and DHCP run their ARP over
+`sd-ipv4acd`-style raw sockets (and DHCP needs a real server on the
+segment), so those show a wire capture rather than a stack capture. The
+addresses use `192.168.177.0/24` (a deliberately uncommon subnet so the
+harness does not collide with a real `192.168.1.0/24` LAN).
 
 Every example is produced by the bundled `tools/capture` runner
 and is reproducible. With the TAP/bridge up and the venv built —
@@ -301,8 +299,9 @@ TCP/UDP echo, multicast service discovery, ping — live in
 thing: `pytcp daemon start/stop/status`, the control-plane introspectors
 `pytcp ss / link / addr / route / neigh / sysctl`, and the network tools
 `pytcp ping / host / nc / traceroute`, and `pytcp tcpdump` — a
-daemon-native packet capture that decodes each frame with `net_proto`
-and shows both directions, including the stack's own replies.
+daemon-native packet capture that shows both directions (including the
+stack's own replies and stack-internal loopback) and decodes with
+`tshark` when present, falling back to a built-in decoder.
 
 #### Stack startup — IPv6 SLAAC + DAD, MLDv2, IPv4 ACD
 
@@ -318,39 +317,25 @@ multicast groups via MLDv2, solicits routers, builds a global
 address from the Router Advertisement and DADs that too, then runs
 RFC 5227 conflict detection for its IPv4 address.
 
-Stack log:
+Wire capture — the stack's **own** boot traffic (captured from the first
+frame by the internal boot capture, filtered to the stack's own MAC and
+decoded by tshark). tshark cracks the MLDv2 Router-Alert header and the
+ND messages that a wire capture starting later would miss entirely:
 
 ```text
-0000.05 | STACK | ICMPv6 ND DAD - Starting process for fe80::7bde:94e9:3254:9daf
-0001.28 | STACK | ICMPv6 ND DAD - No duplicate address detected for fe80::7bde:94e9:3254:9daf
-0001.28 | STACK | Successfully claimed IPv6 address fe80::7bde:94e9:3254:9daf/64
-0001.28 | STACK | Sent out ICMPv6 ND Router Solicitation
-0001.28 | STACK | ICMPv6 ND DAD - Starting process for 2603:808c:2800:4301:7d08:ba99:95db:c5
-0002.78 | STACK | Successfully claimed IPv6 address 2603:808c:2800:4301:7d08:ba99:95db:c5/64
-0006.21 | STACK | Sent out ARP Announcement for 192.168.1.77
-0008.21 | STACK | Successfully claimed IPv4 address 192.168.1.77
+  0.000  :: → ff02::1:ff7f:f8d6         ICMPv6 86 Neighbor Solicitation for fe80::a5e2:2ca6:4c7f:f8d6
+  1.002  fe80::a5e2:2ca6:4c7f:f8d6 → ff02::16  ICMPv6 90 Multicast Listener Report Message v2
+  1.002  fe80::a5e2:2ca6:4c7f:f8d6 → ff02::2   ICMPv6 70 Router Solicitation from 02:00:00:77:77:77
+  4.879  fe80::a5e2:2ca6:4c7f:f8d6 → ff02::2   ICMPv6 70 Router Solicitation from 02:00:00:77:77:77
 ```
 
-Wire capture — the stack decoding its **own** boot traffic through the
-`pytcp tcpdump` engine (no external capture tool; an internal AF_PACKET
-socket is bound before the stack starts, so it sees autoconfiguration
-from the first frame). `Out` is a frame the stack emits, timestamps
-rebased to the first:
-
-```text
-   0.000 Out IP6 :: > ff02::1:ff1a:de43: ICMPv6 ND Neighbor Solicitation, target fe80::e3e3:135:2b1a:de43, opts [nonce (0xd8737c9e8df3)], len 32 (24+8)
-   1.001 Out IP6 fe80::e3e3:135:2b1a:de43 > ff02::16: IPv6_HBH, length 36
-   1.002 Out IP6 fe80::e3e3:135:2b1a:de43 > ff02::2: ICMPv6 ND Router Solicitation, opts [slla 02:00:00:77:77:77], len 16 (8+8)
-   1.500 Out IP6 :: > ff02::1:ffeb:5194: ICMPv6 ND Neighbor Solicitation, target 2603:808c:2800:4301:d1f3:6f60:7feb:5194, opts [nonce (0x90d9fc6ab3ea)], len 32 (24+8)
-   5.519 Out IP6 fe80::e3e3:135:2b1a:de43 > fe80::c51:f947:495a:cc54: ICMPv6 ND Neighbor Advertisement, flags -S-, target fe80::e3e3:135:2b1a:de43, opts [tlla 02:00:00:77:77:77], len 32 (24+8)
-   9.339 Out IP6 fe80::e3e3:135:2b1a:de43.546 > ff02::1:2.547: UDP, length 46
-```
-
-(The `IPv6_HBH` lines are the MLDv2 Multicast Listener Reports — ICMPv6
-carried under a Hop-by-Hop Router-Alert header; the `.546 > …547` datagram
-is the DHCPv6 Solicit. The stack's IPv4 ACD ARP Probe/Announcement is not
-shown here: ACD runs over a raw AF_PACKET link socket that bypasses the
-egress capture tap.)
+The stack derives its IPv6 link-local address, runs Duplicate Address
+Detection on it (the Neighbor Solicitation from the unspecified `::`
+source), reports its multicast groups via MLDv2, and solicits routers —
+retransmitting the RS when no Router Advertisement answers on this
+isolated segment. (The IPv4 ACD ARP Probe/Announcement is not shown: ACD
+runs over a raw AF_PACKET link socket that bypasses the egress capture
+tap.)
 
 #### ARP Probe / Announcement (RFC 5227 Address Conflict Detection)
 
@@ -371,18 +356,18 @@ stack's own in-line egress tap, so the in-stack `pytcp tcpdump` cannot
 observe it:
 
 ```text
-0.00   ARP   0.0.0.0 → 192.168.1.77        ARP Probe — Who has 192.168.1.77?
-1.83   ARP   0.0.0.0 → 192.168.1.77        ARP Probe — Who has 192.168.1.77?
-3.38   ARP   0.0.0.0 → 192.168.1.77        ARP Probe — Who has 192.168.1.77?
-6.44   ARP   192.168.1.77 → 192.168.1.77   ARP Announcement for 192.168.1.77
-8.45   ARP   192.168.1.77 → 192.168.1.77   ARP Announcement for 192.168.1.77
+0.00   ARP   0.0.0.0 → 192.168.177.77        ARP Probe — Who has 192.168.177.77?
+1.83   ARP   0.0.0.0 → 192.168.177.77        ARP Probe — Who has 192.168.177.77?
+3.38   ARP   0.0.0.0 → 192.168.177.77        ARP Probe — Who has 192.168.177.77?
+6.44   ARP   192.168.177.77 → 192.168.177.77   ARP Announcement for 192.168.177.77
+8.45   ARP   192.168.177.77 → 192.168.177.77   ARP Announcement for 192.168.177.77
 ```
 
 Probe vs. Announcement, decoded (`tshark -V`):
 
 ```text
-ARP Probe         Opcode: request   Sender IP: 0.0.0.0        Target IP: 192.168.1.77
-ARP Announcement  Opcode: request   Sender IP: 192.168.1.77   Target IP: 192.168.1.77
+ARP Probe         Opcode: request   Sender IP: 0.0.0.0        Target IP: 192.168.177.77
+ARP Announcement  Opcode: request   Sender IP: 192.168.177.77   Target IP: 192.168.177.77
 ```
 
 #### ARP resolution and ICMP Echo
@@ -393,27 +378,22 @@ ARP Announcement  Opcode: request   Sender IP: 192.168.1.77   Target IP: 192.168
 sudo PYTHONPATH=. venv/bin/python -m tools.capture ip4-icmp-echo
 ```
 
-A host on the segment pings the stack. The host's Echo Request arrives
-before the stack knows the host's MAC, so the stack queues its reply,
-resolves the *host's* MAC via ARP, then flushes the queued reply — all
-captured by the stack itself, both directions (`In` = the host, `Out` =
-the stack):
-
-Wire capture — the stack's own `pytcp tcpdump`, decoded in-stack:
+A host on the segment pings the stack. Having claimed its address, the
+stack answers the Echo Request, resolving the host's MAC via ARP first
+(tshark cross-references each reply to its request):
 
 ```text
-   0.000 In IP 192.168.1.10 > 192.168.1.77: ICMPv4 Echo Request, id 21698, seq 1, len 64 (8+56)
-   0.001 Out ARP, Request who-has 192.168.1.10 tell 192.168.1.77
-   0.001 In ARP, Reply 192.168.1.10 is-at a2:4b:a1:00:92:56
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4 Echo Reply, id 21698, seq 1, len 64 (8+56)
-   1.001 In IP 192.168.1.10 > 192.168.1.77: ICMPv4 Echo Request, id 21698, seq 2, len 64 (8+56)
-   1.002 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4 Echo Reply, id 21698, seq 2, len 64 (8+56)
-   2.003 In IP 192.168.1.10 > 192.168.1.77: ICMPv4 Echo Request, id 21698, seq 3, len 64 (8+56)
-   2.003 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4 Echo Reply, id 21698, seq 3, len 64 (8+56)
+  0.000  02:00:00:77:77:77 → 3a:f8:3f:dd:c8:34  ARP 42 192.168.177.77 is at 02:00:00:77:77:77
+  0.000  192.168.177.1 → 192.168.177.77  ICMP 98 Echo (ping) request  id=0x54c7, seq=1/256, ttl=64
+  0.001  192.168.177.77 → 192.168.177.1  ICMP 98 Echo (ping) reply    id=0x54c7, seq=1/256, ttl=64
+  1.001  192.168.177.1 → 192.168.177.77  ICMP 98 Echo (ping) request  id=0x54c7, seq=2/512, ttl=64
+  1.002  192.168.177.77 → 192.168.177.1  ICMP 98 Echo (ping) reply    id=0x54c7, seq=2/512, ttl=64
+  2.003  192.168.177.1 → 192.168.177.77  ICMP 98 Echo (ping) request  id=0x54c7, seq=3/768, ttl=64
+  2.003  192.168.177.77 → 192.168.177.1  ICMP 98 Echo (ping) reply    id=0x54c7, seq=3/768, ttl=64
 ```
 
 From the pinging host:
-`3 packets transmitted, 3 received, 0% packet loss; rtt min/avg/max/mdev = 1.041/1.334/1.894/0.395 ms`.
+`3 packets transmitted, 3 received, 0% packet loss`.
 
 #### ICMPv6 Echo over IPv6 (Neighbor Discovery + ping6)
 
@@ -424,27 +404,23 @@ sudo PYTHONPATH=. venv/bin/python -m tools.capture ip6-icmp-echo
 ```
 
 The IPv6 counterpart: a host on a ULA pings the stack's IPv6 address.
-The host first resolves the stack with ICMPv6 Neighbor Discovery — its
-Neighbor Solicitation carries the host's own link-layer address (`slla`),
-so the stack learns the host from it and answers the Echo directly:
-
-Wire capture — the stack's own `pytcp tcpdump`, decoded in-stack
-(rebased to the host's Neighbor Solicitation; the ND option payloads —
-source / target link-layer addresses — are decoded too):
+The host first resolves the stack with ICMPv6 Neighbor Discovery
+(Neighbor Solicitation → Advertisement), then the Echo exchange follows
+(note the request TTL 64 vs the reply's hop-limit 255, the ND default):
 
 ```text
-   0.000 In IP6 fd00:1::1 > ff02::1:ff00:77: ICMPv6 ND Neighbor Solicitation, target fd00:1::77, opts [slla a2:4b:a1:00:92:56], len 32 (24+8)
-   0.000 Out IP6 fd00:1::77 > fd00:1::1: ICMPv6 ND Neighbor Advertisement, flags -S-, target fd00:1::77, opts [tlla 02:00:00:77:77:77], len 32 (24+8)
-   0.001 In IP6 fd00:1::1 > fd00:1::77: ICMPv6 Echo Request, id 21697, seq 1, len 64 (8+56)
-   0.001 Out IP6 fd00:1::77 > fd00:1::1: ICMPv6 Echo Reply, id 21697, seq 1, len 64 (8+56)
-   1.000 In IP6 fd00:1::1 > fd00:1::77: ICMPv6 Echo Request, id 21697, seq 2, len 64 (8+56)
-   1.001 Out IP6 fd00:1::77 > fd00:1::1: ICMPv6 Echo Reply, id 21697, seq 2, len 64 (8+56)
-   2.014 In IP6 fd00:1::1 > fd00:1::77: ICMPv6 Echo Request, id 21697, seq 3, len 64 (8+56)
-   2.015 Out IP6 fd00:1::77 > fd00:1::1: ICMPv6 Echo Reply, id 21697, seq 3, len 64 (8+56)
+  0.000  fd00:1::1 → ff02::1:ff00:77  ICMPv6 86 Neighbor Solicitation for fd00:1::77 from 3a:f8:3f:dd:c8:34
+  0.000  fd00:1::77 → fd00:1::1       ICMPv6 86 Neighbor Advertisement fd00:1::77 (sol) is at 02:00:00:77:77:77
+  0.001  fd00:1::1 → fd00:1::77       ICMPv6 118 Echo (ping) request id=0x54c9, seq=1, hop limit=64
+  0.001  fd00:1::77 → fd00:1::1       ICMPv6 118 Echo (ping) reply id=0x54c9, seq=1, hop limit=255
+  1.002  fd00:1::1 → fd00:1::77       ICMPv6 118 Echo (ping) request id=0x54c9, seq=2, hop limit=64
+  1.002  fd00:1::77 → fd00:1::1       ICMPv6 118 Echo (ping) reply id=0x54c9, seq=2, hop limit=255
+  2.024  fd00:1::1 → fd00:1::77       ICMPv6 118 Echo (ping) request id=0x54c9, seq=3, hop limit=64
+  2.024  fd00:1::77 → fd00:1::1       ICMPv6 118 Echo (ping) reply id=0x54c9, seq=3, hop limit=255
 ```
 
 From the pinging host:
-`3 packets transmitted, 3 received, 0% packet loss; rtt min/avg/max/mdev = 0.921/1.325/2.113/0.556 ms`.
+`3 packets transmitted, 3 received, 0% packet loss`.
 
 #### Monkeys over TCP
 
@@ -465,7 +441,7 @@ intact; sending `quit` asks the server to close, and PyTCP performs the
 graceful active close itself:
 
 ```text
-$ { printf 'malpi\n'; sleep 3; printf 'quit\n'; } | nc 192.168.1.77 7
+$ { printf 'malpi\n'; sleep 3; printf 'quit\n'; } | nc 192.168.177.77 7
 ***CLIENT OPEN / SERVICE OPEN***
                                        ______AAAA_______________AAAA______
                                              VVVV               VVVV
@@ -490,31 +466,25 @@ $ { printf 'malpi\n'; sleep 3; printf 'quit\n'; } | nc 192.168.1.77 7
 ***CLIENT OPEN, SERVICE CLOSING***
 ```
 
-On the wire — the stack's own `pytcp tcpdump`, decoded in-stack (`Out` is
-the stack, `In` is the host), rebased to the SYN. The SYN-ACK is the
-stack's first frame to the host, so it is queued pending ARP resolution
-and flushed once the host's MAC is learned — and the egress tap captures
-it on the flush, exactly as Linux `dev_queue_xmit_nit` does:
+On the wire — captured by the stack, decoded by tshark, which shows the
+full TCP option negotiation and the application-layer `ECHO` messages:
 
 ```text
-   0.000 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [S], length 0
-   0.002 Out ARP, Request who-has 192.168.1.10 tell 192.168.1.77
-   0.003 In ARP, Reply 192.168.1.10 is-at a2:4b:a1:00:92:56
-   0.003 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [S.], length 0
-   0.003 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [.], length 0
-   0.004 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [P.], length 6
-   0.007 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [.], length 1448
-   0.010 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [P.], length 146
-   2.999 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [P.], length 5
-   3.001 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [P.], length 35
-   3.004 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [F.], length 0
-   3.044 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [.], length 0
-   6.000 In IP 192.168.1.10.42816 > 192.168.1.77.7: Flags [F.], length 0
-   6.000 Out IP 192.168.1.77.7 > 192.168.1.10.42816: Flags [.], length 0
+  0.000  02:00:00:77:77:77 → 3a:f8:3f:dd:c8:34  ARP 42 192.168.177.77 is at 02:00:00:77:77:77
+  0.001  192.168.177.1 → 192.168.177.77  TCP 74 36882 → 7 [SYN] Seq=0 MSS=1460 SACK_PERM TSval=352211376 WS=1024
+  0.003  192.168.177.77 → 192.168.177.1  TCP 74 7 → 36882 [SYN, ACK] Seq=0 Ack=1 Win=65535 MSS=1460 SACK_PERM WS=128 TSecr=352211376
+  0.004  192.168.177.1 → 192.168.177.77  TCP 66 36882 → 7 [ACK] Seq=1 Ack=1
+  0.004  192.168.177.1 → 192.168.177.77  ECHO 72 Request
+  0.007  192.168.177.77 → 192.168.177.1  ECHO 1514 Response
+  0.008  192.168.177.1 → 192.168.177.77  TCP 66 36882 → 7 [ACK] Seq=7 Ack=1449
+  0.010  192.168.177.77 → 192.168.177.1  ECHO 212 Response
+  2.999  192.168.177.1 → 192.168.177.77  ECHO 71 Request
+  3.001  192.168.177.77 → 192.168.177.1  ECHO 101 Response
+  3.004  192.168.177.77 → 192.168.177.1  TCP 66 7 → 36882 [FIN, ACK] Seq=1630 Ack=12
+  3.045  192.168.177.1 → 192.168.177.77  TCP 66 36882 → 7 [ACK] Seq=12 Ack=1631
+  5.999  192.168.177.1 → 192.168.177.77  TCP 66 36882 → 7 [FIN, ACK] Seq=12 Ack=1631
+  6.000  192.168.177.77 → 192.168.177.1  TCP 66 7 → 36882 [ACK] Seq=1631 Ack=13
 ```
-
-(`Flags`: `S` SYN, `.` ACK, `P` PSH, `F` FIN. Pure-ACK `In` segments
-between the shown frames are elided for brevity.)
 
 The stack negotiates MSS / SACK-permitted / window-scale /
 timestamps on the handshake, resolves the peer's MAC via ARP
@@ -534,26 +504,21 @@ sudo PYTHONPATH=. venv/bin/python -m tools.capture ip6-tcp-monkeys
 
 The same demo, unchanged, over IPv6 (the server bound to a ULA; the
 host resolves it with ICMPv6 Neighbor Discovery instead of ARP). The
-IPv6 MSS is 20 bytes smaller than IPv4's (the larger fixed header), so
-the first echo segment is 1428 vs 1448 bytes. The stack captures the
-whole thing itself — note the Neighbor Solicitation the stack sends
-mid-handshake to resolve the peer for its SYN-ACK, and the queued
-SYN-ACK (`[S.]`) flushed and captured once the peer answers:
+IPv6 MSS is 1440 — 20 bytes smaller than IPv4's, for the larger fixed
+header. The stack resolves the peer via ND, then the handshake, echo,
+and RFC 9293 §3.6 graceful close proceed:
 
 ```text
-   0.000 In IP6 fd00:1::1.35970 > fd00:1::77.7: Flags [S], length 0
-   0.001 Out IP6 fd00:1::77 > ff02::1:ff00:1: ICMPv6 ND Neighbor Solicitation, target fd00:1::1, opts [slla 02:00:00:77:77:77], len 32 (24+8)
-   0.002 In IP6 fd00:1::1 > fd00:1::77: ICMPv6 ND Neighbor Advertisement, flags -SO, target fd00:1::1, opts [tlla a2:4b:a1:00:92:56], len 32 (24+8)
-   0.002 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [S.], length 0
-   0.003 In IP6 fd00:1::1.35970 > fd00:1::77.7: Flags [P.], length 6
-   0.006 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [.], length 1428
-   0.009 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [P.], length 166
-   2.998 In IP6 fd00:1::1.35970 > fd00:1::77.7: Flags [P.], length 5
-   3.000 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [P.], length 35
-   3.004 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [F.], length 0
-   3.046 In IP6 fd00:1::1.35970 > fd00:1::77.7: Flags [.], length 0
-   5.999 In IP6 fd00:1::1.35970 > fd00:1::77.7: Flags [F.], length 0
-   6.000 Out IP6 fd00:1::77.7 > fd00:1::1.35970: Flags [.], length 0
+  0.000  fd00:1::1 → ff02::1:ff00:77  ICMPv6 86 Neighbor Solicitation for fd00:1::77 from 3a:f8:3f:dd:c8:34
+  0.000  fd00:1::77 → fd00:1::1       ICMPv6 86 Neighbor Advertisement fd00:1::77 (sol) is at 02:00:00:77:77:77
+  0.001  fd00:1::1 → fd00:1::77       TCP 94 40586 → 7 [SYN] Seq=0 MSS=1440 SACK_PERM TSval=1961865125 WS=1024
+  0.003  fd00:1::77 → fd00:1::1       TCP 94 7 → 40586 [SYN, ACK] Seq=0 Ack=1 Win=65535 MSS=1440 SACK_PERM WS=128
+  0.004  fd00:1::1 → fd00:1::77       TCP 86 40586 → 7 [ACK] Seq=1 Ack=1
+  0.004  fd00:1::1 → fd00:1::77       ECHO 92 Request
+  0.006  fd00:1::77 → fd00:1::1       ECHO 119 Response
+  0.009  fd00:1::77 → fd00:1::1       ECHO 1514 Response
+  0.011  fd00:1::77 → fd00:1::1       ECHO 219 Response
+  0.012  fd00:1::1 → fd00:1::77       TCP 86 40586 → 7 [ACK] Seq=7 Ack=1595
 ```
 
 #### Monkeys over UDP — IPv4 fragmentation
@@ -570,7 +535,7 @@ IPv4-fragments it — the classic "IP fragmentation" demo, captured
 for real.
 
 ```text
-$ printf 'malpi\n' | nc -u 192.168.1.77 7
+$ printf 'malpi\n' | nc -u 192.168.177.77 7
                                        ______AAAA_______________AAAA______
                                              VVVV               VVVV
                                              (__)               (__)
@@ -593,24 +558,20 @@ $ printf 'malpi\n' | nc -u 192.168.1.77 7
                                                   '''       '''
 ```
 
-On the wire — the stack's own `pytcp tcpdump`, decoded in-stack
-(`frag <id>:<len>@<offset>`, `+` = More Fragments; rebased to the
-request):
+On the wire — captured by the stack, decoded by tshark, which
+reassembles the fragmented reply and shows the `ECHO` datagram:
 
 ```text
-   0.000 In IP 192.168.1.10.39262 > 192.168.1.77.7: UDP, length 6
-   0.001 Out ARP, Request who-has 192.168.1.10 tell 192.168.1.77
-   0.002 In ARP, Reply 192.168.1.10 is-at a2:4b:a1:00:92:56
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: UDP, frag 1:1480@0+
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: UDP, frag 1:89@1480
+  0.000  02:00:00:77:77:77 → 3a:f8:3f:dd:c8:34  ARP 42 192.168.177.77 is at 02:00:00:77:77:77
+  0.000  192.168.177.1 → 192.168.177.77  ECHO 48 Request
+  0.002  192.168.177.77 → 192.168.177.1  IPv4 1514 Fragmented IP protocol (proto=UDP 17, off=0, ID=0001)
+  0.002  192.168.177.77 → 192.168.177.1  ECHO 123 Response
 ```
 
-The oversized UDP reply is split into two IPv4 fragments sharing one IP
-id (`1`); the peer's kernel reassembles them and `nc -u` prints the
-monkey. The first fragment is held in the per-neighbour queue until the
-ARP reply resolves the peer's MAC (RFC 1122 §2.3.2.2), then both
-fragments are flushed in order — and the egress tap captures the queued
-first fragment on the flush, so the stack sees its own complete output.
+The oversized UDP reply exceeds the 1500-byte link MTU, so the stack
+IPv4-fragments it (tshark shows the first fragment as `Fragmented IP
+protocol` and reassembles the second into the `ECHO Response`); the
+peer's kernel reassembles them and `nc -u` prints the monkey.
 
 #### Monkeys over UDP — over IPv6
 
@@ -623,23 +584,17 @@ sudo PYTHONPATH=. venv/bin/python -m tools.capture ip6-udp-monkeys
 The same oversized echo over IPv6. IPv6 fragments differently from
 IPv4: the base header is never modified — the source inserts a
 **Fragment extension header** (RFC 8200 §4.5), and only the source may
-fragment. The stack resolves the peer via ICMPv6 Neighbor Discovery
-(NS → NA — the stack sends the NS itself, mid-flow, to resolve the peer
-for its reply), then emits the ~1.5 KB reply as two `IPv6_Frag`
-fragments — captured and decoded by the stack itself:
+fragment. The stack resolves the peer via ND, then emits the ~1.5 KB
+reply as two fragments; tshark decodes the IPv6 fragment header and
+reassembles the `ECHO Response`:
 
 ```text
-   0.000 In IP6 fd00:1::1.33143 > fd00:1::77.7: UDP, length 6
-   0.001 Out IP6 fd00:1::77 > ff02::1:ff00:1: ICMPv6 ND Neighbor Solicitation, target fd00:1::1, opts [slla 02:00:00:77:77:77], len 32 (24+8)
-   0.002 In IP6 fd00:1::1 > fd00:1::77: ICMPv6 ND Neighbor Advertisement, flags -SO, target fd00:1::1, opts [tlla a2:4b:a1:00:92:56], len 32 (24+8)
-   0.002 Out IP6 fd00:1::77 > fd00:1::1: IPv6_Frag, length 1456
-   0.002 Out IP6 fd00:1::77 > fd00:1::1: IPv6_Frag, length 129
+  0.000  fd00:1::1 → ff02::1:ff00:77  ICMPv6 86 Neighbor Solicitation for fd00:1::77 from 3a:f8:3f:dd:c8:34
+  0.000  fd00:1::77 → fd00:1::1       ICMPv6 86 Neighbor Advertisement fd00:1::77 (sol) is at 02:00:00:77:77:77
+  0.000  fd00:1::1 → fd00:1::77       ECHO 68 Request
+  0.001  fd00:1::77 → fd00:1::1       IPv6 1510 IPv6 fragment (off=0 more=y ident=0xf6aed279 nxt=17)
+  0.001  fd00:1::77 → fd00:1::1       ECHO 183 Response
 ```
-
-(`IPv6_Frag` is the Fragment extension header — the decoder reports the
-per-fragment payload length; the two fragments, 1456 + 129 bytes,
-reassemble to the ~1.5 KB reply, which the peer's kernel puts back
-together so `nc -u` prints the monkey.)
 
 #### Inbound IPv4 reassembly (oversized ping)
 
@@ -652,27 +607,53 @@ sudo PYTHONPATH=. venv/bin/python -m tools.capture ip4-icmp-frag-rx --count 1
 The receive-side counterpart of the fragmentation demos. The host sends
 a 4000-byte `ping`, which its kernel splits into three IPv4 fragments.
 The stack **reassembles** them into one Echo Request, then replies with a
-4000-byte Echo Reply that it **itself fragments** into three — all
-captured and decoded by the stack itself, both directions:
+4000-byte Echo Reply that it **itself fragments** — captured by the
+stack, decoded by tshark, which shows each fragment and reassembles the
+Echo on both sides:
 
 ```text
-   0.000 In IP 192.168.1.10 > 192.168.1.77: ICMPv4, frag 60131:1480@0+
-   0.000 In IP 192.168.1.10 > 192.168.1.77: ICMPv4, frag 60131:1480@1480+
-   0.000 In IP 192.168.1.10 > 192.168.1.77: ICMPv4, frag 60131:1048@2960
-   0.001 Out ARP, Request who-has 192.168.1.10 tell 192.168.1.77
-   0.002 In ARP, Reply 192.168.1.10 is-at a2:4b:a1:00:92:56
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4, frag 1:1480@0+
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4, frag 1:1480@1480+
-   0.002 Out IP 192.168.1.77 > 192.168.1.10: ICMPv4, frag 1:1048@2960
+  0.000  02:00:00:77:77:77 → 3a:f8:3f:dd:c8:34  ARP 42 192.168.177.77 is at 02:00:00:77:77:77
+  0.001  192.168.177.1 → 192.168.177.77  IPv4 1514 Fragmented IP protocol (proto=ICMP 1, off=0, ID=2c43)
+  0.001  192.168.177.1 → 192.168.177.77  IPv4 1514 Fragmented IP protocol (proto=ICMP 1, off=1480, ID=2c43)
+  0.001  192.168.177.1 → 192.168.177.77  ICMP 1082 Echo (ping) request  id=0x54c8, seq=1/256, ttl=64
+  0.002  192.168.177.77 → 192.168.177.1  IPv4 1514 Fragmented IP protocol (proto=ICMP 1, off=0, ID=0001)
+  0.002  192.168.177.77 → 192.168.177.1  IPv4 1514 Fragmented IP protocol (proto=ICMP 1, off=1480, ID=0001)
+  0.002  192.168.177.77 → 192.168.177.1  ICMP 1082 Echo (ping) reply    id=0x54c8, seq=1/256, ttl=64
 ```
 
-The three inbound fragments (id `60131`) reassemble to one Echo Request;
-the stack's reply is re-fragmented under its own IP id (`1`). Offsets are
-in bytes — `0`, `1480`, `2960` — and the final fragment of each group
-carries no `+`. From the pinging host:
-`1 packets transmitted, 1 received, 0% packet loss`
-(`4008 bytes from 192.168.1.77` — the full 4000-byte payload made the
-round trip, reassembled on both ends).
+The host's three inbound fragments (id `2c43`) reassemble to one Echo
+Request (tshark shows the reassembled `ICMP … Echo request` on the last);
+the stack's reply is re-fragmented under its own IP id (`0001`). From the
+pinging host: `1 packet transmitted, 1 received, 0% packet loss` — the
+full 4000-byte payload made the round trip, reassembled on both ends.
+
+#### Capturing stack-internal loopback (what only the stack can see)
+
+Every capture above could, in principle, also be seen by an external
+`tcpdump` on the TAP — the frames are on the wire. Stack-internal
+**loopback** traffic is not: when two sockets on the same daemon talk
+over `127.0.0.1` / `::1`, the datagrams loop inside the stack and never
+reach any device, so an external capture is blind to them. `pytcp
+tcpdump -i lo` is the only way to observe them, because it captures at
+the stack's own loopback tap and pipes the frames to tshark:
+
+```bash
+# With a daemon running (PYTCP_DAEMON_SOCKET set), in one terminal:
+pytcp tcpdump -i lo
+
+# ...while a program sends to a loopback address through the daemon:
+python -c "from pytcp import socket; s=socket.socket(socket.AF_INET, \
+  socket.SOCK_DGRAM); s.sendto(b'hi', ('127.0.0.1', 9))"
+```
+
+```text
+1   0.000000   127.0.0.1 → 127.0.0.1   DISCARD 57 Discard
+2   0.000473   127.0.0.1 → 127.0.0.1   DISCARD 57 Discard
+```
+
+tshark decodes the looped datagrams (UDP to the discard port) that never
+touched the wire — capture reach only the in-stack tool has, with
+tshark's decode on top.
 
 #### DHCPv4 client lease
 
@@ -696,14 +677,14 @@ Announcements go over the raw-socket path the in-stack tap does not see
 
 ```text
 0.000   DHCP  0.0.0.0 → 255.255.255.255       DHCP Discover   xid 0x3207aee
-0.000   DHCP  192.168.1.1 → 255.255.255.255   DHCP Offer      xid 0x3207aee   (offers 192.168.1.145)
-3.002   DHCP  0.0.0.0 → 255.255.255.255       DHCP Request    xid 0x3207aee   (requesting 192.168.1.145)
-3.002   DHCP  192.168.1.1 → 255.255.255.255   DHCP ACK        xid 0x3207aee   (lease 3600 s)
-3.810   ARP   0.0.0.0 → 192.168.1.145         ARP Probe — Who has 192.168.1.145?   (RFC 5227 ACD on the leased address)
-5.599   ARP   0.0.0.0 → 192.168.1.145         ARP Probe — Who has 192.168.1.145?
-6.891   ARP   0.0.0.0 → 192.168.1.145         ARP Probe — Who has 192.168.1.145?
-10.252  ARP   192.168.1.145 → 192.168.1.145   ARP Announcement for 192.168.1.145
-12.252  ARP   192.168.1.145 → 192.168.1.145   ARP Announcement for 192.168.1.145
+0.000   DHCP  192.168.177.1 → 255.255.255.255   DHCP Offer      xid 0x3207aee   (offers 192.168.177.145)
+3.002   DHCP  0.0.0.0 → 255.255.255.255       DHCP Request    xid 0x3207aee   (requesting 192.168.177.145)
+3.002   DHCP  192.168.177.1 → 255.255.255.255   DHCP ACK        xid 0x3207aee   (lease 3600 s)
+3.810   ARP   0.0.0.0 → 192.168.177.145         ARP Probe — Who has 192.168.177.145?   (RFC 5227 ACD on the leased address)
+5.599   ARP   0.0.0.0 → 192.168.177.145         ARP Probe — Who has 192.168.177.145?
+6.891   ARP   0.0.0.0 → 192.168.177.145         ARP Probe — Who has 192.168.177.145?
+10.252  ARP   192.168.177.145 → 192.168.177.145   ARP Announcement for 192.168.177.145
+12.252  ARP   192.168.177.145 → 192.168.177.145   ARP Announcement for 192.168.177.145
 ```
 
 Stack log:
@@ -711,10 +692,10 @@ Stack log:
 ```text
 0015.05 | DHCP4 | Initial desync delay: 6.83s
 0021.89 | DHCP4 | TX - DHCPv4 Request ... [message_type Discover ...]
-0021.89 | DHCP4 | RX - DHCPv4 Reply ... yiaddr 192.168.1.145 ... [message_type Offer, server_id 192.168.1.1 ...]
-0024.89 | DHCP4 | TX - DHCPv4 Request ... [message_type Request, server_id 192.168.1.1, req_ip_addr 192.168.1.145 ...]
+0021.89 | DHCP4 | RX - DHCPv4 Reply ... yiaddr 192.168.177.145 ... [message_type Offer, server_id 192.168.177.1 ...]
+0024.89 | DHCP4 | TX - DHCPv4 Request ... [message_type Request, server_id 192.168.177.1, req_ip_addr 192.168.177.145 ...]
 0024.89 | DHCP4 | RX - DHCPv4 Reply ... [message_type ACK, lease_time 3600 ...]
-0032.14 | DHCP4 | Lease acquired: 192.168.1.145/24 (lease_time=3600s, server=192.168.1.1)
+0032.14 | DHCP4 | Lease acquired: 192.168.177.145/24 (lease_time=3600s, server=192.168.177.1)
 ```
 
 #### TCP under packet loss — retransmission & recovery
@@ -740,23 +721,23 @@ invariant is that it *completes*), captured with an **external** tool
 annotations make the recovery legible), rebased to the SYN:
 
 ```text
-0.000  TCP  192.168.1.10 → 192.168.1.77   [SYN]                 Seq=0 MSS=1460 SACK_PERM WS=1024
-0.003  TCP  192.168.1.77 → 192.168.1.10   [SYN,ACK]             Seq=0 Ack=1
-0.003  TCP  192.168.1.10 → 192.168.1.77   [ACK]
-0.006  TCP  192.168.1.77 → 192.168.1.10   [PSH,ACK]             open banner, Len 33
-0.035  TCP  192.168.1.77 → 192.168.1.10   [PSH,ACK]             [TCP Retransmission] Seq=1 Len 33  (banner drop → RTO resend)
-0.035  TCP  192.168.1.10 → 192.168.1.77   [ACK]                 [Previous segment not captured] SACK SLE=1 SRE=34
-0.036  TCP  192.168.1.77 → 192.168.1.10   [ACK]                 [TCP Dup ACK]
-0.208  TCP  192.168.1.10 → 192.168.1.77   [PSH,ACK]             [TCP Retransmission] "malpi\n" request resent
-0.211  TCP  192.168.1.77 → 192.168.1.10   [PSH,ACK]             monkeys, segment 1
-0.279  TCP  192.168.1.77 → 192.168.1.10   [PSH,ACK]             [TCP Retransmission] Seq=1482 Len 113  monkeys seg 2 resent
-0.279  TCP  192.168.1.10 → 192.168.1.77   [ACK]                 SACK SLE=1482 SRE=1595
-3.210  TCP  192.168.1.10 → 192.168.1.77   [PSH,ACK]             "quit\n" request
-4.001  TCP  192.168.1.77 → 192.168.1.10   [PSH,ACK]             [TCP Retransmission] "SERVICE CLOSING" banner resent
-4.004  TCP  192.168.1.77 → 192.168.1.10   [FIN,ACK]             PyTCP active close
-4.044  TCP  192.168.1.10 → 192.168.1.77   [ACK]                 peer acks the FIN
-6.000  TCP  192.168.1.10 → 192.168.1.77   [FIN,ACK]             peer closes its half
-6.001  TCP  192.168.1.77 → 192.168.1.10   [ACK]                 connection fully closed (no RST)
+0.000  TCP  192.168.177.10 → 192.168.177.77   [SYN]                 Seq=0 MSS=1460 SACK_PERM WS=1024
+0.003  TCP  192.168.177.77 → 192.168.177.10   [SYN,ACK]             Seq=0 Ack=1
+0.003  TCP  192.168.177.10 → 192.168.177.77   [ACK]
+0.006  TCP  192.168.177.77 → 192.168.177.10   [PSH,ACK]             open banner, Len 33
+0.035  TCP  192.168.177.77 → 192.168.177.10   [PSH,ACK]             [TCP Retransmission] Seq=1 Len 33  (banner drop → RTO resend)
+0.035  TCP  192.168.177.10 → 192.168.177.77   [ACK]                 [Previous segment not captured] SACK SLE=1 SRE=34
+0.036  TCP  192.168.177.77 → 192.168.177.10   [ACK]                 [TCP Dup ACK]
+0.208  TCP  192.168.177.10 → 192.168.177.77   [PSH,ACK]             [TCP Retransmission] "malpi\n" request resent
+0.211  TCP  192.168.177.77 → 192.168.177.10   [PSH,ACK]             monkeys, segment 1
+0.279  TCP  192.168.177.77 → 192.168.177.10   [PSH,ACK]             [TCP Retransmission] Seq=1482 Len 113  monkeys seg 2 resent
+0.279  TCP  192.168.177.10 → 192.168.177.77   [ACK]                 SACK SLE=1482 SRE=1595
+3.210  TCP  192.168.177.10 → 192.168.177.77   [PSH,ACK]             "quit\n" request
+4.001  TCP  192.168.177.77 → 192.168.177.10   [PSH,ACK]             [TCP Retransmission] "SERVICE CLOSING" banner resent
+4.004  TCP  192.168.177.77 → 192.168.177.10   [FIN,ACK]             PyTCP active close
+4.044  TCP  192.168.177.10 → 192.168.177.77   [ACK]                 peer acks the FIN
+6.000  TCP  192.168.177.10 → 192.168.177.77   [FIN,ACK]             peer closes its half
+6.001  TCP  192.168.177.77 → 192.168.177.10   [ACK]                 connection fully closed (no RST)
 ```
 
 `--loss` (and `--delay-ms` / `--reorder` / `--duplicate` /
