@@ -45,7 +45,7 @@ import sys
 import tempfile
 import threading
 from collections.abc import Callable
-from typing import Any, TextIO
+from typing import Any, BinaryIO
 
 from net_addr import Ip4IfAddr, Ip6IfAddr, MacAddress
 from pytcp import stack
@@ -119,34 +119,36 @@ def _resolve_interface(interface_name: str, *, mac_address: MacAddress | None) -
     raise ValueError(f"Unsupported interface type {interface_name[:3]!r}; only 'tap' and 'tun' are supported.")
 
 
-def _start_capture(capture_path: str, /) -> tuple[DaemonCapture, PacketSocket, TextIO | None]:
+def _start_capture(capture_path: str, /, *, pcap: bool) -> tuple[DaemonCapture, PacketSocket, BinaryIO | None]:
     """
-    Open the capture sink ('-' = stdout, else a line-buffered file), bind
-    an internal capture-all AF_PACKET socket, and start the drain writer.
-    Return the writer, the socket, and the file to close on teardown
-    ('None' for stdout). Called after 'stack.init()' and before
-    'stack.start()' so the writer sees the stack's boot from frame one.
+    Open the capture sink ('-' = stdout, else a file), bind an internal
+    capture-all AF_PACKET socket, and start the drain writer. 'pcap'
+    selects a libpcap-stream sink (for 'tshark -r') over the default
+    decoded-text sink. Return the writer, the socket, and the file to
+    close on teardown ('None' for stdout). Called after 'stack.init()' and
+    before 'stack.start()' so the writer sees the stack's boot from frame
+    one.
     """
 
-    sink: TextIO
-    owned_file: TextIO | None
+    sink: BinaryIO
+    owned_file: BinaryIO | None
     if capture_path == "-":
-        sink = sys.stdout
+        sink = sys.stdout.buffer
         owned_file = None
     else:
-        sink = open(capture_path, "w", buffering=1, encoding="ascii")  # noqa: SIM115
+        sink = open(capture_path, "wb", buffering=0)  # noqa: SIM115
         owned_file = sink
 
     # Construct through the sanctioned socket factory (the user/kernel
     # transition), not by instantiating PacketSocket directly.
     capture_socket = pytcp_socket(family=AddressFamily.PACKET, type=SocketType.RAW)
     assert isinstance(capture_socket, PacketSocket)
-    capture = DaemonCapture(capture_socket=capture_socket, sink=sink)
+    capture = DaemonCapture(capture_socket=capture_socket, sink=sink, pcap=pcap)
     capture.start()
     return capture, capture_socket, owned_file
 
 
-def _stop_capture(capture: DaemonCapture, capture_socket: PacketSocket, owned_file: TextIO | None, /) -> None:
+def _stop_capture(capture: DaemonCapture, capture_socket: PacketSocket, owned_file: BinaryIO | None, /) -> None:
     """
     Stop the drain writer, close the capture socket, and close the sink
     file if the daemon opened one (never stdout).
@@ -170,6 +172,7 @@ def run_daemon(
     on_ready: Callable[[str], None] | None = None,
     pidfile_path: str | None = None,
     capture_path: str | None = None,
+    capture_pcap: bool = False,
 ) -> None:
     """
     Run the PyTCP daemon: boot the stack on one or more interfaces, serve
@@ -187,11 +190,13 @@ def run_daemon(
     'pytcp daemon stop' can signal it.
 
     When 'capture_path' is given the daemon binds an internal AF_PACKET
-    capture socket before the stack starts and streams decoded,
-    direction-tagged tcpdump-style lines to that file ('-' for stdout).
-    Binding before 'stack.start()' captures the stack's own boot —
-    IPv6 DAD / RS / RA, RFC 5227 ARP Probe / Announcement, DHCPv4 —
-    which a client-attached 'pytcp tcpdump' cannot see.
+    capture socket before the stack starts and writes captured frames to
+    that file ('-' for stdout). Binding before 'stack.start()' captures
+    the stack's own boot — IPv6 DAD / RS / RA, RFC 5227 ARP Probe /
+    Announcement, DHCPv4 — which a client-attached 'pytcp tcpdump' cannot
+    see. With 'capture_pcap' the file is a libpcap stream ('tshark -r'
+    decodable); otherwise it is decoded, direction-tagged tcpdump-style
+    text.
     """
 
     stop = threading.Event()
@@ -211,7 +216,7 @@ def run_daemon(
 
     server: IpcServer | None = None
     stack_started = False
-    capture_state: tuple[DaemonCapture, PacketSocket, TextIO | None] | None = None
+    capture_state: tuple[DaemonCapture, PacketSocket, BinaryIO | None] | None = None
     try:
         stack.init()
         # Per-interface static MAC / host arguments only apply to a
@@ -251,7 +256,7 @@ def run_daemon(
         # stack's own autoconfiguration (DAD / RS / RA / ARP ACD / DHCPv4)
         # from the first frame.
         if capture_path is not None:
-            capture_state = _start_capture(capture_path)
+            capture_state = _start_capture(capture_path, pcap=capture_pcap)
         # Do not block the daemon's bring-up on the DHCPv4 lease: start the
         # lifecycle and let the lease land in the background so the control
         # socket is reachable immediately (clients poll the address state).

@@ -44,9 +44,14 @@ ver 3.0.8
 import threading
 import time
 from collections.abc import Callable
-from typing import Protocol, TextIO
+from typing import BinaryIO, Protocol
 
-from pytcp.cli.cli__tcpdump import format_capture_line
+from pytcp.cli.cli__tcpdump import (
+    format_capture_line,
+    frame_for_pcap,
+    pcap_global_header,
+    pcap_record,
+)
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 DAEMON__CAPTURE__POLL_TIMEOUT__SEC: float = 0.2
@@ -65,25 +70,32 @@ class CaptureSocket(Protocol):
 
 class DaemonCapture:
     """
-    A background writer that drains an in-daemon AF_PACKET socket and
-    renders each captured frame as a decoded, direction-tagged line.
+    A background writer that drains an in-daemon AF_PACKET socket to a
+    binary sink. In the default text mode it writes one decoded,
+    direction-tagged line per frame ('pytcp tcpdump' built-in output); in
+    'pcap' mode it writes a classic libpcap stream (a global header then a
+    record per frame) that 'tshark -r' can decode — the same rich output
+    the CLI produces, but captured from the stack's own boot.
     """
 
     def __init__(
         self,
         *,
         capture_socket: CaptureSocket,
-        sink: TextIO,
+        sink: BinaryIO,
+        pcap: bool = False,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         """
-        Bind the writer to a capture socket and a text sink (left
-        unstarted until 'start'). 'clock' supplies the monotonic reading
-        rebased so the first captured frame reads 0.0 s.
+        Bind the writer to a capture socket and a binary sink (left
+        unstarted until 'start'). 'pcap' selects the libpcap-stream output;
+        'clock' supplies the monotonic reading rebased so the first
+        captured frame reads 0.0 s (text mode only).
         """
 
         self._capture_socket = capture_socket
         self._sink = sink
+        self._pcap = pcap
         self._clock = clock
         self._epoch: float | None = None
         self._event__stop = threading.Event()
@@ -91,16 +103,20 @@ class DaemonCapture:
 
     def start(self) -> None:
         """
-        Spawn the drain thread.
+        Spawn the drain thread (writing the pcap global header first in
+        pcap mode).
         """
 
+        if self._pcap:
+            self._sink.write(pcap_global_header())
+            self._sink.flush()
         self._thread__capture = threading.Thread(target=self._pump, name="Daemon-Capture", daemon=True)
         self._thread__capture.start()
 
     def _pump(self) -> None:
         """
-        Drain captured frames until stopped, writing one decoded,
-        direction-tagged, rebased-timestamp line per frame to the sink.
+        Drain captured frames until stopped, writing each to the sink as a
+        decoded line (text mode) or a libpcap record (pcap mode).
         """
 
         while not self._event__stop.is_set():
@@ -114,14 +130,18 @@ class DaemonCapture:
             now = self._clock()
             if self._epoch is None:
                 self._epoch = now
-            line = format_capture_line(pkttype=sockaddr_ll.pkttype, frame=frame, timestamp=now - self._epoch)
+            if self._pcap:
+                blob = pcap_record(frame_for_pcap(frame), seconds=int(now), micros=int(now % 1 * 1_000_000))
+            else:
+                line = format_capture_line(pkttype=sockaddr_ll.pkttype, frame=frame, timestamp=now - self._epoch)
+                blob = (line + "\n").encode()
 
             try:
-                self._sink.write(line + "\n")
+                self._sink.write(blob)
                 self._sink.flush()
             except OSError, ValueError:
                 # Sink closed underneath us (ValueError on a closed
-                # StringIO / file) — stop draining rather than spin.
+                # BytesIO / file) — stop draining rather than spin.
                 break
 
     def is_alive(self) -> bool:

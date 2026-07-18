@@ -120,6 +120,7 @@ class TestDaemonCli(TestCase):
             ip6_host=None,
             on_ready=ANY,
             capture_path=None,
+            capture_pcap=False,
         )
 
     def test__main__threads_capture_path_to_run_daemon(self) -> None:

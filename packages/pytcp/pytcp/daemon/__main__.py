@@ -134,8 +134,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--capture",
         metavar="PATH",
         default=None,
-        help="Stream decoded, direction-tagged tcpdump-style capture lines to PATH "
-        "('-' for stdout), starting from the stack's own boot (DAD / ARP ACD / DHCP).",
+        help="Capture frames to PATH ('-' for stdout) from the stack's own boot "
+        "(DAD / ARP ACD / DHCP). Decoded tcpdump-style text unless --capture-pcap.",
+    )
+    parser.add_argument(
+        "--capture-pcap",
+        action="store_true",
+        help="Write the --capture file as a libpcap stream ('tshark -r' decodable) " "instead of decoded text.",
     )
     return parser
 
@@ -157,6 +162,7 @@ def main(argv: list[str] | None = None) -> None:
         ip6_host=args.ip6_address,
         on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
         capture_path=args.capture,
+        capture_pcap=args.capture_pcap,
     )
 
 

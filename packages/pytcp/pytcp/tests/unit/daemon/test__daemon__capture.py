@@ -43,6 +43,7 @@ from unittest import TestCase
 from net_addr import Ip4Address, MacAddress
 from net_proto import EthernetAssembler, Ip4Assembler
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
+from pytcp.cli.cli__tcpdump import pcap_global_header, pcap_record
 from pytcp.daemon.daemon__capture import DaemonCapture
 from pytcp.runtime.socket import PacketType
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
@@ -99,7 +100,7 @@ class TestDaemonCapture(TestCase):
     @override
     def setUp(self) -> None:
         """
-        Build an outbound then an inbound UDP capture pair and a text sink.
+        Build an outbound then an inbound UDP capture pair and a binary sink.
         """
 
         self._drained = threading.Event()
@@ -107,7 +108,7 @@ class TestDaemonCapture(TestCase):
             (_udp_frame(), SockAddrLl(pkttype=PacketType.PACKET_OUTGOING)),
             (_udp_frame(), SockAddrLl(pkttype=PacketType.PACKET_HOST)),
         ]
-        self._sink = io.StringIO()
+        self._sink = io.BytesIO()
 
     def test__daemon__capture__drains_and_writes_rebased_lines(self) -> None:
         """
@@ -131,9 +132,42 @@ class TestDaemonCapture(TestCase):
 
         self.assertEqual(
             self._sink.getvalue(),
-            " 0.000000 Out IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5\n"
-            " 0.100000 In IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5\n",
+            b" 0.000000 Out IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5\n"
+            b" 0.100000 In IP 10.0.1.7.7 > 10.0.1.91.12345: UDP, length 5\n",
             msg="The writer must emit one rebased, direction-tagged line per captured frame.",
+        )
+
+    def test__daemon__capture__pcap_mode_writes_libpcap_stream(self) -> None:
+        """
+        Ensure pcap mode writes a libpcap global header followed by one
+        record per captured frame, so 'tshark -r' can decode the stream.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        capture = DaemonCapture(
+            capture_socket=_FakeCaptureSocket(self._packets, self._drained),
+            sink=self._sink,
+            pcap=True,
+            clock=iter([50.0, 50.1]).__next__,
+        )
+        self.addCleanup(capture.stop)
+
+        capture.start()
+        self.assertTrue(self._drained.wait(timeout=5.0), msg="The writer must drain both queued frames.")
+        capture.stop()
+
+        stream = self._sink.getvalue()
+        self.assertEqual(
+            stream[:24],
+            pcap_global_header(),
+            msg="A pcap-mode stream must begin with the libpcap global header.",
+        )
+        frame = _udp_frame()
+        self.assertEqual(
+            stream[24:],
+            pcap_record(frame, seconds=50, micros=0) + pcap_record(frame, seconds=50, micros=100000),
+            msg="A pcap-mode stream must carry one libpcap record per captured frame.",
         )
 
     def test__daemon__capture__stop_is_idempotent_and_joins(self) -> None:
