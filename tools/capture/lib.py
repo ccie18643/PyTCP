@@ -125,12 +125,15 @@ def common_options(func: Callable[..., Any]) -> Callable[..., Any]:
 
     options = [
         click.option("--iface", envvar="IFACE", default="tap7", show_default=True),
-        click.option("--ip4", envvar="IP4", default="192.168.1.77/24", show_default=True),
-        click.option("--gw4", envvar="GW4", default="192.168.1.1", show_default=True),
+        # 192.168.177.0/24 is deliberately uncommon: a capture harness on
+        # the ubiquitous 192.168.1.0/24 would collide with the operator's
+        # real LAN, so the host would route the ping out its real NIC.
+        click.option("--ip4", envvar="IP4", default="192.168.177.77/24", show_default=True),
+        click.option("--gw4", envvar="GW4", default="192.168.177.1", show_default=True),
         click.option("--ip6", envvar="IP6", default="fd00:1::77/64", show_default=True),
         click.option("--gw6", envvar="GW6", default="", show_default=True),
         click.option("--port", envvar="PORT", type=int, default=7, show_default=True),
-        click.option("--peer", envvar="PEER", default="", help="Host-side IPv4 (icmp); auto-detected if empty."),
+        click.option("--peer", envvar="PEER", default="192.168.177.1", help="Host-side IPv4 (icmp)."),
         click.option("--peer6", envvar="PEER6", default="fd00:1::1", show_default=True),
         click.option("--claim-timeout", envvar="CLAIM_TIMEOUT", type=int, default=60, show_default=True),
         click.option("--bind-timeout", envvar="BIND_TIMEOUT", type=int, default=90, show_default=True),
