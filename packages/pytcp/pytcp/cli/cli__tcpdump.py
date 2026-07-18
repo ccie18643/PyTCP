@@ -37,6 +37,10 @@ pytcp/cli/cli__tcpdump.py
 ver 3.0.8
 """
 
+import shutil
+import struct
+import subprocess
+import time
 from collections.abc import Callable, Iterator
 from typing import Protocol
 
@@ -263,3 +267,133 @@ def run_tcpdump(
             timestamp = now - epoch
         yield format_capture_line(pkttype=sockaddr_ll.pkttype, frame=frame, timestamp=timestamp)
         emitted += 1
+
+
+# --- tshark decode feed -------------------------------------------------
+#
+# 'pytcp tcpdump' captures frames the daemon sees (including stack-internal
+# loopback, which no external tool can reach) and — when tshark is
+# installed — pipes them to a 'tshark -r -' subprocess for its richer
+# decode / output. The frames are wrapped in a classic little-endian
+# libpcap stream: a 24-byte global header (EN10MB link type) then a
+# 16-byte record header per frame. A bare IP packet (a loopback capture
+# has no link layer) is wrapped in a zero-MAC Ethernet header so the
+# single-link-type stream carries it, exactly as Linux presents 'lo'.
+
+PCAP__MAGIC: int = 0xA1B2C3D4
+PCAP__VERSION_MAJOR: int = 2
+PCAP__VERSION_MINOR: int = 4
+PCAP__SNAPLEN: int = 65535
+PCAP__DLT_EN10MB: int = 1
+PCAP__GLOBAL_HEADER__STRUCT: str = "<IHHiIII"
+PCAP__RECORD_HEADER__STRUCT: str = "<IIII"
+
+
+def pcap_global_header() -> bytes:
+    """
+    Build the classic little-endian libpcap global header declaring the
+    EN10MB (Ethernet) link type — written once at the head of the stream
+    fed to 'tshark -r -'.
+    """
+
+    return struct.pack(
+        PCAP__GLOBAL_HEADER__STRUCT,
+        PCAP__MAGIC,
+        PCAP__VERSION_MAJOR,
+        PCAP__VERSION_MINOR,
+        0,
+        0,
+        PCAP__SNAPLEN,
+        PCAP__DLT_EN10MB,
+    )
+
+
+def pcap_record(frame: bytes, /, *, seconds: int, micros: int) -> bytes:
+    """
+    Frame a captured packet as a libpcap record: a 16-byte header carrying
+    the timestamp and the captured / original lengths, then the bytes.
+    """
+
+    return struct.pack(PCAP__RECORD_HEADER__STRUCT, seconds, micros, len(frame), len(frame)) + frame
+
+
+def frame_for_pcap(frame: bytes, /) -> bytes:
+    """
+    Return the frame ready for the EN10MB pcap stream. An Ethernet frame is
+    returned verbatim; a bare IP packet (a loopback capture has no link
+    layer) is wrapped in a zero-MAC Ethernet header carrying the IP-version
+    ethertype, so the single-link-type stream can carry it.
+    """
+
+    if not _looks_like_bare_ip(frame):
+        return frame
+    ethertype = EtherType.IP4 if frame[0] >> 4 == 4 else EtherType.IP6
+    return bytes(6) + bytes(6) + int(ethertype).to_bytes(2) + frame
+
+
+def _looks_like_bare_ip(frame: bytes, /) -> bool:
+    """
+    Report whether 'frame' is a bare IP packet (no link-layer header) — an
+    Ethernet parse that fails, or succeeds only with an unknown ethertype,
+    on a frame whose first nibble is an IP version. Mirrors the raw-IP
+    detection in 'describe_frame'.
+    """
+
+    if not frame or frame[0] >> 4 not in (4, 6):
+        return False
+    packet_rx = PacketRx(frame)
+    try:
+        EthernetParser(packet_rx)
+    except PacketValidationError:
+        return True
+    return packet_rx.ethernet.type not in (EtherType.ARP, EtherType.IP4, EtherType.IP6)
+
+
+def tshark_available() -> bool:
+    """
+    Report whether the 'tshark' binary is on PATH (the richer decode path).
+    """
+
+    return shutil.which("tshark") is not None
+
+
+def stream_via_tshark(sock: CaptureSocket, /, *, count: int | None = None) -> int:
+    """
+    Capture frames off 'sock' and stream them, pcap-framed, to a
+    'tshark -r -' subprocess whose decoded output goes straight to this
+    process's stdout. Returns the number of frames fed. The tshark process
+    inherits stdout so its line-buffered ('-l') decode prints live; name
+    resolution is off ('-n') so a capture never blocks on DNS.
+    """
+
+    proc = subprocess.Popen(
+        ["tshark", "-r", "-", "-l", "-n"],
+        stdin=subprocess.PIPE,
+    )
+    assert proc.stdin is not None
+    fed = 0
+    try:
+        proc.stdin.write(pcap_global_header())
+        proc.stdin.flush()
+        while count is None or fed < count:
+            try:
+                frame, _sockaddr_ll = sock.recvfrom()
+            except BlockingIOError, TimeoutError:
+                continue
+            now = time.time()
+            record = pcap_record(frame_for_pcap(frame), seconds=int(now), micros=int(now % 1 * 1_000_000))
+            try:
+                proc.stdin.write(record)
+                proc.stdin.flush()
+            except BrokenPipeError:
+                break
+            fed += 1
+    except KeyboardInterrupt:
+        pass
+    finally:
+        try:
+            proc.stdin.close()
+        except BrokenPipeError:
+            pass
+        proc.wait()
+    return fed

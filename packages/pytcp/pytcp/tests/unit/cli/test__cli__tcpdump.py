@@ -33,6 +33,7 @@ pytcp/tests/unit/cli/test__cli__tcpdump.py
 ver 3.0.8
 """
 
+import struct
 from typing import override
 from unittest import TestCase
 
@@ -56,6 +57,9 @@ from net_proto.protocols.udp.udp__assembler import UdpAssembler
 from pytcp.cli.cli__tcpdump import (
     describe_frame,
     format_capture_line,
+    frame_for_pcap,
+    pcap_global_header,
+    pcap_record,
     run_tcpdump,
 )
 from pytcp.runtime.socket import PacketType
@@ -595,4 +599,97 @@ class TestCliTcpdumpRunLoop(TestCase):
                 " 0.250000 In ARP, Request who-has 10.0.1.7 tell 10.0.1.91",
             ],
             msg="run_tcpdump must rebase a supplied clock to the first captured frame.",
+        )
+
+
+class TestCliTcpdumpPcapStream(TestCase):
+    """
+    The 'pytcp tcpdump' pcap-framing helpers (the tshark-decode feed).
+    """
+
+    def test__cli__tcpdump__pcap_global_header_is_en10mb_libpcap(self) -> None:
+        """
+        Ensure the pcap global header is a classic little-endian libpcap
+        header declaring the EN10MB (Ethernet) link type, so a tshark
+        subprocess reads the stream that follows.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            pcap_global_header(),
+            struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1),
+            msg="The pcap global header must be a little-endian EN10MB libpcap header.",
+        )
+
+    def test__cli__tcpdump__pcap_record_frames_a_packet(self) -> None:
+        """
+        Ensure a pcap record prefixes the frame with a 16-byte record
+        header carrying the timestamp and the captured / original lengths.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            pcap_record(b"abcd", seconds=5, micros=6),
+            struct.pack("<IIII", 5, 6, 4, 4) + b"abcd",
+            msg="A pcap record must be a 16-byte header (ts + lengths) then the frame.",
+        )
+
+    def test__cli__tcpdump__frame_for_pcap_passes_ethernet_through(self) -> None:
+        """
+        Ensure an Ethernet frame is fed to tshark unchanged (it already
+        carries the EN10MB link-layer header).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        eth = _udp_frame()
+        self.assertEqual(
+            frame_for_pcap(eth),
+            eth,
+            msg="An Ethernet frame must be fed to tshark verbatim.",
+        )
+
+    def test__cli__tcpdump__frame_for_pcap_wraps_bare_ipv4(self) -> None:
+        """
+        Ensure a bare IPv4 packet (a loopback capture, no link layer) is
+        wrapped in a zero-MAC Ethernet header so the EN10MB tshark stream
+        can carry it — as Linux presents 'lo' frames.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        ip4 = bytes(
+            Ip4Assembler(
+                ip4__src=Ip4Address("127.0.0.1"),
+                ip4__dst=Ip4Address("127.0.0.1"),
+                ip4__payload=UdpAssembler(udp__sport=12345, udp__dport=7, udp__payload=b"lo"),
+            )
+        )
+        self.assertEqual(
+            frame_for_pcap(ip4),
+            b"\x00" * 12 + b"\x08\x00" + ip4,
+            msg="A bare IPv4 packet must be wrapped in a zero-MAC Ethernet header.",
+        )
+
+    def test__cli__tcpdump__frame_for_pcap_wraps_bare_ipv6(self) -> None:
+        """
+        Ensure a bare IPv6 packet is wrapped with the IPv6 ethertype in its
+        synthetic zero-MAC Ethernet header.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        ip6 = bytes(
+            Ip6Assembler(
+                ip6__src=Ip6Address("::1"),
+                ip6__dst=Ip6Address("::1"),
+                ip6__payload=UdpAssembler(udp__sport=12345, udp__dport=7, udp__payload=b"lo"),
+            )
+        )
+        self.assertEqual(
+            frame_for_pcap(ip6),
+            b"\x00" * 12 + b"\x86\xdd" + ip6,
+            msg="A bare IPv6 packet must be wrapped with the IPv6 ethertype.",
         )

@@ -106,7 +106,7 @@ from pytcp.cli.cli__ping import (
     resolve_destination,
     run_ping,
 )
-from pytcp.cli.cli__tcpdump import run_tcpdump
+from pytcp.cli.cli__tcpdump import run_tcpdump, stream_via_tshark, tshark_available
 from pytcp.cli.cli__traceroute import (
     TRACEROUTE__DEFAULT_MAX_HOPS,
     TRACEROUTE__DEFAULT_PROBES,
@@ -1090,13 +1090,24 @@ def _cmd_tcpdump(args: argparse.Namespace, /) -> int:
         if args.interface is not None:
             ifindex = _resolve_interface(client, args.interface, command="tcpdump")
             sock.bind(SockAddrLl(ifindex=ifindex, ethertype=ETH_P_ALL))
-        print(f"tcpdump: listening on {args.interface or 'all interfaces'} (Ctrl-C to stop)")
+        interface = args.interface or "all interfaces"
         try:
-            for line in run_tcpdump(sock, count=args.count):
-                print(f"{_capture_timestamp()} {line}")
-                captured += 1
-        except KeyboardInterrupt:
-            print()
+            if tshark_available():
+                # Capture with the stack (reaching stack-internal loopback
+                # traffic no external tool can see) and decode with tshark's
+                # richer dissectors.
+                print(f"tcpdump: listening on {interface} (decoding via tshark, Ctrl-C to stop)", flush=True)
+                captured = stream_via_tshark(sock, count=args.count)
+            else:
+                # No tshark — fall back to the built-in decoder (keeps the
+                # tool self-contained / zero-dependency).
+                print(f"tcpdump: listening on {interface} (built-in decoder, Ctrl-C to stop)", flush=True)
+                try:
+                    for line in run_tcpdump(sock, count=args.count):
+                        print(f"{_capture_timestamp()} {line}")
+                        captured += 1
+                except KeyboardInterrupt:
+                    print()
         finally:
             sock.close()
     finally:
