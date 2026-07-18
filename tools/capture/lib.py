@@ -195,10 +195,11 @@ class Harness:
 
         self._cfg = config
         self._tmp = Path(tempfile.mkdtemp(prefix="pytcp-cap-"))
-        # The daemon's own decoded capture stream ('pytcp tcpdump'
-        # engine) replaces the external tshark pcap — the stack captures
-        # and decodes its own traffic, both directions, from boot.
-        self._capfile = self._tmp / "capture.txt"
+        # The daemon captures its own traffic — both directions, from boot,
+        # including stack-internal loopback — to a libpcap file via its
+        # '--capture-pcap' option; 'wire()' renders it with tshark's rich
+        # dissectors (the same output 'pytcp tcpdump' produces).
+        self._capfile = self._tmp / "capture.pcap"
         self._sock = self._tmp / "daemon.sock"
         self._log = self._tmp / "stack.log"
         self._svc_log = self._tmp / "service.log"
@@ -222,6 +223,8 @@ class Harness:
 
         if os.geteuid() != 0:
             raise CaptureError("must run as root (TAP access needs it)")
+        if shutil.which("tshark") is None:
+            raise CaptureError("tshark not installed (the wire captures are rendered with it)")
         if not (_ROOT / "venv" / "bin" / "python").exists():
             raise CaptureError("venv python not found (run: make venv)")
         if subprocess.run(["ip", "link", "show", self._cfg.iface], capture_output=True).returncode != 0:
@@ -340,13 +343,12 @@ class Harness:
 
     def start_stack(self, *, ip4: str = "static", ip6: str = "off") -> None:
         """
-        Launch the PyTCP daemon on 'cfg.iface' with '--capture' pointed at
-        the run's decoded capture file, so the stack records its own
-        traffic — from boot — through the 'pytcp tcpdump' engine. 'ip4' /
-        'ip6' each select 'static' (assign 'cfg.ip4' / 'cfg.ip6'), 'auto'
-        (autoconfigure via DHCPv4 / SLAAC), or 'off' ('--no-ip4' /
-        '--no-ip6'). The daemon's own stack log is captured to the run
-        log for readiness waits and highlights.
+        Launch the PyTCP daemon on 'cfg.iface' capturing its own traffic to
+        a libpcap file ('--capture-pcap') from boot, so 'wire()' can render
+        it with tshark. 'ip4' / 'ip6' each select 'static' (assign
+        'cfg.ip4' / 'cfg.ip6'), 'auto' (autoconfigure via DHCPv4 / SLAAC),
+        or 'off' ('--no-ip4' / '--no-ip6'). The daemon's own stack log is
+        captured to the run log for readiness waits and highlights.
         """
 
         argv = [
@@ -360,6 +362,7 @@ class Harness:
             self._cfg.iface,
             "--capture",
             str(self._capfile),
+            "--capture-pcap",
         ]
         if ip4 == "off":
             argv += ["--no-ip4"]
@@ -469,24 +472,30 @@ class Harness:
             self._captured["client"] = text
             click.echo(text.rstrip("\n"))
 
-    def wire(self, keep: str | None = None, /) -> None:
+    def wire(self, display_filter: str | None = None, /) -> None:
         """
-        Print the daemon's own decoded, direction-tagged capture — the
-        stack's 'pytcp tcpdump' engine rendering both ingress and its own
-        egress. 'keep' is a regex retaining only matching decoded lines
-        (the readable equivalent of a BPF filter); '--raw' overrides it to
-        print every captured line.
+        Render the daemon's own libpcap capture with tshark — its rich
+        dissectors decoding both ingress and the stack's own egress (and
+        stack-internal loopback), from boot. 'display_filter' is a tshark
+        display-filter expression (e.g. "icmp or arp") retaining only the
+        matching frames; '--raw' overrides it to print every frame.
+        Timestamps are relative to the first captured frame.
         """
 
         click.echo()
         click.echo(f"=== wire capture ({self._cfg.iface}) ===")
-        lines = self._capfile.read_text(errors="replace").splitlines() if self._capfile.exists() else []
-        if keep is not None and not self._cfg.raw:
-            rx = re.compile(keep)
-            lines = [line for line in lines if rx.search(line)]
-        # Preserve each line's leading timestamp alignment (do not strip
-        # the leading pad space of the first line).
-        out = "\n".join(lines)
+        args = ["tshark", "-r", str(self._capfile), "-n", "-t", "r"]
+        if display_filter is not None and not self._cfg.raw:
+            args += ["-Y", display_filter]
+        out = subprocess.run(args, capture_output=True, text=True).stdout.strip()
+        if not out:
+            # Fall back to the unfiltered summary so a mismatched filter
+            # never silently yields an empty capture block.
+            out = subprocess.run(
+                ["tshark", "-r", str(self._capfile), "-n", "-t", "r"],
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
         self._captured["wire"] = out
         click.echo(out or "(no packets captured)")
 

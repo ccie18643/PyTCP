@@ -66,4 +66,4 @@ def command(**kwargs: Any) -> None:
             20,
         )
         # DHCPv4 is UDP 67/68; keep those plus ARP (the post-lease ACD).
-        harness.wire(r"ARP,|\.67 |\.68 |\.67:|\.68:")
+        harness.wire("bootp or dhcp or arp")

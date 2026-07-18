@@ -31,7 +31,6 @@ tools/capture/scenarios/ip6_udp_monkeys.py
 ver 3.0.8
 """
 
-import re
 import time
 from typing import Any
 
@@ -72,4 +71,4 @@ def command(*, payload: str, **kwargs: Any) -> None:
         harness.stop_all()
         harness.print_client_output("client output (echoed monkeys)")
         harness.log_highlights(SERVICE_LOG_RE, 20)
-        harness.wire(rf"ICMPv6 ND|{re.escape(cfg.ip6_addr)}|{re.escape(cfg.peer6)}")
+        harness.wire(f"icmpv6 or ipv6.addr == {cfg.ip6_addr}")

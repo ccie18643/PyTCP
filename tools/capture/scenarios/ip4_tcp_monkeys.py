@@ -31,7 +31,6 @@ tools/capture/scenarios/ip4_tcp_monkeys.py
 ver 3.0.8
 """
 
-import re
 import time
 from typing import Any
 
@@ -77,4 +76,4 @@ def command(*, payload: str, graceful: bool, **kwargs: Any) -> None:
         harness.stop_all()
         harness.print_client_output("client output (banner + echoed monkeys)")
         harness.log_highlights(SERVICE_LOG_RE, 20)
-        harness.wire(rf"ARP,|{re.escape(cfg.ip4_addr)}")
+        harness.wire(f"arp or ip.addr == {cfg.ip4_addr}")

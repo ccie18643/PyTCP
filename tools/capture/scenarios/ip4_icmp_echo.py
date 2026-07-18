@@ -56,4 +56,4 @@ def command(*, count: int, **kwargs: Any) -> None:
         time.sleep(1)
         harness.stop_all()
         harness.print_client_output(f"host ping ({peer} -> {cfg.ip4_addr})")
-        harness.wire(r" (ARP,|IP .*ICMPv4)")
+        harness.wire("arp or icmp")

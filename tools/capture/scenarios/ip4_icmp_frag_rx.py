@@ -32,7 +32,6 @@ tools/capture/scenarios/ip4_icmp_frag_rx.py
 ver 3.0.8
 """
 
-import re
 import time
 from typing import Any
 
@@ -60,4 +59,4 @@ def command(*, count: int, size: int, **kwargs: Any) -> None:
         harness.print_client_output(f"host ping -s {size} (-> {cfg.ip4_addr})")
         # ARP plus every frame to / from the stack (the inbound Echo
         # fragments and the stack's reassembled reply).
-        harness.wire(rf"ARP,|{re.escape(cfg.ip4_addr)}")
+        harness.wire(f"arp or ip.addr == {cfg.ip4_addr}")

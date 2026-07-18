@@ -31,7 +31,6 @@ tools/capture/scenarios/ip6_icmp_echo.py
 ver 3.0.8
 """
 
-import re
 import time
 from typing import Any
 
@@ -58,4 +57,4 @@ def command(*, count: int, **kwargs: Any) -> None:
         harness.stop_all()
         harness.print_client_output(f"host ping6 ({cfg.peer6} -> {cfg.ip6_addr})")
         # Neighbor Discovery plus the Echo exchange with the host peer.
-        harness.wire(rf"ICMPv6|{re.escape(cfg.ip6_addr)}|{re.escape(cfg.peer6)}")
+        harness.wire(f"icmpv6 or ipv6.addr == {cfg.ip6_addr}")

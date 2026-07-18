@@ -59,4 +59,4 @@ def command(**kwargs: Any) -> None:
         )
         # The stack's own boot frames: only the 'Out' direction, so the
         # capture shows what the stack itself emits during startup.
-        harness.wire(r"^ *[0-9.]+ Out ")
+        harness.wire("icmpv6 or igmp or arp")

@@ -56,4 +56,4 @@ def command(**kwargs: Any) -> None:
             10,
         )
         # The stack's own ACD frames: outbound ARP Probes + Announcement.
-        harness.wire(r"^ *[0-9.]+ Out ARP,")
+        harness.wire("arp")
