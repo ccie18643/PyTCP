@@ -32,9 +32,13 @@ order is most-specific-first so 'lookup' can stop at the
 first hit. The default contents match the RFC §10.3 figure
 verbatim and Linux's /etc/gai.conf default preset.
 
-A future Phase §12c.3.b may add a sysctl-driven runtime
-override, but the default table is sufficient for the §5
-rule-6 consumer to stop being a no-op.
+An operator may replace the active table at runtime through
+'set_policy_table' / 'reset_policy_table' (the PyTCP analogue
+of Linux 'ip addrlabel', which is a dedicated netlink control
+surface rather than a '/proc/sys' scalar — a whole table is
+not a scalar sysctl). 'lookup' reads the active table each
+call so an override resolves live for the §5 rule-6
+source-selection consumer.
 
 pytcp/protocols/ip6/ip6__policy_table.py
 
@@ -79,17 +83,61 @@ DEFAULT_POLICY_TABLE: tuple[PolicyEntry, ...] = (
 )
 
 
+# The currently-active policy table. Defaults to the RFC
+# §10.3 table; an operator override swaps the whole tuple
+# reference (copy-on-write). Readers ('lookup' / the rule-6
+# consumer) read this module global each call and always see
+# a complete immutable snapshot — a frozen tuple of frozen
+# 'PolicyEntry' records — so the reference swap is safe under
+# free-threading without a lock (the no-GIL COW pattern).
+_active_policy_table: tuple[PolicyEntry, ...] = DEFAULT_POLICY_TABLE
+
+
 def lookup(address: Ip6Address, /) -> tuple[int, int]:
     """
     Return the (precedence, label) pair from the most-specific
-    policy-table entry that contains the given IPv6 address.
-    The table's terminating ::/0 entry guarantees a hit for
-    every address, so the function is total.
+    active-policy-table entry that contains the given IPv6
+    address. The table's terminating ::/0 entry guarantees a
+    hit for every address, so the function is total.
     """
 
-    for entry in DEFAULT_POLICY_TABLE:
+    for entry in _active_policy_table:
         if address in entry.network:
             return (entry.precedence, entry.label)
     # Unreachable because of the ::/0 catch-all; the assert
     # makes the invariant explicit for static analysis.
     raise AssertionError("RFC 6724 §10.3 policy table missing ::/0 catch-all")
+
+
+def get_policy_table() -> tuple[PolicyEntry, ...]:
+    """
+    Return the currently-active policy table as an immutable
+    snapshot (a frozen tuple of frozen 'PolicyEntry' records).
+    """
+
+    return _active_policy_table
+
+
+def set_policy_table(entries: tuple[PolicyEntry, ...], /) -> None:
+    """
+    Replace the active policy table with 'entries' — the PyTCP
+    analogue of Linux 'ip addrlabel'. Entries are matched
+    most-specific-first, so order them longest-prefix-first.
+    The table MUST contain a ::/0 catch-all so 'lookup' stays
+    total; a table without one is rejected.
+    """
+
+    if not any(entry.network == Ip6Network("::/0") for entry in entries):
+        raise ValueError("policy table must contain a ::/0 catch-all entry so 'lookup' stays total")
+    global _active_policy_table
+    _active_policy_table = tuple(entries)
+
+
+def reset_policy_table() -> None:
+    """
+    Restore the RFC 6724 §10.3 default policy table, discarding
+    any operator override.
+    """
+
+    global _active_policy_table
+    _active_policy_table = DEFAULT_POLICY_TABLE

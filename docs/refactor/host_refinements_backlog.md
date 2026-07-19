@@ -56,6 +56,19 @@ until the user says "push".
   `test__icmp6__mld1_compat.py::TestIcmp6MldForcedVersion`. Adherence:
   `rfc2710__mld_v1`. (R10's RFC 2710 §4 Report-suppression part remains —
   optimization only.)
+- [x] **RFC 6724 policy-table override (R11)** — `set_policy_table` /
+  `reset_policy_table` / `get_policy_table` on
+  `protocols/ip6/ip6__policy_table.py` — the PyTCP analogue of Linux
+  `ip addrlabel` (a dedicated control API, not a scalar sysctl, since a
+  whole table is not a scalar). `lookup` reads the active table live
+  (copy-on-write reference swap, lock-free under free-threading) so the
+  §5 rule-6 selector picks up an override without a restart;
+  `set_policy_table` rejects a table with no ::/0 catch-all so `lookup`
+  stays total. Unit tests:
+  `test__ip6__policy_table.py::TestIp6PolicyTableOverride`. Adherence:
+  `rfc6724__default_address_selection` (§2.1 / §10.3 flipped to met,
+  stale `lib/` paths corrected). Phase-3 note: daemon-IPC exposure of
+  this control surface is a follow-on (in-process only today).
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -227,19 +240,17 @@ stay text-only (Linux `sysctl` has no `-j` either).
   marginal value. Tests-first in `tests/integration/protocols/icmp6/`.
 - **Effort:** small. **Risk:** low. **Value:** marginal.
 
-### R11 — RFC 6724 `ip.policy_table` sysctl override (small-medium)
+### R11 — RFC 6724 policy-table override — SHIPPED (see "Shipped" above)
 
-- **Why:** the RFC 6724 §2.1 policy table (source/dest address selection
-  precedence/label) is hard-coded; Linux exposes it as a writable table
-  (`/proc/sys/net/ipv6/...` / `ip addrlabel`). Source:
-  `rfc6724_source_selection.md` non-blocking arc extension.
-- **Scope:** make the policy table operator-overridable (a sysctl entry or a
-  small dedicated API), re-resolved live per the qualified-module-access
-  pattern.
-- **Tests-first:** unit tests asserting source-selection changes when the
-  policy table is overridden.
-- **Effort:** small-medium. **Risk:** low. **Value:** low-medium (rarely
-  tuned on a host).
+- Implemented as a small dedicated control API on
+  `protocols/ip6/ip6__policy_table.py` (`set_policy_table` /
+  `reset_policy_table` / `get_policy_table`) rather than a scalar sysctl —
+  a whole precedence/label table is not a scalar, and Linux itself exposes
+  it via `ip addrlabel` (netlink), not `/proc/sys`. Copy-on-write
+  reference swap, read live by `lookup`.
+- **Follow-on (deferred):** expose the control API over the daemon IPC
+  boundary for Phase-3 (in-process only today), and the corresponding
+  `pytcp` CLI verb. Low value; do on appetite.
 
 ### Ongoing hygiene (not a discrete scheduled item)
 
@@ -275,8 +286,8 @@ so this backlog's boundary is explicit.
 1. ~~**R1** (ping SO_RCVBUF)~~ — SHIPPED; the SO_RCVBUF symmetry is closed.
 2. Small self-contained wins, any order: ~~**R5** (CLI JSON — all four
    observation commands)~~ SHIPPED, ~~**R10** mld.version knob~~ SHIPPED
-   (R10 §4 suppression remains, marginal), **R11** (RFC 6724 policy
-   table), or dip into **R2** (setsockopt sweep).
+   (R10 §4 suppression remains, marginal), ~~**R11** (RFC 6724 policy
+   table)~~ SHIPPED, or dip into **R2** (setsockopt sweep).
 3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
 4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
    (HyStart++), **R7** (DF-guarded probe), **R8** (IP_RECVERR over daemon),
@@ -292,4 +303,5 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
   this backlog plan).
 - **Unpushed:** `f5ecd901` (R1 ping SO_RCVBUF), `2750afb5` (R5 address
   JSON), `9b465047` (footer refresh), `2ecaf708` (ss/route/neighbor JSON),
-  + the `mld.version` knob (R10) commit. Hold until the user says "push".
+  `3bf8315d` (R10 mld.version knob), + the R11 policy-table override
+  commit. Hold until the user says "push".

@@ -8,7 +8,7 @@
 | Date        | September 2012                                                   |
 | Source text | [`rfc6724.txt`](rfc6724.txt)                                     |
 
-## Status: PARTIAL (source-selection rules 1, 2, 3, 6, 7, 8 shipped; IPv4 symmetry shipped; DAS / sysctl override deferred)
+## Status: PARTIAL (source-selection rules 1, 2, 3, 6, 7, 8 shipped; IPv4 symmetry shipped; policy-table override shipped; DAS deferred)
 
 PyTCP runs the RFC 6724 §5 default source-address-selection
 algorithm on every outbound IPv6 packet whose source is
@@ -20,7 +20,8 @@ lexicographic sort encoded with rules 1, 2, 3, 6, 7, and 8,
 and returns the winner. The pure helpers — RFC 4007/4291
 scope extraction and the §2.2 CommonPrefixLen — live in
 `packages/pytcp/pytcp/lib/ip6_source_selection.py`; the §10.3 default policy
-table backing rule 6 lives in `packages/pytcp/pytcp/lib/ip6_policy_table.py`.
+table backing rule 6 lives in
+`packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py`.
 Rules 4 (home address), 5 (outgoing interface), and 5.5
 (next-hop) are no-ops on a single-interface host stack.
 
@@ -36,10 +37,16 @@ Rule 6 consults the RFC 6724 §10.3 default policy table.
 Default labels follow the RFC figure verbatim (label 0 for
 ::1/128, label 1 for the catch-all ::/0, label 2 for 6to4
 2002::/16, label 4 for IPv4-mapped, label 5 for Teredo, label
-13 for ULA fc00::/7, etc.). A future Phase §12c.3.b may add a
-sysctl-driven override of the default table; the framework
-is shaped so that swap-out is a one-symbol change in the
-selector.
+13 for ULA fc00::/7, etc.). An operator may replace the active
+table at runtime through `set_policy_table` /
+`reset_policy_table` / `get_policy_table` on
+`ip6__policy_table` — the PyTCP analogue of Linux
+`ip addrlabel` (a dedicated control surface, not a `/proc/sys`
+scalar, since a whole table is not a scalar sysctl). `lookup`
+reads the active table each call (a copy-on-write reference
+swap, lock-free under free-threading) so an override resolves
+live for the rule-6 selector; `set_policy_table` rejects a
+table with no ::/0 catch-all so `lookup` stays total.
 
 The selector is invoked for both unicast and multicast
 destinations with an unspecified source — a DHCPv6 SOLICIT to
@@ -56,7 +63,7 @@ Per-RFC mechanism inventory:
 
 | §          | Mechanism                                                  | Status                             | Where                                                                                            |
 |------------|------------------------------------------------------------|------------------------------------|--------------------------------------------------------------------------------------------------|
-| §2.1       | Configurable address-selection policy table                | met (default table)                | `packages/pytcp/pytcp/lib/ip6_policy_table.py` exposes `DEFAULT_POLICY_TABLE`; sysctl override deferred         |
+| §2.1       | Configurable address-selection policy table                | met                                | `packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py` exposes `DEFAULT_POLICY_TABLE` + operator override (`set_policy_table` / `reset_policy_table` / `get_policy_table`, the `ip addrlabel` analogue) |
 | §2.2       | CommonPrefixLen helper                                     | met                                | `common_prefix_len` (`packages/pytcp/pytcp/lib/ip6_source_selection.py`)                                        |
 | §3.1       | Scope comparisons                                          | met                                | `ip6_address_scope` returns RFC 4007 / 4291 codepoints                                           |
 | §5 rule 1  | Prefer same address                                        | met                                | `_select_ip6_source` short-circuits when the destination is owned                                |
@@ -70,7 +77,7 @@ Per-RFC mechanism inventory:
 | §5 rule 8  | Use longest matching prefix                                | met                                | sort-key tiebreak after rules 1/2/3                                                              |
 | §6 (v4)    | IPv4 source-selection symmetry                             | met (rules 1, 2, 8)                | `_select_ip4_source` mirrors `_select_ip6_source` for the v4 family at TX                        |
 | §6 (DAS)   | Destination address selection                              | not implemented                    | DNS-resolution selection (rules D1-D8) is out of scope at the stack layer                        |
-| §10.3      | Default policy table                                       | met                                | `DEFAULT_POLICY_TABLE` mirrors RFC figure verbatim; sysctl-driven override deferred              |
+| §10.3      | Default policy table                                       | met                                | `DEFAULT_POLICY_TABLE` mirrors RFC figure verbatim; operator override via `set_policy_table` (rejects a table with no ::/0 catch-all) |
 
 ## Test coverage
 
@@ -114,13 +121,17 @@ Per-RFC mechanism inventory:
     — the TX path runs §5 selection for a multicast
     destination (link-local source filled in for `ff02::1:2`)
     rather than dropping it
-- `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip6_policy_table.py`
+- `packages/pytcp/pytcp/tests/unit/protocols/ip6/test__ip6__policy_table.py`
   - `TestIp6PolicyTableLookup` — RFC §10.3 (precedence, label)
     pairs for ::1, 6to4, Teredo, ULA, deprecated site-local,
     deprecated 6bone, IPv4-mapped, IPv4-compatible,
     catch-all GUA, and link-local (falls through to ::/0)
   - `TestIp6PolicyTableShape` — 9-entry default table,
     typed records, ::/0 catch-all present
+  - `TestIp6PolicyTableOverride` — `set_policy_table` overrides
+    `lookup` live, `reset_policy_table` restores the default,
+    `get_policy_table` returns the active snapshot, and a table
+    with no ::/0 catch-all is rejected
 - `packages/pytcp/pytcp/tests/integration/protocols/ip6/test__ip6__rfc6724_source_selection_rule_6.py`
   - `TestRfc6724Rule6PolicyLabel` — matching label outranks
     longer non-matching prefix (rule 6 > rule 8); ULA
