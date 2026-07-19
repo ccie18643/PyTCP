@@ -65,8 +65,11 @@ from pytcp.cli.cli__format import (
     format_addr_json,
     format_link,
     format_neighbor_table,
+    format_neighbor_table_json,
     format_route_table,
+    format_route_table_json,
     format_socket_table,
+    format_socket_table_json,
     format_sysctl,
 )
 from pytcp.cli.cli__host import (
@@ -136,6 +139,7 @@ from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
 from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.socket import Socket
+from pytcp.stack.neighbor import NeighborSnapshot
 
 
 def _parse_sysctl_value(text: str, /) -> bool | int | str:
@@ -165,6 +169,16 @@ def _cmd_ss(client: ClientStack, args: argparse.Namespace, /) -> str:
         socket_type = SocketType.STREAM
     elif args.udp and not args.tcp:
         socket_type = SocketType.DGRAM
+
+    if args.json:
+        snapshots = [
+            snapshot
+            for family in _selected_families(args)
+            for snapshot in client.ss.list_sockets(
+                family=family, socket_type=socket_type, listening_only=args.listening
+            )
+        ]
+        return format_socket_table_json(snapshots)
 
     return _format_family_sections(
         "PyTCP Socket Table",
@@ -388,6 +402,10 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
 
     names = _interface_names(client)
+    if args.json:
+        routes = [route for family in _selected_families(args) for route in client.route.list_routes(family=family)]
+        return format_route_table_json(routes, interface_names=names)
+
     return _format_family_sections(
         "PyTCP Routing Table",
         _selected_families(args),
@@ -466,15 +484,22 @@ def _cmd_neighbor_list(client: ClientStack, args: argparse.Namespace, /) -> str:
 
     names = _interface_names(client)
 
-    def render(family: AddressFamily) -> str:
-        entries = [
+    def entries_for(family: AddressFamily) -> list[tuple[NeighborSnapshot, str]]:
+        return [
             (snapshot, names[ifindex])
             for ifindex in client.link.list_interfaces()
             for snapshot in client.neighbor.interface(ifindex).list_neighbors(family=family)
         ]
-        return format_neighbor_table(entries)
 
-    return _format_family_sections("PyTCP Neighbor Table", _selected_families(args), render)
+    if args.json:
+        entries = [entry for family in _selected_families(args) for entry in entries_for(family)]
+        return format_neighbor_table_json(entries)
+
+    return _format_family_sections(
+        "PyTCP Neighbor Table",
+        _selected_families(args),
+        lambda family: format_neighbor_table(entries_for(family)),
+    )
 
 
 def _cmd_neighbor_flush(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -1147,11 +1172,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser_ss.add_argument("-l", "--listening", action="store_true", help="Show only listening sockets.")
     parser_ss.add_argument("-4", dest="inet", action="store_true", help="Show only IPv4 sockets.")
     parser_ss.add_argument("-6", dest="inet6", action="store_true", help="Show only IPv6 sockets.")
+    parser_ss.add_argument("-j", "--json", action="store_true", help="Output machine-readable JSON.")
     parser_ss.set_defaults(func=_cmd_ss)
 
     parser_route = subparsers.add_parser("route", help="Show or modify the routing table.")
     parser_route.add_argument("-4", dest="inet", action="store_true", help="Show only the IPv4 routing table.")
     parser_route.add_argument("-6", dest="inet6", action="store_true", help="Show only the IPv6 routing table.")
+    parser_route.add_argument(
+        "-j", "--json", action="store_true", help="Output machine-readable JSON ('ip -j route' shape)."
+    )
     # A bare 'route' (no add / del subcommand) lists the table.
     parser_route.set_defaults(func=_cmd_route_list)
     route_subparsers = parser_route.add_subparsers(dest="route_command", title="commands", metavar="<command>")
@@ -1176,6 +1205,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser_neighbor = subparsers.add_parser("neighbor", help="Show or flush the neighbour caches.")
     parser_neighbor.add_argument("-4", dest="inet", action="store_true", help="Only IPv4 (ARP) neighbours.")
     parser_neighbor.add_argument("-6", dest="inet6", action="store_true", help="Only IPv6 (ND) neighbours.")
+    parser_neighbor.add_argument(
+        "-j", "--json", action="store_true", help="Output machine-readable JSON ('ip -j neighbor' shape)."
+    )
     parser_neighbor.set_defaults(func=_cmd_neighbor_list)
     neighbor_subparsers = parser_neighbor.add_subparsers(dest="neighbor_command", title="commands", metavar="<command>")
     parser_neighbor_add = neighbor_subparsers.add_parser("add", help="Add a static neighbour entry.")

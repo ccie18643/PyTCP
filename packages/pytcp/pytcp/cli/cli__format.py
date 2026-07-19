@@ -121,6 +121,32 @@ def format_socket_table(snapshots: Iterable[SocketSnapshot], /) -> str:
     return _format_table(headers, rows)
 
 
+def format_socket_table_json(snapshots: Iterable[SocketSnapshot], /) -> str:
+    """
+    Render open sockets as a JSON array — one object per socket with the
+    'ss' columns as keys (netid / family / state / recv_q / send_q +
+    local / peer address and port). An unconnected socket carries the
+    'UNCONN' state string, matching the human table.
+    """
+
+    payload = [
+        {
+            "netid": _NETID_BY_TYPE.get(snapshot.socket_type, str(snapshot.socket_type)),
+            "family": "inet6" if snapshot.address_family is AddressFamily.INET6 else "inet",
+            "state": str(snapshot.state) if snapshot.state is not None else "UNCONN",
+            "recv_q": snapshot.rx_queue,
+            "send_q": snapshot.tx_queue,
+            "local_address": str(snapshot.local_address),
+            "local_port": snapshot.local_port,
+            "peer_address": str(snapshot.remote_address),
+            "peer_port": snapshot.remote_port,
+        }
+        for snapshot in snapshots
+    ]
+
+    return json.dumps(payload, indent=2)
+
+
 # Neighbour-table row + column header, in the same table style as the
 # route table. Each entry is a '(snapshot, device)' pair — the device is
 # the interface the entry was learned on (the snapshot does not carry it).
@@ -153,6 +179,27 @@ def format_neighbor_table(entries: Iterable[tuple[NeighborSnapshot, str]], /) ->
         )
 
     return "\n".join(lines)
+
+
+def format_neighbor_table_json(entries: Iterable[tuple[NeighborSnapshot, str]], /) -> str:
+    """
+    Render neighbour-cache entries as a JSON array mirroring the 'ip -j
+    neighbor' object shape (dst / lladdr / dev / state). Each entry pairs
+    a snapshot with the interface it was learned on; an unresolved entry
+    carries a null 'lladdr'.
+    """
+
+    payload = [
+        {
+            "dst": str(snapshot.address),
+            "lladdr": str(snapshot.mac_address) if snapshot.mac_address is not None else None,
+            "dev": device,
+            "state": str(snapshot.state),
+        }
+        for snapshot, device in entries
+    ]
+
+    return json.dumps(payload, indent=2)
 
 
 def _route_iface(oif: int | None, names: Mapping[int, str], /) -> str:
@@ -235,6 +282,39 @@ def format_route_table(
         )
 
     return "\n".join(lines)
+
+
+def format_route_table_json(
+    routes: Iterable[_AnyRoute],
+    /,
+    *,
+    interface_names: Mapping[int, str] | None = None,
+) -> str:
+    """
+    Render routes as a JSON array mirroring the 'ip -j route' object shape
+    (family / dst / gateway / dev / prefsrc / metric / scope / protocol).
+    The family is inferred per route from its destination network; a
+    route with no gateway / prefsrc carries a null field, and a route
+    with no egress interface a null 'dev'. 'interface_names' maps an
+    egress ifindex to its interface name.
+    """
+
+    names = interface_names or {}
+    payload = [
+        {
+            "family": "inet" if isinstance(route.destination, Ip4Network) else "inet6",
+            "dst": f"{route.destination.address}/{route.destination.prefixlen}",
+            "gateway": str(route.gateway) if route.gateway is not None else None,
+            "dev": names.get(route.oif, f"if{route.oif}") if route.oif is not None else None,
+            "prefsrc": str(route.prefsrc) if route.prefsrc is not None else None,
+            "metric": route.metric,
+            "scope": route.scope.name.lower(),
+            "protocol": route.protocol.name.lower(),
+        }
+        for route in routes
+    ]
+
+    return json.dumps(payload, indent=2)
 
 
 def flatten_sysctl(items: Mapping[str, object], /) -> dict[str, object]:

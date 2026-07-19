@@ -42,8 +42,11 @@ from pytcp.cli.cli__format import (
     format_addr_json,
     format_link,
     format_neighbor_table,
+    format_neighbor_table_json,
     format_route_table,
+    format_route_table_json,
     format_socket_table,
+    format_socket_table_json,
     format_sysctl,
 )
 from pytcp.lib.neighbor import NudState
@@ -101,6 +104,47 @@ class TestCliFormatSockets(TestCase):
             msg="The socket table must render in the aligned ss -tuln layout.",
         )
 
+    def test__format_socket_table_json(self) -> None:
+        """
+        Ensure the socket table renders as a JSON array of one object per
+        socket (netid / family / state / recv_q / send_q / local + peer
+        address and port), an unconnected socket carrying 'UNCONN'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        snapshots = (
+            SocketSnapshot(
+                address_family=AddressFamily.INET4,
+                socket_type=SocketType.STREAM,
+                local_address=Ip4Address("0.0.0.0"),
+                local_port=80,
+                remote_address=Ip4Address("0.0.0.0"),
+                remote_port=0,
+                state=FsmState.LISTEN,
+                rx_queue=0,
+                tx_queue=0,
+            ),
+        )
+
+        self.assertEqual(
+            json.loads(format_socket_table_json(snapshots)),
+            [
+                {
+                    "netid": "tcp",
+                    "family": "inet",
+                    "state": "LISTEN",
+                    "recv_q": 0,
+                    "send_q": 0,
+                    "local_address": "0.0.0.0",
+                    "local_port": 80,
+                    "peer_address": "0.0.0.0",
+                    "peer_port": 0,
+                }
+            ],
+            msg="The socket JSON must carry one object per socket with the ss columns as keys.",
+        )
+
 
 class TestCliFormatNeighbors(TestCase):
     """
@@ -142,6 +186,43 @@ class TestCliFormatNeighbors(TestCase):
             "10.0.1.91                      02:00:00:00:00:91   REACHABLE   tap7\n"
             "10.0.1.92                                          INCOMPLETE  tap7",
             msg="The neighbour table must render in the route-style column layout.",
+        )
+
+    def test__format_neighbor_table_json(self) -> None:
+        """
+        Ensure neighbour entries render as a JSON array mirroring the 'ip
+        -j neighbor' object shape (dst / lladdr / dev / state), an
+        unresolved entry carrying a null 'lladdr'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        entries = (
+            (
+                NeighborSnapshot(
+                    address=Ip4Address("10.0.1.91"),
+                    mac_address=MacAddress("02:00:00:00:00:91"),
+                    state=NudState.REACHABLE,
+                ),
+                "tap7",
+            ),
+            (
+                NeighborSnapshot(
+                    address=Ip4Address("10.0.1.92"),
+                    mac_address=None,
+                    state=NudState.INCOMPLETE,
+                ),
+                "tap7",
+            ),
+        )
+
+        self.assertEqual(
+            json.loads(format_neighbor_table_json(entries)),
+            [
+                {"dst": "10.0.1.91", "lladdr": "02:00:00:00:00:91", "dev": "tap7", "state": "REACHABLE"},
+                {"dst": "10.0.1.92", "lladdr": None, "dev": "tap7", "state": "INCOMPLETE"},
+            ],
+            msg="The neighbour JSON must mirror the 'ip -j neighbor' object shape.",
         )
 
 
@@ -196,6 +277,44 @@ class TestCliFormatRoutes(TestCase):
             "::/0                           fe80::1                    UG         0   0     0 tap9\n"
             "2603:808c:2800:4301::/64       ::                         U          0   0     0 tap9",
             msg="The IPv6 route table must render in the net-tools 'route -6' layout.",
+        )
+
+    def test__format_route_table_json(self) -> None:
+        """
+        Ensure routes render as a JSON array mirroring the 'ip -j route'
+        object shape (family / dst / gateway / dev / prefsrc / metric /
+        scope / protocol), the family inferred per route, a route with no
+        gateway or prefsrc carrying null fields, and no egress interface
+        rendering a null 'dev'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            json.loads(format_route_table_json(self._IP4_ROUTES, interface_names={1: "tap7"})),
+            [
+                {
+                    "family": "inet",
+                    "dst": "0.0.0.0/0",
+                    "gateway": "10.0.1.1",
+                    "dev": "tap7",
+                    "prefsrc": None,
+                    "metric": 0,
+                    "scope": "universe",
+                    "protocol": "static",
+                },
+                {
+                    "family": "inet",
+                    "dst": "10.0.1.0/24",
+                    "gateway": None,
+                    "dev": "tap7",
+                    "prefsrc": "10.0.1.7",
+                    "metric": 0,
+                    "scope": "universe",
+                    "protocol": "static",
+                },
+            ],
+            msg="The route JSON must mirror the 'ip -j route' object shape with the family inferred.",
         )
 
 

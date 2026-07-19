@@ -41,12 +41,25 @@ from typing import override
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
-from net_addr import Ip4IfAddr, MacAddress
+from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, MacAddress
 from pytcp import __version__
-from pytcp.cli.__main__ import _cmd_address, build_parser, main
+from pytcp.cli.__main__ import (
+    _cmd_address,
+    _cmd_neighbor_list,
+    _cmd_route_list,
+    _cmd_ss,
+    build_parser,
+    main,
+)
 from pytcp.cli.cli__format import InterfaceView
 from pytcp.daemon.daemon import remove_pidfile
 from pytcp.ipc.ipc__errors import IpcRemoteError
+from pytcp.lib.neighbor import NudState
+from pytcp.protocols.tcp.tcp__enums import FsmState
+from pytcp.runtime.fib import Route
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.stack.neighbor import NeighborSnapshot
+from pytcp.stack.socket_introspect import SocketSnapshot
 
 
 class _StubMissingOpStack:
@@ -412,6 +425,120 @@ class TestCliAddressJson(TestCase):
             output,
             "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n" "    link/ether 02:00:00:00:00:07\n" "    inet 10.0.1.7/24",
             msg="A bare 'address' must render the 'ip addr' table.",
+        )
+
+
+class _StubObservationStack:
+    """
+    A minimal 'ClientStack' stand-in for the observation-command JSON
+    dispatch tests: one IPv4 interface 'tap7' carrying one socket, one
+    route, and one neighbour, all IPv4-only.
+    """
+
+    class _Link:
+        def list_interfaces(self) -> list[int]:
+            return [1]
+
+        def interface(self, _ifindex: int, /) -> object:
+            return SimpleNamespace(name="tap7")
+
+    class _Ss:
+        def list_sockets(self, *, family: AddressFamily, **_kwargs: object) -> list[SocketSnapshot]:
+            if family is not AddressFamily.INET4:
+                return []
+            return [
+                SocketSnapshot(
+                    address_family=AddressFamily.INET4,
+                    socket_type=SocketType.STREAM,
+                    local_address=Ip4Address("0.0.0.0"),
+                    local_port=80,
+                    remote_address=Ip4Address("0.0.0.0"),
+                    remote_port=0,
+                    state=FsmState.LISTEN,
+                    rx_queue=0,
+                    tx_queue=0,
+                )
+            ]
+
+    class _Route:
+        def list_routes(self, *, family: AddressFamily) -> list[object]:
+            if family is not AddressFamily.INET4:
+                return []
+            return [Route(destination=Ip4Network("0.0.0.0/0"), gateway=Ip4Address("10.0.1.1"), oif=1)]
+
+    class _Neighbor:
+        def interface(self, _ifindex: int, /) -> object:
+            def list_neighbors(*, family: AddressFamily) -> list[NeighborSnapshot]:
+                if family is not AddressFamily.INET4:
+                    return []
+                return [
+                    NeighborSnapshot(
+                        address=Ip4Address("10.0.1.91"),
+                        mac_address=MacAddress("02:00:00:00:00:91"),
+                        state=NudState.REACHABLE,
+                    )
+                ]
+
+            return SimpleNamespace(list_neighbors=list_neighbors)
+
+    def __init__(self) -> None:
+        self.link = self._Link()
+        self.ss = self._Ss()
+        self.route = self._Route()
+        self.neighbor = self._Neighbor()
+
+
+class TestCliObservationJson(TestCase):
+    """
+    The 'ss' / 'route' / 'neighbor' '--json' dispatch tests.
+    """
+
+    def test__cmd_ss__json_flag_emits_json(self) -> None:
+        """
+        Ensure 'ss -j' renders the socket table as a JSON array rather
+        than the human section report.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        args = SimpleNamespace(inet=True, inet6=False, tcp=False, udp=False, listening=False, json=True)
+        output = _cmd_ss(_StubObservationStack(), args)  # type: ignore[arg-type]
+        self.assertEqual(
+            json.loads(output)[0]["netid"],
+            "tcp",
+            msg="ss -j must emit a JSON array of socket objects.",
+        )
+
+    def test__cmd_route__json_flag_emits_json(self) -> None:
+        """
+        Ensure 'route -j' renders the routing table as a JSON array rather
+        than the human section report.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        args = SimpleNamespace(inet=True, inet6=False, json=True)
+        output = _cmd_route_list(_StubObservationStack(), args)  # type: ignore[arg-type]
+        self.assertEqual(
+            json.loads(output)[0]["dst"],
+            "0.0.0.0/0",
+            msg="route -j must emit a JSON array of route objects.",
+        )
+
+    def test__cmd_neighbor__json_flag_emits_json(self) -> None:
+        """
+        Ensure 'neighbor -j' renders the neighbour caches as a JSON array
+        rather than the human section report.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        args = SimpleNamespace(inet=True, inet6=False, json=True)
+        output = _cmd_neighbor_list(_StubObservationStack(), args)  # type: ignore[arg-type]
+        self.assertEqual(
+            json.loads(output)[0]["dst"],
+            "10.0.1.91",
+            msg="neighbor -j must emit a JSON array of neighbour objects.",
         )
 
 
