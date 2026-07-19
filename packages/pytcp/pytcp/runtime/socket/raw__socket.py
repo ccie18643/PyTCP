@@ -544,6 +544,19 @@ class RawSocket(socket):
         with self._lock__io:
             if self._closed:
                 return
+            # SO_RCVBUF enforcement (Linux 'sk_rcvqueues_full'): once the
+            # operator sets a receive-buffer cap, drop an inbound packet
+            # whose payload would push the queued bytes past it. Unset
+            # ('None') stays unbounded. Measured against summed payload
+            # bytes (the Linux 'truesize' overhead is not modelled).
+            if self._so_rcvbuf is not None:
+                queued = sum(len(md.raw__data) for md in self._packet_rx_md)
+                if queued + len(packet_rx_md.raw__data) > self._so_rcvbuf:
+                    __debug__ and log(
+                        "socket",
+                        f"<g>[{self}]</> - Dropped packet: SO_RCVBUF cap " f"{self._so_rcvbuf} exceeded",
+                    )
+                    return
             self._packet_rx_md.append(packet_rx_md)
             self._packet_rx_md_ready.release()
         self._signal_readable()

@@ -52,6 +52,8 @@ from pytcp.runtime.socket import (
     IPPROTO_IPV6,
     IPV6_HOPLIMIT,
     IPV6_RECVHOPLIMIT,
+    SO_RCVBUF,
+    SOL_SOCKET,
     AddressFamily,
     SocketType,
     gaierror,
@@ -1354,3 +1356,60 @@ class TestRawSocketIcmp6Checksum(_RawSocketTestCase):
         )
 
         self.assertEqual(result, payload, msg="A non-ICMPv6 raw socket must not rewrite the payload.")
+
+
+class TestRawSocketRcvbuf(_RawSocketTestCase):
+    """
+    The 'RawSocket' SO_RCVBUF receive-queue-cap tests.
+    """
+
+    def _make_md(self) -> RawMetadata:
+        """
+        Build a canonical IPv4 'RawMetadata' envelope with a 7-byte
+        payload.
+        """
+
+        return RawMetadata(
+            ip__ver=IpVersion.IP4,
+            ip__local_address=Ip4Address("10.0.0.1"),
+            ip__remote_address=Ip4Address("10.0.0.2"),
+            ip__proto=IpProto.ICMP4,
+            raw__data=b"payload",
+        )
+
+    def test__raw_socket__so_rcvbuf_drops_packet_over_cap(self) -> None:
+        """
+        Ensure that once 'SO_RCVBUF' is set, an inbound packet whose
+        payload would push the queued receive bytes past the cap is
+        dropped rather than enqueued.
+
+        Reference: RFC 1122 §4.2.2.16 (receive-buffer bound).
+        """
+
+        s = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
+        s.setsockopt(SOL_SOCKET, SO_RCVBUF, 20)
+        s.process_raw_packet(self._make_md())
+        s.process_raw_packet(self._make_md())
+        s.process_raw_packet(self._make_md())
+        self.assertEqual(
+            len(s._packet_rx_md),
+            2,
+            msg="A raw packet over the SO_RCVBUF cap must be dropped, not enqueued.",
+        )
+
+    def test__raw_socket__so_rcvbuf_unset_is_unbounded(self) -> None:
+        """
+        Ensure that with 'SO_RCVBUF' unset the raw receive queue is
+        unbounded (no default cap).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        s = RawSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
+        for _ in range(50):
+            s.process_raw_packet(self._make_md())
+        self.assertEqual(
+            len(s._packet_rx_md),
+            50,
+            msg="With SO_RCVBUF unset every raw packet must be enqueued.",
+        )
