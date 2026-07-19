@@ -55,6 +55,9 @@ from net_proto import (
     IpProto,
     Tracker,
 )
+from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__done import (
+    Icmp6Mld1MessageDone,
+)
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (
     Icmp6Mld1MessageReport,
     MldVersion,
@@ -259,6 +262,91 @@ class Icmp6TxHandler:
         )
         self._if._packet_stats_tx.icmp6__mld1__report__send += 1
         self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=group)
+
+    def _send_icmp6_mld_leave(self, group: Ip6Address, /) -> None:
+        """
+        Announce departure from a single IPv6 multicast group.
+
+        Reference: RFC 3810 §5.2.12 (CHANGE_TO_INCLUDE record).
+        Reference: RFC 3810 §6.1 (leaving a group is a state-change Report).
+
+        The all-nodes group (ff02::1) is never reported (RFC 3810 §6).
+        While in MLDv1 Host Compatibility Mode the departure is announced
+        with an MLDv1 Done so an MLDv1-only querier can parse it
+        (RFC 3810 §8.3.2); otherwise an MLDv2 State Change Report with a
+        CHANGE_TO_INCLUDE record and an empty source list is the leave
+        signal.
+        """
+
+        if group == Ip6Address("ff02::1"):
+            return
+
+        if self._if._mld_host_compatibility_mode() is MldVersion.V1:
+            self._send_icmp6_mld1_done(group)
+            return
+
+        icmp6_packet_tx = Icmp6Assembler(
+            icmp6__message=Icmp6Mld2MessageReport(
+                records=[
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
+                        multicast_address=group,
+                    )
+                ],
+            ),
+        )
+        self._if._packet_stats_tx.icmp6__mld2__report__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
+
+    def _send_icmp6_mld1_done(self, group: Ip6Address, /) -> None:
+        """
+        Send an MLDv1 Multicast Listener Done (type 132) for 'group'.
+
+        Reference: RFC 2710 §3 (MLDv1 Done sent to all-routers ff02::2).
+        Reference: RFC 3810 §8.3.2 (emit MLDv1 Done while in v1 mode).
+        """
+
+        icmp6_packet_tx = Icmp6Assembler(
+            icmp6__message=Icmp6Mld1MessageDone(multicast_address=group),
+        )
+        self._if._packet_stats_tx.icmp6__mld1__done__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::2"))
+
+    def _send_icmp6_mld_leave_all(self) -> None:
+        """
+        Announce departure from every joined IPv6 multicast group, for
+        the stack-shutdown graceful-leave path.
+
+        Reference: RFC 3810 §6.1 (graceful leave on shutdown).
+
+        All-nodes (ff02::1) is never reported (RFC 3810 §6). While in
+        MLDv1 Host Compatibility Mode one MLDv1 Done is emitted per group;
+        otherwise a single aggregated MLDv2 State Change Report carries a
+        CHANGE_TO_INCLUDE record per group.
+        """
+
+        groups = {group for group in self._if._ip6_multicast if group != Ip6Address("ff02::1")}
+        if not groups:
+            return
+
+        if self._if._mld_host_compatibility_mode() is MldVersion.V1:
+            for group in groups:
+                self._send_icmp6_mld1_done(group)
+            return
+
+        icmp6_packet_tx = Icmp6Assembler(
+            icmp6__message=Icmp6Mld2MessageReport(
+                records=[
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
+                        multicast_address=group,
+                    )
+                    for group in groups
+                ],
+            ),
+        )
+        self._if._packet_stats_tx.icmp6__mld2__report__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
 
     def __send_icmp6_mld_via_hbh_ra(self, icmp6_packet_tx: Icmp6Assembler, /, *, ip6__dst: Ip6Address) -> None:
         """

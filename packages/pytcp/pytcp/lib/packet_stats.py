@@ -407,6 +407,7 @@ class PacketStatsTx(PacketStats):
     icmp6__nd__neighbor_advertisement__send: int = 0
     icmp6__mld2__report__send: int = 0
     icmp6__mld1__report__send: int = 0
+    icmp6__mld1__done__send: int = 0
     icmp6__unknown__drop: int = 0
 
     igmp__pre_assemble: int = 0

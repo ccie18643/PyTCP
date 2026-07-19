@@ -212,12 +212,12 @@ retransmits (Linux `ip_mc_down`). Tests:
 `test__igmp__shutdown_leave.py` + a `stack.stop()` ordering test in
 `test__stack__init.py`.
 
-**MLD (IPv6) deferred — NOT symmetric.** MLD has no state-change-leave
-path at all: `_remove_ip6_multicast` emits nothing and the MLDv2 TX
-only sends current-state `CHANGE_TO_EXCLUDE` reports. A graceful MLD
-Done/leave-on-shutdown therefore requires first building MLD per-group
-leave reporting — a separate feature, not a wiring change. Tracked in
-§C.
+**MLD (IPv6) — SHIPPED symmetrically.** MLDv2 now has the analogous
+leave path: `remove_ip6_multicast` calls `_send_icmp6_mld_leave`
+(a `CHANGE_TO_INCLUDE` State Change Report, or an MLDv1 Done in v1
+compat mode), and `send_mld_leave_all` is the graceful-leave-on-
+shutdown hook wired into `stack.stop()` right next to
+`send_igmp_leave_all`. Tests: `test__icmp6__mld2_leave.py`.
 
 **Original (pre-fix):** `stack.stop()` silently abandoned every joined
 group — no `CHANGE_TO_INCLUDE_MODE` / Leave was emitted, so a router
@@ -252,13 +252,13 @@ These are feature-level gaps, not refinements — see
   timers) and the IGMPv1 default Max Resp Time.
 - Source-specific filtering (§9, `IP_ADD_SOURCE_MEMBERSHIP`).
 - The IGMPv3 router/querier role (Phase-2).
-- **MLDv2 leave reporting (IPv6).** The IPv6 MLDv2 listener has no
-  state-change-leave path — `_remove_ip6_multicast` emits nothing and
-  the TX only sends current-state `CHANGE_TO_EXCLUDE` reports. Adding a
-  per-group leave (RFC 3810 BLOCK / `CHANGE_TO_INCLUDE`) and the
-  graceful-leave-on-shutdown that R7 gives IGMP is a dedicated MLD
-  feature, not a wiring change. The R7 stop-hook in `stack.stop()` is
-  the natural place to add the MLD call once that path exists.
+- ~~**MLDv2 leave reporting (IPv6).**~~ **SHIPPED** — the IPv6 MLDv2
+  listener now emits a per-group leave (`CHANGE_TO_INCLUDE` State
+  Change Report, or an MLDv1 Done in v1 compat mode) on
+  `remove_ip6_multicast`, and `send_mld_leave_all` does the
+  graceful-leave-on-shutdown, wired into `stack.stop()` alongside the
+  IGMP R7 hook. Tests: `test__icmp6__mld2_leave.py`. Only the IGMPv3
+  router/querier role above remains Phase-2.
 
 ---
 

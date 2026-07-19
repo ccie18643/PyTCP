@@ -60,7 +60,7 @@ fall into `__phrx_icmp6__unknown`.
 | §4 wire | Query (type 130) wire format                   | met (parser via `Icmp6Mld2MessageQuery` — codec + RX dispatch; assembly is Phase-2 router) |
 | §4 wire | Report (type 143) wire format                  | met (codec + assembler + parser) |
 | §4 wire | Multicast Address Record wire format           | met |
-| §5      | Listener-side state machine                    | met (group join/leave triggers `CHANGE_TO_EXCLUDE` Report) |
+| §5      | Listener-side state machine                    | met (join triggers a `CHANGE_TO_EXCLUDE` Report; leave triggers a `CHANGE_TO_INCLUDE` Report with an empty source list — §5.2.12 / §6.1, tested by `test__icmp6__mld2_leave.py`) |
 | §5      | Querier-side state machine                     | deferred (Phase-2 router role) |
 | §5.1.10 | Listener responds to Query with Report         | met (MRC random-delay window, `stack.timer`-scheduled) |
 | §5.2.13 | Hop Limit = 1 on outbound MLDv2 messages       | met |

@@ -876,6 +876,7 @@ def stop() -> None:
     # (RFC 3376 §5.1; Linux 'ip_mc_down').
     for iface in _stack.interfaces.values():
         iface.send_igmp_leave_all()
+        iface.send_mld_leave_all()
 
     _stack.stack_running = False
 

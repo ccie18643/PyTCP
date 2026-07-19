@@ -275,6 +275,7 @@ class TestPacketHandlerAddressAssignment(TestCase):
 
         h = _build_l2_handler()
         h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
+        h._send_icmp6_mld_leave = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
         h.assign_ip6_multicast(addr)

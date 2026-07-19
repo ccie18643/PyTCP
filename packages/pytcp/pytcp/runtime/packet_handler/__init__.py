@@ -2550,6 +2550,14 @@ class PacketHandler(Subsystem, ABC):
 
         self._icmp6_tx._send_icmp6_multicast_listener_report()
 
+    def _send_icmp6_mld_leave(self, ip6_multicast: Ip6Address, /) -> None:
+        """
+        Announce departure from an IPv6 multicast group (delegates to the
+        ICMPv6 TX sub-handler).
+        """
+
+        self._icmp6_tx._send_icmp6_mld_leave(ip6_multicast)
+
     def _send_igmp_v3_report(self) -> None:
         """
         Send an IGMPv3 current-state Membership Report (delegates to the
@@ -2597,6 +2605,15 @@ class PacketHandler(Subsystem, ABC):
         """
 
         self._igmp_tx._send_igmp_leave_all()
+
+    def send_mld_leave_all(self) -> None:
+        """
+        Emit a graceful MLD Leave for every joined IPv6 multicast group
+        on shutdown (delegates to the ICMPv6 TX sub-handler). Public
+        surface for the stack-shutdown lifecycle path.
+        """
+
+        self._icmp6_tx._send_icmp6_mld_leave_all()
 
     def _igmp_host_compatibility_mode(self) -> IgmpVersion:
         """
@@ -3751,6 +3768,11 @@ class PacketHandlerL2(
 
         self._remove_mac_multicast(ip6_multicast.multicast_mac)
 
+        # RFC 3810 §6.1 — announce the departure with a State Change
+        # Report (CHANGE_TO_INCLUDE, empty source list), the IPv6
+        # analogue of the IGMP leave above.
+        self._send_icmp6_mld_leave(ip6_multicast)
+
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:
         """
@@ -3965,6 +3987,10 @@ class PacketHandlerL3(
             self._ip6_multicast = [group for group in self._ip6_multicast if group != ip6_multicast]
 
         __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
+
+        # RFC 3810 §6.1 — announce the departure with a State Change
+        # Report (CHANGE_TO_INCLUDE, empty source list).
+        self._send_icmp6_mld_leave(ip6_multicast)
 
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:

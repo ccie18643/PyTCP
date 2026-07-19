@@ -57,6 +57,12 @@ stack-internal loopback interface lets one daemon talk to itself.
   fragments), and the daemon can capture **from boot** (`--capture` /
   `--capture-pcap`) to record its own autoconfiguration.
 
+- **MLDv2 leave reporting** — leaving an IPv6 multicast group now emits
+  a departure (a CHANGE_TO_INCLUDE State Change Report, or an MLDv1 Done
+  in v1 compatibility mode), and stack shutdown gracefully leaves every
+  joined group — the IPv6 analogue of the IGMP leave, closing the last
+  host-conformance gap in the multicast plane.
+
 ### Changed
 
 - Examples reworked around the daemon (async TCP/UDP echo, FTP,
