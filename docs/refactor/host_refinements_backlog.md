@@ -47,6 +47,15 @@ until the user says "push".
   Unit tests: `test__cli__format.py` (three formatter-shape tests) +
   `test__cli__stack.py::TestCliObservationJson` (flag dispatch for all
   three). Full JSON parity across the observation commands is now closed.
+- [x] **`mld.version` force knob (R10, knob part)** — new
+  `MLD__FORCE_VERSION` in `protocols/icmp6/mld__constants.py`, registered
+  as the `mld.version` sysctl (range 0-2, 0 = auto fallback / 1 / 2 = pin
+  MLDv1/MLDv2), consumed by `_mld_host_compatibility_mode` via qualified
+  module access. The IPv6 analogue of the shipped `igmp.version` knob /
+  Linux `force_igmp_version`. Integration tests:
+  `test__icmp6__mld1_compat.py::TestIcmp6MldForcedVersion`. Adherence:
+  `rfc2710__mld_v1`. (R10's RFC 2710 §4 Report-suppression part remains —
+  optimization only.)
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -205,21 +214,18 @@ stay text-only (Linux `sysctl` has no `-j` either).
 - **Effort:** medium. **Risk:** medium (threading/lifecycle). **Value:**
   medium (daemon robustness).
 
-### R10 — MLDv1 Report suppression + `mld.version` force knob (small)
+### R10 — MLDv1 Report suppression (small) — knob part SHIPPED
 
-- **Why:** two deferred-with-rationale items from `mld_version_fallback.md`:
-  RFC 2710 §4 Report suppression (a host that hears another host's Report for
-  a group suppresses its own — an optimization, not done for MLDv2 either),
-  and an `mld.version` force sysctl (Linux extension, the IPv6 analogue of
-  the shipped `igmp.version` knob).
-- **Scope:** (a) suppression: on RX of a peer MLDv1 Report for a group in
-  v1 compat mode, cancel this host's pending Report for that group; (b) the
-  knob: add `mld.version` via the `sysctl_knob` skill workflow, consumed by
-  `_mld_host_compatibility_mode` (mirror `igmp.version` /
-  `IGMP__FORCE_VERSION`).
-- **Tests-first:** integration tests in `tests/integration/protocols/icmp6/`.
-- **Effort:** small each. **Risk:** low. **Value:** low (optimization +
-  operator knob). The knob has clear parity value; suppression is marginal.
+- **`mld.version` force knob — SHIPPED (see "Shipped" above).** New
+  `MLD__FORCE_VERSION` in `protocols/icmp6/mld__constants.py`, registered
+  as the `mld.version` sysctl (range 0-2), consumed by
+  `_mld_host_compatibility_mode`. Mirrors `igmp.version` /
+  `IGMP__FORCE_VERSION`.
+- **Remaining — RFC 2710 §4 Report suppression:** on RX of a peer MLDv1
+  Report for a group in v1 compat mode, cancel this host's pending Report
+  for that group. An optimization only (not done for MLDv2 either);
+  marginal value. Tests-first in `tests/integration/protocols/icmp6/`.
+- **Effort:** small. **Risk:** low. **Value:** marginal.
 
 ### R11 — RFC 6724 `ip.policy_table` sysctl override (small-medium)
 
@@ -268,8 +274,9 @@ so this backlog's boundary is explicit.
 
 1. ~~**R1** (ping SO_RCVBUF)~~ — SHIPPED; the SO_RCVBUF symmetry is closed.
 2. Small self-contained wins, any order: ~~**R5** (CLI JSON — all four
-   observation commands)~~ SHIPPED, **R10** (mld knob + suppression),
-   **R11** (RFC 6724 policy table), or dip into **R2** (setsockopt sweep).
+   observation commands)~~ SHIPPED, ~~**R10** mld.version knob~~ SHIPPED
+   (R10 §4 suppression remains, marginal), **R11** (RFC 6724 policy
+   table), or dip into **R2** (setsockopt sweep).
 3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
 4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
    (HyStart++), **R7** (DF-guarded probe), **R8** (IP_RECVERR over daemon),
@@ -284,5 +291,5 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 - Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
   this backlog plan).
 - **Unpushed:** `f5ecd901` (R1 ping SO_RCVBUF), `2750afb5` (R5 address
-  JSON), `9b465047` (footer refresh), + the `ss`/`route`/`neighbor` JSON
-  follow-on. Hold until the user says "push".
+  JSON), `9b465047` (footer refresh), `2ecaf708` (ss/route/neighbor JSON),
+  + the `mld.version` knob (R10) commit. Hold until the user says "push".

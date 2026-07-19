@@ -39,6 +39,8 @@ from typing import override
 from net_addr import MacAddress
 from net_proto import Icmp6Type
 from net_proto.lib.inet_cksum import inet_cksum
+from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import MldVersion
+from pytcp.stack import sysctl
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 
 # ICMPv6 type byte sits after Ethernet(14) + IPv6(40) + HBH(8).
@@ -160,5 +162,69 @@ class TestIcmp6Mld1Compat(IcmpTestCase):
             msg=(
                 "After the MLDv1 querier-present timeout the mode must revert "
                 f"to MLDv2 (type-143 Report). Got: {frames_tx[0][_OFFSET_ICMP6_TYPE]}."
+            ),
+        )
+
+
+class TestIcmp6MldForcedVersion(IcmpTestCase):
+    """
+    The 'mld.version' forced MLD Host Compatibility Mode tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        super().setUp()
+        self._packet_handler._mac_multicast.append(MacAddress("33:33:00:00:00:01"))
+        self._packet_handler._icmp6_rx._mld2_query__pick_response_delay_ms = (  # type: ignore[method-assign]
+            lambda mrd_ms: 0
+        )
+
+    def test__mld__forced_version_pins_mode(self) -> None:
+        """
+        Ensure a forced 'mld.version' sysctl pins the MLD Host
+        Compatibility Mode regardless of the queriers heard: value 1 pins
+        MLDv1, value 2 pins MLDv2, and the default 0 leaves the automatic
+        querier-tracking fallback in effect.
+
+        Reference: RFC 3810 §8.3.1 (host compatibility mode selects the report version).
+        """
+
+        self.assertIs(
+            self._packet_handler._mld_host_compatibility_mode(),
+            MldVersion.V2,
+            msg="With 'mld.version' at its default 0 the interface must start in MLDv2 mode.",
+        )
+        with sysctl.override("mld.version", 1):
+            self.assertIs(
+                self._packet_handler._mld_host_compatibility_mode(),
+                MldVersion.V1,
+                msg="A forced 'mld.version' of 1 must pin the interface to MLDv1 mode.",
+            )
+        with sysctl.override("mld.version", 2):
+            self.assertIs(
+                self._packet_handler._mld_host_compatibility_mode(),
+                MldVersion.V2,
+                msg="A forced 'mld.version' of 2 must pin the interface to MLDv2 mode.",
+            )
+
+    def test__mld__forced_v1__query_response_is_v1_report(self) -> None:
+        """
+        Ensure that with 'mld.version' forced to 1 an inbound MLDv2 Query
+        elicits an MLDv1 Report (ICMPv6 type 131), the forced mode
+        overriding the version implied by the query heard.
+
+        Reference: RFC 3810 §8.3.1 (emit MLDv1 Reports while in v1 mode).
+        """
+
+        with sysctl.override("mld.version", 1):
+            frames_tx = self._drive_rx(frame=_build_mld_query_frame(mldv1=False))
+
+        self.assertGreaterEqual(len(frames_tx), 1, msg="A Query must elicit at least one Report.")
+        self.assertEqual(
+            frames_tx[0][_OFFSET_ICMP6_TYPE],
+            int(Icmp6Type.MULTICAST_LISTENER_REPORT),
+            msg=(
+                "With 'mld.version' forced to 1 the response Report must be "
+                f"type 131 (MLDv1), not 143. Got: {frames_tx[0][_OFFSET_ICMP6_TYPE]}."
             ),
         )

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |-------|-------|
-| Status | **SHIPPED** — Phase 1 (`e3bd1a2f`, net_proto MLDv1 wire codec) + Phase 2 (the RFC 3810 §8 compat-mode state machine). Adherence: `docs/rfc/icmp6/rfc2710__mld_v1/adherence.md`. MLDv1 Done-on-leave SHIPPED (`test__icmp6__mld2_leave.py`; a leave in v1 compat mode emits an MLDv1 Done to ff02::2). Deferred-with-rationale: Report suppression (optimization), the `mld.version` force knob (Linux extension, needs the sysctl_knob workflow). |
+| Status | **SHIPPED** — Phase 1 (`e3bd1a2f`, net_proto MLDv1 wire codec) + Phase 2 (the RFC 3810 §8 compat-mode state machine). Adherence: `docs/rfc/icmp6/rfc2710__mld_v1/adherence.md`. MLDv1 Done-on-leave SHIPPED (`test__icmp6__mld2_leave.py`; a leave in v1 compat mode emits an MLDv1 Done to ff02::2). `mld.version` force knob SHIPPED (`mld__constants.MLD__FORCE_VERSION` → `mld.version` sysctl; `test__icmp6__mld1_compat.py::TestIcmp6MldForcedVersion`). Deferred-with-rationale: Report suppression (optimization only). |
 | Target RFC | RFC 3810 §8 (Interoperation With MLDv1), with RFC 2710 host behaviours |
 | Mirror of | `docs/refactor/igmp_version_fallback.md` (the shipped IGMP RFC 3376 §7 fallback) — the IGMP↔MLD analogue |
 | North Star | Phase 1 (host-stack parity). Closes the MLDv2-host MLDv1-interop `MUST`. |
@@ -42,9 +42,12 @@ Add `MldVersion(IntEnum) { V1 = 1, V2 = 2 }` (per `enums.md`).
 `packages/net_proto/net_proto/protocols/igmp/message/igmp__message.py:62`;
 place `MldVersion` analogously (e.g. the MLDv2 query/report module or a
 small icmp6 mld lib). The MLD force-knob (`mld.version`, the
-`igmp.version` analogue) is OPTIONAL/deferred — it needs the
-`sysctl_knob` skill workflow and is a Linux extension, not an RFC MUST.
-The timer-driven mode below is the §8 MUST.
+`igmp.version` analogue) is **SHIPPED** — `MLD__FORCE_VERSION` in
+`packages/pytcp/pytcp/protocols/icmp6/mld__constants.py`, registered as the
+`mld.version` sysctl (range 0-2), consumed by
+`_mld_host_compatibility_mode` via qualified module access so an operator
+override resolves live (a Linux parity extension, not an RFC MUST). The
+timer-driven mode below is the §8 MUST.
 
 ### 2.2 Per-interface state + mode function (`runtime/packet_handler/__init__.py`)
 Mirror `_igmp__v1_querier_present_until_ms` (decl ~`:213`, init ~`:558`)

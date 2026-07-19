@@ -26,6 +26,7 @@ Phase-2 router work and out of host scope.
 | RFC 2710 §4 | Hop Limit 1; link-local; Router Alert option | met |
 | RFC 3810 §8.1 | MLDv1 vs MLDv2 Query length discrimination (24 vs ≥28) | met |
 | RFC 3810 §8.2.1 | Host Compatibility Mode + Older Version Querier Present timer | met |
+| Linux parity   | Forced MLD version knob (`mld.version` sysctl, IPv6 analogue of `force_igmp_version`) | met |
 | RFC 3810 §8.3.1 | Emit MLDv1 Reports while in MLDv1 mode | met |
 | RFC 2710 §5 | MLDv1 Done on leaving a group | met (emitted on leave while in MLDv1 compat mode, to ff02::2) |
 | RFC 2710 §4 | Report suppression on hearing another host's Report | deferred (optimization) |
@@ -73,6 +74,16 @@ so the mode reverts automatically when it passes (no explicit revert
 timer), mirroring `_igmp_host_compatibility_mode`. The scalar is
 written under the per-interface `_lock__multicast` (the no-GIL standing
 invariant) and read lock-free.
+
+A forced `mld.version` sysctl (`MLD__FORCE_VERSION` in
+`packages/pytcp/pytcp/protocols/icmp6/mld__constants.py`, range 0-2)
+overrides the automatic tracking: 0 = auto fallback (the timer-driven
+behaviour above), 1/2 = pin the interface to MLDv1/MLDv2 regardless of
+the queriers heard. `_mld_host_compatibility_mode()` reads it via
+qualified module access so an operator override resolves live. This is a
+PyTCP Linux-parity extension — the IPv6 analogue of Linux
+`net.ipv4.conf.*.force_igmp_version` (which has no shipped IPv6
+counterpart) and of PyTCP's own `igmp.version` knob.
 
 ## RFC 3810 §8.3.1 — emit MLDv1 Reports while in MLDv1 mode
 
@@ -123,6 +134,15 @@ group); the MLDv2 Report goes to `ff02::16`.
 
 **Status:** locked in.
 
+### Forced MLD version knob (`mld.version` sysctl)
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld1_compat.py::TestIcmp6MldForcedVersion`
+  — a forced `mld.version` of 1/2 pins `_mld_host_compatibility_mode()`
+  to MLDv1/MLDv2 (the default 0 leaves the automatic fallback), and a
+  forced v1 makes an MLDv2 Query elicit an MLDv1 Report (type 131).
+
+**Status:** locked in.
+
 ### RFC 2710 §5 MLDv1 Done on leave
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld2_leave.py`
@@ -141,6 +161,7 @@ group); the MLDv2 Report goes to `ff02::16`.
 | §8.1 Query length discrimination | locked in (integration) |
 | §8.2.1 compatibility-mode entry + revert | locked in |
 | §8.3.1 MLDv1 Report emission in v1 mode | locked in |
+| Forced `mld.version` knob | locked in (`TestIcmp6MldForcedVersion`) |
 | §5 Done on leave | locked in (`test__icmp6__mld2_leave`) |
 | §4 Report suppression | n/a (deferred) |
 

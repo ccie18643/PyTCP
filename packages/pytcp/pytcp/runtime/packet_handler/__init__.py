@@ -91,6 +91,7 @@ from pytcp.lib.packet_stats import (
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
+from pytcp.protocols.icmp6 import mld__constants
 from pytcp.protocols.icmp6.nd import nd__constants
 from pytcp.protocols.icmp6.nd.nd__router_state import (
     Icmp6DadState,
@@ -2639,12 +2640,19 @@ class PacketHandler(Subsystem, ABC):
     def _mld_host_compatibility_mode(self) -> MldVersion:
         """
         Return the RFC 3810 §8.2.1 MLD Host Compatibility Mode for this
-        interface: MLDv1 while the Older Version Querier Present timer
-        runs (an MLDv1 Query was heard within the timeout), else MLDv2.
-        The scalar is written under '_lock__multicast' by the RX Query
-        handler; this read is lock-free (a benign-stale read at worst
-        picks the previous mode), mirroring '_igmp_host_compatibility_mode'.
+        interface: a forced 'mld.version' (1/2) overrides; otherwise
+        MLDv1 while the Older Version Querier Present timer runs (an
+        MLDv1 Query was heard within the timeout), else MLDv2. Reading
+        'mld.version' via qualified module access so an operator override
+        resolves live. The querier-present scalar is written under
+        '_lock__multicast' by the RX Query handler; this read is
+        lock-free (a benign-stale read at worst picks the previous
+        mode), mirroring '_igmp_host_compatibility_mode'.
         """
+
+        forced = mld__constants.MLD__FORCE_VERSION
+        if forced != 0:
+            return MldVersion(forced)
 
         now_ms = stack.timer.now_ms
         if self._mld__v1_querier_present_until_ms is not None and now_ms < self._mld__v1_querier_present_until_ms:
