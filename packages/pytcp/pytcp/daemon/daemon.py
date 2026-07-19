@@ -187,7 +187,7 @@ def run_daemon(
     'on_ready', if given, is called with 'socket_path' once the control
     server is listening. When 'pidfile_path' is given the process id is
     written there for the lifetime of the daemon (removed on exit) so
-    'pytcp daemon stop' can signal it.
+    'pytcp stack stop' can signal it.
 
     When 'capture_path' is given the daemon binds an internal AF_PACKET
     capture socket before the stack starts and writes captured frames to
@@ -209,7 +209,7 @@ def run_daemon(
 
     # Write the pidfile up front — before 'stack.start()', which blocks
     # for up to DHCP4__BOOT_WAIT_MS (30 s) waiting for the DHCPv4 lease —
-    # so 'pytcp daemon stop' can signal the process the instant it exists,
+    # so 'pytcp stack stop' can signal the process the instant it exists,
     # not only once autoconfiguration finishes. Removed in the finally.
     if pidfile_path is not None:
         _write_pidfile(pidfile_path)

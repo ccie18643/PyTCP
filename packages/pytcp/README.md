@@ -1,8 +1,9 @@
 # PyTCP
 
 Pure-Python, zero-dependency TCP/IP stack — Ethernet through
-RFC 9293 TCP — running in user space on a TAP/TUN interface,
-embeddable in-process or run as a daemon, with a Berkeley-sockets API.
+RFC 9293 TCP — running in user space on a TAP/TUN interface, run as a
+daemon that off-the-shelf programs drive unmodified through a 1:1
+stdlib-`socket` drop-in, plus a `pytcp` CLI multitool.
 
 ```python
 from pytcp import socket, stack
@@ -18,10 +19,10 @@ and IGMP IPv4 multicast group membership), DHCPv4 and DHCPv6 clients,
 UDP, and a RFC 9293 TCP with a real FSM, congestion control
 (Reno / NewReno / CUBIC), SACK / timestamps / window-scaling, and a
 BSD-sockets facade. It runs on a TAP/TUN interface in user space — no
-kernel module, no privileged data path. It can be embedded in-process
-as a library, or run as a **daemon** that out-of-process clients drive
-over an AF_UNIX control boundary — the kernel/userspace split described
-below.
+kernel module, no privileged data path. It runs as a **daemon** that
+out-of-process clients drive over an AF_UNIX control boundary — the
+kernel/userspace split described below. (It can also be embedded
+in-process as a library, but that path is unsupported.)
 
 The project's north star is **feature-equivalence with the Linux
 host network stack**: where an RFC is unambiguous PyTCP follows it,

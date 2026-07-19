@@ -2,7 +2,7 @@
 
 | Field      | Value                                                                 |
 |------------|-----------------------------------------------------------------------|
-| Status     | **IN PROGRESS — Track A starting. Phase 0 complete (3.0.7 released + frozen, 3.0.8 opened). Created 2026-05-31 on `PyTCP_3_0_8`.** |
+| Status     | **COMPLETE — shipped on `PyTCP_3_0_8`. Drop-in stdlib-`socket` library, the `pytcp` CLI multitool (ss / link / address / route / neighbor / sysctl / ping / host / nc / traceroute / tcpdump / stack), the loopback interface, the unprivileged ICMP-Echo socket, raw-socket Linux parity, and the AF_PACKET egress tap + `pytcp tcpdump` all landed. Created 2026-05-31; completed 2026-07-19.** |
 | Branch     | `PyTCP_3_0_8`                                                          |
 | Builds on  | The kernel/userspace separation track ([`kernel_userspace_separation.md`](kernel_userspace_separation.md)), shipped as `3.0.7`. |
 | Motivation | Turn the daemon boundary into two user-facing layers: a 1:1 stdlib-`socket` drop-in client library, and a single `pytcp` CLI multitool that manages and drives the daemon. |
@@ -29,9 +29,9 @@ of that boundary:
    `errno` / exception reconstruction, DNS resolved *through* the daemon's
    stack, and many sockets per process fully independent.
 2. **A unified `pytcp` CLI multitool** that both manages the daemon
-   (`pytcp daemon start/stop`) and drives it with Linux-tool-lookalike,
-   faithful-and-parseable subcommands (`pytcp ss / link / addr / route /
-   neigh / sysctl`).
+   (`pytcp stack start/stop`) and drives it with Linux-tool-lookalike,
+   faithful-and-parseable subcommands (`pytcp ss / link / address / route /
+   neighbor / sysctl`).
 
 Build order: **socket library first** (with a real off-the-shelf app as the
 proof point), then the CLI toolset.

@@ -14,7 +14,7 @@
 
 <br>
 
-**PyTCP is a TCP/IP stack written in pure Python.** It runs in user space, attached to a Linux TAP/TUN interface, and implements the protocol layers itself rather than calling the host stack. It can be embedded in-process as a library, or run as a **daemon** that out-of-process clients drive over an AF_UNIX control boundary — the way a Linux process talks to the kernel.
+**PyTCP is a TCP/IP stack written in pure Python.** It runs in user space, attached to a Linux TAP/TUN interface, and implements the protocol layers itself rather than calling the host stack. It runs as a **daemon** that out-of-process clients drive over an AF_UNIX control boundary — the way a Linux process talks to the kernel — through a 1:1 stdlib-`socket` drop-in and the `pytcp` CLI. (It can also be embedded in-process as a library, but that path is unsupported.)
 
 The stack covers Ethernet II and IEEE 802.3 framing, ARP, IPv4 and IPv6 (extension headers and fragmentation), ICMPv4 and ICMPv6, IPv6 Neighbor Discovery and SLAAC, IPv4 and IPv6 multicast group membership (IGMP / MLD), DHCPv4 and DHCPv6 clients, UDP, and RFC 9293 TCP. The TCP implementation includes the full finite state machine, congestion control (CUBIC, NewReno, PRR, HyStart++), SACK and RACK-TLP loss recovery, and RFC 5961 hardening. It exchanges traffic with other hosts on the local segment and over the Internet.
 
