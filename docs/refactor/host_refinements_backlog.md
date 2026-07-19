@@ -69,6 +69,13 @@ until the user says "push".
   `rfc6724__default_address_selection` (§2.1 / §10.3 flipped to met,
   stale `lib/` paths corrected). Phase-3 note: daemon-IPC exposure of
   this control surface is a follow-on (in-process only today).
+- [x] **DF-guarded PLPMTUD probe (R7)** — turned out already-satisfied:
+  the TCP probe reuses `_phtx_tcp`, which sets `ip4__flag_df=True`
+  unconditionally, so the probe already carries DF=1 (RFC 8899 §3 #2).
+  Added `test__tcp__plpmtud__probe_emit__sets_df_bit` to lock it in and
+  flipped the stale "TCP probe path deferred (Phase 3c)" rows in
+  `rfc8899__dplpmtud` + `rfc4821__plpmtud` adherence records to met. No
+  production change required.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -184,19 +191,18 @@ stay text-only (Linux `sysctl` has no `-j` either).
   exact deferred rows before starting.
 - **Effort:** medium. **Risk:** medium (CC path). **Value:** medium.
 
-### R7 — DF-guarded TCP PLPMTUD probe (small, closes a "Phase 3c-min" residual)
+### R7 — DF-guarded TCP PLPMTUD probe — SHIPPED (already-satisfied; test-locked)
 
-- **Why:** the TCP probe-emit path (`session/tcp__session__tx.py`) ships
-  probe-**sized** segments but does not set DF, so RFC 8899 §3 #2 (DF=1 on
-  the probe) is still "Phase 3c" (honest note left in
-  `docs/rfc/tcp/rfc8899__dplpmtud/adherence.md` and rfc4821). Set DF on the
-  emitted probe segment so a black-hole is detected by loss rather than
-  relying only on ack-feedback sizing.
-- **Tests-first:** extend
-  `test__tcp__session__plpmtud_probe_emit.py` to assert the probe segment
-  carries DF=1 (IPv4) / is size-capped without fragmentation (IPv6).
-- **Effort:** small–medium. **Risk:** medium (probe-loss interaction with
-  RTO). **Value:** completes RFC 8899 §3 #2 / §4.1 fully.
+- **Outcome:** the "residual" was documentation staleness, not a code gap.
+  The probe is emitted through the same `_phtx_tcp` TX path as every other
+  IPv4 TCP segment, which already sets `ip4__flag_df=True` unconditionally
+  (RFC 1191 §3 / RFC 9293 §3.7.5) — so the probe already carries DF=1. IPv6
+  probes carry no Fragment header (no source fragmentation on the TX path).
+- **What shipped:** `test__tcp__plpmtud__probe_emit__sets_df_bit` locks in
+  the DF=1 / MF=0 property on the emitted probe, and the stale
+  "TCP probe path deferred (Phase 3c)" rows in
+  `rfc8899__dplpmtud/adherence.md` + `rfc4821__plpmtud/adherence.md` were
+  flipped to **met**. No production change was required.
 
 ### R8 — `IP_RECVERR` / `IPV6_RECVERR` error queue over the daemon boundary (medium)
 
@@ -290,8 +296,9 @@ so this backlog's boundary is explicit.
    table)~~ SHIPPED, or dip into **R2** (setsockopt sweep).
 3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
 4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
-   (HyStart++), **R7** (DF-guarded probe), **R8** (IP_RECVERR over daemon),
-   **R9** (cancelable accept).
+   (HyStart++), ~~**R7** (DF-guarded probe)~~ SHIPPED (already-satisfied,
+   test-locked), **R8** (IP_RECVERR over daemon), **R9** (cancelable
+   accept).
 
 None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 
@@ -301,7 +308,6 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 
 - Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
   this backlog plan).
-- **Unpushed:** `f5ecd901` (R1 ping SO_RCVBUF), `2750afb5` (R5 address
-  JSON), `9b465047` (footer refresh), `2ecaf708` (ss/route/neighbor JSON),
-  `3bf8315d` (R10 mld.version knob), + the R11 policy-table override
-  commit. Hold until the user says "push".
+- Pushed through `c2a76a60` (R1 / R5 / R5-followon / R10 knob / R11).
+- **Unpushed:** the R7 DF-probe test-lock commit. Hold until the user
+  says "push".

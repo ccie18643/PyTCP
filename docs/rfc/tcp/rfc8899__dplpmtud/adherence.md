@@ -91,12 +91,17 @@ plan Phase 3 / 4).
 > network layer endpoint fragmentation. In IPv6, a probe
 > packet is always sent without source fragmentation."
 
-**Adherence:** the DF=1 default landed in Phase 8 of
+**Adherence:** met. The DF=1 default landed in Phase 8 of
 the prior refactor (see commit history for
-`packet_handler__ip4__tx.py`). The "without
-fragmentation" property is naturally satisfied by
-PyTCP's send paths (no kernel-style auto-fragmentation
-on TX). Active probe construction is not yet present.
+`packet_handler__ip4__tx.py`); the TCP probe segment is
+emitted through the same `_phtx_tcp` TX path as every other
+IPv4 TCP segment, which sets `ip4__flag_df=True`
+unconditionally, so the probe inherits DF=1. The "without
+fragmentation" property is naturally satisfied by PyTCP's
+send paths (no kernel-style auto-fragmentation on TX), and
+IPv6 probes carry no Fragment header. Locked in by
+`test__tcp__plpmtud__probe_emit__sets_df_bit` (asserts the
+emitted probe's IPv4 DF bit set, MF clear).
 
 ### §3 #3 Reception feedback
 
@@ -435,6 +440,7 @@ accounting.
 | Aspect                                              | Coverage                  |
 |-----------------------------------------------------|---------------------------|
 | §3 #5 Local-link MTU / max-size hint                | locked in                 |
+| §3 #2 Probe DF=1 (IPv4) / no-fragment (IPv6)        | locked in (`test__tcp__session__plpmtud_probe_emit__sets_df_bit`) |
 | §3 #6 PTB validation                                | locked in                 |
 | §3 #9 Per-destination shared state                  | locked in                 |
 | §3 #7 Probe-cwnd exemption                          | n/a (Linux-pragmatic deviation — probes share cwnd) |
@@ -457,7 +463,7 @@ accounting.
 | §3 #5/#9 / §4.5 Per-destination MTU cache + state   | met                          |
 | §3 #6 PTB-message validation                        | met                          |
 | §3 #1 Non-probe size enforcement                    | met                          |
-| §3 #2 IPv4 DF=1 / IPv6 no-fragmentation on probe    | met for non-probe; TCP probe path deferred (Phase 3c) |
+| §3 #2 IPv4 DF=1 / IPv6 no-fragmentation on probe    | met (TCP probe reuses the unconditional-DF `_phtx_tcp` IPv4 path; test-locked) |
 | §3 #3 Reception feedback                            | met for UDP (manual API); met for TCP (snd.una hook for ack/loss) |
 | §3 #7 Probes excluded from cwnd                     | **Linux-pragmatic deviation** (probes share cwnd; matches Linux tcp_mtu_probing) |
 | §4.1 Probe packet generation                        | met for UDP; met for TCP (Phase 3c-min + `tcp.mtu_probing=2` enable + `tcp.base_mss` cold-start seed) |

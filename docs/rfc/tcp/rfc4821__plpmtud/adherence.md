@@ -348,17 +348,25 @@ by the integration test
 
 - `test__tcp__plpmtud__probe_emit__fires_when_candidate_exceeds_snd_mss`
   — the emitted data segment carries the probe-sized payload.
+- `test__tcp__plpmtud__probe_emit__sets_df_bit`
+  — the emitted IPv4 probe carries DF=1 / MF=0 (§3 #2).
 - `test__tcp__plpmtud__probe_emit__records_in_flight`
 - `test__tcp__plpmtud__probe_emit__no_emit_when_insufficient_data`
 - `test__tcp__plpmtud__probe_emit__ack_transitions_engine`
 
+The DF-guarded probe (§3 #2 in the RFC 8899 record) is
+**met**: the probe is emitted through the same `_phtx_tcp`
+TX path as every other IPv4 TCP segment, which sets
+`ip4__flag_df=True` unconditionally (RFC 1191 §3 / RFC 9293
+§3.7.5), so a probe-sized packet that the path cannot carry
+is dropped or elicits ICMP Frag-Needed rather than being
+fragmented (which would falsely confirm the larger MTU).
+Locked in by `test__tcp__plpmtud__probe_emit__sets_df_bit`.
+
 Still deferred (deliberate deviations, not gaps): §7.4
 cwnd-exempt accounting and the §7.5 probe-only RTO are
 **Linux-pragmatic deviations** (Linux probes share cwnd and
-use the regular RTO for probe-loss detection); the
-DF-guarded probe (§3 #2 in the RFC 8899 record) is the
-remaining Phase-3c piece — the current path emits
-probe-sized segments without setting DF.
+use the regular RTO for probe-loss detection).
 
 ### Test coverage summary
 
