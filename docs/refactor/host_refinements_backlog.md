@@ -272,9 +272,9 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 
 ---
 
-## Git state at handoff (2026-07-19)
+## Git state (2026-07-19)
 
-- Branch `PyTCP_3_0_8`. Pushed through `af2719ea` (MLDv2 leave + doc
-  reconciliations).
-- **Unpushed:** `d51abda9` (UDP SO_RCVBUF) + `a0140806` (RAW SO_RCVBUF).
+- Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
+  this backlog plan).
+- **Unpushed:** `f5ecd901` (R1 ping SO_RCVBUF) + `2750afb5` (R5 CLI JSON).
   Hold until the user says "push".
