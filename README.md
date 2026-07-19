@@ -33,6 +33,58 @@ Contributions are welcome.
 ---
 
 
+### Quickstart
+
+The fastest path from clone to a working stack is to run it as a
+**daemon** and drive it with the `pytcp` CLI. Interface setup and the
+daemon need root; the CLI tools talk to the daemon over its control
+socket, so run them as the same user (here, all under `sudo`).
+
+```bash
+# 1. Clone, build the venv (Python 3.14+), create a TAP on a bridge.
+git clone https://github.com/ccie18643/PyTCP && cd PyTCP
+make venv
+sudo make bridge && sudo make tap7
+
+# 2. Start the stack daemon on tap7 (autoconfigures via DHCPv4 / SLAAC).
+sudo venv/bin/pytcp stack start -i tap7
+```
+
+In another terminal, operate the running stack with Linux-lookalike
+tools:
+
+```bash
+sudo venv/bin/pytcp ss                  # list sockets            (like 'ss')
+sudo venv/bin/pytcp address             # interface addresses     (like 'ip addr')
+sudo venv/bin/pytcp route               # routing table           (like 'ip route')
+sudo venv/bin/pytcp ping 192.168.177.1  # ICMP echo               (like 'ping')
+sudo venv/bin/pytcp tcpdump -i tap7     # capture + decode        (like 'tcpdump')
+sudo venv/bin/pytcp stack stop          # stop the daemon
+```
+
+Run **your own** program over the daemon with the 1:1 stdlib-`socket`
+drop-in — no changes beyond the import (it finds the daemon via
+`$PYTCP_DAEMON_SOCKET`, or the default control socket):
+
+```python
+import pytcp.socket as socket      # daemon-backed; DNS resolved through the stack
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("example.com", 80))
+sock.sendall(b"GET / HTTP/1.0\r\n\r\n")
+print(sock.recv(4096))
+sock.close()
+```
+
+To embed the stack **in-process** instead of running a daemon, the
+lifecycle is `stack.init()` → `stack.add_interface(...)` →
+`stack.start()`, then the `pytcp.runtime.socket` BSD-sockets API, then
+`stack.stop()`. See
+[`examples_legacy/stack.py`](examples_legacy/stack.py) for the complete
+runnable reference and [`examples/`](examples/) for daemon-backed apps.
+
+---
+
+
 ### Features
 
 #### Stack & sockets (engineering, non-RFC)
@@ -143,9 +195,10 @@ PyTCP stack to your local network at the same time.
                                             |--(tap7) <---> [PyTCP TCP/IP stack]
 ```
 
-After the example program (either client or service) starts the stack, it can communicate with it
-via simplified BSD Sockets like API interface. There is also the possibility of sending packets
-directly by calling one of the internal ```_phtx_*()``` methods on the ```PacketHandler```.
+Once the stack is running, programs communicate with it through a
+Berkeley-sockets-style API — in-process via `pytcp.runtime.socket`, or
+out-of-process against the daemon via the `pytcp.socket` drop-in / the
+`pytcp` CLI (see the Quickstart above).
 
 ---
 
