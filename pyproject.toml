@@ -97,7 +97,6 @@ include = [
     "packages/net_proto/net_proto",
     "packages/pytcp/pytcp",
     "examples",
-    "examples_legacy",
     "tests_runner.py",
 ]
 exclude = ["**/__pycache__", "**/node_modules", "venv"]

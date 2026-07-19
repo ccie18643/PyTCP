@@ -4,11 +4,10 @@ PYTCP_PATH := packages/pytcp/pytcp
 NET_ADDR_PATH := packages/net_addr/net_addr
 NET_PROTO_PATH := packages/net_proto/net_proto
 EXAMPLES_PATH := examples
-EXAMPLES_LEGACY_PATH := examples_legacy
 PYTCP_FILES := $(shell find ${PYTCP_PATH} -name '*.py')
 NET_ADDR_FILES := $(shell find ${NET_ADDR_PATH} -name '*.py')
 NET_PROTO_FILES := $(shell find ${NET_PROTO_PATH} -name '*.py')
-EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} ${EXAMPLES_LEGACY_PATH} -name '*.py')
+EXAMPLES_FILES := $(shell find ${EXAMPLES_PATH} -name '*.py')
 ROOT_FILES := tests_runner.py
 
 # Every linted file in one list (codespell / isort / black / flake8
@@ -18,7 +17,7 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # mypy '-p' takes import names, not paths. net_addr now lives at
 # packages/net_addr/net_addr (resolved via its editable install in
 # the 'venv' target), so its name is decoupled from its path here.
-MYPY_PACKAGES := pytcp net_addr net_proto examples examples_legacy
+MYPY_PACKAGES := pytcp net_addr net_proto examples
 
 # The entire pylint configuration — which checks fire AND which paths
 # are exempt — lives in pyproject.toml ([tool.pylint.*]: 'disable = all'
@@ -105,12 +104,12 @@ test__net_proto__unit: venv
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_proto/net_proto/tests/unit' -name 'test__*.py')
 
 test__examples__unit: venv
-	@echo '<<< UNITTEST EXAMPLES UNIT'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'examples_legacy/tests/unit' -name 'test__*.py')
+	@echo '<<< UNITTEST EXAMPLES'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/pytcp/pytcp/tests/integration/examples' -name 'test__*.py')
 
 test: venv
 	@echo '<<< UNITTEST ALL'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' 'examples_legacy/tests' -name 'test__*.py')
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' -name 'test__*.py')
 
 validate: lint test
 
@@ -149,7 +148,7 @@ benchmark: venv
 	@echo '  sudo hping3 --flood --icmp -d 1472 <stack-ip>'
 	@echo
 	@PYTCP_STATS_INTERVAL=5 PYTHONOPTIMIZE=1 PYTHONPATH=$(ROOT_PATH) \
-		./$(VENV)/bin/python3 examples_legacy/stack.py
+		./$(VENV)/bin/python3 -m pytcp.daemon -i tap7
 
 bridge:
 	@brctl addbr br0

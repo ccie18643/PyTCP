@@ -75,12 +75,12 @@ print(sock.recv(4096))
 sock.close()
 ```
 
-To embed the stack **in-process** instead of running a daemon, the
-lifecycle is `stack.init()` → `stack.add_interface(...)` →
-`stack.start()`, then the `pytcp.runtime.socket` BSD-sockets API, then
-`stack.stop()`. See
-[`examples_legacy/stack.py`](examples_legacy/stack.py) for the complete
-runnable reference and [`examples/`](examples/) for daemon-backed apps.
+The daemon is the supported way to run and operate the stack. It can
+also be embedded **in-process** as a library — the lifecycle is
+`stack.init()` → `stack.add_interface(...)` → `stack.start()`, then the
+`pytcp.runtime.socket` BSD-sockets API, then `stack.stop()` — but that
+path is unsupported and mainly for advanced embedding. See
+[`examples/`](examples/) for daemon-backed applications.
 
 ---
 
@@ -218,10 +218,10 @@ After cloning, we can run one of the included examples:
  - Run the ```sudo make tap7``` command to create the tap7 interface and assign it to the 'br0' bridge.
  - Run the ```make venv``` command to create the virtual environment for development and testing.
  - Run ```. venv/bin/activate``` command to activate the virtual environment.
- - Execute any example, e.g., ```python -m examples_legacy.stack``` (see the ```examples_legacy/``` directory; pass ```--help``` for options).
+ - Start the stack daemon, e.g. ```sudo pytcp stack start -i tap7``` (see the Quickstart above), or run a daemon-backed program from the ```examples/``` directory.
  - Hit Ctrl-C to stop it.
 
-Stack parameters are configured per run via the ```stack.init(...)``` keyword arguments and the runtime sysctl registry (see ```pytcp/stack/```), not a static config file.
+Daemon options are set on the ```pytcp stack start``` / ```python -m pytcp.daemon``` command line and the runtime sysctl registry (see ```packages/pytcp/pytcp/stack/```), not a static config file.
 
 ---
 
@@ -244,21 +244,19 @@ sudo ip link set dev br0 up
 sudo ip link set dev tap7 master br0
 ```
 
-PyTCP is consumed in-process as a library through the ```pytcp.stack```
-lifecycle API (```stack.init(...)``` → ```stack.start()``` →
-```stack.stop()```) and the ```pytcp.runtime.socket```
-Berkeley-sockets-style API. The subsystems run in their own threads; after
-```start()``` control returns to your code. Out-of-process, a **daemon**
-exposes the same surfaces over an AF_UNIX boundary — driven by the
-daemon-backed ```pytcp.socket``` 1:1 stdlib-`socket` drop-in, the explicit
-```pytcp.client``` API, or the ```pytcp``` CLI multitool.
-
-For a complete, runnable in-process reference — opening the TAP/TUN file
-descriptor, calling ```stack.init(...)```, and driving the stack — see
-[```examples_legacy/stack.py```](examples_legacy/stack.py) and the other
-programs in the [```examples_legacy/```](examples_legacy/) directory. For
+The supported way to run PyTCP is as a **daemon**: `pytcp stack start`
+(or `python -m pytcp.daemon`) boots the stack, and out-of-process clients
+drive it over an AF_UNIX boundary — through the daemon-backed
+```pytcp.socket``` 1:1 stdlib-`socket` drop-in, the explicit
+```pytcp.client``` API, or the ```pytcp``` CLI multitool. For runnable
 daemon-backed applications over the drop-in (async FTP, TCP/UDP echo,
 multicast discovery, ping), see [```examples/```](examples/).
+
+The stack can also be embedded **in-process** as a library — the
+```pytcp.stack``` lifecycle (```stack.init(...)``` → ```stack.start()```
+→ ```stack.stop()```) plus the ```pytcp.runtime.socket``` API, with the
+subsystems running in their own threads — but that path is unsupported
+and intended only for advanced embedding.
 
 ---
 
@@ -332,13 +330,10 @@ with connect(socket_path="/tmp/pytcp.sock") as client:
     sock.close()
 ```
 
-The bundled [`examples_legacy/client__tcp_echo_ipc.py`](examples_legacy/client__tcp_echo_ipc.py)
-is exactly this — an out-of-process echo client — alongside the
-in-process subsystem form in
-[`examples_legacy/client__tcp_echo.py`](examples_legacy/client__tcp_echo.py). The same
-`client.socket(...)` factory returns UDP / raw / AF_PACKET sockets, and
-`client.sysctl` / `.route` / `.link` / `.address` / `.neighbor` /
-`.membership` mirror the in-process control APIs across the boundary.
+The `client.socket(...)` factory returns TCP / UDP / raw / AF_PACKET
+sockets over the daemon boundary, and `client.sysctl` / `.route` /
+`.link` / `.address` / `.neighbor` / `.membership` mirror the control
+APIs across it.
 
 For off-the-shelf programs, `pytcp.socket` is a **1:1 stdlib-`socket`
 drop-in** over the same daemon — an app adopts it by changing one import

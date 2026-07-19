@@ -27,7 +27,7 @@
 UDP flood load-generator — sends raw datagrams as fast as
 'socket.sendto' returns, with no per-datagram print loop and no
 peer protocol negotiation. Pair it with PyTCP's UDP echo service
-('examples_legacy/service__udp_echo.py' on port 7) to stress-test the
+('examples/udp_echo_server__async.py' on port 7) to stress-test the
 RX -> handler -> TX path.
 
 Run (no root required for UDP):

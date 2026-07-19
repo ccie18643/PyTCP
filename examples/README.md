@@ -21,10 +21,9 @@ protocol code — including **blocking** stdlib programs and **`asyncio`**
 servers and clients — runs unmodified over PyTCP.
 
 > These examples are for **writing applications** against a running stack.
-> For how to **boot and run the stack itself** — opening the TAP/TUN
-> interface, `stack.init(...)`, the in-process lifecycle, the raw
-> `pytcp.client` control API, and the daemon launcher — see
-> [`examples_legacy/`](../examples_legacy/) (still current, not deprecated).
+> For how to **boot and run the stack itself**, see the Quickstart in the
+> [root README](../README.md): `pytcp stack start` (the supported daemon
+> launcher) plus the `pytcp` CLI to operate it.
 
 ## Prerequisites
 
@@ -92,10 +91,6 @@ inside the stack over `lo`. The full reproducible recipe is in
 
 ## See also
 
-- **[`examples_legacy/`](../examples_legacy/)** — the in-process
-  bootstrap reference (`stack.py`), the raw `pytcp.client` out-of-process
-  control API demo (`client__tcp_echo_ipc.py`), and the in-process service
-  programs the `tools/capture` live-demo harness drives.
 - **The `pytcp` CLI** — `pytcp ping / host / nc / traceroute / tcpdump` are
   batteries-included tools over the same daemon; `pytcp ss / link / address
   / route / neighbor / sysctl` introspect and drive the control plane.

@@ -155,9 +155,7 @@ with connect(socket_path="/tmp/pytcp.sock") as client:
 
 The same `client.socket(...)` factory returns UDP / raw / `AF_PACKET`
 sockets, and `client.sysctl` / `.route` / `.link` / `.address` /
-`.neighbor` / `.membership` mirror the in-process control APIs across
-the boundary. See
-[`examples_legacy/client__tcp_echo_ipc.py`](https://github.com/ccie18643/PyTCP/blob/master/examples_legacy/client__tcp_echo_ipc.py).
+`.neighbor` / `.membership` mirror the control APIs across the boundary.
 
 ### The 1:1 stdlib-`socket` drop-in
 
@@ -215,18 +213,15 @@ needing no bridge, are also available — `make tun3`
 (172.16.2.1/24, 2001:db8:2::1/64) set up the host side; run the stack on
 one with `sudo pytcp stack start -i tun3`. A stack can `init()` with
 zero interfaces and add / remove them at runtime, so any mix of taps and
-tuns can be attached to one running stack. (`examples_legacy/stack.py`
-is the in-process equivalent, adding stats / SIGUSR1 interface removal.)
+tuns can be attached to one running stack.
 
-In-process, PyTCP is consumed through the `stack` lifecycle API and the
-`pytcp.runtime.socket` BSD-sockets API; out-of-process, through the
-daemon-backed `pytcp.socket` drop-in or the explicit `pytcp.client`
-API. See
-[`examples_legacy/`](https://github.com/ccie18643/PyTCP/tree/master/examples_legacy) — `examples_legacy/stack.py` is the complete
-runnable in-process reference (TAP/TUN open, `stack.init(...)`,
-multi-interface bind, runtime interface removal on SIGUSR1) — and
+The supported way to run PyTCP is as a daemon, driven out-of-process
+through the daemon-backed `pytcp.socket` drop-in, the explicit
+`pytcp.client` API, or the `pytcp` CLI. See
 [`examples/`](https://github.com/ccie18643/PyTCP/tree/master/examples)
-for daemon-backed applications over the drop-in.
+for daemon-backed applications over the drop-in. In-process embedding
+via the `stack` lifecycle + `pytcp.runtime.socket` API still works but is
+unsupported.
 
 ## Requirements
 
