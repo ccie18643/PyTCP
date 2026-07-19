@@ -62,6 +62,7 @@ from pytcp.cli.cli__format import (
     flatten_sysctl,
     format_activity,
     format_addr,
+    format_addr_json,
     format_link,
     format_neighbor_table,
     format_route_table,
@@ -528,11 +529,12 @@ def _cmd_neighbor_del(client: ClientStack, args: argparse.Namespace, /) -> str:
 
 def _cmd_address(client: ClientStack, args: argparse.Namespace, /) -> str:
     """
-    Render interfaces with their addresses for a bare 'address'.
+    Render interfaces with their addresses for a bare 'address' — as a
+    JSON array with '-j'/'--json', else the 'ip addr show' table.
     """
 
-    _ = args
-    return format_addr(_interface_views(client))
+    views = _interface_views(client)
+    return format_addr_json(views) if args.json else format_addr(views)
 
 
 def _cmd_address_add(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -1190,6 +1192,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser_neighbor_flush = neighbor_subparsers.add_parser("flush", help="Flush the neighbour caches.")
     parser_neighbor_flush.set_defaults(func=_cmd_neighbor_flush)
     parser_address = subparsers.add_parser("address", help="Show, add, or remove interface addresses.")
+    parser_address.add_argument(
+        "-j", "--json", action="store_true", help="Output machine-readable JSON ('ip -j addr' shape)."
+    )
     parser_address.set_defaults(func=_cmd_address)
     address_subparsers = parser_address.add_subparsers(dest="address_command", title="commands", metavar="<command>")
     parser_address_add = address_subparsers.add_parser("add", help="Add an interface address.")

@@ -32,15 +32,19 @@ ver 3.0.8
 
 import contextlib
 import io
+import json
 import os
 import signal
 import tempfile
+from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
 from unittest.mock import ANY, patch
 
+from net_addr import Ip4IfAddr, MacAddress
 from pytcp import __version__
-from pytcp.cli.__main__ import build_parser, main
+from pytcp.cli.__main__ import _cmd_address, build_parser, main
+from pytcp.cli.cli__format import InterfaceView
 from pytcp.daemon.daemon import remove_pidfile
 from pytcp.ipc.ipc__errors import IpcRemoteError
 
@@ -362,6 +366,53 @@ class TestRemovePidfile(TestCase):
             self.assertFalse(os.path.exists(path), msg="remove_pidfile must delete the pidfile.")
 
             remove_pidfile(path)  # second removal must not raise
+
+
+class TestCliAddressJson(TestCase):
+    """
+    The 'pytcp address --json' output-selection tests.
+    """
+
+    _VIEW = InterfaceView(
+        ifindex=1,
+        name="tap7",
+        flags=("BROADCAST", "MULTICAST", "UP"),
+        mtu=1500,
+        mac_address=MacAddress("02:00:00:00:00:07"),
+        addresses=(Ip4IfAddr("10.0.1.7/24"),),
+    )
+
+    def test__cmd_address__json_flag_emits_json(self) -> None:
+        """
+        Ensure 'address -j' renders the interface view as a JSON array
+        rather than the human 'ip addr' table.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("pytcp.cli.__main__._interface_views", return_value=[self._VIEW]):
+            output = _cmd_address(SimpleNamespace(), SimpleNamespace(json=True))  # type: ignore[arg-type]
+        self.assertEqual(
+            json.loads(output)[0]["ifname"],
+            "tap7",
+            msg="address -j must emit a JSON array of interface objects.",
+        )
+
+    def test__cmd_address__default_emits_table(self) -> None:
+        """
+        Ensure a bare 'address' (no '-j') renders the human-readable 'ip
+        addr' table, not JSON.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with patch("pytcp.cli.__main__._interface_views", return_value=[self._VIEW]):
+            output = _cmd_address(SimpleNamespace(), SimpleNamespace(json=False))  # type: ignore[arg-type]
+        self.assertEqual(
+            output,
+            "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n" "    link/ether 02:00:00:00:00:07\n" "    inet 10.0.1.7/24",
+            msg="A bare 'address' must render the 'ip addr' table.",
+        )
 
 
 class TestCliUnreachableDaemon(TestCase):

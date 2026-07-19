@@ -30,6 +30,7 @@ pytcp/tests/unit/cli/test__cli__format.py
 ver 3.0.8
 """
 
+import json
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network, MacAddress
@@ -38,6 +39,7 @@ from pytcp.cli.cli__format import (
     flatten_sysctl,
     format_activity,
     format_addr,
+    format_addr_json,
     format_link,
     format_neighbor_table,
     format_route_table,
@@ -326,6 +328,54 @@ class TestCliFormatInterfaces(TestCase):
             format_link([self._VIEW]),
             "1: tap7: <BROADCAST,MULTICAST,UP> mtu 1500\n    link/ether 02:00:00:00:00:07",
             msg="The link formatter must render the interface without addresses.",
+        )
+
+    def test__format_addr_json(self) -> None:
+        """
+        Ensure interfaces render as a JSON array mirroring the 'ip -j
+        addr show' object shape (ifindex / ifname / flags / mtu / address
+        + per-address 'addr_info' with family / local / prefixlen).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            json.loads(format_addr_json([self._VIEW])),
+            [
+                {
+                    "ifindex": 1,
+                    "ifname": "tap7",
+                    "flags": ["BROADCAST", "MULTICAST", "UP"],
+                    "mtu": 1500,
+                    "address": "02:00:00:00:00:07",
+                    "addr_info": [
+                        {"family": "inet", "local": "10.0.1.7", "prefixlen": 24},
+                        {"family": "inet6", "local": "2001:db8:0:1::7", "prefixlen": 64},
+                    ],
+                }
+            ],
+            msg="The addr JSON formatter must mirror the 'ip -j addr show' object shape.",
+        )
+
+    def test__format_addr_json__no_mac(self) -> None:
+        """
+        Ensure an interface with no MAC address renders a null 'address'
+        field in the JSON output.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        view = InterfaceView(
+            ifindex=2,
+            name="lo",
+            flags=("LOOPBACK", "UP"),
+            mtu=65536,
+            mac_address=None,
+            addresses=(Ip4IfAddr("127.0.0.1/8"),),
+        )
+        self.assertIsNone(
+            json.loads(format_addr_json([view]))[0]["address"],
+            msg="An interface with no MAC must render a null 'address' field.",
         )
 
 

@@ -35,6 +35,7 @@ pytcp/cli/cli__format.py
 ver 3.0.8
 """
 
+import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 
@@ -300,6 +301,35 @@ def format_addr(views: Iterable[InterfaceView], /) -> str:
     """
 
     return "\n".join(line for view in views for line in _interface_lines(view, with_addresses=True))
+
+
+def format_addr_json(views: Iterable[InterfaceView], /) -> str:
+    """
+    Render interfaces with their addresses as a JSON array, mirroring the
+    'ip -j addr show' object shape (ifindex / ifname / flags / mtu /
+    address + per-address 'addr_info' with family / local / prefixlen).
+    """
+
+    payload = [
+        {
+            "ifindex": view.ifindex,
+            "ifname": view.name,
+            "flags": list(view.flags),
+            "mtu": view.mtu,
+            "address": str(view.mac_address) if view.mac_address is not None else None,
+            "addr_info": [
+                {
+                    "family": "inet" if isinstance(address, Ip4IfAddr) else "inet6",
+                    "local": str(address.address),
+                    "prefixlen": address.network.prefixlen,
+                }
+                for address in view.addresses
+            ],
+        }
+        for view in views
+    ]
+
+    return json.dumps(payload, indent=2)
 
 
 def format_activity(activities: Iterable[InterfaceActivity]) -> str:

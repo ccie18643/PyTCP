@@ -31,6 +31,13 @@ until the user says "push".
   file `test__runtime__socket__ping__socket.py::TestPingSocketRcvbuf`
   (setsockopt-sets-cap + over-cap-drop + unset-unbounded). Closes the
   SO_RCVBUF symmetry across all three datagram sockets.
+- [x] **`pytcp address -j` JSON output (R5)** — new `format_addr_json`
+  formatter (cli__format.py) mirroring the `ip -j addr show` object shape
+  (`ifindex` / `ifname` / `flags` / `mtu` / `address` + per-address
+  `addr_info` with `family` / `local` / `prefixlen`); `address` subcommand
+  gained a `-j`/`--json` flag routed through `_cmd_address`. Unit tests:
+  `test__cli__format.py::TestCliFormatInterfaces` (formatter shape + null
+  MAC) + `test__cli__stack.py::TestCliAddressJson` (flag dispatch).
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -133,14 +140,12 @@ self._signal_readable()
 - **Effort:** large (multi-phase, mirrors a whole shipped track). **Risk:**
   medium. **Value:** highest — real v4/v6 parity.
 
-### R5 — CLI polish: `pytcp address -j` JSON output (small, self-contained)
+### R5 — CLI polish: `pytcp address -j` JSON output — SHIPPED (see "Shipped" above)
 
-- **Scope:** add `-j`/`--json` to the `pytcp address` subcommand (and
-  optionally `ss`/`route`/`neighbor` for parity), emitting machine-readable
-  JSON alongside the human table. CLI lives under `packages/pytcp/pytcp/cli/`.
-- **Tests-first:** unit tests under
-  `packages/pytcp/pytcp/tests/unit/cli/` asserting the JSON shape.
-- **Effort:** ~1–2 hrs. **Risk:** low. **Value:** low-ish (nice for scripting).
+- **Follow-on (optional):** extend `-j`/`--json` to `ss` / `route` /
+  `neighbor` for full parity. Each mirrors the `format_addr_json` pattern:
+  a `format_<x>_json` helper + a `-j` flag routed through the command's
+  `_cmd_*`. Small, self-contained, do on appetite.
 
 ### R6 — HyStart++ (RFC 9406) remaining work
 
@@ -254,9 +259,10 @@ so this backlog's boundary is explicit.
 ## Recommended ordering
 
 1. ~~**R1** (ping SO_RCVBUF)~~ — SHIPPED; the SO_RCVBUF symmetry is closed.
-2. Small self-contained wins, any order: **R5** (CLI JSON), **R10** (mld
-   knob + suppression), **R11** (RFC 6724 policy table), or dip into **R2**
-   (setsockopt sweep).
+2. Small self-contained wins, any order: ~~**R5** (CLI JSON)~~ SHIPPED,
+   **R10** (mld knob + suppression), **R11** (RFC 6724 policy table), or
+   dip into **R2** (setsockopt sweep). The `ss`/`route`/`neighbor` JSON
+   follow-on to R5 is an easy next pick.
 3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
 4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
    (HyStart++), **R7** (DF-guarded probe), **R8** (IP_RECVERR over daemon),
