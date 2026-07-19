@@ -104,7 +104,9 @@ daemon / multi-homed shape.
 
 The in-process socket facade, `pytcp.runtime.socket`, mirrors the
 stdlib `socket` module: a `socket(...)` factory returns `TcpSocket` /
-`UdpSocket` / `RawSocket` / `PacketSocket`, with `bind` / `listen` /
+`UdpSocket` / `RawSocket` / `PacketSocket` (plus an unprivileged
+ICMP-Echo datagram socket, `SOCK_DGRAM`+`IPPROTO_ICMP`/`ICMPV6`, that
+backs `pytcp ping`), with `bind` / `listen` /
 `accept` / `connect` / `send` / `recv` / `close`, `fileno()` + eventfd
 for `selectors` integration, blocking & non-blocking modes,
 errno-mapped `OSError`, `getaddrinfo`, common `setsockopt` options,
@@ -176,11 +178,12 @@ apps live in [`examples/`](https://github.com/ccie18643/PyTCP/tree/master/exampl
 
 A single zero-dependency `pytcp` command (console script; also
 `python -m pytcp.cli`) manages and drives the daemon with
-Linux-tool-lookalike subcommands: `pytcp daemon start / stop / status`,
-the control-plane introspectors `pytcp ss / link / addr / route / neigh
-/ sysctl` (faithful, parseable layouts), and the batteries-included
-network tools `pytcp ping / host / nc / traceroute / tcpdump` (the last a
-daemon-native capture that decodes both ingress and egress).
+Linux-tool-lookalike subcommands: `pytcp stack start / stop`,
+the control-plane introspectors `pytcp ss / link / address / route /
+neighbor / sysctl` (faithful, parseable layouts), and the
+batteries-included network tools `pytcp ping / host / nc / traceroute /
+tcpdump` (the last a daemon-native capture that decodes both ingress and
+egress).
 
 ## Install
 
@@ -199,21 +202,21 @@ bridge setup). Bridged TAP interfaces (Ethernet) are created on the
 `br0` bridge, so the bridge comes first:
 
 ```bash
-make bridge      # create the br0 bridge (sudo)
-make tap7        # create tap7, add it to br0 (sudo)
-make tap9        # create a second tap, tap9, on br0 (sudo)
-make run         # run the stack on tap7
-make run_multi   # multi-interface demo (runs on tap7 + tap9)
+make bridge                     # create the br0 bridge (sudo)
+make tap7                       # create tap7, add it to br0 (sudo)
+make tap9                       # create a second tap, tap9, on br0 (sudo)
+sudo pytcp stack start -i tap7  # run the stack daemon on tap7
+sudo pytcp stack start -i tap7 -i tap9   # multi-interface (repeat -i)
 ```
 
 Point-to-point TUN interfaces (IP), each created pre-addressed and
 needing no bridge, are also available — `make tun3`
 (172.16.1.1/24, 2001:db8:1::1/64) and `make tun5`
-(172.16.2.1/24, 2001:db8:2::1/64) set up the host side, and
-`make run_tun` / `make run_tun5` run the stack on the matching device
-(taking the `.2` host in each subnet). A stack can `init()` with zero
-interfaces and add / remove them at runtime, so any mix of taps and
-tuns can be attached to one running stack.
+(172.16.2.1/24, 2001:db8:2::1/64) set up the host side; run the stack on
+one with `sudo pytcp stack start -i tun3`. A stack can `init()` with
+zero interfaces and add / remove them at runtime, so any mix of taps and
+tuns can be attached to one running stack. (`examples_legacy/stack.py`
+is the in-process equivalent, adding stats / SIGUSR1 interface removal.)
 
 In-process, PyTCP is consumed through the `stack` lifecycle API and the
 `pytcp.runtime.socket` BSD-sockets API; out-of-process, through the
@@ -236,12 +239,12 @@ Python **3.14+**, Linux (TAP/TUN), POSIX.
   mirror, a first-class `daemon` entry point), 3.0.8 adds the two
   user-facing layers on top of that boundary: the **1:1 stdlib-`socket`
   drop-in** (`pytcp.socket`, blocking + non-blocking / asyncio, DNS
-  through the daemon) and the **`pytcp` CLI multitool** (`daemon` /
-  `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` + `ping` /
-  `host` / `nc` / `traceroute`), plus a **loopback interface** (`lo`,
-  127.0.0.0/8 · ::1, own-IP local delivery). The pytcp suite runs
-  ~4,750 unit + integration tests (the full repo suite, across all
-  three packages + examples, is ~13,400). Lint clean (codespell +
+  through the daemon) and the **`pytcp` CLI multitool** (`stack` /
+  `ss` / `link` / `address` / `route` / `neighbor` / `sysctl` + `ping` /
+  `host` / `nc` / `traceroute` / `tcpdump`), plus a **loopback interface**
+  (`lo`, 127.0.0.0/8 · ::1, own-IP local delivery). The pytcp suite runs
+  ~4,800 unit + integration tests (the full repo suite, across all
+  three packages + examples, is ~13,450). Lint clean (codespell +
   isort + black + flake8 + mypy strict + pylint + pyright +
   import-linter).
 - Host-stack feature-complete (North Star Phase 1), reachable

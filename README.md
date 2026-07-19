@@ -20,7 +20,7 @@ The stack covers Ethernet II and IEEE 802.3 framing, ARP, IPv4 and IPv6 (extensi
 
 The project's goal is a pure-Python stack that is feature-equivalent to the Linux kernel network stack. RFC text is the primary authority; where a spec is silent or offers a choice, PyTCP follows Linux. Host-stack parity is the current scope; router-grade forwarding is planned.
 
-Behaviour is covered by roughly 13,400 unit and integration tests and tracked against more than 125 per-RFC adherence audits kept in the repository under `docs/rfc/`.
+Behaviour is covered by roughly 13,450 unit and integration tests and tracked against more than 120 per-RFC adherence audits kept in the repository under `docs/rfc/`.
 
 The stack has zero runtime dependencies (standard library only) and exposes a Berkeley-sockets-style API so it can be used in place of the standard socket layer. It is organised as three independently-published, strictly-layered packages — each usable on its own:
 
@@ -48,9 +48,9 @@ Contributions are welcome.
  - Homegrown high-performance logger (no third-party logging dependency).
  - Berkeley-sockets-style API for TCP / UDP / RAW / `AF_PACKET`: `fileno()`/eventfd + `selectors` integration, blocking & non-blocking modes, errno-mapped `OSError`, `getaddrinfo` family, common `setsockopt` options, `IP_RECVERR`/`MSG_ERRQUEUE` error queue.
  - Runs as a **daemon**: out-of-process clients open real (SCM_RIGHTS-passed) socket fds and drive the control APIs over an AF_UNIX boundary, either through the explicit `pytcp.client` API or a **1:1 stdlib-`socket` drop-in** (`import pytcp.socket as socket`) that runs off-the-shelf blocking and `asyncio` programs unmodified, with DNS resolved through the stack.
- - Single `pytcp` CLI multitool (zero-dependency): `daemon` / `ss` / `link` / `addr` / `route` / `neigh` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute` / `tcpdump` (a daemon-native capture that decodes both ingress and the stack's own egress).
+ - Single `pytcp` CLI multitool (zero-dependency): `stack` / `ss` / `link` / `address` / `route` / `neighbor` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute` / `tcpdump` (a daemon-native capture that decodes both ingress and the stack's own egress).
  - Loopback interface (`lo`): 127.0.0.0/8 · ::1 and own-address local delivery, traffic looping inside the stack with no wire frames.
- - Native `unittest` suite (~13,400 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
+ - Native `unittest` suite (~13,450 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
 
 #### Ethernet
 
@@ -259,8 +259,8 @@ script after install); it defaults the socket to `$XDG_RUNTIME_DIR/pytcp.sock`:
 ```bash
 sudo make bridge && sudo make tap7 && make venv
 sudo PYTHONPATH=. venv/bin/python -m pytcp.daemon --ipc-socket /tmp/pytcp.sock
-# or, with the example runner (adds stats / multi-interface / SIGUSR1):
-make daemon            # examples_legacy/stack.py --ipc-socket /tmp/pytcp.sock
+# or via the CLI (installs as the 'pytcp' / 'pytcpd' console scripts):
+sudo pytcp stack start -i tap7
 ```
 
 Then, from any other process, open a TCP socket *through the daemon* and
@@ -296,8 +296,8 @@ through the daemon's own stack; real stdlib `http.client` and `asyncio`
 servers/clients run over it unchanged. The runnable apps — async FTP,
 TCP/UDP echo, multicast service discovery, ping — live in
 [`examples/`](examples/). And a single **`pytcp` CLI** drives the whole
-thing: `pytcp daemon start/stop/status`, the control-plane introspectors
-`pytcp ss / link / addr / route / neigh / sysctl`, and the network tools
+thing: `pytcp stack start/stop`, the control-plane introspectors
+`pytcp ss / link / address / route / neighbor / sysctl`, and the network tools
 `pytcp ping / host / nc / traceroute`, and `pytcp tcpdump` — a
 daemon-native packet capture that shows both directions (including the
 stack's own replies and stack-internal loopback) and decodes with

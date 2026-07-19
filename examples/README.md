@@ -30,12 +30,13 @@ servers and clients — runs unmodified over PyTCP.
 
 All of these need a **running daemon** that owns the TAP interface. The
 first-class launcher ships in the package; `pytcp stack start`
-autoconfigures via DHCPv4, so either run a DHCP server on the link or boot
-with a static address:
+autoconfigures via DHCPv4, so either run a DHCP server on the link or use
+`python -m pytcp.daemon` to boot with a static address:
 
 ```bash
 sudo make bridge && sudo make tap7 && make venv
-pytcp stack start -i tap7 --ip4-host 192.168.1.77/24     # or: python -m pytcp.daemon
+sudo pytcp stack start -i tap7                                    # autoconfigure (DHCPv4)
+sudo python -m pytcp.daemon -i tap7 --ip4-address 192.168.1.77/24 # or a static address
 ```
 
 The client programs find the daemon through `$PYTCP_DAEMON_SOCKET` (the
@@ -96,7 +97,7 @@ inside the stack over `lo`. The full reproducible recipe is in
   control API demo (`client__tcp_echo_ipc.py`), and the in-process service
   programs the `tools/capture` live-demo harness drives.
 - **The `pytcp` CLI** — `pytcp ping / host / nc / traceroute / tcpdump` are
-  batteries-included tools over the same daemon; `pytcp ss / link / addr /
-  route / neigh / sysctl` introspect and drive the control plane.
+  batteries-included tools over the same daemon; `pytcp ss / link / address
+  / route / neighbor / sysctl` introspect and drive the control plane.
 - The main [`README.md`](../README.md) — live wire captures of the stack in
   action (SLAAC + DAD, ARP ACD, TCP under packet loss, IP fragmentation).
