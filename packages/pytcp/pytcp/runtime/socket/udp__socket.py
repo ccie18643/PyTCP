@@ -955,6 +955,21 @@ class UdpSocket(socket):
         with self._lock__io:
             if self._closed:
                 return
+            # SO_RCVBUF enforcement (Linux 'sk_rcvqueues_full' /
+            # '__sock_queue_rcv_skb'): once the operator sets a receive-
+            # buffer cap, drop an inbound datagram whose payload would
+            # push the queued bytes past it. Unset ('None') stays
+            # unbounded, so existing workloads are unaffected. The cap is
+            # measured against summed payload bytes (the Linux 'truesize'
+            # skb-overhead accounting is not modelled).
+            if self._so_rcvbuf is not None:
+                queued = sum(len(md.udp__data) for md in self._packet_rx_md)
+                if queued + len(packet_rx_md.udp__data) > self._so_rcvbuf:
+                    __debug__ and log(
+                        "socket",
+                        f"<B><g>[{self}]</> - Dropped datagram: SO_RCVBUF cap " f"{self._so_rcvbuf} exceeded",
+                    )
+                    return
             self._packet_rx_md.append(packet_rx_md)
             self._packet_rx_md_ready.release()
         self._signal_readable()

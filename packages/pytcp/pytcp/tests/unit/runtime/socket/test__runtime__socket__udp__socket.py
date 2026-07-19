@@ -780,6 +780,65 @@ class TestUdpSocketReceive(_UdpSocketTestCase):
             msg="process_udp_packet must enqueue exactly one metadata entry.",
         )
 
+    def test__udp_socket__so_rcvbuf_drops_datagram_over_cap(self) -> None:
+        """
+        Ensure that once 'SO_RCVBUF' is set, an inbound datagram whose
+        payload would push the queued receive bytes past the cap is
+        dropped rather than enqueued, mirroring the Linux receive-buffer
+        overflow drop.
+
+        Reference: RFC 1122 §4.2.2.16 (receive-buffer bound).
+        """
+
+        s = UdpSocket(family=AddressFamily.INET4)
+        # Cap admits two 7-byte payloads (14) but not a third (21 > 20).
+        s.setsockopt(SOL_SOCKET, SO_RCVBUF, 20)
+        s.process_udp_packet(self._make_md())
+        s.process_udp_packet(self._make_md())
+        s.process_udp_packet(self._make_md())
+        self.assertEqual(
+            len(s._packet_rx_md),
+            2,
+            msg="A datagram over the SO_RCVBUF cap must be dropped, not enqueued.",
+        )
+
+    def test__udp_socket__so_rcvbuf_admits_up_to_cap(self) -> None:
+        """
+        Ensure datagrams whose cumulative payload stays within the
+        'SO_RCVBUF' cap are all admitted (the cap bounds, it does not
+        reject at-or-below the limit).
+
+        Reference: RFC 1122 §4.2.2.16 (receive-buffer bound).
+        """
+
+        s = UdpSocket(family=AddressFamily.INET4)
+        s.setsockopt(SOL_SOCKET, SO_RCVBUF, 14)
+        s.process_udp_packet(self._make_md())
+        s.process_udp_packet(self._make_md())
+        self.assertEqual(
+            len(s._packet_rx_md),
+            2,
+            msg="Datagrams within the SO_RCVBUF cap must all be admitted.",
+        )
+
+    def test__udp_socket__so_rcvbuf_unset_is_unbounded(self) -> None:
+        """
+        Ensure that with 'SO_RCVBUF' unset the receive queue is
+        unbounded (no default cap), so setting the option is what makes
+        it bite — existing workloads are unaffected.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        s = UdpSocket(family=AddressFamily.INET4)
+        for _ in range(50):
+            s.process_udp_packet(self._make_md())
+        self.assertEqual(
+            len(s._packet_rx_md),
+            50,
+            msg="With SO_RCVBUF unset every datagram must be enqueued.",
+        )
+
     def test__udp_socket__recv_returns_payload(self) -> None:
         """
         Ensure recv() dequeues a single queued packet and returns its
