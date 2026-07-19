@@ -1,0 +1,84 @@
+# Changelog
+
+All notable changes to **PyTCP** are recorded here. This package (the
+running stack, daemon, socket surfaces, and `pytcp` CLI) is released in
+lockstep with `PyTCP-net_proto` and `PyTCP-net_addr` — they share a
+version. Releases before 3.0.8 are on the
+[GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
+
+## 3.0.8 — 2026-07-19
+
+The daemon-backed userspace. 3.0.7 split the stack into a daemon that
+owns the interface and a thin client boundary; 3.0.8 builds the
+user-facing layers on top: off-the-shelf Python network programs run
+**unmodified** against a running daemon through a 1:1 stdlib-`socket`
+drop-in, a full `pytcp` CLI multitool operates the stack, and a
+stack-internal loopback interface lets one daemon talk to itself.
+
+> **Daemon mode is now the official, supported way to run the stack.**
+> Boot it with `sudo pytcp stack start -i tap7` (autoconfigures via
+> DHCPv4) or `python -m pytcp.daemon` for a static address. In-process
+> embedding still works but is explicitly unsupported.
+
+### Added
+
+- **Drop-in stdlib-`socket` replacement.** `from pytcp import socket`
+  returns real, `selectors`-pollable descriptors backed by the daemon
+  over its AF_UNIX control boundary. Blocking programs and `asyncio`
+  servers/clients run unchanged — including non-blocking
+  `connect` / `accept`, `getpeername` / `ENOTCONN` parity, `SO_ERROR`,
+  honored `SO_RCVBUF`, `sendmsg` with `IP_TOS` / `IPV6_TCLASS` cmsg,
+  and survival across a `sys.modules['socket']` swap.
+- **`pytcp` CLI multitool** — one command over the daemon: `ping`,
+  `host` (DNS lookup), `nc` (netcat), `traceroute` (UDP default, `-I`
+  for ICMP), and `tcpdump`, plus `ss`, `link`, `address`, `route`,
+  `neighbor`, and `sysctl` to introspect and drive the control plane.
+  `stack start` / `stack stop` manage the daemon lifecycle;
+  `python -m pytcp` runs the package directly.
+- **Loopback interface** — a real `lo` inside the stack: locally
+  destined IP TX is diverted onto a loopback ring and delivered back
+  up, so a server and client sharing one daemon can talk over
+  `127.0.0.1` / `::1` / their own address, end to end (including TCP).
+- **Unprivileged ICMP-Echo (ping) socket** —
+  `socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP)` (the Linux `ping`
+  datagram-socket model) with a raw-socket fallback, wired through the
+  daemon, the drop-in, the in-process factory, and the `pytcp ping`
+  engine.
+- **Raw-socket Linux parity** — `SOCK_RAW` over the drop-in; IPv4 raw
+  recv delivers the full IP packet; unbound raw RX receives a copy of
+  all matching traffic; TTL / Hop-Limit delivered as cmsg; the
+  mandatory ICMPv6 checksum auto-computed; egress-aware source
+  selection for multi-homed hosts.
+- **AF_PACKET egress tap + `pytcp tcpdump`** — an `AF_PACKET`-style
+  egress tap (`dev_queue_xmit_nit` parity) captures outbound frames,
+  including the ARP/ND queued-packet flush path and loopback traffic.
+  `pytcp tcpdump` captures both directions daemon-native, decodes via
+  **tshark** when available (built-in fallback for ICMPv4/v6 and IPv4
+  fragments), and the daemon can capture **from boot** (`--capture` /
+  `--capture-pcap`) to record its own autoconfiguration.
+
+### Changed
+
+- Examples reworked around the daemon (async TCP/UDP echo, FTP,
+  multicast service discovery, ping) over the drop-in. The pre-3.0.7
+  in-process `examples_legacy/` tree was removed; the README now leads
+  with a daemon-first Quickstart.
+
+### Fixed
+
+- DHCPv4 client INIT / mid-recv paths are now responsive to `stop()`
+  (no more wedged `pytcp stack start`).
+- `pytcp ping` fails cleanly when the daemon is down.
+- Graceful CRITICAL exit when an interface cannot be opened.
+
+### Tooling
+
+- `make lint` gate expanded: pyright gated, import-linter architectural
+  contracts, 8 more mypy strict error codes, and a large pylint
+  regression-guard allowlist; TYPE_CHECKING / circular-import cruft
+  flattened via a Protocol-seam pattern.
+
+### Compatibility
+
+Requires Python 3.14+. Depends on `PyTCP-net_proto==3.0.8` and
+`PyTCP-net_addr==3.0.8` (released in lockstep).

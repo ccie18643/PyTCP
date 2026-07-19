@@ -126,6 +126,10 @@ modern typing throughout).
   CLOSED; follow-up audits A–L are complete (see
   `docs/refactor/net_proto_remaining_audits.md`).
 
+## Changelog
+
+See [`CHANGELOG.md`](https://github.com/ccie18643/PyTCP/blob/master/packages/net_proto/CHANGELOG.md).
+
 ## License
 
 GPL-3.0-or-later. Part of the PyTCP project by Sebastian Majewski.

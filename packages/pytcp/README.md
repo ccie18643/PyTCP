@@ -252,6 +252,10 @@ Python **3.14+**, Linux (TAP/TUN), POSIX.
   [`.claude/rules/pytcp.md`](https://github.com/ccie18643/PyTCP/blob/master/.claude/rules/pytcp.md); per-RFC
   adherence in [`docs/rfc/`](https://github.com/ccie18643/PyTCP/tree/master/docs/rfc).
 
+## Changelog
+
+See [`CHANGELOG.md`](https://github.com/ccie18643/PyTCP/blob/master/packages/pytcp/CHANGELOG.md).
+
 ## License
 
 GPL-3.0-or-later. PyTCP by Sebastian Majewski.

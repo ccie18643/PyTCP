@@ -793,3 +793,13 @@ annotations make the recovery legible), rebased to the SYN:
 `--expect-client` assertions are global options that go before
 *any* scenario, so any capture can be turned into a loss /
 latency e2e check.
+
+### Changelog
+
+Each published package keeps its own changelog, so a consumer of one
+dist sees only that dist's changes:
+[PyTCP](https://github.com/ccie18643/PyTCP/blob/master/packages/pytcp/CHANGELOG.md) ·
+[PyTCP-net_proto](https://github.com/ccie18643/PyTCP/blob/master/packages/net_proto/CHANGELOG.md) ·
+[PyTCP-net_addr](https://github.com/ccie18643/PyTCP/blob/master/packages/net_addr/CHANGELOG.md).
+Tagged releases (one per package) are on the
+[GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
