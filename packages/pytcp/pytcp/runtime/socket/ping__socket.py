@@ -63,6 +63,7 @@ from pytcp.runtime.socket import (
     IPPROTO_IPV6,
     IPV6_HOPLIMIT,
     IPV6_RECVHOPLIMIT,
+    SOL_SOCKET,
     AddressFamily,
     SocketType,
     gaierror,
@@ -228,6 +229,8 @@ class PingSocket(socket):
         if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
             self._recv_ttl = bool(value)
             return
+        if isinstance(value, int) and level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
+            return
 
     @override
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
@@ -388,6 +391,19 @@ class PingSocket(socket):
         with self._lock__io:
             if self._closed:
                 return
+            # SO_RCVBUF enforcement (Linux 'sk_rcvqueues_full'): once the
+            # operator sets a receive-buffer cap, drop an inbound reply
+            # whose message would push the queued bytes past it. Unset
+            # ('None') stays unbounded. Measured against summed message
+            # bytes (the Linux 'truesize' overhead is not modelled).
+            if self._so_rcvbuf is not None:
+                queued = sum(len(md.icmp__data) for md in self._packet_rx_md)
+                if queued + len(packet_rx_md.icmp__data) > self._so_rcvbuf:
+                    __debug__ and log(
+                        "socket",
+                        f"<g>[{self}]</> - Dropped reply: SO_RCVBUF cap {self._so_rcvbuf} exceeded",
+                    )
+                    return
             self._packet_rx_md.append(packet_rx_md)
             self._packet_rx_md_ready.release()
         self._signal_readable()

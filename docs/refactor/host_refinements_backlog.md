@@ -25,6 +25,12 @@ until the user says "push".
 - [x] **RAW `SO_RCVBUF` enforcement** — commit `a0140806`. Same guard in
   `process_raw_packet` (`raw__data`). 2 unit tests in
   `test__runtime__socket__raw__socket.py::TestRawSocketRcvbuf`.
+- [x] **Ping `SO_RCVBUF` enforcement (R1)** — `PingSocket.setsockopt` now
+  routes `SOL_SOCKET` options to the base `_sol_socket_setsockopt`, and
+  `process_echo_reply` enforces the same guard (`icmp__data`). New unit-test
+  file `test__runtime__socket__ping__socket.py::TestPingSocketRcvbuf`
+  (setsockopt-sets-cap + over-cap-drop + unset-unbounded). Closes the
+  SO_RCVBUF symmetry across all three datagram sockets.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -49,29 +55,7 @@ self._signal_readable()
 
 ## Remaining items
 
-### R1 — Ping socket `SO_RCVBUF` (small, has a prerequisite)
-
-- **Why deferred:** `PingSocket.setsockopt` (runtime/socket/ping__socket.py
-  ~222) only handles `IP_RECVTTL` / `IPV6_RECVHOPLIMIT` — it does **not**
-  route `SO_RCVBUF` to the base `_sol_socket_setsockopt`, so enforcing the
-  guard in `process_echo_reply` would be dead code (`_so_rcvbuf` stays
-  `None`).
-- **Scope:** (1) add SOL_SOCKET routing to `PingSocket.setsockopt` (mirror
-  udp/raw: `if isinstance(value, int) and level == SOL_SOCKET and
-  self._sol_socket_setsockopt(optname, value): return`); (2) add the
-  SO_RCVBUF guard to `process_echo_reply` (~381, data attr `icmp__data`).
-- **Tests-first:** there is **no** ping-socket unit test today. Create
-  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__ping__socket.py`
-  with a lean fixture: patch `pytcp.runtime.socket.ping__socket.log` and
-  `...ping__socket.stack.icmp_echo_sockets` to a fresh `dict` (the only two
-  module deps — `_allocate_echo_id` reads the dict). Construct
-  `PingSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)`,
-  `addCleanup(s.close)`. `PingMetadata` fields: `ip__ver`,
-  `ip__remote_address`, `ip__ttl`, `icmp__data`. Red tests: over-cap drop
-  + unset-unbounded (mirror the RAW tests). Also a test that
-  `setsockopt(SOL_SOCKET, SO_RCVBUF, n)` now actually sets `_so_rcvbuf`.
-- **Effort:** ~1 hr. **Risk:** low. **Value:** low (ping is one reply per
-  request), but closes the SO_RCVBUF symmetry.
+### R1 — Ping socket `SO_RCVBUF` — SHIPPED (see "Shipped" above)
 
 ### R2 — `setsockopt`-honored + errno-exactness sweep (medium, incremental)
 
@@ -269,7 +253,7 @@ so this backlog's boundary is explicit.
 
 ## Recommended ordering
 
-1. **R1** (ping SO_RCVBUF) — finishes the SO_RCVBUF symmetry cleanly.
+1. ~~**R1** (ping SO_RCVBUF)~~ — SHIPPED; the SO_RCVBUF symmetry is closed.
 2. Small self-contained wins, any order: **R5** (CLI JSON), **R10** (mld
    knob + suppression), **R11** (RFC 6724 policy table), or dip into **R2**
    (setsockopt sweep).
