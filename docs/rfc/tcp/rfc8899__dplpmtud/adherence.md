@@ -400,8 +400,8 @@ The shipped surface is locked in by:
   (5 tests) — pins TcpSession adapter wiring + classical
   PMTU route + snd.una advance hook.
 
-**Status:** locked in for ack/loss feedback paths; probe-
-emit path deferred to Phase 3c.
+**Status:** locked in — ack/loss feedback paths plus the TCP
+probe-emit path (`test__tcp__session__plpmtud_probe_emit.py`).
 
 ### §7 black-hole detection
 
@@ -414,12 +414,21 @@ emit path deferred to Phase 3c.
 
 **Status:** locked in.
 
-### §3 #7 cwnd-exempt probes — Phase 3c gap
+### §4.1 TCP probe-packet generation — locked in (Phase 3c-min)
 
-**No test surface — TCP probe-emit path not yet shipped.**
-The adapter's `in_flight_probe_sizes` snapshot is in place
-for the consumer; the natural future test name is
-`test__tcp__plpmtud__bytes_in_flight_excludes_probe_segment`.
+The TcpSession TX-path emits probe-sized data segments when
+`tcp.mtu_probing=2` is set, covered by
+`test__tcp__session__plpmtud_probe_emit.py` (see the RFC 4821
+record for the per-test breakdown).
+
+### §3 #7 cwnd-exempt probes — Linux-pragmatic deviation
+
+**Not implemented, by design.** PyTCP follows Linux
+`tcp_mtu_probing`, which does not exclude probe segments from
+cwnd — so there is no cwnd-exemption behaviour to test. The
+adapter's `in_flight_probe_sizes` snapshot remains available
+for a future consumer that wants strict RFC 8899 §3 #7
+accounting.
 
 ### Test coverage summary
 
@@ -428,9 +437,9 @@ for the consumer; the natural future test name is
 | §3 #5 Local-link MTU / max-size hint                | locked in                 |
 | §3 #6 PTB validation                                | locked in                 |
 | §3 #9 Per-destination shared state                  | locked in                 |
-| §3 #7 Probe-cwnd exemption                          | n/a (Phase 3c gap)        |
+| §3 #7 Probe-cwnd exemption                          | n/a (Linux-pragmatic deviation — probes share cwnd) |
 | §4.1 Probe-packet generation (UDP)                  | locked in                 |
-| §4.1 Probe-packet generation (TCP)                  | n/a (Phase 3c gap)        |
+| §4.1 Probe-packet generation (TCP)                  | locked in (`test__tcp__session__plpmtud_probe_emit`) |
 | §4.3 Unsupported-PLPMTU detection                   | locked in                 |
 | §4.6.4 BASE_PLPMTU floor                            | locked in                 |
 | §5.1.1 Timer machinery                              | locked in                 |

@@ -336,22 +336,29 @@ The shipped surface is locked in by:
 
 **Status:** locked in.
 
-### §7.4 probe-cwnd-exempt accounting + §7.5 probe-segment emit
+### §7.5 probe-segment emit (TCP)
 
-**No test surface — Phase 3c gap.** The TCP TX-path
-probe-emit + the cwnd-exempt accounting + the probe-only
-RTO are deferred to a focused follow-on commit. The
-adapter's `in_flight_probe_sizes` snapshot is in place for
-the consumer; the missing piece is the TcpSession TX-path
-hook that pads data segments to `candidate_mtu`. When
-Phase 3c lands, the natural tests are:
+**Locked in (Phase 3c-min).** The TcpSession TX-path
+probe-emit hook (`session/tcp__session__tx.py`) sizes the
+next data segment to `probe_payload` when
+`probe_payload > snd_mss`, enough data is buffered, and the
+operator has enabled probing (`tcp.mtu_probing=2`). Covered
+by the integration test
+`test__tcp__session__plpmtud_probe_emit.py`:
 
-- `test__tcp__plpmtud__established_probe_emitted_after_timer`
-- `test__tcp__plpmtud__probe_segment_size_matches_candidate`
-- `test__tcp__plpmtud__bytes_in_flight_excludes_probe_segment`
-- `test__tcp__plpmtud__probe_seq_is_snd_nxt_minus_one`
-- `test__tcp__plpmtud__data_rto_does_not_feed_probe_loss`
-- `test__tcp__plpmtud__search_complete_raise_timer_reprobes`
+- `test__tcp__plpmtud__probe_emit__fires_when_candidate_exceeds_snd_mss`
+  — the emitted data segment carries the probe-sized payload.
+- `test__tcp__plpmtud__probe_emit__records_in_flight`
+- `test__tcp__plpmtud__probe_emit__no_emit_when_insufficient_data`
+- `test__tcp__plpmtud__probe_emit__ack_transitions_engine`
+
+Still deferred (deliberate deviations, not gaps): §7.4
+cwnd-exempt accounting and the §7.5 probe-only RTO are
+**Linux-pragmatic deviations** (Linux probes share cwnd and
+use the regular RTO for probe-loss detection); the
+DF-guarded probe (§3 #2 in the RFC 8899 record) is the
+remaining Phase-3c piece — the current path emits
+probe-sized segments without setting DF.
 
 ### Test coverage summary
 
@@ -360,8 +367,8 @@ Phase 3c lands, the natural tests are:
 | §5.2 per-destination MTU cache + state              | locked in                      |
 | §7.1 search_low/high/eff_pmtu state machine         | locked in                      |
 | §7.3 binary-search probe size                       | locked in (engine unit tests)  |
-| §7.4 cwnd-exempt probes                             | n/a (Phase 3c gap)             |
-| §7.5 probe-segment emit (TCP)                       | n/a (Phase 3c gap)             |
+| §7.4 cwnd-exempt probes                             | n/a (Linux-pragmatic deviation — probes share cwnd) |
+| §7.5 probe-segment emit (TCP)                       | locked in (`test__tcp__session__plpmtud_probe_emit`) |
 | §7.5 probe-segment emit (UDP manual)                | locked in                      |
 | §7.6 probe-result feedback to engine                | locked in                      |
 | §7.7 full-stop timeout / black-hole clamp           | locked in                      |
