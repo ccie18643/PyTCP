@@ -2,7 +2,7 @@
 
 | Field             | Value                                                                                                                                                 |
 |-------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Status            | **In progress** — planned 2026-06-30, phased P0→P6                                                                                                     |
+| Status            | **SHIPPED** on `PyTCP_3_0_8` — all phases P0→P6 landed (`9efd9f7d` P0 InterfaceLayer.LOOPBACK + LinkFlag, `b3890ea8` P1 PacketHandlerLoopback + LoopbackRing, `b4d26586` P2+P3 lifecycle + harness, `6e30832b` P4 divert local IP TX onto the loopback ring, `5f335f7c` P5 accept local delivery of loopback + own-IP on `lo`, `f7e40612` P6 end-to-end TCP over loopback + own-IP). |
 | Target branch     | `PyTCP_3_0_8`                                                                                                                                          |
 | Linux analogue    | The `lo` loopback device — owns `127.0.0.0/8` + `::1`; any packet destined to a *local* address is delivered internally, never on the wire            |
 | Motivation        | PyTCP has no intra-stack loopback: `connect(("127.0.0.1", port))` / `connect((own-ip, port))` hangs (SYN goes to the wire; nothing loops it back)      |

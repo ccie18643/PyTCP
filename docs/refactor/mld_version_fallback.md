@@ -29,7 +29,7 @@ exist):
   (24) vs MLDv2 (≥28) per RFC 3810 §8.1; 131/132 wired.
 - 14 unit tests.
 
-## 2. Phase 2 — the compat-mode state machine (PLANNED)
+## 2. Phase 2 — the compat-mode state machine (SHIPPED)
 
 The IGMP §7 mirror, on top of the codec. **Must land as one cohesive
 commit** (state + RX + TX report-form selection + Done) — a

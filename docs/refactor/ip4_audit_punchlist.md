@@ -67,7 +67,7 @@ inventory.
 | # | Item | RFC | Effort | Notes |
 |---|------|-----|--------|-------|
 | ~~D~~ | ~~**IPv4 link-local autoconfig**~~ | ~~3927~~ | ~~2-4 days~~ | **SHIPPED** — phases 0 / 0.5 / 1 / 2 / 3 / 4 / 5 of the RFC 3927 track. **Reconciled 2026-05-30:** the end-state ACD does NOT run through a sanctioned `Ip4AddressApi` claim/retry surface — it runs in userspace over per-address `Ip4Acd` AF_PACKET sockets (`protocols/ip4/acd/ip4_acd.py`); the link-local client calls `Ip4Acd.claim` / `Ip4Acd.poll_conflict` directly (cross-ref `rfc3927_link_local_autoconfig.md`, `raw_link_socket.md`). Otherwise: subsystem skeleton + MAC-seeded RNG; claim + retry + rate-limit; §2.5 defend / abandon; §1.9 / §2.11 DHCP coordination; stack-side wiring. Plan doc: `docs/refactor/rfc3927_link_local_autoconfig.md`. Adherence record: `docs/rfc/ip4/rfc3927__ip4_link_local/adherence.md` (every §-section met). |
-| E | Multicast group membership API + IGMPv2/v3 | 1112 / 2236 / 3376 | Multi-day | All-hosts (224.0.0.1) preconfigured today; runtime JOIN/LEAVE / Reports / Queries deferred. |
+| ~~E~~ | ~~**Multicast group membership API + IGMPv2/v3**~~ | ~~1112 / 2236 / 3376~~ | ~~Multi-day~~ | **SHIPPED.** IPv4 multicast group membership (RFC 1112 Level 2) — runtime `IP_ADD_MEMBERSHIP` / `IP_DROP_MEMBERSHIP`, membership refcount, per-socket source filters (`IP_ADD/DROP_SOURCE_MEMBERSHIP`, `IP_BLOCK/UNBLOCK_SOURCE`), Reports, Group-Specific Queries, RFC 3376 §7 v1/v2 querier-version fallback, and graceful Leave on stack.stop(). See `docs/refactor/igmp_refinements.md`, `igmp_version_fallback.md`, `igmp_source_specific_multicast.md`. Deferred (Phase-2 router only): IGMPv3 router/querier role. |
 | ~~F~~ | ~~IPv6 audit set parity sweep~~ | ~~—~~ | ~~1-2 days~~ | **SHIPPED 2026-05-29.** Comparative IPv4↔IPv6 audit-set diff found the IPv6 data plane already well-implemented; the asymmetry was in the audit records, not the code. 1 code fix + 4 doc items: RFC 8200 §4.2 action-11 multicast suppression + RFC 4443 §2.4(e.3) code-2 exception (`5727911e`); new ip6 RFC 3168 (ECN) + RFC 2474 (DSCP) records + rfc8504 §5.12 flip (`c8effda6`); new ip6 RFC 2711 (Router Alert) record (`4c816c38`). Plan + findings: `docs/refactor/ipv6_audit_parity.md`. |
 
 ### Phase-2 items (project north-star — deferred until forwarding plane)
@@ -130,7 +130,7 @@ the Address API is the family-agnostic `AddressApi`, not
 | Address API       | shipped — `pytcp.stack.address` / `AddressApi` (family-agnostic: `add`/`remove`/`replace`/`list_ifaddrs`) |
 | Route API         | **shipped** — host-mode FIB + `RouteApi` (`stack/route.py` + `runtime/fib.py`)               |
 | Neighbor API      | **shipped** — `NeighborApi` (`stack/neighbor.py`)                                            |
-| Introspection API | partially shipped — `LinkApi.stats` covers per-interface counters; route table / neighbor cache / socket list introspection deferred |
+| Introspection API | **shipped** — `LinkApi.stats` covers per-interface counters, and route-table / neighbor-cache / socket-list introspection landed with the daemon CLI (`pytcp ss` / `route` / `neighbor`, reading read-only snapshots of the FIB, neighbor caches, and socket list) |
 
 ### IPv4 #5 scope gate (closed)
 
@@ -145,17 +145,12 @@ landed in Phases 1-5 alongside. The symmetric IPv6 gate (RFC
 
 ## Recommended next-track sequencing
 
-The Phase-1 small-win track (items A + B + C) and big-feature
-track (item D — RFC 3927 link-local autoconfig) are both
-closed. Remaining tracks, in rough order of impact:
-
-1. **Audit-set parity:** item F (sweep IPv6 audits for
-   symmetric gaps). Likely surfaces 3-5 Phase-1 items
-   worth shipping symmetrically. 1-2 days.
-
-2. **Multicast group membership API + IGMP:** item E.
-   Multi-day; needs a public socket-level API surface
-   coordinated with the socket parity track.
+All Phase-1 items on this punch list have since closed: the
+small-win track (A + B + C), the big-feature track (item D —
+RFC 3927 link-local autoconfig), item E (multicast group
+membership + IGMP), and item F (IPv6 audit-set parity). The
+only remaining items are the Phase-2 forwarding-plane entries
+below.
 
 ## Cross-references
 
