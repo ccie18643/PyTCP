@@ -1,0 +1,290 @@
+# Host-stack refinements backlog (post-3.0.8 optional items)
+
+| Field      | Value                                                                 |
+|------------|-----------------------------------------------------------------------|
+| Status     | **IN PROGRESS** — 2 of N shipped. Opened 2026-07-19 on `PyTCP_3_0_8`. |
+| Branch     | `PyTCP_3_0_8`                                                          |
+| Scope      | Optional host-scope refinements deferred out of the 3.0.8 cut. **None are host-conformance gaps** — 3.0.8 is host-feature-complete. These are polish / Linux-parity completeness. |
+| Rule       | Every item is **tests-first (red tests before implementation)**, `make lint` clean, adherence + docs in lockstep. See `.claude/rules/feature_implementation.md`. |
+
+This is the working backlog for the "do refinements one by one" track.
+Items are ordered by ascending prerequisite-weight, not value. Pick the
+next unchecked item, write the failing test(s) first, implement the
+minimal change, verify, commit (one concern per commit), hold pushes
+until the user says "push".
+
+---
+
+## Shipped (this track)
+
+- [x] **UDP `SO_RCVBUF` enforcement** — commit `d51abda9`. `process_udp_packet`
+  drops an inbound datagram whose payload would push the queued receive
+  bytes past the cap (Linux `sk_rcvqueues_full`), enforced only when
+  `SO_RCVBUF` is set; unset stays unbounded. 3 unit tests in
+  `test__runtime__socket__udp__socket.py::TestUdpSocketReceive`.
+- [x] **RAW `SO_RCVBUF` enforcement** — commit `a0140806`. Same guard in
+  `process_raw_packet` (`raw__data`). 2 unit tests in
+  `test__runtime__socket__raw__socket.py::TestRawSocketRcvbuf`.
+
+**The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
+
+```python
+with self._lock__io:
+    if self._closed:
+        return
+    if self._so_rcvbuf is not None:
+        queued = sum(len(md.<data_attr>) for md in self._packet_rx_md)
+        if queued + len(packet_rx_md.<data_attr>) > self._so_rcvbuf:
+            __debug__ and log("socket", f"...Dropped: SO_RCVBUF {self._so_rcvbuf} exceeded")
+            return
+    self._packet_rx_md.append(packet_rx_md)
+    self._packet_rx_md_ready.release()
+self._signal_readable()
+```
+
+`_so_rcvbuf` lives on the base `socket` (runtime/socket/__init__.py, set by
+`_sol_socket_setsockopt`). Enforce-only-when-set = zero regression risk.
+
+---
+
+## Remaining items
+
+### R1 — Ping socket `SO_RCVBUF` (small, has a prerequisite)
+
+- **Why deferred:** `PingSocket.setsockopt` (runtime/socket/ping__socket.py
+  ~222) only handles `IP_RECVTTL` / `IPV6_RECVHOPLIMIT` — it does **not**
+  route `SO_RCVBUF` to the base `_sol_socket_setsockopt`, so enforcing the
+  guard in `process_echo_reply` would be dead code (`_so_rcvbuf` stays
+  `None`).
+- **Scope:** (1) add SOL_SOCKET routing to `PingSocket.setsockopt` (mirror
+  udp/raw: `if isinstance(value, int) and level == SOL_SOCKET and
+  self._sol_socket_setsockopt(optname, value): return`); (2) add the
+  SO_RCVBUF guard to `process_echo_reply` (~381, data attr `icmp__data`).
+- **Tests-first:** there is **no** ping-socket unit test today. Create
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__ping__socket.py`
+  with a lean fixture: patch `pytcp.runtime.socket.ping__socket.log` and
+  `...ping__socket.stack.icmp_echo_sockets` to a fresh `dict` (the only two
+  module deps — `_allocate_echo_id` reads the dict). Construct
+  `PingSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)`,
+  `addCleanup(s.close)`. `PingMetadata` fields: `ip__ver`,
+  `ip__remote_address`, `ip__ttl`, `icmp__data`. Red tests: over-cap drop
+  + unset-unbounded (mirror the RAW tests). Also a test that
+  `setsockopt(SOL_SOCKET, SO_RCVBUF, n)` now actually sets `_so_rcvbuf`.
+- **Effort:** ~1 hr. **Risk:** low. **Value:** low (ping is one reply per
+  request), but closes the SO_RCVBUF symmetry.
+
+### R2 — `setsockopt`-honored + errno-exactness sweep (medium, incremental)
+
+- **Why:** several options are accepted-and-stored but not enforced, and
+  some error paths don't match Linux errno exactly. This is the "make every
+  setsockopt actually bite" item.
+- **Approach:** audit each `case` in the setsockopt handlers in
+  `runtime/socket/__init__.py` (`_sol_socket_setsockopt`,
+  `_ipproto_ip_setsockopt`, `_ipproto_ipv6_setsockopt`) plus the per-flavour
+  overrides (udp/raw/ping). For each option ask: is it read anywhere? If
+  stored-only, either wire it or document why it's inert. Also verify
+  `ENOPROTOOPT` / `EINVAL` / `ENOTCONN` are raised where Linux raises them.
+- **Tests-first:** one red test per option-that-should-bite-but-doesn't,
+  asserting the behavioural effect (not just the stored value). This is a
+  series of small red-tests-first commits — good "one by one" cadence.
+- **Known members of this bucket:** `SO_SNDBUF` (see R3), `SO_SNDTIMEO`
+  (see R3), `X3` listen()-on-unbound → `EINVAL` (breaks examples; land as
+  an explicit breaking-change commit + update `examples/`).
+- **Effort:** open-ended (do a few per session). **Risk:** low per fix.
+
+### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
+
+- **Why deferred:** UDP `send` hands the datagram straight to the shared TX
+  ring (`send_udp_packet`), with **no per-socket send buffer**. Linux
+  `SO_SNDBUF` bounds `sk_wmem_alloc`; PyTCP has no such accounting.
+- **Scope:** build a per-socket outstanding-send-bytes counter
+  (increment on enqueue-to-TX, decrement on TX completion — needs a
+  completion signal from the TX ring the socket can observe), bound it by
+  `_so_sndbuf`, and on overflow either `EAGAIN` (non-blocking) or
+  block up to `SO_SNDTIMEO`. `SO_SNDTIMEO` is only meaningful once this
+  exists — do them together.
+- **Tests-first:** red tests for over-SO_SNDBUF → EAGAIN, and blocking →
+  timeout after SO_SNDTIMEO.
+- **Effort:** medium-large (the TX-completion signal is the hard part).
+  **Risk:** medium (touches the TX path). **Prereq:** understand how the
+  TX ring signals completion; there may be no per-datagram completion today.
+
+### R4 — IPv6 per-socket source filters = MLDv2 SSM track (large, highest value)
+
+- **Why:** IPv6 has only any-source `IPV6_JOIN_GROUP` / `IPV6_LEAVE_GROUP`
+  (handled at runtime/socket/__init__.py ~1029). IPv4 has the full
+  source-specific set. This is the **IPv6 analogue of the shipped IGMPv3
+  SSM feature** — see `docs/refactor/igmp_source_specific_multicast.md`
+  (Phases 1–5) as the exact template.
+- **The IPv4 machinery to mirror:**
+  - `packages/pytcp/pytcp/lib/ip4_multicast_filter.py` —
+    `Ip4MulticastFilter` (INCLUDE/EXCLUDE mode + source set + `merge`).
+  - `_ip4_multicast_filters: dict[Ip4Address, Ip4MulticastFilter]` on the
+    packet handler (runtime/packet_handler/__init__.py ~324); the merged
+    §3.2 reception filter via `_ip4_multicast_filter_for`.
+  - setsockopt opts at runtime/socket/__init__.py ~783–957:
+    `IP_ADD_SOURCE_MEMBERSHIP` / `IP_DROP_SOURCE_MEMBERSHIP` /
+    `IP_BLOCK_SOURCE` / `IP_UNBLOCK_SOURCE`.
+  - IGMPv3 state-change source records (ALLOW_NEW_SOURCES /
+    BLOCK_OLD_SOURCES / the CHANGE_TO_* forms) in the IGMP TX handler.
+  - RX source-delivery filter `ip_mc_sf_allow` (`Ip4MulticastFilter.allows`)
+    gating per-socket delivery for **UDP and RAW** (RAW needed the
+    `RawMetadata.socket_ids` wildcard-combo enumeration — mirror for v6).
+- **The IPv6 side to build (Phases mirroring the IGMP track):**
+  - P1: `packages/pytcp/pytcp/lib/ip6_multicast_filter.py` (`Ip6MulticastFilter`,
+    a straight `Ip6Address` copy of the v4 value type). Unit tests.
+  - P2: new opts `IPV6_ADD_SOURCE_MEMBERSHIP` / `IPV6_DROP_SOURCE_MEMBERSHIP`
+    (and/or the protocol-independent `MCAST_JOIN_SOURCE_GROUP` family) as
+    `IpV6Option` enum members + bare aliases (see `.claude/rules/enums.md`
+    §2.2). Wire the setsockopt cases.
+  - P3: `_ip6_multicast_filters` dict on the handler + `_ip6_multicast_filter_for`.
+  - P4: MLDv2 source records on TX — `Icmp6Mld2MulticastAddressRecordType`
+    already has `ALLOW_NEW_SOURCES` (5) / `BLOCK_OLD_SOURCES` (6) /
+    `CHANGE_TO_INCLUDE` (3) / `CHANGE_TO_EXCLUDE` (4). Emit the state-change
+    source records on filter transitions (mirror `_send_igmp_state_change`;
+    the MLDv2 leave path added in `de3d3213` is the sibling to extend).
+  - P5: RX source-delivery filter for IPv6 UDP + RAW (`Ip6MulticastFilter.allows`).
+  - Adherence: update `docs/rfc/icmp6/rfc3810__mld2/adherence.md` (§4.2.12 /
+    §5.1 / §5.2 source records) + a socket-parity note, in lockstep.
+- **Effort:** large (multi-phase, mirrors a whole shipped track). **Risk:**
+  medium. **Value:** highest — real v4/v6 parity.
+
+### R5 — CLI polish: `pytcp address -j` JSON output (small, self-contained)
+
+- **Scope:** add `-j`/`--json` to the `pytcp address` subcommand (and
+  optionally `ss`/`route`/`neighbor` for parity), emitting machine-readable
+  JSON alongside the human table. CLI lives under `packages/pytcp/pytcp/cli/`.
+- **Tests-first:** unit tests under
+  `packages/pytcp/pytcp/tests/unit/cli/` asserting the JSON shape.
+- **Effort:** ~1–2 hrs. **Risk:** low. **Value:** low-ish (nice for scripting).
+
+### R6 — HyStart++ (RFC 9406) remaining work
+
+- **Scope:** the deferred pieces noted in the rfc9406 adherence record
+  (~6–8 hrs estimated). Read `docs/rfc/tcp/rfc9406*/adherence.md` for the
+  exact deferred rows before starting.
+- **Effort:** medium. **Risk:** medium (CC path). **Value:** medium.
+
+### R7 — DF-guarded TCP PLPMTUD probe (small, closes a "Phase 3c-min" residual)
+
+- **Why:** the TCP probe-emit path (`session/tcp__session__tx.py`) ships
+  probe-**sized** segments but does not set DF, so RFC 8899 §3 #2 (DF=1 on
+  the probe) is still "Phase 3c" (honest note left in
+  `docs/rfc/tcp/rfc8899__dplpmtud/adherence.md` and rfc4821). Set DF on the
+  emitted probe segment so a black-hole is detected by loss rather than
+  relying only on ack-feedback sizing.
+- **Tests-first:** extend
+  `test__tcp__session__plpmtud_probe_emit.py` to assert the probe segment
+  carries DF=1 (IPv4) / is size-capped without fragmentation (IPv6).
+- **Effort:** small–medium. **Risk:** medium (probe-loss interaction with
+  RTO). **Value:** completes RFC 8899 §3 #2 / §4.1 fully.
+
+### R8 — `IP_RECVERR` / `IPV6_RECVERR` error queue over the daemon boundary (medium)
+
+- **Why:** the per-socket ICMP error queue + `recvmsg(MSG_ERRQUEUE)` works
+  **in-process**, but the daemon data bridge does not pump the error queue
+  across the AF_UNIX boundary, so a daemon-backed drop-in client cannot read
+  ICMP errors via `MSG_ERRQUEUE`. Source: `kernel_userspace_separation.md`
+  deferred list.
+- **Scope:** extend the daemon IPC protocol so an `MSG_ERRQUEUE` `recvmsg`
+  is serviced across the boundary (the in-process path already builds the
+  `sock_extended_err` cmsg via `runtime/socket/error_queue.py`). Wire the
+  error-queue drain into the daemon's per-socket bridge.
+- **Tests-first:** integration test under `tests/integration/ipc/` driving
+  an ICMP error to a daemon-backed UDP socket and asserting the client's
+  `recvmsg(MSG_ERRQUEUE)` returns the `IP_RECVERR` cmsg.
+- **Effort:** medium. **Risk:** medium (IPC protocol surface). **Value:**
+  medium (completes the drop-in's error-reporting parity).
+
+### R9 — Selectable / cancelable `accept` over the daemon (medium)
+
+- **Why:** a client disconnecting mid-`accept` leaves the daemon dispatch
+  thread polling until server stop (Phase-4 daemon limitation noted in
+  `kernel_userspace_separation.md`).
+- **Scope:** make the daemon-side accept wait cancelable (wake on client
+  disconnect / a cancellation signal) so the dispatch thread doesn't spin.
+- **Tests-first:** integration test — connect a client, issue accept, drop
+  the client, assert the dispatch thread returns/cleans up promptly.
+- **Effort:** medium. **Risk:** medium (threading/lifecycle). **Value:**
+  medium (daemon robustness).
+
+### R10 — MLDv1 Report suppression + `mld.version` force knob (small)
+
+- **Why:** two deferred-with-rationale items from `mld_version_fallback.md`:
+  RFC 2710 §4 Report suppression (a host that hears another host's Report for
+  a group suppresses its own — an optimization, not done for MLDv2 either),
+  and an `mld.version` force sysctl (Linux extension, the IPv6 analogue of
+  the shipped `igmp.version` knob).
+- **Scope:** (a) suppression: on RX of a peer MLDv1 Report for a group in
+  v1 compat mode, cancel this host's pending Report for that group; (b) the
+  knob: add `mld.version` via the `sysctl_knob` skill workflow, consumed by
+  `_mld_host_compatibility_mode` (mirror `igmp.version` /
+  `IGMP__FORCE_VERSION`).
+- **Tests-first:** integration tests in `tests/integration/protocols/icmp6/`.
+- **Effort:** small each. **Risk:** low. **Value:** low (optimization +
+  operator knob). The knob has clear parity value; suppression is marginal.
+
+### R11 — RFC 6724 `ip.policy_table` sysctl override (small-medium)
+
+- **Why:** the RFC 6724 §2.1 policy table (source/dest address selection
+  precedence/label) is hard-coded; Linux exposes it as a writable table
+  (`/proc/sys/net/ipv6/...` / `ip addrlabel`). Source:
+  `rfc6724_source_selection.md` non-blocking arc extension.
+- **Scope:** make the policy table operator-overridable (a sysctl entry or a
+  small dedicated API), re-resolved live per the qualified-module-access
+  pattern.
+- **Tests-first:** unit tests asserting source-selection changes when the
+  policy table is overridden.
+- **Effort:** small-medium. **Risk:** low. **Value:** low-medium (rarely
+  tuned on a host).
+
+### Ongoing hygiene (not a discrete scheduled item)
+
+- **On-touch enum migrations** — bare `FOO: int = N` constants that represent
+  one-of-a-set should become enum members on touch (see `.claude/rules/enums.md`
+  §5). Not a dedicated commit; fix opportunistically when editing a file.
+
+---
+
+## Out of scope for this backlog (deliberately excluded)
+
+These are **not** host-scope refinements and are tracked elsewhere; listed
+so this backlog's boundary is explicit.
+
+- **Consumer-blocked** (need a DNS resolver / DDNS / HTTP agent PyTCP does
+  not have): RFC 4702 Client FQDN, RFC 3203 FORCERENEW, RFC 8910 Captive
+  Portal (DHCPv4 Phase 9); RFC 6724 §6 destination-address selection;
+  the RDNSS / DNSSL runtime consumer (wire codec is parse-ready).
+- **Deliberate won't-do (scope decisions):** DCTCP (RFC 8257), L4S
+  (RFC 9331 / 8311), TCP-AO (RFC 5925), Eifel (RFC 4015), CWV (RFC 7661),
+  F-RTO (RFC 5682); `dup` / `dup2`, `socketpair`, hostname-in-`bind`/
+  `connect`; RFC 4884 extended ICMP.
+- **Phase-2 router track** (its own future major version): IP forwarding
+  data path, ICMP Redirect emit, forward-path TTL-decrement + Time
+  Exceeded, IGMPv3 / MLDv2 querier role, Proxy ARP, RH0 disable-knob,
+  Router-Alert interception, PMTU-on-transit, RFC 1812 requirements, Link
+  API `up()` / `down()` (needs multi-interface).
+
+---
+
+## Recommended ordering
+
+1. **R1** (ping SO_RCVBUF) — finishes the SO_RCVBUF symmetry cleanly.
+2. Small self-contained wins, any order: **R5** (CLI JSON), **R10** (mld
+   knob + suppression), **R11** (RFC 6724 policy table), or dip into **R2**
+   (setsockopt sweep).
+3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
+4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
+   (HyStart++), **R7** (DF-guarded probe), **R8** (IP_RECVERR over daemon),
+   **R9** (cancelable accept).
+
+None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
+
+---
+
+## Git state at handoff (2026-07-19)
+
+- Branch `PyTCP_3_0_8`. Pushed through `af2719ea` (MLDv2 leave + doc
+  reconciliations).
+- **Unpushed:** `d51abda9` (UDP SO_RCVBUF) + `a0140806` (RAW SO_RCVBUF).
+  Hold until the user says "push".
