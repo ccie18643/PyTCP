@@ -48,11 +48,15 @@ ver 3.0.8
 import errno
 
 from net_addr import Ip4Address
+from net_proto import IpProto
+from pytcp import stack
 from pytcp.runtime.socket import (
     SO_BROADCAST,
     SOL_SOCKET,
     AddressFamily,
+    SocketType,
 )
+from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
@@ -62,6 +66,29 @@ from pytcp.tests.lib.network_testcase import (
 STACK__IP: Ip4Address = STACK__IP4_HOST.address
 # Subnet-directed broadcast of the stack's attached 10.0.1.0/24 network.
 STACK__DIRECTED_BROADCAST: Ip4Address = STACK__IP4_HOST.network.broadcast
+
+# Silence the SOCKET log channel for the whole module: RAW sockets log
+# 'Closed socket' from 'addCleanup(close)' callbacks that fire AFTER the
+# harness tearDown restores LOG__CHANNEL, leaking into the runner output.
+# Module-level silencing spans every per-test cleanup (unit_testing.md
+# §10a.4 / §11).
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class TestSocketSoBroadcastGate(NetworkTestCase):
@@ -232,4 +259,104 @@ class TestSocketSoBroadcastGateDirected(NetworkTestCase):
             ctx.exception.errno,
             errno.EACCES,
             msg="send on a directed-broadcast-connected socket without SO_BROADCAST must raise EACCES.",
+        )
+
+
+class TestSocketSoBroadcastGateRaw(NetworkTestCase):
+    """
+    RAW-socket 'sendto' / 'send' to an IPv4 broadcast destination
+    must have 'SO_BROADCAST' enabled first or fail with EACCES —
+    Linux gates raw broadcast in 'raw_sendmsg' exactly like UDP.
+    """
+
+    def _raw_socket(self) -> RawSocket:
+        """
+        Build an IPv4 RAW socket on an arbitrary experimental IANA
+        protocol number (253, RFC 3692) so the send path exercises
+        the broadcast gate without protocol-specific handling.
+        """
+
+        sock = RawSocket(family=AddressFamily.INET4, type=SocketType.RAW, protocol=IpProto.from_int(253))
+        self.addCleanup(sock.close)
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
+
+    def test__raw_sendto_limited_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure RAW 'sendto' to '255.255.255.255' on a socket with
+        'SO_BROADCAST = 0' (the default) raises 'OSError(EACCES)'
+        — the raw send path enforces the same broadcast gate as
+        UDP.
+
+        Reference: Linux net/ipv4/raw.c raw_sendmsg (broadcast gate).
+        """
+
+        sock = self._raw_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", ("255.255.255.255", 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="RAW sendto to limited broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__raw_sendto_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure RAW 'sendto' to a subnet-directed broadcast
+        (10.0.1.255) on a socket with 'SO_BROADCAST = 0' raises
+        'OSError(EACCES)' — the directed-broadcast gate covers
+        raw sends too.
+
+        Reference: Linux net/ipv4/raw.c raw_sendmsg (broadcast gate).
+        Reference: Linux net/ipv4/route.c ip_route_output (RTN_BROADCAST).
+        """
+
+        sock = self._raw_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="RAW sendto to a directed broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__raw_sendto_broadcast_with_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure RAW 'sendto' to a broadcast destination on a socket
+        with 'SO_BROADCAST = 1' succeeds — the gate only applies
+        when the flag is unset.
+
+        Reference: RFC 1122 §3.3.6 (directed broadcast send).
+        """
+
+        sock = self._raw_socket()
+        sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+        sent = sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 0))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="RAW sendto to a broadcast with SO_BROADCAST=1 must return the sent byte count.",
+        )
+
+    def test__raw_sendto_unicast_without_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure RAW 'sendto' to a unicast destination on a socket
+        with 'SO_BROADCAST = 0' (default) is unaffected by the
+        gate — regression pin so the raw broadcast check does NOT
+        spuriously gate unicast traffic.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = self._raw_socket()
+
+        sent = sock.sendto(b"x", ("10.0.1.91", 0))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="RAW sendto to a unicast peer must not be affected by SO_BROADCAST.",
         )

@@ -324,6 +324,16 @@ class RawSocket(socket):
         if not stack.has_route_to(self._remote_ip_address):
             raise OSError(errno.EHOSTUNREACH, "No route to host - [No route to destination]")
 
+        # SO_BROADCAST gate (Linux 'raw_sendmsg'): sending to an IPv4
+        # broadcast destination — limited '255.255.255.255' or a
+        # subnet-directed broadcast (Linux 'RTN_BROADCAST') — requires
+        # 'SO_BROADCAST = 1', mirroring the UDP path.
+        if not self._so_broadcast and stack.is_ip4_broadcast(self._remote_ip_address):
+            raise OSError(
+                errno.EACCES,
+                "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
+            )
+
         match self._address_family:
             case AddressFamily.INET6:
                 stack.egress_packet_handler(cast(Ip6Address, self._remote_ip_address)).send_ip6_packet(
@@ -377,6 +387,16 @@ class RawSocket(socket):
         # synchronous EHOSTUNREACH at send time.
         if not stack.has_route_to(remote_ip_address):
             raise OSError(errno.EHOSTUNREACH, "No route to host - [No route to destination]")
+
+        # SO_BROADCAST gate (Linux 'raw_sendmsg'): sending to an IPv4
+        # broadcast destination — limited '255.255.255.255' or a
+        # subnet-directed broadcast (Linux 'RTN_BROADCAST') — requires
+        # 'SO_BROADCAST = 1', mirroring the UDP path.
+        if not self._so_broadcast and stack.is_ip4_broadcast(remote_ip_address):
+            raise OSError(
+                errno.EACCES,
+                "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
+            )
 
         match self._address_family:
             case AddressFamily.INET6:

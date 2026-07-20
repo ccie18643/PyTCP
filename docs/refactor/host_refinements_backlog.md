@@ -204,8 +204,14 @@ self._signal_readable()
   each interface's directed-broadcast set via the public `ip4_broadcast`
   accessor) and switched both UDP send/sendto gate sites to it, so a send
   to `10.0.1.255`-style directed broadcast without `SO_BROADCAST` now
-  raises `EACCES`. Tests: `TestSocketSoBroadcastGateDirected` (3). RAW/PING
-  still do not consult `SO_BROADCAST` (separate, lower-value item).
+  raises `EACCES`. Tests: `TestSocketSoBroadcastGateDirected` (3).
+- **Shipped:** extended the same `SO_BROADCAST` gate to RAW sockets (Linux
+  `raw_sendmsg` gates raw broadcast identically). Both RAW `send` / `sendto`
+  consult `stack.is_ip4_broadcast(dst)` after the route check, so a RAW send
+  to a limited or subnet-directed broadcast without `SO_BROADCAST` raises
+  `EACCES`. Tests: `TestSocketSoBroadcastGateRaw` (4: limited-drop,
+  directed-drop, with-flag-succeeds, unicast-regression). PING sockets still
+  do not consult `SO_BROADCAST` (niche; a PING to a broadcast is uncommon).
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 
