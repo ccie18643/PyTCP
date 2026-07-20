@@ -1094,12 +1094,11 @@ class PacketHandler(Subsystem, ABC):
                     # §6.1 join Report.
                     self.assign_ip6_multicast(ip6_multicast=group)
                 elif merged != self._ip6_multicast_filters[group]:
-                    # Still joined, filter changed: re-materialize and
-                    # re-announce. P4: replace the current-state Report
-                    # with an MLDv2 ALLOW / BLOCK / CHANGE_TO_* source
-                    # delta ('_send_mld_state_change').
+                    # Still joined, filter changed: re-materialize and emit
+                    # the §6.1 source delta (ALLOW / BLOCK / CHANGE_TO_*).
+                    old = self._ip6_multicast_filters[group]
                     self._ip6_multicast_filters[group] = merged
-                    self._send_icmp6_multicast_listener_report()
+                    self._send_mld_state_change(group, old=old, new=merged)
             elif joined:
                 self.remove_ip6_multicast(ip6_multicast=group)
 
@@ -2754,13 +2753,20 @@ class PacketHandler(Subsystem, ABC):
 
         self._icmp6_tx._send_icmp6_multicast_listener_report()
 
-    def _send_icmp6_mld_leave(self, ip6_multicast: Ip6Address, /) -> None:
+    def _send_mld_state_change(
+        self,
+        group: Ip6Address,
+        /,
+        *,
+        old: Ip6MulticastFilter,
+        new: Ip6MulticastFilter,
+    ) -> None:
         """
-        Announce departure from an IPv6 multicast group (delegates to the
-        ICMPv6 TX sub-handler).
+        Emit an MLDv2 source-bearing state-change Report for 'group'
+        (RFC 3810 §6.1; delegates to the ICMPv6 TX sub-handler).
         """
 
-        self._icmp6_tx._send_icmp6_mld_leave(ip6_multicast)
+        self._icmp6_tx._send_mld_state_change(group, old=old, new=new)
 
     def _send_igmp_v3_report(self) -> None:
         """
@@ -3977,13 +3983,16 @@ class PacketHandlerL2(
             # Materialize the merged §4.2 reception filter (EXCLUDE{} for a
             # directly-assigned / any-source group, the merged contributors'
             # filter for a source-specific join).
-            self._ip6_multicast_filters[ip6_multicast] = self._ip6_multicast_filter_for(ip6_multicast)
+            new = self._ip6_multicast_filter_for(ip6_multicast)
+            self._ip6_multicast_filters[ip6_multicast] = new
 
             __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
 
             self._assign_mac_multicast(ip6_multicast.multicast_mac)
 
-            self._send_icmp6_multicast_listener_report()
+            # RFC 3810 §6.1 — announce the new membership with a state-change
+            # Report describing the INCLUDE{}→'new' transition.
+            self._send_mld_state_change(ip6_multicast, old=_IP6_MULTICAST__NONMEMBER, new=new)
 
     @override
     def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
@@ -3992,16 +4001,17 @@ class PacketHandlerL2(
         """
 
         with self._lock__multicast:
+            old = self._ip6_multicast_filters[ip6_multicast]
             del self._ip6_multicast_filters[ip6_multicast]
 
             __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
             self._remove_mac_multicast(ip6_multicast.multicast_mac)
 
-            # RFC 3810 §6.1 — announce the departure with a State Change
-            # Report (CHANGE_TO_INCLUDE, empty source list), the IPv6
-            # analogue of the IGMP leave above.
-            self._send_icmp6_mld_leave(ip6_multicast)
+            # RFC 3810 §6.1 — announce the departure with a state-change
+            # Report describing the 'old'→INCLUDE{} transition (no longer a
+            # listener).
+            self._send_mld_state_change(ip6_multicast, old=old, new=_IP6_MULTICAST__NONMEMBER)
 
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:
@@ -4205,11 +4215,14 @@ class PacketHandlerL3(
         with self._lock__multicast:
             # Materialize the merged §4.2 reception filter (EXCLUDE{} for an
             # any-source group, the merged contributors' filter otherwise).
-            self._ip6_multicast_filters[ip6_multicast] = self._ip6_multicast_filter_for(ip6_multicast)
+            new = self._ip6_multicast_filter_for(ip6_multicast)
+            self._ip6_multicast_filters[ip6_multicast] = new
 
             __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
 
-            self._send_icmp6_multicast_listener_report()
+            # RFC 3810 §6.1 — announce the new membership with a state-change
+            # Report describing the INCLUDE{}→'new' transition.
+            self._send_mld_state_change(ip6_multicast, old=_IP6_MULTICAST__NONMEMBER, new=new)
 
     @override
     def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
@@ -4218,13 +4231,14 @@ class PacketHandlerL3(
         """
 
         with self._lock__multicast:
+            old = self._ip6_multicast_filters[ip6_multicast]
             del self._ip6_multicast_filters[ip6_multicast]
 
             __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
-            # RFC 3810 §6.1 — announce the departure with a State Change
-            # Report (CHANGE_TO_INCLUDE, empty source list).
-            self._send_icmp6_mld_leave(ip6_multicast)
+            # RFC 3810 §6.1 — announce the departure with a state-change
+            # Report describing the 'old'→INCLUDE{} transition.
+            self._send_mld_state_change(ip6_multicast, old=old, new=_IP6_MULTICAST__NONMEMBER)
 
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:

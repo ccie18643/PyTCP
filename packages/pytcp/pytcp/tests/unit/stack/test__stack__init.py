@@ -1731,10 +1731,10 @@ class TestStackInterfaceLifecycleDynamic(TestCase):
         }
         handler._mac_multicast = [v6.address.solicited_node_multicast.multicast_mac]
         # Removing the interface leaves the solicited-node multicast,
-        # which emits an MLD leave (RFC 3810 §6.1); this unit test has no
-        # live timer, so stub the emit — the leave path is exercised in
-        # the icmp6 MLDv2-leave integration tests.
-        handler._send_icmp6_mld_leave = MagicMock()  # type: ignore[method-assign]
+        # which emits an MLDv2 state-change Report (RFC 3810 §6.1); this
+        # unit test has no live timer, so stub the emit — the leave path
+        # is exercised in the icmp6 MLDv2-leave integration tests.
+        handler._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
 
         remove_interface(ifindex)
 

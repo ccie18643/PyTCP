@@ -105,6 +105,16 @@ until the user says "push".
   `test__icmp6__mld__membership6_api.py` (8) + the join_group refcount /
   close tests. P4 (MLDv2 source records on the wire) + P5 (RX source-
   delivery gate) remain before the §4.2/§5.2 adherence flip.
+- [x] **IPv6 SSM state-change records (R4 P4a)** — MLDv2 source-bearing
+  state-change Reports on TX. New `_send_mld_state_change` /
+  `_mld_state_change_records` / `_emit_mld2_report` (the RFC 3810 §6.1
+  difference table + MLDv1 coarse fallback), wired to the join / leave /
+  mid-delta edges (a source-specific join now emits ALLOW_NEW_SOURCES /
+  BLOCK_OLD_SOURCES / CHANGE_TO_* with the real source list instead of the
+  coarse all-groups report); the dead coarse `_send_icmp6_mld_leave` was
+  removed. Single immediate emission — the §6.1 robustness retransmit train
+  is P4b. Tests: `test__icmp6__mld__source_state_change.py` (7). RFC 3810
+  §4.2/§5.2 adherence flip waits for P4b + P5.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -243,11 +253,23 @@ self._signal_readable()
     + the harness / thread-safety / ND-seed test updates. The RFC 3810
     §4.2 / §5.2 source-record adherence flip waits for P4/P5 (as the v4
     §3.2 flip waited for Phase 5).
-  - P4: MLDv2 source records on TX — `Icmp6Mld2MulticastAddressRecordType`
-    already has `ALLOW_NEW_SOURCES` (5) / `BLOCK_OLD_SOURCES` (6) /
-    `CHANGE_TO_INCLUDE` (3) / `CHANGE_TO_EXCLUDE` (4). Emit the state-change
-    source records on filter transitions (mirror `_send_igmp_state_change`;
-    the MLDv2 leave path added in `de3d3213` is the sibling to extend).
+  - **P4a — SHIPPED:** MLDv2 source-bearing state-change records on TX.
+    Added `_send_mld_state_change(group, old, new)` + `_mld_state_change_records`
+    (the §6.1 difference table: mode change → CHANGE_TO_INCLUDE /
+    CHANGE_TO_EXCLUDE with the new source list; within-mode source change →
+    ALLOW_NEW_SOURCES / BLOCK_OLD_SOURCES) + `_emit_mld2_report`, with the
+    MLDv1 coarse Report/Done fallback. Wired the three edges: the
+    `assign_ip6_multicast` join edge (`old=NONMEMBER, new`), the
+    `remove_ip6_multicast` leave edge (`old, new=NONMEMBER`), and the
+    `_mc6_recompute` mid-delta (replacing the `# P4:` placeholder). The now-
+    dead coarse `_send_icmp6_mld_leave` (single) was removed. Single
+    immediate emission — the RFC 3810 §6.1 robustness retransmit train is
+    **P4b** (mirror the v4 `_igmp_state_change__pending` /
+    `_arm`/`_fire`/`_cancel` machinery). Tests-first:
+    `test__icmp6__mld__source_state_change.py` (7) — ALLOW / BLOCK / TO_EX /
+    TO_IN records with source lists, mirroring the v4 track.
+  - P4b: the §6.1 robustness retransmit-train state machine
+    (`_mld_state_change__pending` + `_arm`/`_fire`/`_cancel`), mirror v4.
   - P5: RX source-delivery filter for IPv6 UDP + RAW (`Ip6MulticastFilter.allows`).
   - Adherence: update `docs/rfc/icmp6/rfc3810__mld2/adherence.md` (§4.2.12 /
     §5.1 / §5.2 source records) + a socket-parity note, in lockstep.
@@ -262,11 +284,13 @@ core (`_Ip6GroupMembership` / `_ip6_multicast_filters` / `_ip6_multicast_refs`
 / `mc6_*` / `_ip6_multicast_filter_for`, all under `_lock__multicast`) AND
 the socket surface (`stack.membership6`, refcounted `IPV6_JOIN_GROUP`, the
 `MCAST_*_SOURCE_*` family with `group_source_req`, per-socket
-`_ip6_source_filters`, close-time release) are done. **Remaining: P4**
-(`_send_mld_state_change` MLDv2 source records — ALLOW / BLOCK / CHANGE_TO_*
-— replacing the `# P4:` current-state-Report placeholder in `_mc6_recompute`
-and the join/leave edges), **P5** (RX `Ip6MulticastFilter.allows` source-
-delivery gate for UDP + RAW). After P4/P5 flip the RFC 3810 §4.2 / §5.2
+`_ip6_source_filters`, close-time release) are done. **P4a SHIPPED** — the
+`_send_mld_state_change` source-bearing state-change records (ALLOW / BLOCK /
+CHANGE_TO_*) now fire on all three edges (join / leave / mid-delta),
+single-emission. **Remaining: P4b** (the §6.1 robustness retransmit-train
+state machine — mirror the v4 `_igmp_state_change__pending` /
+`_arm`/`_fire`/`_cancel`), **P5** (RX `Ip6MulticastFilter.allows` source-
+delivery gate for UDP + RAW). After P4b/P5 flip the RFC 3810 §4.2 / §5.2
 adherence rows.
 
 - **Handler (`runtime/packet_handler/__init__.py`) — the deep, no-GIL-locked

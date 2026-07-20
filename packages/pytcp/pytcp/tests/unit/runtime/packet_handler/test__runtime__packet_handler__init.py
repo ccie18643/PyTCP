@@ -250,20 +250,20 @@ class TestPacketHandlerAddressAssignment(TestCase):
         Ensure PacketHandlerL2's '_assign_ip6_multicast' appends the
         matching multicast MAC to '_mac_multicast' (needed so the L2
         filter accepts frames for the joined group) and invokes the
-        MLDv2 listener-report sender.
+        MLDv2 state-change sender.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         h = _build_l2_handler()
-        h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
+        h._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
         h.assign_ip6_multicast(addr)
 
         self.assertIn(addr, h._ip6_multicast)
         self.assertIn(addr.multicast_mac, h._mac_multicast)
-        h._send_icmp6_multicast_listener_report.assert_called_once()
+        h._send_mld_state_change.assert_called_once()
 
     def test__stack__packet_handler__init__l2_ip6_remove_also_removes_mac_multicast(self) -> None:
         """
@@ -274,8 +274,7 @@ class TestPacketHandlerAddressAssignment(TestCase):
         """
 
         h = _build_l2_handler()
-        h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
-        h._send_icmp6_mld_leave = MagicMock()  # type: ignore[method-assign]
+        h._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
         h.assign_ip6_multicast(addr)
@@ -293,7 +292,7 @@ class TestPacketHandlerAddressAssignment(TestCase):
         """
 
         h = _build_l3_handler()
-        h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
+        h._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
 
         addr = Ip6Address("ff02::1:3")
         h.assign_ip6_multicast(addr)
@@ -351,7 +350,7 @@ class TestPacketHandlerL3CreateStackAddressing(TestCase):
         """
 
         h = _build_l3_handler()
-        h._send_icmp6_multicast_listener_report = MagicMock()  # type: ignore[method-assign]
+        h._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
         h._ip6_ifaddr_candidate = [STACK__IP6_HOST]
 
         h._create_stack_ip6_addressing()

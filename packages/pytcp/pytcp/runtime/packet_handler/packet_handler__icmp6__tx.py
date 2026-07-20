@@ -71,12 +71,22 @@ from net_proto.protocols.ip6_hbh.options.ip6_hbh__option__router_alert import (
     Ip6HbhOptionRouterAlert,
 )
 from net_proto.protocols.ip6_hbh.options.ip6_hbh__options import Ip6HbhOptions
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
+
+# The IPv6 MLD destinations (RFC 3810 §5.2.14 / RFC 2710 §3): an MLDv2
+# Report goes to the all-MLDv2-routers group; the all-nodes group is
+# never reported (RFC 3810 §6).
+MLD__ALL_MLDV2_ROUTERS = Ip6Address("ff02::16")
+MLD__ALL_NODES = Ip6Address("ff02::1")
 
 
 class Icmp6TxHandler:
@@ -263,41 +273,6 @@ class Icmp6TxHandler:
         self._if._packet_stats_tx.icmp6__mld1__report__send += 1
         self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=group)
 
-    def _send_icmp6_mld_leave(self, group: Ip6Address, /) -> None:
-        """
-        Announce departure from a single IPv6 multicast group.
-
-        Reference: RFC 3810 §5.2.12 (CHANGE_TO_INCLUDE record).
-        Reference: RFC 3810 §6.1 (leaving a group is a state-change Report).
-
-        The all-nodes group (ff02::1) is never reported (RFC 3810 §6).
-        While in MLDv1 Host Compatibility Mode the departure is announced
-        with an MLDv1 Done so an MLDv1-only querier can parse it
-        (RFC 3810 §8.3.2); otherwise an MLDv2 State Change Report with a
-        CHANGE_TO_INCLUDE record and an empty source list is the leave
-        signal.
-        """
-
-        if group == Ip6Address("ff02::1"):
-            return
-
-        if self._if._mld_host_compatibility_mode() is MldVersion.V1:
-            self._send_icmp6_mld1_done(group)
-            return
-
-        icmp6_packet_tx = Icmp6Assembler(
-            icmp6__message=Icmp6Mld2MessageReport(
-                records=[
-                    Icmp6Mld2MulticastAddressRecord(
-                        type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
-                        multicast_address=group,
-                    )
-                ],
-            ),
-        )
-        self._if._packet_stats_tx.icmp6__mld2__report__send += 1
-        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
-
     def _send_icmp6_mld1_done(self, group: Ip6Address, /) -> None:
         """
         Send an MLDv1 Multicast Listener Done (type 132) for 'group'.
@@ -347,6 +322,111 @@ class Icmp6TxHandler:
         )
         self._if._packet_stats_tx.icmp6__mld2__report__send += 1
         self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
+
+    def _emit_mld2_report(self, records: list[Icmp6Mld2MulticastAddressRecord], /) -> None:
+        """
+        Assemble and emit a single aggregated MLDv2 State Change Report
+        (type 143) carrying 'records' to the all-MLDv2-routers group
+        ff02::16, wrapped in the Hop-by-Hop Router Alert carrier
+        (RFC 3810 §5.2.14). A report with no records is not emitted.
+        """
+
+        if not records:
+            return
+
+        icmp6_packet_tx = Icmp6Assembler(
+            icmp6__message=Icmp6Mld2MessageReport(records=records),
+        )
+        self._if._packet_stats_tx.icmp6__mld2__report__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=MLD__ALL_MLDV2_ROUTERS)
+
+    @staticmethod
+    def _mld_state_change_records(
+        group: Ip6Address,
+        old: Ip6MulticastFilter,
+        new: Ip6MulticastFilter,
+        /,
+    ) -> list[Icmp6Mld2MulticastAddressRecord]:
+        """
+        Compute the MLDv2 difference records for a group's filter change
+        per the RFC 3810 §6.1 table (the "non-listener" state is
+        INCLUDE{}): a filter-mode change yields one CHANGE_TO_INCLUDE /
+        CHANGE_TO_EXCLUDE record carrying the new source list; a
+        within-mode source change yields ALLOW_NEW_SOURCES and/or
+        BLOCK_OLD_SOURCES records (empty ones are omitted). The IPv6
+        analogue of the IGMPv3 '_state_change_records'.
+        """
+
+        if old.mode is new.mode:
+            if old.mode is Ip6MulticastFilterMode.INCLUDE:
+                allow, block = new.sources - old.sources, old.sources - new.sources
+            else:
+                allow, block = old.sources - new.sources, new.sources - old.sources
+            records: list[Icmp6Mld2MulticastAddressRecord] = []
+            if allow:
+                records.append(
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.ALLOW_NEW_SOURCES,
+                        multicast_address=group,
+                        source_addresses=sorted(allow, key=int),
+                    )
+                )
+            if block:
+                records.append(
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES,
+                        multicast_address=group,
+                        source_addresses=sorted(block, key=int),
+                    )
+                )
+            return records
+
+        record_type = (
+            Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE
+            if new.mode is Ip6MulticastFilterMode.EXCLUDE
+            else Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE
+        )
+        return [
+            Icmp6Mld2MulticastAddressRecord(
+                type=record_type,
+                multicast_address=group,
+                source_addresses=sorted(new.sources, key=int),
+            )
+        ]
+
+    def _send_mld_state_change(
+        self,
+        group: Ip6Address,
+        /,
+        *,
+        old: Ip6MulticastFilter,
+        new: Ip6MulticastFilter,
+    ) -> None:
+        """
+        Emit an unsolicited state-change Report for 'group' describing the
+        transition from filter 'old' to filter 'new' (RFC 3810 §6.1) in
+        the form dictated by the interface's Host Compatibility Mode
+        (§8.3). In MLDv2 mode the Report carries the source-bearing §6.1
+        difference records; in MLDv1 mode it degrades to the coarse
+        Report / Done (MLDv1 has no source concept), keyed only off the
+        reception edge. The all-nodes group ff02::1 is never reported
+        (RFC 3810 §6). The IPv6 analogue of '_send_igmp_state_change'.
+        """
+
+        if group == MLD__ALL_NODES:
+            return
+
+        # The coarse MLDv1 form keys only off the reception edge — a
+        # source-only change within a still-joined membership is invisible
+        # to an older-version querier.
+        if self._if._mld_host_compatibility_mode() is MldVersion.V1:
+            if new.has_reception and not old.has_reception:
+                self._send_icmp6_mld1_report(group)
+            elif old.has_reception and not new.has_reception:
+                self._send_icmp6_mld1_done(group)
+            return
+
+        self._emit_mld2_report(self._mld_state_change_records(group, old, new))
 
     def __send_icmp6_mld_via_hbh_ra(self, icmp6_packet_tx: Icmp6Assembler, /, *, ip6__dst: Ip6Address) -> None:
         """
