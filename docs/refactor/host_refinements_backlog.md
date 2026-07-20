@@ -184,12 +184,27 @@ Full `-j`/`--json` parity across every observation command is now closed
 (`address`, `ss`, `route`, `neighbor`). The mutation verbs and `sysctl`
 stay text-only (Linux `sysctl` has no `-j` either).
 
-### R6 — HyStart++ (RFC 9406) remaining work
+### R6 — HyStart++ (RFC 9406) — SHIPPED (algorithm was already met; test surface strengthened)
 
-- **Scope:** the deferred pieces noted in the rfc9406 adherence record
-  (~6–8 hrs estimated). Read `docs/rfc/tcp/rfc9406*/adherence.md` for the
-  exact deferred rows before starting.
-- **Effort:** medium. **Risk:** medium (CC path). **Value:** medium.
+- **Outcome:** the RFC 9406 §4.2/§4.3 algorithm was already fully
+  implemented and met (per-round minRTT tracking, SS→CSS delay exit, CSS
+  1/CSS_GROWTH_DIVISOR growth, CSS→SS resume, CSS_ROUNDS→CA exhaustion).
+  The only non-met row is the §4.3 `L` parameter (n/a — PyTCP uses the
+  standard L=1 slow-start cap). The adherence record's closing paragraph
+  still read as if unimplemented (stale); it was corrected.
+- **What shipped:** the integration-test surface was the real gap. Two of
+  the five prior integration tests *cheated* — they pre-populated
+  `hystart_state` and called `_hystart_check_phase_transition()` directly
+  rather than driving real ACKs, and there was no wire-level test for CSS
+  conservative growth or the CSS→CA exhaustion path. The rewritten
+  `test__tcp__session__hystart.py` (7 tests) drives every transition
+  **end-to-end through the wire ACK path**: fill the send pipe with real
+  segments (TCP_NODELAY to defeat Nagle so the whole window goes out),
+  stream RTT-bearing ACKs so each fold/transition runs through
+  `_process_ack_packet`. New coverage: SS→CSS end-to-end, CSS
+  conservative-growth rate comparison, CSS→CA exhaustion (ssthresh≤cwnd),
+  CSS→SS resume (ssthresh unchanged). Adherence `rfc9406__hystart_pp`
+  updated in lockstep.
 
 ### R7 — DF-guarded TCP PLPMTUD probe — SHIPPED (already-satisfied; test-locked)
 
@@ -295,10 +310,11 @@ so this backlog's boundary is explicit.
    (R10 §4 suppression remains, marginal), ~~**R11** (RFC 6724 policy
    table)~~ SHIPPED, or dip into **R2** (setsockopt sweep).
 3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
-4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO), **R6**
-   (HyStart++), ~~**R7** (DF-guarded probe)~~ SHIPPED (already-satisfied,
-   test-locked), **R8** (IP_RECVERR over daemon), **R9** (cancelable
-   accept).
+4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO),
+   ~~**R6** (HyStart++)~~ SHIPPED (algorithm already met; end-to-end test
+   surface strengthened), ~~**R7** (DF-guarded probe)~~ SHIPPED
+   (already-satisfied, test-locked), **R8** (IP_RECVERR over daemon),
+   **R9** (cancelable accept).
 
 None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 
@@ -309,5 +325,5 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 - Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
   this backlog plan).
 - Pushed through `c2a76a60` (R1 / R5 / R5-followon / R10 knob / R11).
-- **Unpushed:** the R7 DF-probe test-lock commit. Hold until the user
-  says "push".
+- **Unpushed:** the R7 DF-probe test-lock commit + the R6 HyStart++
+  end-to-end test-strengthening commit. Hold until the user says "push".

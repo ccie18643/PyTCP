@@ -181,22 +181,34 @@ this audit covers).
 
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__hystart.py`
-  contains 5 tests pinning the session-level wiring:
+  contains 7 tests pinning the session-level wiring, all
+  driven **end-to-end through the wire ACK path** — the send
+  pipe is filled with real data segments (TCP_NODELAY so the
+  whole window goes out rather than one Nagle-gated partial),
+  then RTT-bearing ACKs are streamed so each fold and phase
+  transition happens through `_process_ack_packet`, with no
+  direct poking of the HyStart++ state to force a transition:
   - `test__hystart__initial_state_is_slow_start` —
-    post-handshake state is in slow-start, no CSS,
-    no rotated round.
+    post-handshake state is in slow-start, no CSS.
   - `test__hystart__rtt_sample_folded_during_slow_start`
-    — TSecr-driven RTT samples flow into HyStart
-    state.
-  - `test__hystart__delay_increase_triggers_ss_to_css_transition`
-    — `_hystart_check_phase_transition` enters CSS
-    when the §4.2 trigger fires.
-  - `test__hystart__css_resume_to_slow_start_on_rtt_recovery`
-    — `_hystart_check_phase_transition` resumes SS
-    on RTT recovery.
+    — TSecr-driven RTT samples fold into currentRoundMinRTT.
+  - `test__hystart__delay_increase_drives_ss_to_css_end_to_end`
+    — a stable baseline round rotates to set lastRoundMinRTT,
+    then a sustained per-round RTT increase drives the streamed
+    ACKs into CSS (baseline + CSS_ROUNDS recorded).
+  - `test__hystart__css_conservative_growth_slower_than_slow_start`
+    — measured cwnd growth per ACK in CSS is strictly below the
+    slow-start rate (the 1/CSS_GROWTH_DIVISOR conservative
+    growth).
+  - `test__hystart__sustained_delay_exhausts_css_and_enters_ca`
+    — elevated RTT held for CSS_ROUNDS rounds exits CSS into CA
+    by pinning ssthresh <= cwnd.
+  - `test__hystart__rtt_recovery_resumes_slow_start_from_css`
+    — a per-round RTT drop below the CSS baseline resumes
+    slow-start WITHOUT pinning ssthresh = cwnd.
   - `test__hystart__stable_rtt_does_not_trigger_css`
-    — negative control: stable RTT across rounds
-    must not false-positive.
+    — negative control: stable RTT across many rounds must not
+    false-positive into CSS.
 
 ### Test coverage summary
 
@@ -204,10 +216,10 @@ this audit covers).
 |----------------------------------------|-----------------------------------------|
 | §4.2 round tracking via SND.NXT marker | locked in (unit + integration)          |
 | §4.2 per-round min-RTT                 | locked in (unit fold + integration)     |
-| §4.2 delay-based slow-start exit       | locked in (unit + integration)          |
-| §4.2 CSS phase cwnd growth             | locked in (unit `css_growth_increment`) |
-| §4.2 CSS resume-slow-start trigger     | locked in (unit + integration)          |
-| §4.2 CSS-rounds-exhausted exit to CA   | locked in by construction (rotate decr) |
+| §4.2 delay-based slow-start exit       | locked in (unit + end-to-end integration) |
+| §4.2 CSS phase cwnd growth             | locked in (unit `css_growth_increment` + end-to-end integration rate comparison) |
+| §4.2 CSS resume-slow-start trigger     | locked in (unit + end-to-end integration) |
+| §4.2 CSS-rounds-exhausted exit to CA   | locked in (unit + end-to-end integration: sustained delay pins ssthresh <= cwnd) |
 | §4.3 tuning constants                  | locked in (unit pin against RFC values) |
 
 ---
@@ -246,10 +258,10 @@ enabled — orthogonal to the delay-detection
 mechanism, can be added in a future commit if
 appropriate-byte-counting is desired.
 
-This is a known and intentional gap — RFC 9438 §4.10
-(CUBIC) recommends HyStart++ as a companion, and
-PyTCP's CUBIC implementation references the gap as
-deferred work. Estimated effort to land: ~6-8
-commits with new state fields, RTT-tracking
-integration, and a CSS phase added to
-`tcp__cwnd.py`.
+RFC 9438 §4.10 (CUBIC) recommends HyStart++ as a
+companion; PyTCP's CUBIC implementation runs alongside
+this HyStart++ implementation. The only remaining
+non-met row is the §4.3 `L` parameter (n/a — PyTCP uses
+the standard L=1 slow-start cap); every §4.2 mechanism
+is implemented and locked in by both unit tests and
+end-to-end wire-driven integration tests.
