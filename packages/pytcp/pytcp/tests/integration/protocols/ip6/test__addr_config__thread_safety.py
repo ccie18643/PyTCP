@@ -172,34 +172,44 @@ class TestAddressConfigLocking(NetworkTestCase):
             msg="_assign_ip4_host must acquire the address-config lock.",
         )
 
-    def test__addr_config__assign_ip6_multicast_cow_under_lock(self) -> None:
+    def test__addr_config__assign_ip6_multicast_under_multicast_lock(self) -> None:
         """
-        Ensure joining an IPv6 multicast group publishes a fresh
-        '_ip6_multicast' list (copy-on-write) while holding the
-        address-config lock, leaving the prior snapshot untouched.
+        Ensure joining an IPv6 multicast group materializes the group's
+        §4.2 reception filter under the multicast lock (the IPv6 state
+        moved to '_lock__multicast' with the source-filter model), and
+        that the derived joined-group snapshot the RX / TX readers
+        consume reflects the new group.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         handler = self._packet_handler
-        old = handler._ip6_multicast
+        tracking = _TrackingRLock()
+        setattr(handler, "_lock__multicast", tracking)
 
-        handler.assign_ip6_multicast(_IP6_MCAST)
-
-        self.assertIsNot(
-            handler._ip6_multicast,
-            old,
-            msg="_assign_ip6_multicast must publish a new _ip6_multicast list (copy-on-write).",
-        )
         self.assertNotIn(
             _IP6_MCAST,
-            old,
-            msg="The prior _ip6_multicast snapshot must be left untouched.",
+            handler._ip6_multicast,
+            msg="The group must be absent before the join.",
+        )
+
+        tracking.max_depth = 0
+        handler.assign_ip6_multicast(_IP6_MCAST)
+
+        self.assertIn(
+            _IP6_MCAST,
+            handler._ip6_multicast_filters,
+            msg="assign_ip6_multicast must materialize the group's §4.2 reception filter.",
+        )
+        self.assertIn(
+            _IP6_MCAST,
+            handler._ip6_multicast,
+            msg="assign_ip6_multicast must expose the group in the derived joined-group view.",
         )
         self.assertGreaterEqual(
-            self._tracking.max_depth,
+            tracking.max_depth,
             1,
-            msg="_assign_ip6_multicast must acquire the address-config lock.",
+            msg="assign_ip6_multicast must acquire the multicast lock.",
         )
 
     def test__addr_config__update_default_router_cow_under_lock(self) -> None:

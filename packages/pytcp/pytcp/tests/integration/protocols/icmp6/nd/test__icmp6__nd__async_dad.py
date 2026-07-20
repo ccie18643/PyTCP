@@ -60,6 +60,10 @@ import time
 from typing import cast, override
 
 from net_addr import Ip6Address, Ip6IfAddr, MacAddress
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6DadState
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.nd_testcase import NdTestCase
@@ -84,7 +88,7 @@ def _join_candidate_multicast(handler: object, *, address: Ip6Address) -> None:
     if snm_mac not in h._mac_multicast:
         h._mac_multicast.append(snm_mac)
     if snm_ip not in h._ip6_multicast:
-        h._ip6_multicast.append(snm_ip)
+        h._ip6_multicast_filters[snm_ip] = Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
 
 
 class TestIcmp6Nd__AsyncDad__ConcurrentClaims(NdTestCase):

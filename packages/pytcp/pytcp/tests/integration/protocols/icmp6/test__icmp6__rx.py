@@ -41,6 +41,10 @@ from typing import Any, override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6Type
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.parameterized import parameterized_class
 
@@ -930,7 +934,9 @@ class TestIcmp6Rx__RouterSolicitation(IcmpTestCase):
 
         super().setUp()
         self._packet_handler._mac_multicast.append(self._ALL_ROUTERS__MAC)
-        self._packet_handler._ip6_multicast.append(self._ALL_ROUTERS__IP6)
+        self._packet_handler._ip6_multicast_filters[self._ALL_ROUTERS__IP6] = Ip6MulticastFilter(
+            Ip6MulticastFilterMode.EXCLUDE
+        )
 
     def test__icmp6__rx__router_solicitation__no_tx(self) -> None:
         """
@@ -991,7 +997,9 @@ class TestIcmp6Rx__Mld2Report(IcmpTestCase):
 
         super().setUp()
         self._packet_handler._mac_multicast.append(self._MLD2_ROUTERS__MAC)
-        self._packet_handler._ip6_multicast.append(self._MLD2_ROUTERS__IP6)
+        self._packet_handler._ip6_multicast_filters[self._MLD2_ROUTERS__IP6] = Ip6MulticastFilter(
+            Ip6MulticastFilterMode.EXCLUDE
+        )
 
     def test__icmp6__rx__mld2_report__no_tx(self) -> None:
         """

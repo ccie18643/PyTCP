@@ -41,6 +41,10 @@ ver 3.0.8
 from typing import override
 
 from net_addr import Ip6Address, MacAddress
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.tests.lib.nd_testcase import NdTestCase
 from pytcp.tests.lib.network_testcase import (
     HOST_A__MAC_ADDRESS,
@@ -80,7 +84,9 @@ class TestIcmp6Rx__NdSimultaneousProbe(NdTestCase):
         if _SOLICITED_NODE_MAC not in self._packet_handler._mac_multicast:
             self._packet_handler._mac_multicast.append(_SOLICITED_NODE_MAC)
         if _SOLICITED_NODE_MCAST not in self._packet_handler._ip6_multicast:
-            self._packet_handler._ip6_multicast.append(_SOLICITED_NODE_MCAST)
+            self._packet_handler._ip6_multicast_filters[_SOLICITED_NODE_MCAST] = Ip6MulticastFilter(
+                Ip6MulticastFilterMode.EXCLUDE
+            )
 
     def test__icmp6__rx__simultaneous_probe__no_tx(self) -> None:
         """

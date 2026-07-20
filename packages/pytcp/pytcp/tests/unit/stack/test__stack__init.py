@@ -51,6 +51,10 @@ from net_addr import (
     MacAddress,
 )
 from pytcp.lib.interface_layer import InterfaceLayer
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.runtime.fib import Route, RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
@@ -1722,7 +1726,9 @@ class TestStackInterfaceLifecycleDynamic(TestCase):
         v6 = Ip6IfAddr("2001:db8:50::7/64")
         handler._ip4_ifaddr = [Ip4IfAddr("10.0.50.7/24")]
         handler._ip6_ifaddr = [v6]
-        handler._ip6_multicast = [v6.address.solicited_node_multicast]
+        handler._ip6_multicast_filters = {
+            v6.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+        }
         handler._mac_multicast = [v6.address.solicited_node_multicast.multicast_mac]
         # Removing the interface leaves the solicited-node multicast,
         # which emits an MLD leave (RFC 3810 §6.1); this unit test has no

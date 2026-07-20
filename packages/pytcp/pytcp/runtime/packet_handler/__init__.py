@@ -81,6 +81,10 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.lib.logger import log
 from pytcp.lib.packet_stats import (
     LinkStatsCounters,
@@ -151,6 +155,16 @@ if TYPE_CHECKING:
 # a group's per-interface record is created (join) or deleted (leave).
 _IP4_MULTICAST__NONMEMBER = Ip4MulticastFilter(Ip4MulticastFilterMode.INCLUDE)
 
+# The RFC 3810 §4.2 "non-listener" reception state — the IPv6 (MLDv2)
+# analogue of '_IP4_MULTICAST__NONMEMBER'.
+_IP6_MULTICAST__NONMEMBER = Ip6MulticastFilter(Ip6MulticastFilterMode.INCLUDE)
+
+# The IPv6 all-nodes multicast group (RFC 4291 §2.7.1). The host is a
+# permanent member and never MLD-manages it (RFC 3810 §6), so it is
+# exempt from the source-filter ref machinery — the v6 analogue of the
+# IPv4 permanent all-systems group 224.0.0.1 ('IP4__MULTICAST__ALL_SYSTEMS').
+IP6__MULTICAST__ALL_NODES = Ip6Address("ff02::1")
+
 
 @dataclass(slots=True)
 class _Ip4GroupMembership:
@@ -184,6 +198,41 @@ class _Ip4GroupMembership:
         contributors = list(self.socket_filters.values())
         if self.operator:
             contributors.append(Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE))
+        return contributors
+
+
+@dataclass(slots=True)
+class _Ip6GroupMembership:
+    """
+    The per-socket source filters contributing to one IPv6 multicast
+    group's reception on an interface — the operator hold ('ip maddr'-
+    style, set-once, an EXCLUDE{} any-source contributor) and each
+    socket's filter keyed by an opaque socket token (the BSD socket
+    options 'IPV6_JOIN_GROUP' / 'MCAST_JOIN_SOURCE_GROUP' / …). The
+    merged interface filter (RFC 3810 §4.2) is derived from
+    'contributors()'; the group stays joined while that merge has
+    reception state. The IPv6 (MLDv2) analogue of '_Ip4GroupMembership'.
+    """
+
+    operator: bool = False
+    # The current source filter each socket holds on this group, keyed
+    # by the socket's opaque token (its 'id()'). 'IPV6_JOIN_GROUP'
+    # registers an EXCLUDE{} any-source filter; the source options
+    # register INCLUDE / EXCLUDE-with-sources filters. A socket's entry
+    # is replaced on each of its own filter mutations and removed when
+    # it leaves the group.
+    socket_filters: dict[int, Ip6MulticastFilter] = field(default_factory=dict)
+
+    def contributors(self) -> list[Ip6MulticastFilter]:
+        """
+        Return every per-socket filter feeding the §4.2 merge — the
+        socket filters plus the operator hold's EXCLUDE{} contributor
+        when the operator hold is set.
+        """
+
+        contributors = list(self.socket_filters.values())
+        if self.operator:
+            contributors.append(Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE))
         return contributors
 
 
@@ -316,7 +365,15 @@ class PacketHandler(Subsystem, ABC):
     _ip4_ifaddr_candidate: list[Ip4IfAddr]
     _ip6_ifaddr: list[Ip6IfAddr]
     _ip4_ifaddr: list[Ip4IfAddr]
-    _ip6_multicast: list[Ip6Address]
+    # The materialized per-interface IPv6 multicast reception state —
+    # one merged source filter (RFC 3810 §4.2) per group the interface
+    # listens on, including the permanent all-nodes group ff02::1 and the
+    # per-address solicited-node groups. The flat '_ip6_multicast'
+    # joined-group list is a derived view over this map's keys. Every
+    # any-source join is EXCLUDE{}; source-specific joins carry
+    # INCLUDE / EXCLUDE-with-sources filters (P2/P5).
+    _ip6_multicast_filters: dict[Ip6Address, Ip6MulticastFilter]
+    _ip6_multicast_refs: dict[Ip6Address, _Ip6GroupMembership]
     # The materialized per-interface IPv4 multicast reception state —
     # one merged source filter (RFC 3376 §3.2) per group the interface
     # listens on, including the permanent all-systems group 224.0.0.1.
@@ -442,8 +499,18 @@ class PacketHandler(Subsystem, ABC):
         self._ip6_ifaddr = []
         self._ip4_ifaddr = []
 
-        # Used to keep track of IPv6 multicast addresses.
-        self._ip6_multicast = []
+        # The materialized per-interface IPv6 multicast reception state
+        # (RFC 3810 §4.2 merged filter per group). The '_ip6_multicast'
+        # joined-group list is a derived read-only view over its keys.
+        self._ip6_multicast_filters = {}
+
+        # Per-group source-filter contributors deciding when an IPv6
+        # multicast group crosses the join / leave edge (operator hold +
+        # per-socket filters; the §4.2 merge over these derives the
+        # materialized filter above). The permanent all-nodes group
+        # ff02::1 and the solicited-node groups are assigned directly and
+        # are not ref-managed.
+        self._ip6_multicast_refs = {}
 
         # The materialized per-interface IPv4 multicast reception state
         # (RFC 3376 §3.2 merged filter per group). The '_ip4_multicast'
@@ -458,27 +525,29 @@ class PacketHandler(Subsystem, ABC):
         # ref-managed.
         self._ip4_multicast_refs = {}
 
-        # Guards every read / write of the two IPv4 multicast reception-
-        # state structures above against concurrent application-thread
-        # membership changes and the RX/timer read paths. Reentrant
-        # because the mutators nest ('mc_ref_acquire' -> '_mc_recompute'
-        # -> '_assign_ip4_multicast' -> '_ip4_multicast_filter_for').
+        # Guards every read / write of the IPv4 AND IPv6 multicast
+        # reception-state structures above against concurrent
+        # application-thread membership changes and the RX/timer read
+        # paths. Reentrant because the mutators nest ('mc_ref_acquire' ->
+        # '_mc_recompute' -> '_assign_ip4_multicast' ->
+        # '_ip4_multicast_filter_for', and the 'mc6_*' analogues).
         # GIL atomicity is not relied upon — PyTCP targets free-threaded
         # CPython, where a bare dict RMW racing another thread corrupts.
         self._lock__multicast = threading.RLock()
 
         # Serializes writers to the per-interface address-configuration
-        # cluster — '_ip4_ifaddr' / '_ip6_ifaddr', '_ip6_multicast',
-        # the RA-derived SLAAC / temporary / default-router lists and
-        # the DAD-state map. Writers publish a fresh list/dict object
-        # under this lock (copy-on-write); the per-packet RX / TX
-        # readers stay lock-free, iterating the immutable snapshot they
-        # load. Reentrant because the RA / sweep / DAD-claim paths nest
-        # ('_icmp6_sweep_* -> _remove_ip6_multicast', '_assign_ip6_host
-        # -> _assign_ip6_multicast'). NEVER held across a blocking DAD
-        # wait — the DAD loop locks only at its individual mutation
-        # points. Ordering: this lock is taken before 'tx_ring' on the
-        # emit paths and never under '_lock__multicast'.
+        # cluster — '_ip4_ifaddr' / '_ip6_ifaddr', the RA-derived SLAAC /
+        # temporary / default-router lists and the DAD-state map. Writers
+        # publish a fresh list/dict object under this lock (copy-on-write);
+        # the per-packet RX / TX readers stay lock-free, iterating the
+        # immutable snapshot they load. Reentrant because the RA / sweep /
+        # DAD-claim paths nest. The IPv6 multicast reception state moved
+        # to '_lock__multicast' (matching IPv4); the address-config paths
+        # that join / leave solicited-node groups therefore take
+        # '_lock__addr_config' THEN '_lock__multicast'. NEVER held across
+        # a blocking DAD wait — the DAD loop locks only at its individual
+        # mutation points. Ordering: '_lock__addr_config' before
+        # '_lock__multicast' before 'tx_ring' on the emit paths.
         self._lock__addr_config = threading.RLock()
 
         # IPv4 Identification counter (last value) + its lock. The
@@ -636,6 +705,19 @@ class PacketHandler(Subsystem, ABC):
         """
 
         return [ip6_host.address for ip6_host in self._ip6_ifaddr]
+
+    @property
+    def _ip6_multicast(self) -> list[Ip6Address]:
+        """
+        Get the list of IPv6 multicast groups the interface listens on —
+        a derived read-only view over the materialized per-group filter
+        map (the groups with reception state). RFC 3810 §4.2 reception
+        state is the source of truth; this flat list is the join-set
+        view the RX accept / TX source / MLD report paths consume.
+        """
+
+        with self._lock__multicast:
+            return list(self._ip6_multicast_filters)
 
     @property
     def _ip4_unicast(self) -> list[Ip4Address]:
@@ -976,6 +1058,127 @@ class PacketHandler(Subsystem, ABC):
             if not membership.operator and not membership.socket_filters:
                 del self._ip4_multicast_refs[group]
             self._mc_recompute(group)
+
+    def mc6_is_joined(self, group: Ip6Address, /) -> bool:
+        """
+        Return whether the interface currently listens on IPv6 multicast
+        'group'. The materialized filter map is the source of truth and
+        also covers the permanent all-nodes group ff02::1. The IPv6
+        (MLDv2) analogue of 'mc_is_joined'.
+        """
+
+        with self._lock__multicast:
+            return group in self._ip6_multicast_filters
+
+    def _mc6_recompute(self, group: Ip6Address, /) -> None:
+        """
+        Re-derive the merged interface filter for 'group' from its
+        per-socket + operator contributors (RFC 3810 §4.2) and reconcile
+        the materialized reception state. Crossing into reception joins
+        the group (MAC filter + Report via 'assign_ip6_multicast');
+        losing reception leaves it (via 'remove_ip6_multicast'); a filter
+        change while still joined updates the materialized filter and
+        re-announces. The permanent all-nodes group ff02::1 is assigned
+        directly and never recomputed here.
+        """
+
+        with self._lock__multicast:
+            membership = self._ip6_multicast_refs.get(group)
+            merged = Ip6MulticastFilter.merge(membership.contributors() if membership is not None else [])
+            joined = self.mc6_is_joined(group)
+
+            if merged.has_reception:
+                if not joined:
+                    # Reception edge: 'assign_ip6_multicast' materializes
+                    # the merged filter, programs the MAC, and emits the
+                    # §6.1 join Report.
+                    self.assign_ip6_multicast(ip6_multicast=group)
+                elif merged != self._ip6_multicast_filters[group]:
+                    # Still joined, filter changed: re-materialize and
+                    # re-announce. P4: replace the current-state Report
+                    # with an MLDv2 ALLOW / BLOCK / CHANGE_TO_* source
+                    # delta ('_send_mld_state_change').
+                    self._ip6_multicast_filters[group] = merged
+                    self._send_icmp6_multicast_listener_report()
+            elif joined:
+                self.remove_ip6_multicast(ip6_multicast=group)
+
+    def mc6_ref_acquire(self, group: Ip6Address, /) -> None:
+        """
+        Acquire the operator hold on IPv6 multicast 'group' (the
+        set-once 'ip maddr'-style EXCLUDE{} any-source contributor) and
+        recompute the merged interface filter. The permanent all-nodes
+        group ff02::1 is never ref-managed (RFC 3810 §6). The IPv6
+        (MLDv2) analogue of 'mc_ref_acquire'.
+        """
+
+        if group == IP6__MULTICAST__ALL_NODES:
+            return
+
+        with self._lock__multicast:
+            self._ip6_multicast_refs.setdefault(group, _Ip6GroupMembership()).operator = True
+            self._mc6_recompute(group)
+
+    def mc6_ref_release(self, group: Ip6Address, /) -> None:
+        """
+        Release the operator hold on IPv6 multicast 'group' and recompute
+        the merged interface filter; the group leaves only when no
+        contributor (operator or socket) remains. Idempotent. The
+        permanent all-nodes group ff02::1 is never dropped here (RFC 3810
+        §6). The IPv6 (MLDv2) analogue of 'mc_ref_release'.
+        """
+
+        if group == IP6__MULTICAST__ALL_NODES:
+            return
+
+        with self._lock__multicast:
+            membership = self._ip6_multicast_refs.get(group)
+            if membership is None:
+                return
+
+            membership.operator = False
+            if not membership.operator and not membership.socket_filters:
+                del self._ip6_multicast_refs[group]
+            self._mc6_recompute(group)
+
+    def mc6_set_socket_filter(self, group: Ip6Address, /, *, token: int, source_filter: Ip6MulticastFilter) -> None:
+        """
+        Register / replace the source filter socket 'token' holds on IPv6
+        multicast 'group' (RFC 3810 §4.1 per-socket state) and recompute
+        the merged interface filter (§4.2). A socket joining the all-nodes
+        group ff02::1 is a no-op — it is permanent and never MLD-managed.
+        The IPv6 (MLDv2) analogue of 'mc_set_socket_filter'.
+        """
+
+        if group == IP6__MULTICAST__ALL_NODES:
+            return
+
+        with self._lock__multicast:
+            self._ip6_multicast_refs.setdefault(group, _Ip6GroupMembership()).socket_filters[token] = source_filter
+            self._mc6_recompute(group)
+
+    def mc6_clear_socket_filter(self, group: Ip6Address, /, *, token: int) -> None:
+        """
+        Drop the source filter socket 'token' held on IPv6 multicast
+        'group' (the socket left, per RFC 3810 §4.1 INCLUDE{} delete) and
+        recompute the merged interface filter (§4.2); the group leaves
+        only when no contributor remains. Idempotent. The all-nodes group
+        ff02::1 is never managed here. The IPv6 (MLDv2) analogue of
+        'mc_clear_socket_filter'.
+        """
+
+        if group == IP6__MULTICAST__ALL_NODES:
+            return
+
+        with self._lock__multicast:
+            membership = self._ip6_multicast_refs.get(group)
+            if membership is None:
+                return
+
+            membership.socket_filters.pop(token, None)
+            if not membership.operator and not membership.socket_filters:
+                del self._ip6_multicast_refs[group]
+            self._mc6_recompute(group)
 
     def _assign_ip4_host(self, /, ip4_host: Ip4IfAddr) -> None:
         """
@@ -2598,6 +2801,22 @@ class PacketHandler(Subsystem, ABC):
                 return Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE)
             return Ip4MulticastFilter.merge(membership.contributors())
 
+    def _ip6_multicast_filter_for(self, group: Ip6Address, /) -> Ip6MulticastFilter:
+        """
+        Return the merged RFC 3810 §4.2 interface filter for 'group' from
+        its current contributors, or the any-source EXCLUDE{} default
+        when the group has no contributor registry entry (a directly
+        assigned group such as the permanent all-nodes group or a
+        solicited-node group, or a test-driven direct assign). The IPv6
+        (MLDv2) analogue of '_ip4_multicast_filter_for'.
+        """
+
+        with self._lock__multicast:
+            membership = self._ip6_multicast_refs.get(group)
+            if membership is None:
+                return Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+            return Ip6MulticastFilter.merge(membership.contributors())
+
     def send_igmp_leave_all(self) -> None:
         """
         Emit a graceful IGMP Leave for every joined IPv4 multicast group
@@ -3754,14 +3973,17 @@ class PacketHandlerL2(
         Assign IPv6 multicast address to the list stack listens on.
         """
 
-        with self._lock__addr_config:
-            self._ip6_multicast = [*self._ip6_multicast, ip6_multicast]
+        with self._lock__multicast:
+            # Materialize the merged §4.2 reception filter (EXCLUDE{} for a
+            # directly-assigned / any-source group, the merged contributors'
+            # filter for a source-specific join).
+            self._ip6_multicast_filters[ip6_multicast] = self._ip6_multicast_filter_for(ip6_multicast)
 
-        __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
+            __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
 
-        self._assign_mac_multicast(ip6_multicast.multicast_mac)
+            self._assign_mac_multicast(ip6_multicast.multicast_mac)
 
-        self._send_icmp6_multicast_listener_report()
+            self._send_icmp6_multicast_listener_report()
 
     @override
     def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
@@ -3769,17 +3991,17 @@ class PacketHandlerL2(
         Remove IPv6 multicast address from the list stack listens on.
         """
 
-        with self._lock__addr_config:
-            self._ip6_multicast = [group for group in self._ip6_multicast if group != ip6_multicast]
+        with self._lock__multicast:
+            del self._ip6_multicast_filters[ip6_multicast]
 
-        __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
+            __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
-        self._remove_mac_multicast(ip6_multicast.multicast_mac)
+            self._remove_mac_multicast(ip6_multicast.multicast_mac)
 
-        # RFC 3810 §6.1 — announce the departure with a State Change
-        # Report (CHANGE_TO_INCLUDE, empty source list), the IPv6
-        # analogue of the IGMP leave above.
-        self._send_icmp6_mld_leave(ip6_multicast)
+            # RFC 3810 §6.1 — announce the departure with a State Change
+            # Report (CHANGE_TO_INCLUDE, empty source list), the IPv6
+            # analogue of the IGMP leave above.
+            self._send_icmp6_mld_leave(ip6_multicast)
 
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:
@@ -3975,15 +4197,19 @@ class PacketHandlerL3(
     @override
     def assign_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
         """
-        Assign IPv6 multicast address to the list stack listens on.
+        Assign IPv6 multicast address to the list stack listens on. An L3
+        (TUN) interface has no Ethernet layer, so no multicast MAC is
+        programmed.
         """
 
-        with self._lock__addr_config:
-            self._ip6_multicast = [*self._ip6_multicast, ip6_multicast]
+        with self._lock__multicast:
+            # Materialize the merged §4.2 reception filter (EXCLUDE{} for an
+            # any-source group, the merged contributors' filter otherwise).
+            self._ip6_multicast_filters[ip6_multicast] = self._ip6_multicast_filter_for(ip6_multicast)
 
-        __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
+            __debug__ and log("stack", f"Assigned IPv6 multicast {ip6_multicast}")
 
-        self._send_icmp6_multicast_listener_report()
+            self._send_icmp6_multicast_listener_report()
 
     @override
     def remove_ip6_multicast(self, /, ip6_multicast: Ip6Address) -> None:
@@ -3991,14 +4217,14 @@ class PacketHandlerL3(
         Remove IPv6 multicast address from the list stack listens on.
         """
 
-        with self._lock__addr_config:
-            self._ip6_multicast = [group for group in self._ip6_multicast if group != ip6_multicast]
+        with self._lock__multicast:
+            del self._ip6_multicast_filters[ip6_multicast]
 
-        __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
+            __debug__ and log("stack", f"Removed IPv6 multicast {ip6_multicast}")
 
-        # RFC 3810 §6.1 — announce the departure with a State Change
-        # Report (CHANGE_TO_INCLUDE, empty source list).
-        self._send_icmp6_mld_leave(ip6_multicast)
+            # RFC 3810 §6.1 — announce the departure with a State Change
+            # Report (CHANGE_TO_INCLUDE, empty source list).
+            self._send_icmp6_mld_leave(ip6_multicast)
 
     @override
     def _assign_ip4_multicast(self, /, ip4_multicast: Ip4Address) -> None:

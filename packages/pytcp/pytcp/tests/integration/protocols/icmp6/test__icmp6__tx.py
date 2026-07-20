@@ -64,6 +64,10 @@ from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__multicast_address_recor
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
 )
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.lib.tx_status import TxStatus
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import (
@@ -953,7 +957,9 @@ class TestIcmp6Tx__SendMulticastListenerReportEmpty(IcmpTestCase):
         """
 
         super().setUp()
-        self._packet_handler._ip6_multicast = [Ip6Address("ff02::1")]
+        self._packet_handler._ip6_multicast_filters = {
+            Ip6Address("ff02::1"): Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+        }
 
     def test__icmp6__tx__send_mlr_empty__no_tx(self) -> None:
         """

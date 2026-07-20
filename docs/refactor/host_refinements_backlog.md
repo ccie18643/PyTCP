@@ -76,6 +76,21 @@ until the user says "push".
   flipped the stale "TCP probe path deferred (Phase 3c)" rows in
   `rfc8899__dplpmtud` + `rfc4821__plpmtud` adherence records to met. No
   production change required.
+- [x] **IPv6 SSM handler core (R4 P3)** — the `mc6_*` reception-state
+  machinery on the packet handler, a faithful mirror of the fully-evolved
+  IGMPv3 v4 core: `_Ip6GroupMembership`, `_ip6_multicast_filters` (now the
+  per-interface source of truth, with `_ip6_multicast` a derived read-only
+  property), `_ip6_multicast_refs`, `_ip6_multicast_filter_for`, and
+  `mc6_is_joined` / `_mc6_recompute` / `mc6_ref_acquire` / `mc6_ref_release`
+  / `mc6_set_socket_filter` / `mc6_clear_socket_filter`. The IPv6 multicast
+  reception state moved from `_lock__addr_config` to `_lock__multicast`
+  (one lock domain, matching v4); `L2/L3.assign/remove_ip6_multicast`
+  materialize the filter map there. Behaviour-preserving (every P3
+  contributor is EXCLUDE{} any-source; the `_mc6_recompute` mid-delta
+  branch is a `# P4:` placeholder). Tests-first:
+  `test__icmp6__mld__source_filter_model.py` (7 wire-driven model tests) +
+  harness / thread-safety / ND-seed updates. RFC 3810 §4.2/§5.2 adherence
+  flip waits for P4/P5. See the R4 section for the remaining P2/P4/P5 map.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -176,7 +191,26 @@ self._signal_readable()
     (and/or the protocol-independent `MCAST_JOIN_SOURCE_GROUP` family) as
     `IpV6Option` enum members + bare aliases (see `.claude/rules/enums.md`
     §2.2). Wire the setsockopt cases.
-  - P3: `_ip6_multicast_filters` dict on the handler + `_ip6_multicast_filter_for`.
+  - **P3 — SHIPPED:** the handler `mc6_*` reception-state core, a
+    faithful mirror of the fully-evolved v4 machinery. Added
+    `_Ip6GroupMembership`, the `_ip6_multicast_filters` dict as the
+    per-interface reception source of truth (with `_ip6_multicast` now a
+    derived read-only property over its keys), `_ip6_multicast_refs`,
+    `_ip6_multicast_filter_for`, and the six `mc6_*` methods
+    (`mc6_is_joined` / `_mc6_recompute` / `mc6_ref_acquire` /
+    `mc6_ref_release` / `mc6_set_socket_filter` /
+    `mc6_clear_socket_filter`). The IPv6 multicast reception state moved
+    from `_lock__addr_config` to `_lock__multicast` (matching v4, one lock
+    domain), so `L2/L3.assign/remove_ip6_multicast` now materialize the
+    filter map under `_lock__multicast` and the address-config callers
+    take `_lock__addr_config` THEN `_lock__multicast`. Behaviour-preserving
+    (every P3 contributor is still EXCLUDE{} any-source, so the same MLD
+    Reports fire); the `_mc6_recompute` mid-membership filter-delta branch
+    is a P4 placeholder (current-state Report, marked `# P4:`). Tests-first:
+    `test__icmp6__mld__source_filter_model.py` (7 wire-driven model tests)
+    + the harness / thread-safety / ND-seed test updates. The RFC 3810
+    §4.2 / §5.2 source-record adherence flip waits for P4/P5 (as the v4
+    §3.2 flip waited for Phase 5).
   - P4: MLDv2 source records on TX — `Icmp6Mld2MulticastAddressRecordType`
     already has `ALLOW_NEW_SOURCES` (5) / `BLOCK_OLD_SOURCES` (6) /
     `CHANGE_TO_INCLUDE` (3) / `CHANGE_TO_EXCLUDE` (4). Emit the state-change
@@ -191,10 +225,17 @@ self._signal_readable()
 #### R4 — resumable implementation map (derived 2026-07-19 by reading the v4 machinery)
 
 The v4 source-filter machinery to mirror, with exact locations, so P2-P5
-can resume without re-deriving:
+can resume without re-deriving. **Status: P3 (the handler core below) is
+SHIPPED** — the `_Ip6GroupMembership` / `_ip6_multicast_filters` /
+`_ip6_multicast_refs` / `mc6_*` / `_ip6_multicast_filter_for` machinery all
+landed under `_lock__multicast`, and `assign/remove_ip6_multicast` now
+materialize the filter map. **Remaining: P2** (Membership API + Socket
+`MCAST_*` setsockopt + `group_source_req`), **P4** (`_send_mld_state_change`
+MLDv2 source records, replacing the `# P4:` placeholder in `_mc6_recompute`),
+**P5** (RX `Ip6MulticastFilter.allows` gate for UDP + RAW).
 
 - **Handler (`runtime/packet_handler/__init__.py`) — the deep, no-GIL-locked
-  core, duplicated across the L2 and L3 handler classes:**
+  core, duplicated across the L2 and L3 handler classes — SHIPPED (P3):**
   - `_Ip4GroupMembership` (line ~156): `operator: bool` + `socket_filters:
     dict[int, Ip4MulticastFilter]` + `contributors()`. Mirror as
     `_Ip6GroupMembership`.

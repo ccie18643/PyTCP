@@ -55,6 +55,10 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.protocols.ip6 import ip6__constants as ip6__constants_module
@@ -348,10 +352,10 @@ class NetworkTestCase(TestCase):
             IP4__MULTICAST__ALL_NODES: Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE)
         }
         self._packet_handler._ip6_ifaddr = [STACK__IP6_HOST]
-        self._packet_handler._ip6_multicast = [
-            IP6__MULTICAST__ALL_NODES,
-            STACK__IP6_HOST.address.solicited_node_multicast,
-        ]
+        self._packet_handler._ip6_multicast_filters = {
+            IP6__MULTICAST__ALL_NODES: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+            STACK__IP6_HOST.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+        }
         self._packet_handler._ip4_ifaddr_candidate = [STACK__IP4_HOST__CANDIDATE]
         self._packet_handler._ip6_ifaddr_candidate = [STACK__IP6_HOST__CANDIDATE]
 
@@ -525,10 +529,10 @@ class NetworkTestCase(TestCase):
         handler._ip6_ifaddr = [ip6_host] if ip6_host is not None else []
         if ip6_host is not None:
             handler._mac_multicast = [ip6_host.address.solicited_node_multicast.multicast_mac]
-            handler._ip6_multicast = [
-                IP6__MULTICAST__ALL_NODES,
-                ip6_host.address.solicited_node_multicast,
-            ]
+            handler._ip6_multicast_filters = {
+                IP6__MULTICAST__ALL_NODES: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+                ip6_host.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+            }
         handler._tx_ring = cast(TxRing, mock_tx_ring)
         handler._rx_ring = cast(RxRing, mock_rx_ring)
         handler._arp_cache = cast(ArpCache, mock_arp_cache)

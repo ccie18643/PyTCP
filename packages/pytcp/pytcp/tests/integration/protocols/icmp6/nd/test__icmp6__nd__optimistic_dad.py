@@ -61,6 +61,10 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6DadState
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.nd_testcase import NdTestCase
@@ -370,7 +374,7 @@ class TestIcmp6Nd__OptimisticDad__NaOverrideFlag(NdTestCase):
         if snm_mac not in self._packet_handler._mac_multicast:
             self._packet_handler._mac_multicast.append(snm_mac)
         if snm_ip not in self._packet_handler._ip6_multicast:
-            self._packet_handler._ip6_multicast.append(snm_ip)
+            self._packet_handler._ip6_multicast_filters[snm_ip] = Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
 
     def test__icmp6__nd__optimistic_dad__na_clears_override_for_optimistic(self) -> None:
         """
