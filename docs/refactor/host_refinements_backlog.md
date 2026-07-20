@@ -160,8 +160,18 @@ self._signal_readable()
     gating per-socket delivery for **UDP and RAW** (RAW needed the
     `RawMetadata.socket_ids` wildcard-combo enumeration — mirror for v6).
 - **The IPv6 side to build (Phases mirroring the IGMP track):**
-  - P1: `packages/pytcp/pytcp/lib/ip6_multicast_filter.py` (`Ip6MulticastFilter`,
-    a straight `Ip6Address` copy of the v4 value type). Unit tests.
+  - **P1 — SHIPPED (commit `d2054fe8`):**
+    `packages/pytcp/pytcp/lib/ip6_multicast_filter.py` (`Ip6MulticastFilter`
+    + `Ip6MulticastFilterMode`, a straight `Ip6Address` copy of the v4
+    value type: `has_reception`, `allows`, RFC 3810 §4.2 `merge`). 18 unit
+    tests in `test__lib__ip6_multicast_filter.py`.
+  - **Architectural note for P2-P3:** the existing `stack/membership.py`
+    `MembershipApi` is entirely IPv4 (`Ip4Address` / `ip4_multicast` /
+    `set_socket_filter` → the handler's `_ip4_multicast_filters`). The IPv6
+    side needs a parallel v6 membership surface (mirror, not genericize —
+    v4/v6 multicast are already separate paths in the handler and the
+    MLD/IGMP TX). P3's `_ip6_multicast_filters` dict + merge live on the
+    handler next to the v4 ones.
   - P2: new opts `IPV6_ADD_SOURCE_MEMBERSHIP` / `IPV6_DROP_SOURCE_MEMBERSHIP`
     (and/or the protocol-independent `MCAST_JOIN_SOURCE_GROUP` family) as
     `IpV6Option` enum members + bare aliases (see `.claude/rules/enums.md`
