@@ -245,8 +245,27 @@ self._signal_readable()
   accepted (byte count returned) but no frame is emitted, gated by a new
   `_multicast_send_suppressed` helper at the UDP / RAW send sites. Tests:
   `TestSocketMulticastHopOverride` (8). **The multicast hop-count item is
-  complete.** (`IP_MULTICAST_LOOP` / `IP_MULTICAST_IF` and the IPv6
-  equivalents remain unimplemented — separate, lower-value knobs.)
+  complete.**
+- **Shipped:** `IP_MULTICAST_LOOP` (34) / `IPV6_MULTICAST_LOOP` (19) now
+  accepted + stored + getsockopt (default 1), rather than `ENOPROTOOPT`.
+  Linux never rejects these, and portable multicast senders set them
+  routinely; accepting closes that parity gap. Behaviourally a near-no-op:
+  PyTCP has no local multicast loopback, so a sender never receives its own
+  multicast — the common `LOOP=0` (do-not-echo) intent is honoured, `LOOP=1`
+  is a documented no-op. Tests: `TestUdpSocketMulticastLoop` (5).
+- **R2 close-out — remaining items scoped to their proper track (not R2
+  sweep fixes):**
+  - `IP_MULTICAST_IF` / `IPV6_MULTICAST_IF` — honouring these *is*
+    multi-interface multicast egress selection, a **Phase-2** feature. On a
+    single-homed Phase-1 host the sole interface is always the egress, so
+    the option carries no Phase-1 semantics worth faking with an inert
+    address/ifindex store. Deferred to Phase-2 (multicast egress-by-oif).
+  - `SO_RCVBUF` on TCP — Linux derives the advertised receive window from
+    it; that is receive-window / buffer-accounting work on the TCP path,
+    tracked with **R3** (`SO_SNDBUF` / `SO_SNDTIMEO`), not a setsockopt
+    sweep fix. Honoured today for UDP / RAW / PING RX drop-cap.
+  - `IP_OPTIONS` on RAW TX — the last true "stored-but-not-honoured" R2 gap;
+    fixed next (see below).
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

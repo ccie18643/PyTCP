@@ -3049,3 +3049,119 @@ class TestUdpSocketSelectorIntegration(_UdpSocketTestCase):
             [self._socket],
             msg="The socket fd must always be select-writable while tx buffer is unbounded.",
         )
+
+
+class TestUdpSocketMulticastLoop(_UdpSocketTestCase):
+    """
+    IP_MULTICAST_LOOP / IPV6_MULTICAST_LOOP acceptance: PyTCP
+    accepts the multicast-loopback flag for stdlib / portability
+    parity (Linux never returns ENOPROTOOPT) and round-trips it
+    through getsockopt, defaulting to the Linux value of 1.
+    """
+
+    def test__ip_multicast_loop_default_is_1(self) -> None:
+        """
+        Ensure IP_MULTICAST_LOOP reads back as 1 (Linux default)
+        on a socket that never set it.
+
+        Reference: Linux IP_MULTICAST_LOOP (default 1).
+        """
+
+        from pytcp.runtime.socket import IP_MULTICAST_LOOP, IPPROTO_IP
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IP, IP_MULTICAST_LOOP),
+            1,
+            msg="IP_MULTICAST_LOOP must default to 1.",
+        )
+
+    def test__ip_multicast_loop_setsockopt_getsockopt_roundtrip(self) -> None:
+        """
+        Ensure IP_MULTICAST_LOOP accepts an int and getsockopt
+        echoes it back — the common 'disable loopback' (0) intent
+        is stored without raising ENOPROTOOPT.
+
+        Reference: Linux IP_MULTICAST_LOOP (multicast loopback flag).
+        """
+
+        from pytcp.runtime.socket import IP_MULTICAST_LOOP, IPPROTO_IP
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        s.setsockopt(IPPROTO_IP, IP_MULTICAST_LOOP, 0)
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IP, IP_MULTICAST_LOOP),
+            0,
+            msg="IP_MULTICAST_LOOP must round-trip 0.",
+        )
+        s.setsockopt(IPPROTO_IP, IP_MULTICAST_LOOP, 1)
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IP, IP_MULTICAST_LOOP),
+            1,
+            msg="IP_MULTICAST_LOOP must round-trip 1.",
+        )
+
+    def test__ip_multicast_loop_non_int_raises_einval(self) -> None:
+        """
+        Ensure IP_MULTICAST_LOOP rejects a non-int value with
+        EINVAL.
+
+        Reference: Linux IP_MULTICAST_LOOP (integer flag).
+        """
+
+        from pytcp.runtime.socket import IP_MULTICAST_LOOP, IPPROTO_IP
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        with self.assertRaises(OSError) as ctx:
+            s.setsockopt(IPPROTO_IP, IP_MULTICAST_LOOP, b"\x00")
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EINVAL,
+            msg="IP_MULTICAST_LOOP with a bytes value must raise EINVAL.",
+        )
+
+    def test__ipv6_multicast_loop_default_is_1(self) -> None:
+        """
+        Ensure IPV6_MULTICAST_LOOP reads back as 1 (Linux default)
+        on a socket that never set it.
+
+        Reference: Linux IPV6_MULTICAST_LOOP (default 1).
+        """
+
+        from pytcp.runtime.socket import IPPROTO_IPV6, IPV6_MULTICAST_LOOP
+
+        s = UdpSocket(family=AddressFamily.INET6)
+
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IPV6, IPV6_MULTICAST_LOOP),
+            1,
+            msg="IPV6_MULTICAST_LOOP must default to 1.",
+        )
+
+    def test__ipv6_multicast_loop_setsockopt_getsockopt_roundtrip(self) -> None:
+        """
+        Ensure IPV6_MULTICAST_LOOP accepts an int and getsockopt
+        echoes it back.
+
+        Reference: Linux IPV6_MULTICAST_LOOP (multicast loopback flag).
+        """
+
+        from pytcp.runtime.socket import IPPROTO_IPV6, IPV6_MULTICAST_LOOP
+
+        s = UdpSocket(family=AddressFamily.INET6)
+
+        s.setsockopt(IPPROTO_IPV6, IPV6_MULTICAST_LOOP, 0)
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IPV6, IPV6_MULTICAST_LOOP),
+            0,
+            msg="IPV6_MULTICAST_LOOP must round-trip 0.",
+        )
+        s.setsockopt(IPPROTO_IPV6, IPV6_MULTICAST_LOOP, 1)
+        self.assertEqual(
+            s.getsockopt(IPPROTO_IPV6, IPV6_MULTICAST_LOOP),
+            1,
+            msg="IPV6_MULTICAST_LOOP must round-trip 1.",
+        )

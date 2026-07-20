@@ -195,6 +195,7 @@ class IpOption(IntEnum):
     IP_RECVTOS = 13  # int 0/1: enable IP_TOS cmsg on recvmsg (RFC 1122 §4.1.4 MAY)
     IP_MTU = 14  # int (getsockopt only): effective PMTU for connected peer (RFC 1122 §3.4 GET_MAXSIZES)
     IP_MULTICAST_TTL = 33  # int -1..255: per-socket multicast TTL (default 1; 0 = host scope, RFC 1112 §6.1)
+    IP_MULTICAST_LOOP = 34  # int 0/1: loop multicast back to local sockets (default 1; not honored — no loopback)
     IP_ADD_MEMBERSHIP = 35  # ip_mreq bytes: join an IPv4 multicast group (RFC 1112 / 3376)
     IP_DROP_MEMBERSHIP = 36  # ip_mreq bytes: leave an IPv4 multicast group (RFC 1112 / 3376)
     IP_UNBLOCK_SOURCE = 37  # ip_mreq_source bytes: unblock a source on an EXCLUDE-mode group (RFC 3376 / 3678)
@@ -213,6 +214,7 @@ IP_RECVTTL = IpOption.IP_RECVTTL
 IP_RECVTOS = IpOption.IP_RECVTOS
 IP_MTU = IpOption.IP_MTU
 IP_MULTICAST_TTL = IpOption.IP_MULTICAST_TTL
+IP_MULTICAST_LOOP = IpOption.IP_MULTICAST_LOOP
 IP_ADD_MEMBERSHIP = IpOption.IP_ADD_MEMBERSHIP
 IP_DROP_MEMBERSHIP = IpOption.IP_DROP_MEMBERSHIP
 IP_UNBLOCK_SOURCE = IpOption.IP_UNBLOCK_SOURCE
@@ -230,6 +232,7 @@ class IpV6Option(IntEnum):
 
     IPV6_UNICAST_HOPS = 16  # int 1-255: per-socket Hop-Limit override
     IPV6_MULTICAST_HOPS = 18  # int -1..255: per-socket multicast Hop-Limit (default 1; 0 = host scope)
+    IPV6_MULTICAST_LOOP = 19  # int 0/1: loop multicast back to local sockets (default 1; not honored — no loopback)
     IPV6_JOIN_GROUP = 20  # ipv6_mreq bytes: join an IPv6 multicast group (RFC 3493 §5.2)
     IPV6_LEAVE_GROUP = 21  # ipv6_mreq bytes: leave an IPv6 multicast group (RFC 3493 §5.2)
     IPV6_MTU = 24  # int (getsockopt only): effective PMTU for connected peer
@@ -243,6 +246,7 @@ class IpV6Option(IntEnum):
 
 IPV6_UNICAST_HOPS = IpV6Option.IPV6_UNICAST_HOPS
 IPV6_MULTICAST_HOPS = IpV6Option.IPV6_MULTICAST_HOPS
+IPV6_MULTICAST_LOOP = IpV6Option.IPV6_MULTICAST_LOOP
 IPV6_JOIN_GROUP = IpV6Option.IPV6_JOIN_GROUP
 IPV6_LEAVE_GROUP = IpV6Option.IPV6_LEAVE_GROUP
 # Linux 'IPV6_ADD_MEMBERSHIP' / 'IPV6_DROP_MEMBERSHIP' are stdlib-
@@ -577,6 +581,7 @@ class socket(ABC):
     _so_sndtimeo: float | None
     _ip_ttl: int | None
     _ip_multicast_ttl: int | None
+    _ip_multicast_loop: bool
     _ip_tos: int
     _ip_options: bytes
     _ip_recvopts: bool
@@ -584,6 +589,7 @@ class socket(ABC):
     _ip_recverr: bool
     _ipv6_unicast_hops: int | None
     _ipv6_multicast_hops: int | None
+    _ipv6_multicast_loop: bool
     _ipv6_tclass: int
     _ipv6_recvtclass: bool
     _ipv6_recverr: bool
@@ -647,6 +653,11 @@ class socket(ABC):
         self._so_sndtimeo = None
         self._ip_ttl = None
         self._ip_multicast_ttl = None
+        # Linux IP_MULTICAST_LOOP defaults on; PyTCP has no local
+        # multicast loopback, so the flag is stored for API/portability
+        # parity but never delivers a sender its own multicast (see
+        # '_ipproto_ip_setsockopt').
+        self._ip_multicast_loop = True
         self._ip_tos = 0
         self._ip_options = bytes()
         self._ip_recvopts = False
@@ -654,6 +665,7 @@ class socket(ABC):
         self._ip_recverr = False
         self._ipv6_unicast_hops = None
         self._ipv6_multicast_hops = None
+        self._ipv6_multicast_loop = True
         self._ipv6_tclass = 0
         self._ipv6_recvtclass = False
         self._ipv6_recverr = False
@@ -841,6 +853,17 @@ class socket(ABC):
                 if not -1 <= int(value) < 256:
                     raise OSError(errno.EINVAL, f"IP_MULTICAST_TTL must be in -1..255, got {value!r}")
                 self._ip_multicast_ttl = None if int(value) == -1 else int(value)
+                return True
+            case _ if optname == IP_MULTICAST_LOOP:
+                # Accepted for stdlib/portability parity (Linux never
+                # returns ENOPROTOOPT here). Behaviourally a near-no-op:
+                # PyTCP has no local multicast loopback, so a sender never
+                # receives its own multicast regardless of the flag — the
+                # common 'LOOP=0' intent (do not echo) is honoured, 'LOOP=1'
+                # (echo to local sockets) is not.
+                if not isinstance(value, int):
+                    raise OSError(errno.EINVAL, f"IP_MULTICAST_LOOP value must be int, got {type(value).__name__}")
+                self._ip_multicast_loop = bool(value)
                 return True
             case _ if optname == IP_TOS:
                 if not isinstance(value, int):
@@ -1078,6 +1101,8 @@ class socket(ABC):
                 # Linux getsockopt reports the multicast default (1) when
                 # no override is set, not 0.
                 return self._ip_multicast_ttl if self._ip_multicast_ttl is not None else 1
+            case _ if optname == IP_MULTICAST_LOOP:
+                return int(self._ip_multicast_loop)
             case _ if optname == IP_TOS:
                 return self._ip_tos
             case _ if optname == IP_OPTIONS:
@@ -1116,6 +1141,14 @@ class socket(ABC):
                 if not -1 <= int(value) < 256:
                     raise OSError(errno.EINVAL, f"IPV6_MULTICAST_HOPS must be in -1..255, got {value!r}")
                 self._ipv6_multicast_hops = None if int(value) == -1 else int(value)
+                return True
+            case _ if optname == IPV6_MULTICAST_LOOP:
+                # Accepted for stdlib/portability parity; behaviourally a
+                # near-no-op (no local multicast loopback) — see the IPv4
+                # IP_MULTICAST_LOOP note above.
+                if not isinstance(value, int):
+                    raise OSError(errno.EINVAL, f"IPV6_MULTICAST_LOOP value must be int, got {type(value).__name__}")
+                self._ipv6_multicast_loop = bool(value)
                 return True
             case _ if optname == IPV6_TCLASS:
                 self._ipv6_tclass = int(value) & 0xFF
@@ -1329,6 +1362,8 @@ class socket(ABC):
                 # Linux getsockopt reports the multicast default (1) when
                 # no override is set, not 0.
                 return self._ipv6_multicast_hops if self._ipv6_multicast_hops is not None else 1
+            case _ if optname == IPV6_MULTICAST_LOOP:
+                return int(self._ipv6_multicast_loop)
             case _ if optname == IPV6_TCLASS:
                 return self._ipv6_tclass
             case _ if optname == IPV6_RECVTCLASS:
