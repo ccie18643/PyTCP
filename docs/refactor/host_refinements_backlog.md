@@ -210,8 +210,17 @@ self._signal_readable()
   consult `stack.is_ip4_broadcast(dst)` after the route check, so a RAW send
   to a limited or subnet-directed broadcast without `SO_BROADCAST` raises
   `EACCES`. Tests: `TestSocketSoBroadcastGateRaw` (4: limited-drop,
-  directed-drop, with-flag-succeeds, unicast-regression). PING sockets still
-  do not consult `SO_BROADCAST` (niche; a PING to a broadcast is uncommon).
+  directed-drop, with-flag-succeeds, unicast-regression).
+- **Shipped:** extended the gate to PING (ICMP-Echo) sockets — a broadcast
+  Echo Request is the classic amplification ('smurf') vector, so this is
+  arguably the most important flavour to guard. `PingSocket._send_echo`
+  (the shared `send`/`sendto` body) now consults
+  `stack.is_ip4_broadcast(dst)` after the route check; a broadcast ping
+  without `SO_BROADCAST` raises `EACCES`, matching the `ping -b` convention.
+  Tests: `TestSocketSoBroadcastGatePing` (4). **The `SO_BROADCAST`
+  broadcast-send gate is now uniform across all datagram flavours (UDP /
+  RAW / PING).** TCP cannot send to a broadcast (connection-oriented), so
+  the sweep is complete.
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

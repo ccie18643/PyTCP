@@ -298,6 +298,19 @@ class PingSocket(socket):
         if not stack.has_route_to(remote_ip_address):
             raise OSError(errno.EHOSTUNREACH, "No route to host - [No route to destination]")
 
+        # SO_BROADCAST gate: a broadcast Echo Request — the classic
+        # amplification ('smurf') vector — requires 'SO_BROADCAST = 1',
+        # mirroring the UDP / RAW send paths and the 'ping -b' convention
+        # (broadcast ping sets SO_BROADCAST). Covers the limited
+        # '255.255.255.255' and subnet-directed broadcasts (Linux
+        # 'RTN_BROADCAST'); IPv6 has no broadcast, so 'is_ip4_broadcast'
+        # returns False for an Ip6Address.
+        if not self._so_broadcast and stack.is_ip4_broadcast(remote_ip_address):
+            raise OSError(
+                errno.EACCES,
+                "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
+            )
+
         sequence = int.from_bytes(data[ICMP__ECHO__SEQ__OFFSET : ICMP__ECHO__SEQ__OFFSET + 2], "big")
         payload = bytes(data[ICMP__ECHO__HEADER__LEN:])
 
