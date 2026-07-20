@@ -529,19 +529,22 @@ so this backlog's boundary is explicit.
 
 ## Recommended ordering
 
-1. ~~**R1** (ping SO_RCVBUF)~~ — SHIPPED; the SO_RCVBUF symmetry is closed.
-2. Small self-contained wins, any order: ~~**R5** (CLI JSON — all four
-   observation commands)~~ SHIPPED, ~~**R10** mld.version knob~~ SHIPPED
-   (R10 §4 suppression remains, marginal), ~~**R11** (RFC 6724 policy
-   table)~~ SHIPPED, or dip into **R2** (setsockopt sweep).
-3. **R4** (IPv6 SSM) — the big-value track; do it as its own phased effort.
-4. Medium items as appetite allows: **R3** (SO_SNDBUF/SNDTIMEO),
-   ~~**R6** (HyStart++)~~ SHIPPED (algorithm already met; end-to-end test
-   surface strengthened), ~~**R7** (DF-guarded probe)~~ SHIPPED
-   (already-satisfied, test-locked), **R8** (IP_RECVERR over daemon),
-   **R9** (cancelable accept).
+**Shipped:** R1, R5 (+ follow-on), R6, R7, R10 (knob), R11, and **R4
+(IPv6 SSM, P1-P5 — the big-value track, DONE)**. See the "Shipped" list
+above for commits.
 
-None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
+**Remaining (all optional; none block a 3.0.8 release):**
+
+1. Small self-contained: **R2** (setsockopt-honored sweep — audit that
+   every accepted socket option is actually consumed on the data path),
+   **R10 §4** (MLDv1 Report suppression — marginal, an optimization).
+2. Medium, as appetite allows: **R3** (SO_SNDBUF / SO_SNDTIMEO — needs a
+   TX-completion signal), **R8** (IP_RECVERR error queue over the daemon
+   IPC boundary), **R9** (cancelable / selectable accept over the daemon).
+
+Suggested next: **R2** (small, closes a real correctness question) or
+**R3** (the last commonly-used socket knob gap). Everything here can
+equally slip to 3.0.9.
 
 ---
 
