@@ -121,6 +121,16 @@ class TestMld6MembershipApi(NetworkTestCase):
         with self.assertRaises(ValueError):
             stack.membership6.leave(group=_ALL_NODES)
 
+    def test__membership6__leave_rejects_non_multicast(self) -> None:
+        """
+        Ensure leaving a non-multicast address is rejected.
+
+        Reference: RFC 4291 §2.7 (membership is for multicast groups).
+        """
+
+        with self.assertRaises(ValueError):
+            stack.membership6.leave(group=Ip6Address("2001:db8::1"))
+
     def test__membership6__set_socket_filter_joins_include(self) -> None:
         """
         Ensure 'set_socket_filter' with a non-empty INCLUDE filter joins

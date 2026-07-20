@@ -45,8 +45,13 @@ from unittest.mock import patch
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6Mld2MulticastAddressRecordType as RecordType
+from net_proto import Icmp6Type
 from net_proto.lib.inet_cksum import inet_cksum
 from pytcp import stack
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.runtime.socket import (
     IPPROTO_IPV6,
     IPV6_JOIN_GROUP,
@@ -63,6 +68,7 @@ from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 _GROUP = Ip6Address("ff15::1234")
 _S1 = Ip6Address("2001:db8::a")
 _S2 = Ip6Address("2001:db8::b")
+_S3 = Ip6Address("2001:db8::c")
 _AF_INET6 = 10
 
 # Ethernet(14) + IPv6(40) + HBH(8) — the ICMPv6 message starts here.
@@ -289,6 +295,103 @@ class TestIcmp6MldSourceStateChange(IcmpTestCase):
             msg="A fresh any-source join must report CHANGE_TO_EXCLUDE.",
         )
 
+    def test__within_mode_change__emits_both_allow_and_block(self) -> None:
+        """
+        Ensure a single within-mode interface-filter change that both
+        adds and drops sources (INCLUDE{S1,S2} → INCLUDE{S2,S3}) emits one
+        Report carrying both an ALLOW_NEW_SOURCES record for the added
+        source and a BLOCK_OLD_SOURCES record for the dropped source.
+
+        Reference: RFC 3810 §6.1 (INCLUDE(A)→INCLUDE(B) sends ALLOW (B-A) and BLOCK (A-B)).
+        """
+
+        # Drive the interface filter directly through the handler so a
+        # single recompute changes two sources at once (the socket options
+        # only mutate one source per call).
+        self._packet_handler.mc6_set_socket_filter(
+            _GROUP,
+            token=1,
+            source_filter=Ip6MulticastFilter(Ip6MulticastFilterMode.INCLUDE, frozenset({_S1, _S2})),
+        )
+
+        before = len(self._frames_tx)
+        self._packet_handler.mc6_set_socket_filter(
+            _GROUP,
+            token=1,
+            source_filter=Ip6MulticastFilter(Ip6MulticastFilterMode.INCLUDE, frozenset({_S2, _S3})),
+        )
+        frames = self._frames_tx[before:]
+
+        self.assertEqual(len(frames), 1, msg="The within-mode change must emit exactly one Report.")
+        self.assertEqual(
+            set(_records(frames[0])),
+            {
+                (int(RecordType.ALLOW_NEW_SOURCES), frozenset({_S3})),
+                (int(RecordType.BLOCK_OLD_SOURCES), frozenset({_S1})),
+            },
+            msg="The Report must carry ALLOW for the added source and BLOCK for the dropped source.",
+        )
+
+    def test__emit_mld2_report__empty_records_emits_nothing(self) -> None:
+        """
+        Ensure emitting an MLDv2 Report with no Multicast Address Records
+        sends no frame — an empty state-change is not put on the wire.
+
+        Reference: RFC 3810 §5.2 (a Report with zero records carries no information).
+        """
+
+        before = len(self._frames_tx)
+        self._packet_handler._icmp6_tx._emit_mld2_report([])
+
+        self.assertEqual(
+            len(self._frames_tx[before:]),
+            0,
+            msg="An MLDv2 Report with no records must emit nothing.",
+        )
+
+    def test__all_nodes__state_change_emits_nothing(self) -> None:
+        """
+        Ensure a state-change for the permanent all-nodes group ff02::1
+        emits nothing — the host never reports its all-nodes membership.
+
+        Reference: RFC 3810 §6 (the all-nodes group ff02::1 is never reported).
+        """
+
+        before = len(self._frames_tx)
+        self._packet_handler._send_mld_state_change(
+            Ip6Address("ff02::1"),
+            old=Ip6MulticastFilter(Ip6MulticastFilterMode.INCLUDE),
+            new=Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+        )
+
+        self.assertEqual(
+            len(self._frames_tx[before:]),
+            0,
+            msg="A state-change for ff02::1 must emit nothing.",
+        )
+
+    def test__mldv1_mode__source_only_change_emits_nothing(self) -> None:
+        """
+        Ensure that while the interface is in MLDv1 Host Compatibility
+        Mode a source-only change within a still-joined membership
+        (blocking a source on an any-source join) emits nothing — MLDv1
+        has no source concept, so only reception-edge changes are visible.
+
+        Reference: RFC 3810 §8.3.1 (MLDv1 Reports carry no source list).
+        """
+
+        with sysctl.override("mld.version", 1):
+            self._socket.setsockopt(IPPROTO_IPV6, IPV6_JOIN_GROUP, _ipv6_mreq(_GROUP))
+
+            before = len(self._frames_tx)
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_BLOCK_SOURCE, _group_source_req(_GROUP, _S1))
+
+            self.assertEqual(
+                len(self._frames_tx[before:]),
+                0,
+                msg="A source-only change in MLDv1 mode must emit no Report.",
+            )
+
 
 class TestIcmp6MldStateChangeRetransmit(IcmpTestCase):
     """
@@ -387,3 +490,85 @@ class TestIcmp6MldStateChangeRetransmit(IcmpTestCase):
                 {},
                 msg="The compat-mode change must clear the pending retransmit train.",
             )
+
+    def test__retransmit__fires_in_mldv1_mode(self) -> None:
+        """
+        Ensure a state-change whose retransmit train runs while the
+        interface is in MLDv1 Host Compatibility Mode retransmits the
+        coarse MLDv1 Report form (type 131), not an MLDv2 Report.
+
+        Reference: RFC 3810 §8.3.1 (state-change retransmits take the MLDv1 form in v1 mode).
+        """
+
+        with sysctl.override("mld.version", 1), sysctl.override("mld.robustness", 2):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            before = len(self._frames_tx)
+            self._socket.setsockopt(IPPROTO_IPV6, IPV6_JOIN_GROUP, _ipv6_mreq(_GROUP))
+            immediate = self._frames_tx[before:]
+            self.assertEqual(len(immediate), 1, msg="The join must emit one immediate Report.")
+            self.assertEqual(
+                immediate[0][_OFFSET_ICMP6],
+                int(Icmp6Type.MULTICAST_LISTENER_REPORT),
+                msg="The immediate join Report must be an MLDv1 Report (type 131) in v1 mode.",
+            )
+
+            tx = self._advance(ms=200)
+            self.assertEqual(len(tx), 1, msg="One robustness retransmit must fire.")
+            self.assertEqual(
+                tx[0][_OFFSET_ICMP6],
+                int(Icmp6Type.MULTICAST_LISTENER_REPORT),
+                msg="The retransmit must also take the MLDv1 Report form in v1 mode.",
+            )
+
+    def test__robustness_one__schedules_no_retransmit(self) -> None:
+        """
+        Ensure a Robustness Variable of 1 emits the state-change Report
+        once and schedules no retransmit train (RV-1 = 0).
+
+        Reference: RFC 3810 §9.1 (RV total transmissions — RV=1 means a single Report).
+        """
+
+        with sysctl.override("mld.robustness", 1):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            before = len(self._frames_tx)
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_JOIN_SOURCE_GROUP, _group_source_req(_GROUP, _S1))
+
+            self.assertEqual(len(self._frames_tx[before:]), 1, msg="RV=1 must emit exactly one Report.")
+            self.assertEqual(
+                self._packet_handler._icmp6_tx._mld_state_change__pending,
+                {},
+                msg="RV=1 must schedule no retransmit train.",
+            )
+            self.assertEqual(len(self._advance(ms=200)), 0, msg="No retransmit must fire when RV=1.")
+
+    def test__retransmit__multiple_rounds_then_exhausts(self) -> None:
+        """
+        Ensure a Robustness Variable of 3 retransmits the state-change
+        Report twice (RV-1 = 2) — the train decrements and re-arms across
+        rounds before exhausting.
+
+        Reference: RFC 3810 §6.1 (state-change Report retransmitted RV-1 times).
+        """
+
+        with sysctl.override("mld.robustness", 3):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_JOIN_SOURCE_GROUP, _group_source_req(_GROUP, _S1))
+
+            self.assertEqual(len(self._advance(ms=200)), 1, msg="The first retransmit round must fire.")
+            self.assertEqual(len(self._advance(ms=200)), 1, msg="The second retransmit round must fire.")
+            self.assertEqual(len(self._advance(ms=200)), 0, msg="No third round fires after RV-1 = 2 rounds.")
