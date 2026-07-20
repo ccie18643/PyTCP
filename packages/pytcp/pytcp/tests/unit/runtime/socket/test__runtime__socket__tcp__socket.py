@@ -569,6 +569,53 @@ class TestTcpSocketListenAccept(_TcpSocketTestCase):
         )
         self._session_cls.return_value.listen.assert_called_once_with()
 
+    def test__tcp_socket__listen_unbound_autobinds_ephemeral_port(self) -> None:
+        """
+        Ensure listen() on a socket with no prior bind() auto-binds an
+        ephemeral local port and registers the listener — mirroring
+        Linux rather than listening on the invalid port 0.
+
+        Reference: Linux net/ipv4/inet_connection_sock.c
+        inet_csk_listen_start (auto-bind an unbound listener).
+        """
+
+        s = TcpSocket(family=AddressFamily.INET4)
+        self.assertEqual(s.local_port, 0, msg="A fresh TCP socket is unbound (port 0).")
+
+        with patch("pytcp.runtime.socket.tcp__socket.pick_local_port", return_value=45000):
+            s.listen()
+
+        self.assertEqual(
+            s.local_port,
+            45000,
+            msg="listen() on an unbound socket must auto-bind an ephemeral port.",
+        )
+        self.assertIn(
+            s.socket_id,
+            self._sockets,
+            msg="An auto-bound listener must be registered under its ephemeral port.",
+        )
+        self._session_cls.return_value.listen.assert_called_once_with()
+
+    def test__tcp_socket__listen_bound_keeps_port_and_does_not_repick(self) -> None:
+        """
+        Ensure listen() on an already-bound socket keeps its bound port
+        and does not re-pick an ephemeral one — the auto-bind path
+        applies only to an unbound socket.
+
+        Reference: Linux net/ipv4/inet_connection_sock.c
+        inet_csk_listen_start (a bound listener keeps its port).
+        """
+
+        s = TcpSocket(family=AddressFamily.INET4)
+        s.bind(("0.0.0.0", 8080))
+
+        with patch("pytcp.runtime.socket.tcp__socket.pick_local_port", return_value=99999) as pick:
+            s.listen()
+
+        self.assertEqual(s.local_port, 8080, msg="listen() must keep the bound port.")
+        pick.assert_not_called()
+
     def test__tcp_socket__accept_returns_socket_and_address(self) -> None:
         """
         Ensure accept() returns a '(socket, (remote_ip_str, port))'

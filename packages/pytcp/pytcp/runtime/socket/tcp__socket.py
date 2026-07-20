@@ -766,6 +766,16 @@ class TcpSocket(socket):
 
         assert backlog > 0, f"The 'backlog' argument must be positive. Got: {backlog!r}"
 
+        # Linux 'inet_csk_listen_start' auto-binds an unbound socket to
+        # an ephemeral local port before it starts listening; PyTCP
+        # mirrors that rather than requiring an explicit prior bind()
+        # (which would otherwise leave the listener on the invalid port
+        # 0). A socket already bound to a specific port keeps it.
+        if self._local_port not in range(1, 65536):
+            stack.sockets.unregister(self)
+            self._local_port = pick_local_port()
+            stack.sockets.register(self)
+
         self._backlog = backlog
         self._tcp_session = TcpSession(
             local_ip_address=self._local_ip_address,

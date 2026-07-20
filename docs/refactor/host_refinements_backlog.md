@@ -178,8 +178,8 @@ self._signal_readable()
   asserting the behavioural effect (not just the stored value). This is a
   series of small red-tests-first commits — good "one by one" cadence.
 - **Known members of this bucket:** `SO_SNDBUF` (see R3), `SO_SNDTIMEO`
-  (see R3), `X3` listen()-on-unbound → `EINVAL` (breaks examples; land as
-  an explicit breaking-change commit + update `examples/`).
+  (see R3), `X3` listen()-on-unbound (DONE — shipped as Linux-parity
+  auto-bind, not the originally-planned `EINVAL`; see the R3 section).
 - **Effort:** open-ended (do a few per session). **Risk:** low per fix.
 - **Audit (done):** swept every stored setsockopt attribute for a data-path
   read. Result: almost everything is HONORED. The only strictly-DEAD
@@ -274,8 +274,8 @@ self._signal_readable()
   is now either honoured or documented-inert; the remaining true gaps are
   scoped to their proper track: `IP_MULTICAST_IF`/`_IF6` → Phase-2 (egress
   selection), `SO_RCVBUF`-on-TCP → R3 (receive-window), `SO_SNDBUF` /
-  `SO_SNDTIMEO` → R3 (send buffer accounting), the `X3` listen()-on-unbound
-  `EINVAL` breaking-change remains an explicit opt-in item.
+  `SO_SNDTIMEO` → R3 (send buffer accounting; DONE), and `X3`
+  listen()-on-unbound (DONE — Linux-parity auto-bind, see R3).
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (UDP) — DONE
 
@@ -323,11 +323,20 @@ self._signal_readable()
   round-trip + integer-still-accepted regression). This makes the R3
   blocking-send `SO_SNDTIMEO` fully usable at sub-second granularity via
   the public API.
+- **Shipped (X3 — listen() on an unbound socket):** the backlog originally
+  planned `EINVAL` here, but that **contradicts Linux**, which auto-binds an
+  unbound TCP socket to an ephemeral port on `listen()`
+  (`inet_csk_listen_start` → `get_port`). Per the Linux-parity north star we
+  shipped the auto-bind: `TcpSocket.listen()` on a socket with no prior
+  `bind()` now picks an ephemeral port (`pick_local_port`) and registers the
+  listener, instead of building the previously-broken port-0 listener. Not a
+  breaking change (the examples already bind first), so no `examples/` update
+  was needed. Tests: `test__tcp_socket__listen_unbound_autobinds_ephemeral_port`
+  + `test__tcp_socket__listen_bound_keeps_port_and_does_not_repick`.
 - **Still scoped out (follow-ons):** TCP `SO_SNDBUF` (TCP has its own send
   buffering / retransmit queue, released on ACK, not on wire-write — a
   separate model, wrong to fold into this counter); `SO_RCVBUF`-on-TCP
-  (receive-window derivation); the `X3` `listen()`-on-unbound → `EINVAL`
-  breaking change (updates `examples/`).
+  (receive-window derivation).
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 
