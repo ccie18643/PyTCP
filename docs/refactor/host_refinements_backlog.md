@@ -188,6 +188,76 @@ self._signal_readable()
 - **Effort:** large (multi-phase, mirrors a whole shipped track). **Risk:**
   medium. **Value:** highest — real v4/v6 parity.
 
+#### R4 — resumable implementation map (derived 2026-07-19 by reading the v4 machinery)
+
+The v4 source-filter machinery to mirror, with exact locations, so P2-P5
+can resume without re-deriving:
+
+- **Handler (`runtime/packet_handler/__init__.py`) — the deep, no-GIL-locked
+  core, duplicated across the L2 and L3 handler classes:**
+  - `_Ip4GroupMembership` (line ~156): `operator: bool` + `socket_filters:
+    dict[int, Ip4MulticastFilter]` + `contributors()`. Mirror as
+    `_Ip6GroupMembership`.
+  - handler attrs (line ~325/451): `_ip4_multicast_filters:
+    dict[Ip4Address, Ip4MulticastFilter]` + `_ip4_multicast_refs:
+    dict[Ip4Address, _Ip4GroupMembership]`. Mirror `_ip6_*`, init in the
+    same `__init__`, snapshot/restore in the harness.
+  - `mc_is_joined` / `_mc_recompute` / `mc_ref_acquire` / `mc_ref_release`
+    / `mc_set_socket_filter` / `mc_clear_socket_filter` (lines ~863-980),
+    all under `self._lock__multicast`. Mirror as `mc6_*`. `_mc_recompute`
+    is the heart: merge contributors → reception edge calls
+    `_assign_ip4_multicast` (join), loss calls `_remove_ip4_multicast`
+    (leave), mid-membership filter delta calls `_send_igmp_state_change`.
+  - `_ip4_multicast_filter_for` (line ~2586) + the filter-materializing
+    `_assign_ip4_multicast` / `_remove_ip4_multicast` (L2 ~3785, L3 ~4014;
+    note the v6 `assign_ip6_multicast`/`remove_ip6_multicast` at L2 ~3752 /
+    L3 ~3976 are the ANY-SOURCE public path — the filtered path is a new
+    private sibling). ff02::1 is the v6 permanent-group exemption (v4:
+    224.0.0.1 `IP4__MULTICAST__ALL_SYSTEMS`).
+- **Membership API (`stack/membership.py`, 232 lines, entirely v4):** build
+  a parallel v6 surface (mirror, not genericize) — `join` / `leave` /
+  `set_socket_filter` / `clear_socket_filter` / `list_memberships`
+  delegating to the `mc6_*` handler methods. Cap via
+  `igmp.max_memberships`'s v6 analogue (no separate MLD cap today — reuse
+  or add `mld.max_memberships`).
+- **Socket (`runtime/socket/__init__.py`):**
+  - v4 opts at lines ~881-979 (`_ipproto_ip_source_membership` +
+    `_apply_source_op`), 12-byte `ip_mreq_source`. For v6, Linux uses the
+    **protocol-independent `MCAST_JOIN_SOURCE_GROUP`(46) /
+    `MCAST_LEAVE_SOURCE_GROUP`(47) / `MCAST_BLOCK_SOURCE`(43) /
+    `MCAST_UNBLOCK_SOURCE`(44)** at IPPROTO_IPV6 level with a
+    `group_source_req` struct — there is NO `IPV6_ADD_SOURCE_MEMBERSHIP`.
+    Add these as a `McastOption` IntEnum + bare aliases (enums.md §2.2).
+  - `group_source_req` glibc layout (native): `gsr_interface` uint32 at
+    offset 0; 4 bytes pad; `gsr_group` sockaddr_storage at offset 8
+    (sockaddr_in6 → sin6_addr at +8, so group addr = bytes[16:32]);
+    `gsr_source` sockaddr_storage at offset 136 (source addr =
+    bytes[144:160]). Validate `ss_family == AF_INET6` (10 on Linux) in
+    each sockaddr. Total 264 bytes.
+  - Per-socket `_ip6_source_filters: dict[(ifindex, Ip6Address),
+    Ip6MulticastFilter]` + a v6 `_apply_source_op` (mirror v4's INCLUDE/
+    EXCLUDE mode-conflict + EADDRNOTAVAIL errno surface). Push to the v6
+    membership API. Also migrate the existing simple `IPV6_JOIN_GROUP` /
+    `IPV6_LEAVE_GROUP` path (line ~1029/1040, the non-refcounted
+    `_ip6_memberships` set) onto the new API so per-socket refcounting is
+    correct (the existing leave-removes-for-all bug the code comments flag).
+  - Socket `close()` must `clear_socket_filter` every held v6 filter
+    (mirror the v4 close path).
+- **RX delivery (`Ip6MulticastFilter.allows`):** gate per-socket delivery
+  in the IPv6 UDP + RAW RX paths (mirror the v4 `ip_mc_sf_allow` gate; RAW
+  needed the `RawMetadata.socket_ids` wildcard-combo enumeration — check
+  the v6 RAW metadata has the same).
+- **Tests:** unit (value type — DONE P1; `_apply_source_op` v6 transitions;
+  `group_source_req` parse) + integration (`tests/integration/protocols/
+  icmp6/` — setsockopt drives the interface merge + emits the right MLDv2
+  ALLOW/BLOCK/CHANGE_TO_* record on the wire; RX source-delivery gating for
+  UDP + RAW). Mirror the shipped IGMP SSM tests under
+  `tests/integration/protocols/igmp/`.
+- **Safety note:** every `mc6_*` mutation runs under `_lock__multicast`
+  (the no-GIL standing invariant); the L2/L3 duplication must stay in
+  sync. This is the stack's most safety-critical machinery — do each phase
+  tests-first and run the full multicast integration suite before commit.
+
 ### R5 — CLI polish: JSON output for `address` / `ss` / `route` / `neighbor` — SHIPPED (see "Shipped" above)
 
 Full `-j`/`--json` parity across every observation command is now closed
@@ -335,5 +405,6 @@ None block a 3.0.8 release. Everything here can equally slip to 3.0.9.
 - Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
   this backlog plan).
 - Pushed through `c2a76a60` (R1 / R5 / R5-followon / R10 knob / R11).
-- **Unpushed:** the R7 DF-probe test-lock commit + the R6 HyStart++
-  end-to-end test-strengthening commit. Hold until the user says "push".
+- **Unpushed:** R7 DF-probe test-lock (`1793fb45`), R6 HyStart++ end-to-end
+  tests (`6cc2702a`), R4 P1 `Ip6MulticastFilter` (`d2054fe8`) + its doc
+  notes, and this resumable R4 P2-P5 map. Hold until the user says "push".
