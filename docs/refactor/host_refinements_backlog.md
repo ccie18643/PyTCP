@@ -264,8 +264,18 @@ self._signal_readable()
     it; that is receive-window / buffer-accounting work on the TCP path,
     tracked with **R3** (`SO_SNDBUF` / `SO_SNDTIMEO`), not a setsockopt
     sweep fix. Honoured today for UDP / RAW / PING RX drop-cap.
-  - `IP_OPTIONS` on RAW TX — the last true "stored-but-not-honoured" R2 gap;
-    fixed next (see below).
+  - `IP_OPTIONS` on RAW TX — the last true "stored-but-not-honoured" R2 gap.
+    **Fixed:** `send_ip4_packet` (and its base-handler delegator) gained an
+    `ip4__options` parameter; RAW `send` / `sendto` now pass
+    `_effective_ip4_options()`, so an IP_OPTIONS block set on a raw IPv4
+    socket is emitted on the wire (hlen bumped, options round-trip),
+    matching the UDP path. Tests: `TestSocketRawIpOptions` (2).
+- **R2 STATUS — substantively complete.** Every accepted setsockopt option
+  is now either honoured or documented-inert; the remaining true gaps are
+  scoped to their proper track: `IP_MULTICAST_IF`/`_IF6` → Phase-2 (egress
+  selection), `SO_RCVBUF`-on-TCP → R3 (receive-window), `SO_SNDBUF` /
+  `SO_SNDTIMEO` → R3 (send buffer accounting), the `X3` listen()-on-unbound
+  `EINVAL` breaking-change remains an explicit opt-in item.
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

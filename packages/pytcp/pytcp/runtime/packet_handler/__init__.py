@@ -3007,6 +3007,7 @@ class PacketHandler(Subsystem, ABC):
         ip4__ttl: int | None = None,
         ip4__ecn: int = 0,
         ip4__dscp: int = 0,
+        ip4__options: Ip4Options | None = None,
     ) -> None:
         """
         Enqueue an outbound IPv4 RAW datagram (delegates to the IPv4 TX sub-handler).
@@ -3020,6 +3021,7 @@ class PacketHandler(Subsystem, ABC):
             ip4__ttl=ip4__ttl,
             ip4__ecn=ip4__ecn,
             ip4__dscp=ip4__dscp,
+            ip4__options=ip4__options,
         )
 
     ###

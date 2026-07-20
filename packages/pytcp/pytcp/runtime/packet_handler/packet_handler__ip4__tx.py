@@ -550,12 +550,17 @@ class Ip4TxHandler:
         ip4__ttl: int | None = None,
         ip4__ecn: int = 0,
         ip4__dscp: int = 0,
+        ip4__options: Ip4Options | None = None,
     ) -> None:
         """
         Interface method for RAW Socket -> Packet Assembler
         communication. Handed to the TX worker fire-and-forget via
         '_marshal_tx_async' (Phase 4b): the calling app thread does
         not block for the 'TxStatus'.
+
+        'ip4__options' threads the socket's IP_OPTIONS block (RFC
+        1122 §4.1.3.2) onto the outbound header; 'None' emits a
+        plain header.
         """
 
         kwargs: dict[str, Any] = {
@@ -570,6 +575,8 @@ class Ip4TxHandler:
         }
         if ip4__ttl is not None:
             kwargs["ip4__ttl"] = ip4__ttl
+        if ip4__options is not None:
+            kwargs["ip4__options"] = ip4__options
         self._if._marshal_tx_async(lambda: self._phtx_ip4(**kwargs))
 
     def __send_out_packet(
