@@ -75,6 +75,7 @@ from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
+from pytcp.stack.membership6 import Membership6Api
 from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi, install_boot_default_routes
@@ -184,6 +185,12 @@ def mock__init(
     # isolation without bespoke harness wiring.
     if mock__packet_handler is not None:
         _stack.membership = MembershipApi(packet_handler=mock__packet_handler)
+
+    # IPv6 Membership API — same pattern as 'membership'. A default
+    # 'Membership6Api' bound to the mocked handler lets consumer code
+    # reading 'stack.membership6.*' work in isolation.
+    if mock__packet_handler is not None:
+        _stack.membership6 = Membership6Api(packet_handler=mock__packet_handler)
 
     # Resolver API — DNS resolution control surface. Created
     # unconditionally (it needs no packet handler, only an upstream
@@ -667,6 +674,7 @@ def init(
     _stack.link = LinkApi()
     _stack.neighbor = NeighborApi()
     _stack.membership = MembershipApi()
+    _stack.membership6 = Membership6Api()
     _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
     _stack.ss = SocketIntrospectApi()
     _stack.activity = ActivityIntrospectApi()

@@ -72,6 +72,7 @@ from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
+from pytcp.stack.membership6 import Membership6Api
 from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi
@@ -459,6 +460,13 @@ neighbor: NeighborApi
 # 'mock__init()' alongside 'address' / 'link' / 'neighbor'; same
 # reconstruct-per-test lifecycle, so it needs no snapshot/restore.
 membership: MembershipApi
+# IPv6 Membership API — the MLDv2 analogue of 'membership' (IPv6 group
+# join / leave / source-filter / list) over each interface's multicast
+# listen set. Mirrors the Linux 'IPV6_JOIN_GROUP' / 'IPV6_LEAVE_GROUP' /
+# 'MCAST_JOIN_SOURCE_GROUP' family socket options and 'ip maddr'. Same
+# reconstruct-per-test lifecycle as 'membership', so it needs no
+# snapshot/restore.
+membership6: Membership6Api
 # Default upstream DNS server for the stub resolver. Phase B2 (the
 # 'pytcp daemon --dns-server' CLI arg) overrides this at 'init()'.
 STACK__DNS_SERVER: Ip4Address = Ip4Address("9.9.9.9")

@@ -54,6 +54,10 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.lib.name_enum import NameEnum
 from pytcp.runtime.socket.socket_id import SocketId
 
@@ -520,14 +524,15 @@ class socket(ABC):
     _ipv6_recverr: bool
     _ipv6_v6only: bool
     _dual_stack: bool
-    # Per-socket IPv6 multicast memberships keyed by (ifindex, group).
-    # Presence-only set (no source-filter today — the IPv4 source-
-    # filter machinery is not yet mirrored for IPv6). The H4 IPv6
-    # row of socket_linux_parity_audit.md flips to "shipped (any-
-    # source join)" with this; full source-filter parity is a
-    # follow-up.
-    _ip6_memberships: set[tuple[int, Ip6Address]]
-    _lock__ip6_memberships: threading.Lock
+    # The IPv6 source filter (RFC 3810 §4.1) this socket holds per joined
+    # (ifindex, group). 'IPV6_JOIN_GROUP' records an EXCLUDE{} any-source
+    # filter; the 'MCAST_JOIN_SOURCE_GROUP' family builds INCLUDE /
+    # EXCLUDE source lists. Presence of a key is the socket's membership;
+    # the value is pushed to the interface merge via the IPv6 membership
+    # API — per-socket refcounted, so one socket's leave does not tear
+    # down a group another socket still holds.
+    _ip6_source_filters: dict[tuple[int, Ip6Address], Ip6MulticastFilter]
+    _lock__ip6_source_filters: threading.Lock
     # The source filter (RFC 3376 §3.1) this socket holds per joined
     # (ifindex, group). 'IP_ADD_MEMBERSHIP' records an EXCLUDE{}
     # any-source filter; the source options build INCLUDE / EXCLUDE
@@ -608,12 +613,16 @@ class socket(ABC):
         # inbound IPv4 packets.
         self._dual_stack = False
 
-        # Per-socket IPv6 multicast memberships (H4 IPv6 row of
-        # socket_linux_parity_audit.md). Empty set on every fresh
-        # socket; populated by 'setsockopt(IPV6_JOIN_GROUP)' and
-        # drained by 'setsockopt(IPV6_LEAVE_GROUP)'.
-        self._ip6_memberships = set()
-        self._lock__ip6_memberships = threading.Lock()
+        # Per-socket IPv6 multicast source filters keyed by (ifindex,
+        # group). Empty on every fresh socket; populated by
+        # 'setsockopt(IPV6_JOIN_GROUP)' / the 'MCAST_JOIN_SOURCE_GROUP'
+        # family and drained by 'IPV6_LEAVE_GROUP' / close. The IPv6
+        # analogue of '_ip4_source_filters'.
+        self._ip6_source_filters = {}
+        # Guards '_ip6_source_filters'. Same discipline as
+        # '_lock__ip4_source_filters': acquired before the interface
+        # multicast lock the membership API takes, never after.
+        self._lock__ip6_source_filters = threading.Lock()
         # Per-socket IPv4 multicast holds (ifindex, group) for the
         # reference-counted IP_ADD/DROP_MEMBERSHIP path (R3).
         self._ip4_source_filters = {}
@@ -1037,19 +1046,43 @@ class socket(ABC):
                 return True
         return False
 
+    def _resolve_ipv6_membership_interface(self, mreq_ifindex: int, /) -> int:
+        """
+        Resolve the interface an IPv6 multicast-membership option
+        targets. A non-zero 'ipv6mr_interface' selects the interface
+        directly; ifindex=0 (the "let the kernel pick" sentinel)
+        resolves to the first interface owning an IPv6 unicast address
+        (Linux 'inet6_lookup_first_iface'). Raises
+        'OSError(EADDRNOTAVAIL)' when no interface matches.
+        """
+
+        import pytcp.stack as _stack
+
+        if mreq_ifindex == 0:
+            for candidate_ifindex, handler in _stack.interfaces.items():
+                if handler.ip6_unicast:
+                    return candidate_ifindex
+            raise OSError(errno.EADDRNOTAVAIL, "No IPv6-capable interface available")
+        if mreq_ifindex not in _stack.interfaces:
+            raise OSError(errno.EADDRNOTAVAIL, f"No interface with ifindex {mreq_ifindex}")
+        return mreq_ifindex
+
     def _ipproto_ipv6_membership(self, optname: int, mreq: bytes, /) -> None:
         """
-        Apply IPV6_JOIN_GROUP / IPV6_LEAVE_GROUP (RFC 3493 §5.2)
-        by parsing the 20-byte 'ipv6_mreq' structure (16-byte
-        ipv6mr_multiaddr + 4-byte ipv6mr_interface in host byte
-        order) and pushing the membership change to the egress
-        interface's 'ip6_multicast' list. Joining wires the
-        outbound MLDv2 Report automatically (the
-        'assign_ip6_multicast' handler emits it). Joining a
-        group this socket already holds raises EADDRINUSE;
-        dropping one it does not hold raises EADDRNOTAVAIL —
-        matches Linux's 'ipv6_sock_mc_join' /
-        'ipv6_sock_mc_drop' errno surface.
+        Apply IPV6_JOIN_GROUP / IPV6_LEAVE_GROUP (RFC 3493 §5.2) — an
+        any-source join / a full leave. Parses the 20-byte 'ipv6_mreq'
+        structure (16-byte ipv6mr_multiaddr + 4-byte ipv6mr_interface in
+        host byte order) and records the socket's filter for
+        (ifindex, group) as EXCLUDE{} (any-source), pushing it to the
+        interface merge via the IPv6 membership API. Joining wires the
+        outbound MLDv2 Report automatically (the 'assign_ip6_multicast'
+        handler emits it on the reception edge).
+
+        Joining a group this socket already holds raises EADDRINUSE;
+        dropping one it does not hold raises EADDRNOTAVAIL (Linux
+        'ipv6_sock_mc_join' / 'ipv6_sock_mc_drop' parity). Per-socket
+        refcounted: a leave by one socket keeps the group joined while
+        another socket still holds it.
         """
 
         import pytcp.stack as _stack
@@ -1061,57 +1094,25 @@ class socket(ABC):
         if not group.is_multicast:
             raise OSError(errno.EINVAL, f"{group} is not a multicast group address")
         mreq_ifindex = int.from_bytes(mreq[16:20], sys.byteorder)
+        ifindex = self._resolve_ipv6_membership_interface(mreq_ifindex)
 
-        # ifindex=0 (the "let the kernel pick" sentinel) resolves
-        # to the first interface that owns an IPv6 unicast address,
-        # mirroring the IPv4 'IP_ADD_MEMBERSHIP' INADDR_ANY path.
-        if mreq_ifindex == 0:
-            for candidate_ifindex, handler in _stack.interfaces.items():
-                if handler.ip6_unicast:
-                    mreq_ifindex = candidate_ifindex
-                    break
-            else:
-                # No IPv6-capable interface configured.
-                raise OSError(errno.EADDRNOTAVAIL, "No IPv6-capable interface available")
-        if mreq_ifindex not in _stack.interfaces:
-            raise OSError(errno.EADDRNOTAVAIL, f"No interface with ifindex {mreq_ifindex}")
-
-        handler = _stack.interfaces[mreq_ifindex]
-        key = (mreq_ifindex, group)
-        with self._lock__ip6_memberships:
-            if optname == IPV6_JOIN_GROUP:
-                if key in self._ip6_memberships:
-                    raise OSError(
-                        errno.EADDRINUSE,
-                        f"Socket already a member of {group} on interface {mreq_ifindex}",
-                    )
-                # The handler's 'assign_ip6_multicast' is idempotent
-                # at the interface level — multiple sockets joining
-                # the same group keep one membership on the wire.
-                # PyTCP doesn't refcount per-interface IPv6
-                # membership today (parity with the IPv6 SLAAC
-                # solicited-node assignment path) — a leave by ONE
-                # socket would remove the group even if another
-                # socket still held it. The IPv4 IGMP track addresses
-                # this via the interface-membership API; mirroring
-                # that for IPv6 is a follow-up. The socket-side
-                # 'EADDRINUSE' check above keeps per-socket
-                # bookkeeping clean.
-                if group not in handler.ip6_multicast:
-                    handler.assign_ip6_multicast(group)
-                self._ip6_memberships.add(key)
-            else:
-                if key not in self._ip6_memberships:
-                    raise OSError(
-                        errno.EADDRNOTAVAIL,
-                        f"Socket is not a member of {group} on interface {mreq_ifindex}",
-                    )
-                self._ip6_memberships.discard(key)
-                # Only remove from the interface if no other
-                # socket on this stack holds the group. Today the
-                # check is best-effort — see the leave-side comment
-                # above.
-                handler.remove_ip6_multicast(group)
+        api = _stack.membership6.interface(ifindex)
+        key = (ifindex, group)
+        try:
+            with self._lock__ip6_source_filters:
+                if optname == IPV6_JOIN_GROUP:
+                    if key in self._ip6_source_filters:
+                        raise OSError(errno.EADDRINUSE, f"Socket already a member of {group} on interface {ifindex}")
+                    source_filter = Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+                    api.set_socket_filter(group=group, token=id(self), source_filter=source_filter)
+                    self._ip6_source_filters[key] = source_filter
+                else:
+                    if key not in self._ip6_source_filters:
+                        raise OSError(errno.EADDRNOTAVAIL, f"Socket is not a member of {group} on interface {ifindex}")
+                    api.clear_socket_filter(group=group, token=id(self))
+                    del self._ip6_source_filters[key]
+        except ValueError as error:
+            raise OSError(errno.EINVAL, str(error)) from error
 
     def _ipproto_ipv6_getsockopt(self, optname: int, /) -> int | None:
         """
@@ -1565,13 +1566,14 @@ class socket(ABC):
             self._close_io_runtime()
 
         self._release_ip4_memberships()
+        self._release_ip6_memberships()
 
     def __del__(self) -> None:
         """
         Finalizer safety net: a socket dropped without an explicit
         close() still releases its OS-level runtime (the backing eventfd)
-        and its IPv4 multicast memberships when garbage-collected, so a
-        leaked joined socket cannot keep its group joined on the
+        and its IPv4 / IPv6 multicast memberships when garbage-collected,
+        so a leaked joined socket cannot keep its group joined on the
         interface forever. This mirrors Linux 'ip_mc_drop_socket', which
         runs silently from the fd release — no ResourceWarning is emitted
         (the stdlib socket's warning would be noise across the stack's
@@ -1621,6 +1623,34 @@ class socket(ABC):
                     # the best-effort nature of the Linux close-time drop.
                     pass
             self._ip4_source_filters.clear()
+
+    def _release_ip6_memberships(self) -> None:
+        """
+        Release every IPv6 multicast source filter this socket still
+        holds — the Linux 'ipv6_sock_mc_close' equivalent run on close().
+        The interface leaves a group (and emits the MLD Leave) only when
+        this socket was its last contributor (RFC 3810 §4.2). Idempotent:
+        a socket that joined no group clears an empty map. Released
+        outside '_lock__io' so the membership/timer path does not run
+        under the socket IO lock. The IPv6 analogue of
+        '_release_ip4_memberships'.
+        """
+
+        import pytcp.stack as _stack
+
+        with self._lock__ip6_source_filters:
+            if not self._ip6_source_filters:
+                return
+
+            for ifindex, group in list(self._ip6_source_filters):
+                try:
+                    _stack.membership6.interface(ifindex).clear_socket_filter(group=group, token=id(self))
+                except KeyError:
+                    # Best-effort cleanup: the interface may already be
+                    # torn down (KeyError) during stack shutdown. Mirrors
+                    # the best-effort nature of the Linux close-time drop.
+                    pass
+            self._ip6_source_filters.clear()
 
     def ip4_multicast_source_admits(self, *, ifindex: int, group: Ip4Address, source: Ip4Address) -> bool:
         """
