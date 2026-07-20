@@ -256,6 +256,29 @@ IPV6_RECVTCLASS = IpV6Option.IPV6_RECVTCLASS
 IPV6_TCLASS = IpV6Option.IPV6_TCLASS
 
 
+class McastOption(IntEnum):
+    """
+    Protocol-independent multicast source-filter setsockopt 'optname'
+    values (RFC 3678 / RFC 3810 §4.1), usable at both IPPROTO_IP and
+    IPPROTO_IPV6 level with a 'group_source_req' struct. Linux numbers
+    from <linux/in.h>; matches Python stdlib 'socket.MCAST_*' on
+    platforms that expose them. PyTCP wires these at IPPROTO_IPV6 for
+    IPv6 source-specific multicast; IPv4 uses the older 'IP_*_SOURCE_*'
+    'ip_mreq_source' options.
+    """
+
+    MCAST_BLOCK_SOURCE = 43  # group_source_req: block a source on an EXCLUDE-mode group
+    MCAST_UNBLOCK_SOURCE = 44  # group_source_req: unblock a source on an EXCLUDE-mode group
+    MCAST_JOIN_SOURCE_GROUP = 46  # group_source_req: join a group in INCLUDE mode for a source
+    MCAST_LEAVE_SOURCE_GROUP = 47  # group_source_req: drop a source from an INCLUDE-mode group
+
+
+MCAST_BLOCK_SOURCE = McastOption.MCAST_BLOCK_SOURCE
+MCAST_UNBLOCK_SOURCE = McastOption.MCAST_UNBLOCK_SOURCE
+MCAST_JOIN_SOURCE_GROUP = McastOption.MCAST_JOIN_SOURCE_GROUP
+MCAST_LEAVE_SOURCE_GROUP = McastOption.MCAST_LEAVE_SOURCE_GROUP
+
+
 class UdpOption(IntEnum):
     """
     SOL_UDP-level setsockopt 'optname' values (Linux numbers
@@ -364,6 +387,42 @@ def _resolve_membership_ifindex(interface_address: Ip4Address, /) -> int | None:
             return ifindex
 
     return None
+
+
+# 'struct group_source_req' (glibc, native layout): uint32 gsr_interface
+# at offset 0; sockaddr_storage gsr_group at offset 8 (sockaddr_in6 ->
+# ss_family at +0, sin6_addr at +8, so the group address is bytes[16:32]);
+# sockaddr_storage gsr_source at offset 136 (source address bytes[144:160]).
+GROUP_SOURCE_REQ__LEN: int = 264
+# Linux OS-level AF_INET6 as it appears in a sockaddr wire struct — the
+# same value 'error_queue._AF_INET6' packs, distinct from PyTCP's
+# internal 'AddressFamily.INET6' socket-family enum value.
+_AF_INET6__SOCKADDR: int = 10
+
+
+def _parse_group_source_req(gsr: bytes, /) -> tuple[int, Ip6Address, Ip6Address]:
+    """
+    Parse a Linux 'struct group_source_req' (RFC 3678) into
+    (ifindex, group, source). Validates the total length and that each
+    embedded sockaddr's ss_family is AF_INET6. Raises 'OSError(EINVAL)'
+    on a short buffer or a non-AF_INET6 sockaddr family.
+    """
+
+    if len(gsr) < GROUP_SOURCE_REQ__LEN:
+        raise OSError(
+            errno.EINVAL,
+            f"group_source_req must be at least {GROUP_SOURCE_REQ__LEN} bytes, got {len(gsr)}",
+        )
+
+    ifindex = int.from_bytes(gsr[0:4], sys.byteorder)
+    group_family = int.from_bytes(gsr[8:10], sys.byteorder)
+    source_family = int.from_bytes(gsr[136:138], sys.byteorder)
+    if group_family != _AF_INET6__SOCKADDR or source_family != _AF_INET6__SOCKADDR:
+        raise OSError(errno.EINVAL, "group_source_req sockaddr family must be AF_INET6")
+
+    group = Ip6Address(gsr[16:32])
+    source = Ip6Address(gsr[144:160])
+    return ifindex, group, source
 
 
 class ShutdownHow(IntEnum):
@@ -1044,6 +1103,20 @@ class socket(ABC):
                     )
                 self._ipproto_ipv6_membership(optname, bytes(value))
                 return True
+            case _ if optname in (
+                MCAST_JOIN_SOURCE_GROUP,
+                MCAST_LEAVE_SOURCE_GROUP,
+                MCAST_BLOCK_SOURCE,
+                MCAST_UNBLOCK_SOURCE,
+            ):
+                if not isinstance(value, (bytes, bytearray, memoryview)):
+                    raise OSError(
+                        errno.EINVAL,
+                        f"MCAST source-membership value must be a group_source_req bytes object, "
+                        f"got {type(value).__name__}",
+                    )
+                self._ipproto_ipv6_source_membership(optname, bytes(value))
+                return True
         return False
 
     def _resolve_ipv6_membership_interface(self, mreq_ifindex: int, /) -> int:
@@ -1113,6 +1186,100 @@ class socket(ABC):
                     del self._ip6_source_filters[key]
         except ValueError as error:
             raise OSError(errno.EINVAL, str(error)) from error
+
+    def _ipproto_ipv6_source_membership(self, optname: int, gsr: bytes, /) -> None:
+        """
+        Apply the IPv6 protocol-independent source-filter socket options
+        (RFC 3678 / RFC 3810 §4.1) by parsing the 'group_source_req'
+        structure and mutating this socket's per-(ifindex, group) filter,
+        then pushing the result to the interface merge via the IPv6
+        membership API:
+
+        - MCAST_JOIN_SOURCE_GROUP: INCLUDE-mode; add the source.
+        - MCAST_LEAVE_SOURCE_GROUP: remove the source from the INCLUDE
+          list (leave the group when it empties).
+        - MCAST_BLOCK_SOURCE: EXCLUDE-mode; add the blocked source.
+        - MCAST_UNBLOCK_SOURCE: remove a blocked source from the EXCLUDE
+          list.
+
+        A mode conflict (an INCLUDE op on an EXCLUDE membership or vice
+        versa, and BLOCK / UNBLOCK with no prior any-source join) raises
+        EINVAL, mirroring Linux 'ip6_mc_source'. The IPv6 analogue of
+        '_ipproto_ip_source_membership'.
+        """
+
+        import pytcp.stack as _stack
+
+        mreq_ifindex, group, source = _parse_group_source_req(gsr)
+        if not group.is_multicast:
+            raise OSError(errno.EINVAL, f"{group} is not a multicast group address")
+        ifindex = self._resolve_ipv6_membership_interface(mreq_ifindex)
+
+        key = (ifindex, group)
+        api = _stack.membership6.interface(ifindex)
+        try:
+            with self._lock__ip6_source_filters:
+                # Compute the new socket filter (or None to leave the
+                # group) inside the lock so the get/compute/store is one
+                # atomic RMW and a mode-conflict OSError aborts cleanly.
+                new_filter = self._apply_ip6_source_op(optname, self._ip6_source_filters.get(key), source)
+                if new_filter is None:
+                    api.clear_socket_filter(group=group, token=id(self))
+                    self._ip6_source_filters.pop(key, None)
+                else:
+                    api.set_socket_filter(group=group, token=id(self), source_filter=new_filter)
+                    self._ip6_source_filters[key] = new_filter
+        except ValueError as error:
+            raise OSError(errno.EINVAL, str(error)) from error
+
+    @staticmethod
+    def _apply_ip6_source_op(
+        optname: int,
+        current: Ip6MulticastFilter | None,
+        source: Ip6Address,
+        /,
+    ) -> Ip6MulticastFilter | None:
+        """
+        Compute the new per-socket IPv6 source filter for a source-filter
+        socket option (RFC 3810 §4.1 / RFC 3678), or 'None' when the
+        operation leaves the group. Raises 'OSError' with the Linux
+        'ip6_mc_source' errno for an invalid transition: EINVAL on a
+        filter-mode conflict, EADDRNOTAVAIL on dropping / unblocking a
+        source the socket does not hold. Adding a source already present
+        is idempotent. The IPv6 analogue of '_apply_source_op'.
+        """
+
+        include = Ip6MulticastFilterMode.INCLUDE
+        exclude = Ip6MulticastFilterMode.EXCLUDE
+
+        match optname:
+            case _ if optname == MCAST_JOIN_SOURCE_GROUP:
+                if current is None:
+                    return Ip6MulticastFilter(include, frozenset({source}))
+                if current.mode is exclude:
+                    raise OSError(errno.EINVAL, "MCAST_JOIN_SOURCE_GROUP on an EXCLUDE-mode group")
+                return Ip6MulticastFilter(include, current.sources | {source})
+            case _ if optname == MCAST_LEAVE_SOURCE_GROUP:
+                if current is None:
+                    raise OSError(errno.EADDRNOTAVAIL, "Socket is not a member of the group")
+                if current.mode is exclude:
+                    raise OSError(errno.EINVAL, "MCAST_LEAVE_SOURCE_GROUP on an EXCLUDE-mode group")
+                if source not in current.sources:
+                    raise OSError(errno.EADDRNOTAVAIL, f"Source {source} is not in the include list")
+                remaining = current.sources - {source}
+                return Ip6MulticastFilter(include, remaining) if remaining else None
+            case _ if optname == MCAST_BLOCK_SOURCE:
+                if current is None or current.mode is include:
+                    raise OSError(errno.EINVAL, "MCAST_BLOCK_SOURCE requires an EXCLUDE-mode (any-source) membership")
+                return Ip6MulticastFilter(exclude, current.sources | {source})
+            case _ if optname == MCAST_UNBLOCK_SOURCE:
+                if current is None or current.mode is include:
+                    raise OSError(errno.EINVAL, "MCAST_UNBLOCK_SOURCE requires an EXCLUDE-mode (any-source) membership")
+                if source not in current.sources:
+                    raise OSError(errno.EADDRNOTAVAIL, f"Source {source} is not blocked")
+                return Ip6MulticastFilter(exclude, current.sources - {source})
+
+        raise OSError(errno.EINVAL, f"Unsupported source-membership option {optname}")
 
     def _ipproto_ipv6_getsockopt(self, optname: int, /) -> int | None:
         """

@@ -90,7 +90,21 @@ until the user says "push".
   branch is a `# P4:` placeholder). Tests-first:
   `test__icmp6__mld__source_filter_model.py` (7 wire-driven model tests) +
   harness / thread-safety / ND-seed updates. RFC 3810 §4.2/§5.2 adherence
-  flip waits for P4/P5. See the R4 section for the remaining P2/P4/P5 map.
+  flip waits for P4/P5. See the R4 section for the remaining P4/P5 map.
+- [x] **IPv6 SSM socket surface (R4 P2)** — the socket-side source-filter
+  API, in two commits. `stack/membership6.py` (`Membership6Api`, the MLDv2
+  analogue of `MembershipApi`) registered as `stack.membership6`;
+  `IPV6_JOIN_GROUP` / `IPV6_LEAVE_GROUP` migrated onto it with per-socket
+  `_ip6_source_filters` refcounting (fixes the leave-removes-for-all bug)
+  + close-time release; and the protocol-independent
+  `MCAST_JOIN_SOURCE_GROUP` / `MCAST_LEAVE_SOURCE_GROUP` /
+  `MCAST_BLOCK_SOURCE` / `MCAST_UNBLOCK_SOURCE` family (`McastOption` enum +
+  bare aliases, `group_source_req` parser, `_apply_ip6_source_op`). There
+  is NO `IPV6_ADD_SOURCE_MEMBERSHIP` — Linux uses the `MCAST_*` family for
+  IPv6 SSM. Tests: `test__socket__ipv6_source_membership.py` (11) +
+  `test__icmp6__mld__membership6_api.py` (8) + the join_group refcount /
+  close tests. P4 (MLDv2 source records on the wire) + P5 (RX source-
+  delivery gate) remain before the §4.2/§5.2 adherence flip.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -187,10 +201,28 @@ self._signal_readable()
     v4/v6 multicast are already separate paths in the handler and the
     MLD/IGMP TX). P3's `_ip6_multicast_filters` dict + merge live on the
     handler next to the v4 ones.
-  - P2: new opts `IPV6_ADD_SOURCE_MEMBERSHIP` / `IPV6_DROP_SOURCE_MEMBERSHIP`
-    (and/or the protocol-independent `MCAST_JOIN_SOURCE_GROUP` family) as
-    `IpV6Option` enum members + bare aliases (see `.claude/rules/enums.md`
-    §2.2). Wire the setsockopt cases.
+  - **P2 — SHIPPED:** the socket-side source-filter surface + IPv6
+    membership API, in two commits. (1) `stack/membership6.py`
+    (`Membership6Api`, the MLDv2 analogue of `MembershipApi`: join / leave
+    / set_socket_filter / clear_socket_filter / list_memberships →
+    `mc6_*`; ff02::1 leave-refusal; no group-count cap — Linux has no IPv6
+    `igmp_max_memberships`), registered as `stack.membership6`. The
+    `IPV6_JOIN_GROUP` / `IPV6_LEAVE_GROUP` path migrated onto it with
+    per-socket `_ip6_source_filters` refcounting (EXCLUDE{} any-source),
+    fixing the documented leave-removes-for-all bug; close/GC releases
+    held memberships (`_release_ip6_memberships`). (2) the
+    protocol-independent `MCAST_JOIN_SOURCE_GROUP` /
+    `MCAST_LEAVE_SOURCE_GROUP` / `MCAST_BLOCK_SOURCE` /
+    `MCAST_UNBLOCK_SOURCE` family as a `McastOption` IntEnum + bare aliases
+    (enums.md §2.2; re-exported from `pytcp.socket`), with a
+    `group_source_req` parser (`_parse_group_source_req`, ss_family ==
+    AF_INET6 = 10) and `_apply_ip6_source_op` (the INCLUDE/EXCLUDE
+    mode-conflict + EADDRNOTAVAIL errno surface mirroring the v4
+    `_apply_source_op`). There is NO `IPV6_ADD_SOURCE_MEMBERSHIP` — Linux
+    uses the protocol-independent `MCAST_*` family for IPv6 SSM.
+    Tests-first: `test__socket__ipv6_source_membership.py` (11) +
+    `test__icmp6__mld__membership6_api.py` (8) + the refcount / close tests
+    in `test__socket__ipv6_join_group.py`.
   - **P3 — SHIPPED:** the handler `mc6_*` reception-state core, a
     faithful mirror of the fully-evolved v4 machinery. Added
     `_Ip6GroupMembership`, the `_ip6_multicast_filters` dict as the
@@ -225,14 +257,17 @@ self._signal_readable()
 #### R4 — resumable implementation map (derived 2026-07-19 by reading the v4 machinery)
 
 The v4 source-filter machinery to mirror, with exact locations, so P2-P5
-can resume without re-deriving. **Status: P3 (the handler core below) is
-SHIPPED** — the `_Ip6GroupMembership` / `_ip6_multicast_filters` /
-`_ip6_multicast_refs` / `mc6_*` / `_ip6_multicast_filter_for` machinery all
-landed under `_lock__multicast`, and `assign/remove_ip6_multicast` now
-materialize the filter map. **Remaining: P2** (Membership API + Socket
-`MCAST_*` setsockopt + `group_source_req`), **P4** (`_send_mld_state_change`
-MLDv2 source records, replacing the `# P4:` placeholder in `_mc6_recompute`),
-**P5** (RX `Ip6MulticastFilter.allows` gate for UDP + RAW).
+can resume without re-deriving. **Status: P2 + P3 SHIPPED** — the handler
+core (`_Ip6GroupMembership` / `_ip6_multicast_filters` / `_ip6_multicast_refs`
+/ `mc6_*` / `_ip6_multicast_filter_for`, all under `_lock__multicast`) AND
+the socket surface (`stack.membership6`, refcounted `IPV6_JOIN_GROUP`, the
+`MCAST_*_SOURCE_*` family with `group_source_req`, per-socket
+`_ip6_source_filters`, close-time release) are done. **Remaining: P4**
+(`_send_mld_state_change` MLDv2 source records — ALLOW / BLOCK / CHANGE_TO_*
+— replacing the `# P4:` current-state-Report placeholder in `_mc6_recompute`
+and the join/leave edges), **P5** (RX `Ip6MulticastFilter.allows` source-
+delivery gate for UDP + RAW). After P4/P5 flip the RFC 3810 §4.2 / §5.2
+adherence rows.
 
 - **Handler (`runtime/packet_handler/__init__.py`) — the deep, no-GIL-locked
   core, duplicated across the L2 and L3 handler classes — SHIPPED (P3):**
