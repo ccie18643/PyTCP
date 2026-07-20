@@ -3331,3 +3331,72 @@ class TestUdpSocketSoSndbuf(_UdpSocketTestCase):
 
         for _ in range(50):
             self.assertEqual(s.send(b"x" * 1000), 1000, msg="A default-SO_SNDBUF send must not block.")
+
+
+class TestUdpSocketTimeoutFloat(_UdpSocketTestCase):
+    """
+    SO_RCVTIMEO / SO_SNDTIMEO accept and report sub-second float
+    seconds via setsockopt / getsockopt, matching PyTCP's documented
+    'float seconds' surface. The setsockopt SOL_SOCKET int-guard
+    previously rejected a float value and getsockopt truncated the
+    stored timeout to whole seconds.
+    """
+
+    def test__so_rcvtimeo__accepts_and_reports_subsecond_float(self) -> None:
+        """
+        Ensure setsockopt(SO_RCVTIMEO, 0.5) stores the sub-second
+        timeout and getsockopt reports it back verbatim.
+
+        Reference: Linux SO_RCVTIMEO (struct timeval; PyTCP exposes
+        float seconds).
+        """
+
+        from pytcp.runtime.socket import SO_RCVTIMEO, SOL_SOCKET
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        s.setsockopt(SOL_SOCKET, SO_RCVTIMEO, 0.5)
+        self.assertEqual(
+            s.getsockopt(SOL_SOCKET, SO_RCVTIMEO),
+            0.5,
+            msg="SO_RCVTIMEO must round-trip a sub-second float.",
+        )
+
+    def test__so_sndtimeo__accepts_and_reports_subsecond_float(self) -> None:
+        """
+        Ensure setsockopt(SO_SNDTIMEO, 0.25) stores the sub-second
+        timeout and getsockopt reports it back verbatim.
+
+        Reference: Linux SO_SNDTIMEO (struct timeval; PyTCP exposes
+        float seconds).
+        """
+
+        from pytcp.runtime.socket import SO_SNDTIMEO, SOL_SOCKET
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        s.setsockopt(SOL_SOCKET, SO_SNDTIMEO, 0.25)
+        self.assertEqual(
+            s.getsockopt(SOL_SOCKET, SO_SNDTIMEO),
+            0.25,
+            msg="SO_SNDTIMEO must round-trip a sub-second float.",
+        )
+
+    def test__so_rcvtimeo__integer_seconds_still_accepted(self) -> None:
+        """
+        Ensure an integer SO_RCVTIMEO still works — regression pin
+        for the float widening.
+
+        Reference: Linux SO_RCVTIMEO (integer-second value accepted).
+        """
+
+        from pytcp.runtime.socket import SO_RCVTIMEO, SOL_SOCKET
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        s.setsockopt(SOL_SOCKET, SO_RCVTIMEO, 3)
+        self.assertEqual(
+            s.getsockopt(SOL_SOCKET, SO_RCVTIMEO),
+            3,
+            msg="SO_RCVTIMEO must still accept an integer-second value.",
+        )

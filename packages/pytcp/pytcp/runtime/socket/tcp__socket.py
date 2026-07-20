@@ -335,7 +335,7 @@ class TcpSocket(socket):
         )
 
     @override
-    def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
+    def setsockopt(self, level: int | IpProto, optname: int, value: int | float | bytes, /) -> None:
         """
         Set a socket option per the BSD 'setsockopt' API.
 
@@ -356,6 +356,17 @@ class TcpSocket(socket):
             # Connection now has RFC 1122 §4.2.3.6 keep-alive enabled.
         """
 
+        # A float value is only valid for the SOL_SOCKET float-seconds
+        # timeouts (SO_RCVTIMEO / SO_SNDTIMEO); route it there so the
+        # int / bytes option paths below never receive a float.
+        if isinstance(value, float):
+            if level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
+                return
+            raise OSError(
+                errno.ENOPROTOOPT,
+                f"setsockopt: unsupported (level, optname) pair for a float value: "
+                f"level={level!r}, optname={optname!r}",
+            )
         if isinstance(value, int) and level == SOL_SOCKET and optname == SO_KEEPALIVE:
             self._so_keepalive = bool(value)
             return
@@ -443,7 +454,7 @@ class TcpSocket(socket):
         )
 
     @override
-    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
+    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | float | bytes:
         """
         Get a socket option per the BSD 'getsockopt' API.
 

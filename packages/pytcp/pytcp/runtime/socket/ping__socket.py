@@ -220,12 +220,23 @@ class PingSocket(socket):
         return str(self._remote_ip_address), 0
 
     @override
-    def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
+    def setsockopt(self, level: int | IpProto, optname: int, value: int | float | bytes, /) -> None:
         """
         Set a socket option. Supports 'IP_RECVTTL' / 'IPV6_RECVHOPLIMIT',
         which make 'recvmsg' surface the reply's TTL / Hop Limit cmsg.
         """
 
+        # A float value is only valid for the SOL_SOCKET float-seconds
+        # timeouts (SO_RCVTIMEO / SO_SNDTIMEO); route it there so the
+        # int / bytes option paths below never receive a float.
+        if isinstance(value, float):
+            if level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
+                return
+            raise OSError(
+                errno.ENOPROTOOPT,
+                f"setsockopt: unsupported (level, optname) pair for a float value: "
+                f"level={level!r}, optname={optname!r}",
+            )
         if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
             self._recv_ttl = bool(value)
             return
@@ -233,7 +244,7 @@ class PingSocket(socket):
             return
 
     @override
-    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
+    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | float | bytes:
         """
         Get a socket option.
         """

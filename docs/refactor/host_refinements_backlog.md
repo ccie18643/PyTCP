@@ -311,12 +311,23 @@ self._signal_readable()
   all three datagram flavours. Tests: `TestRawSocketSoSndbuf` (2 —
   non-blocking EAGAIN, completion-hook release), `TestPingSocketSoSndbuf`
   (1 — charged-during / released-after balance).
-- **Still scoped out (follow-ons):** a sub-second `SO_SNDTIMEO` /
-  `SO_RCVTIMEO` via `setsockopt` (blocked today by the SOL_SOCKET int-guard
-  on the datagram sockets — float timeouts flow through `settimeout()`
-  instead); TCP `SO_SNDBUF` (TCP has its own send buffering / retransmit
-  queue, released on ACK, not on wire-write — a separate model, wrong to
-  fold into this counter); `SO_RCVBUF`-on-TCP (receive-window derivation).
+- **Shipped (sub-second timeout via setsockopt):** `SO_RCVTIMEO` /
+  `SO_SNDTIMEO` now accept and report a sub-second **float** value via
+  `setsockopt` / `getsockopt`, matching PyTCP's documented "float seconds"
+  surface. Previously the SOL_SOCKET dispatch int-guard rejected a float
+  and getsockopt `int()`-truncated the stored value. The setsockopt `value`
+  widened to `int | float | bytes`; a float is routed first to
+  `_sol_socket_setsockopt` (the only float-valid path) so the int / bytes
+  option handlers never receive one; getsockopt returns the float verbatim.
+  Tests: `TestUdpSocketTimeoutFloat` (3 — float `SO_RCVTIMEO` / `SO_SNDTIMEO`
+  round-trip + integer-still-accepted regression). This makes the R3
+  blocking-send `SO_SNDTIMEO` fully usable at sub-second granularity via
+  the public API.
+- **Still scoped out (follow-ons):** TCP `SO_SNDBUF` (TCP has its own send
+  buffering / retransmit queue, released on ACK, not on wire-write — a
+  separate model, wrong to fold into this counter); `SO_RCVBUF`-on-TCP
+  (receive-window derivation); the `X3` `listen()`-on-unbound → `EINVAL`
+  breaking change (updates `examples/`).
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 

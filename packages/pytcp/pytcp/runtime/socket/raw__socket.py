@@ -156,7 +156,7 @@ class RawSocket(socket):
         return local_ip_address, remote_ip_address  # type: ignore[return-value]
 
     @override
-    def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
+    def setsockopt(self, level: int | IpProto, optname: int, value: int | float | bytes, /) -> None:
         """
         Set a socket option per the BSD 'setsockopt' API. RAW
         sockets honor SOL_SOCKET / IPPROTO_IP / IPPROTO_IPV6
@@ -164,6 +164,17 @@ class RawSocket(socket):
         for scalar options and 'bytes' for IP_OPTIONS.
         """
 
+        # A float value is only valid for the SOL_SOCKET float-seconds
+        # timeouts (SO_RCVTIMEO / SO_SNDTIMEO); route it there so the
+        # int / bytes option paths below never receive a float.
+        if isinstance(value, float):
+            if level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
+                return
+            raise OSError(
+                errno.ENOPROTOOPT,
+                f"setsockopt: unsupported (level, optname) pair for a float value: "
+                f"level={level!r}, optname={optname!r}",
+            )
         if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
             # Make 'recvmsg' surface the received TTL / Hop Limit as an
             # 'IP_TTL' / 'IPV6_HOPLIMIT' cmsg — the only way to read the
@@ -187,7 +198,7 @@ class RawSocket(socket):
         )
 
     @override
-    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
+    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | float | bytes:
         """
         Get a socket option per the BSD 'getsockopt' API.
         Symmetric to 'setsockopt': 'int' for scalar options,
@@ -196,7 +207,7 @@ class RawSocket(socket):
 
         if optname in (IP_RECVTTL, IPV6_RECVHOPLIMIT):
             return int(self._recv_ttl)
-        value: int | bytes | None
+        value: int | float | bytes | None
         if level == SOL_SOCKET and (value := self._sol_socket_getsockopt(optname)) is not None:
             return value
         if level == IPPROTO_IP and (value := self._ipproto_ip_getsockopt(optname)) is not None:

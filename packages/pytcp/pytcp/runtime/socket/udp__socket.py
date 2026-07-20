@@ -167,7 +167,7 @@ class UdpSocket(socket):
         return self._udp_no_check6_rx
 
     @override
-    def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
+    def setsockopt(self, level: int | IpProto, optname: int, value: int | float | bytes, /) -> None:
         """
         Set a socket option per the BSD 'setsockopt' API. UDP
         sockets honor SOL_SOCKET / IPPROTO_IP / IPPROTO_IPV6 /
@@ -176,6 +176,17 @@ class UdpSocket(socket):
         'bytes' for IP_OPTIONS (RFC 1122 §4.1.3.2 raw options block).
         """
 
+        # A float value is only valid for the SOL_SOCKET float-seconds
+        # timeouts (SO_RCVTIMEO / SO_SNDTIMEO); route it there so the
+        # int / bytes option paths below never receive a float.
+        if isinstance(value, float):
+            if level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
+                return
+            raise OSError(
+                errno.ENOPROTOOPT,
+                f"setsockopt: unsupported (level, optname) pair for a float value: "
+                f"level={level!r}, optname={optname!r}",
+            )
         if level == SOL_SOCKET and optname == SO_BINDTODEVICE:
             self._so_bindtodevice(value)
             return
@@ -198,14 +209,14 @@ class UdpSocket(socket):
         )
 
     @override
-    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
+    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | float | bytes:
         """
         Get a socket option per the BSD 'getsockopt' API.
         Symmetric to 'setsockopt': 'int' for scalar options,
         'bytes' for IP_OPTIONS.
         """
 
-        value: int | bytes | None
+        value: int | float | bytes | None
         if level == SOL_SOCKET and optname == SO_BINDTODEVICE:
             return self._bound_interface_name.encode() if self._bound_interface_name else bytes()
         if level == SOL_SOCKET and (value := self._sol_socket_getsockopt(optname)) is not None:

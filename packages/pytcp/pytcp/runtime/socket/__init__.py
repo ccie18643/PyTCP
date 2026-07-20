@@ -790,7 +790,7 @@ class socket(ABC):
         l_onoff, l_linger = self._so_linger or (0, 0)
         return struct.pack("@ii", l_onoff, l_linger)
 
-    def _sol_socket_setsockopt(self, optname: int, value: int, /) -> bool:
+    def _sol_socket_setsockopt(self, optname: int, value: int | float, /) -> bool:
         """
         Apply a SOL_SOCKET-level setsockopt option; return True if
         handled or False if the optname is not a base-class option
@@ -1556,7 +1556,7 @@ class socket(ABC):
             return None
         return Ip4Options.from_buffer(self._ip_options)
 
-    def _sol_socket_getsockopt(self, optname: int, /) -> int | bytes | None:
+    def _sol_socket_getsockopt(self, optname: int, /) -> int | float | bytes | None:
         """
         Get a SOL_SOCKET-level option's stored value, or 'None' if
         the option is not a base-class option. Most options return an
@@ -1577,9 +1577,9 @@ class socket(ABC):
             case _ if optname == SO_RCVBUF:
                 return self._so_rcvbuf or 0
             case _ if optname == SO_RCVTIMEO:
-                return int(self._so_rcvtimeo) if self._so_rcvtimeo else 0
+                return self._so_rcvtimeo or 0.0
             case _ if optname == SO_SNDTIMEO:
-                return int(self._so_sndtimeo) if self._so_sndtimeo else 0
+                return self._so_sndtimeo or 0.0
             case _ if optname == SO_OOBINLINE:
                 # Always 1 — PyTCP's RFC 6093 §6 universal-inline
                 # design (see the setsockopt comment above).
@@ -2114,7 +2114,7 @@ class socket(ABC):
 
         raise NotImplementedError
 
-    def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
+    def setsockopt(self, level: int | IpProto, optname: int, value: int | float | bytes, /) -> None:
         """
         The 'setsockopt()' socket API method placeholder. Each concrete
         IP socket implements the SOL_SOCKET / IPPROTO_* option surface;
@@ -2123,7 +2123,7 @@ class socket(ABC):
 
         raise NotImplementedError
 
-    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
+    def getsockopt(self, level: int | IpProto, optname: int, /) -> int | float | bytes:
         """
         The 'getsockopt()' socket API method placeholder. Symmetric to
         'setsockopt'.
