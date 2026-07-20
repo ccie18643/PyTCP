@@ -33,6 +33,7 @@ ver 3.0.8
 """
 
 import time
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip6Address, MacAddress
@@ -496,12 +497,15 @@ class Ip6TxHandler:
         ip6__hop: int | None = None,
         ip6__ecn: int = 0,
         ip6__dscp: int = 0,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Interface method for RAW Socket -> Packet Assembler
         communication. Handed to the TX worker fire-and-forget via
         '_marshal_tx_async' (Phase 4b): the calling app thread does
-        not block for the 'TxStatus'.
+        not block for the 'TxStatus'. 'on_complete' (if given) fires
+        once after the datagram leaves the send queue — the SO_SNDBUF
+        release hook.
         """
 
         kwargs: dict[str, Any] = {
@@ -516,7 +520,7 @@ class Ip6TxHandler:
         }
         if ip6__hop is not None:
             kwargs["ip6__hop"] = ip6__hop
-        self._if._marshal_tx_async(lambda: self._phtx_ip6(**kwargs))
+        self._if._marshal_tx_async(lambda: self._phtx_ip6(**kwargs), on_complete=on_complete)
 
     def __send_out_packet(self, ip6_packet_tx: Ip6Assembler) -> None:
         assert self._if._tx_ring is not None, "PacketHandler must have an injected TX ring to send."

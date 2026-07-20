@@ -339,6 +339,11 @@ class RawSocket(socket):
         if self._multicast_send_suppressed(self._remote_ip_address):
             return len(data)
 
+        # SO_SNDBUF accounting: reserve send-buffer space (blocking /
+        # EAGAIN per SO_SNDTIMEO), released when the datagram's TX
+        # completes via the 'on_complete' hook.
+        nbytes = len(data)
+        self._charge_sndbuf(nbytes)
         match self._address_family:
             case AddressFamily.INET6:
                 stack.egress_packet_handler(cast(Ip6Address, self._remote_ip_address)).send_ip6_packet(
@@ -353,6 +358,7 @@ class RawSocket(socket):
                     ip6__hop=self._effective_ip_ttl(self._remote_ip_address),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
+                    on_complete=lambda: self._release_sndbuf(nbytes),
                 )
             case AddressFamily.INET4:
                 stack.egress_packet_handler(cast(Ip4Address, self._remote_ip_address)).send_ip4_packet(
@@ -364,6 +370,7 @@ class RawSocket(socket):
                     ip4__ttl=self._effective_ip_ttl(self._remote_ip_address),
                     ip4__ecn=self._effective_ip_ecn(),
                     ip4__dscp=self._effective_ip_dscp(),
+                    on_complete=lambda: self._release_sndbuf(nbytes),
                 )
 
         # Phase 4b fire-and-forget: the packet is accepted into the
@@ -409,6 +416,11 @@ class RawSocket(socket):
         if self._multicast_send_suppressed(remote_ip_address):
             return len(data)
 
+        # SO_SNDBUF accounting: reserve send-buffer space (blocking /
+        # EAGAIN per SO_SNDTIMEO), released when the datagram's TX
+        # completes via the 'on_complete' hook.
+        nbytes = len(data)
+        self._charge_sndbuf(nbytes)
         match self._address_family:
             case AddressFamily.INET6:
                 stack.egress_packet_handler(cast(Ip6Address, remote_ip_address)).send_ip6_packet(
@@ -423,6 +435,7 @@ class RawSocket(socket):
                     ip6__hop=self._effective_ip_ttl(remote_ip_address),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
+                    on_complete=lambda: self._release_sndbuf(nbytes),
                 )
             case AddressFamily.INET4:
                 stack.egress_packet_handler(cast(Ip4Address, remote_ip_address)).send_ip4_packet(
@@ -434,6 +447,7 @@ class RawSocket(socket):
                     ip4__ttl=self._effective_ip_ttl(self._remote_ip_address),
                     ip4__ecn=self._effective_ip_ecn(),
                     ip4__dscp=self._effective_ip_dscp(),
+                    on_complete=lambda: self._release_sndbuf(nbytes),
                 )
 
         # Phase 4b fire-and-forget — see 'send' above.

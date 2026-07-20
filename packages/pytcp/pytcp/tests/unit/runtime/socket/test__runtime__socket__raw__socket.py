@@ -1413,3 +1413,90 @@ class TestRawSocketRcvbuf(_RawSocketTestCase):
             50,
             msg="With SO_RCVBUF unset every raw packet must be enqueued.",
         )
+
+
+class TestRawSocketSoSndbuf(_RawSocketTestCase):
+    """
+    The RAW-socket SO_SNDBUF send-buffer accounting tests. RAW send
+    is fire-and-forget (like UDP), so 'send_ip4_packet' /
+    'send_ip6_packet' carry the 'on_complete' release hook; the
+    per-socket outstanding-bytes bound and blocking behaviour are the
+    shared base-socket logic exercised in full by the UDP suite.
+
+    The fixture's 'send_ip4_packet' stub swallows 'on_complete'
+    without firing it, so outstanding bytes accumulate until a test
+    fires the captured hook.
+    """
+
+    def _connected_socket(self) -> RawSocket:
+        """
+        Construct a connected IPv4 raw socket ready for send().
+        """
+
+        s = RawSocket(family=AddressFamily.INET4, protocol=IpProto.from_int(253))
+        with patch(
+            "pytcp.runtime.socket.raw__socket.pick_local_ip_address",
+            return_value=Ip4Address("10.0.0.1"),
+        ):
+            s.connect(("10.0.0.5", 0))
+        return s  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
+
+    def test__raw__so_sndbuf_nonblocking_over_buffer_raises_eagain(self) -> None:
+        """
+        Ensure a non-blocking RAW send that would push the outstanding
+        bytes past SO_SNDBUF raises 'BlockingIOError(EAGAIN)' while the
+        buffer is not drained.
+
+        Reference: Linux net/ipv4/raw.c raw_sendmsg (SO_SNDBUF bound).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        s.setblocking(False)
+
+        self.assertEqual(s.send(b"x" * 80), 80, msg="First RAW datagram must be accepted.")
+        with self.assertRaises(BlockingIOError) as ctx:
+            s.send(b"x" * 80)
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EAGAIN,
+            msg="An over-SO_SNDBUF non-blocking RAW send must raise EAGAIN.",
+        )
+
+    def test__raw__so_sndbuf_completion_hook_releases_and_allows_next_send(self) -> None:
+        """
+        Ensure firing the 'on_complete' hook that RAW threads into
+        'send_ip4_packet' releases the outstanding bytes so a
+        subsequent send that previously would have blocked proceeds —
+        the RAW end-to-end TX-completion release wiring.
+
+        Reference: Linux net/core/sock.c sk_wmem_alloc
+        (freed on TX completion, waking blocked senders).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        captured: list[object] = []
+
+        def _capturing_send(*, on_complete: object = None, **_: object) -> TxStatus:
+            captured.append(on_complete)
+            return TxStatus.PASSED__ETHERNET__TO_TX_RING
+
+        self._handler.send_ip4_packet = _capturing_send
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        s.setblocking(False)
+
+        s.send(b"x" * 80)
+        on_complete = captured[-1]
+        assert callable(on_complete)
+        on_complete()
+
+        self.assertEqual(
+            s.send(b"x" * 80),
+            80,
+            msg="After the completion hook releases the buffer, the next RAW send must proceed.",
+        )

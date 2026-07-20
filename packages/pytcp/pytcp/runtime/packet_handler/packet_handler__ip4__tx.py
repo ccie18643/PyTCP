@@ -32,6 +32,7 @@ pytcp/runtime/packet_handler/packet_handler__ip4__tx.py
 ver 3.0.8
 """
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Address, MacAddress
@@ -551,6 +552,7 @@ class Ip4TxHandler:
         ip4__ecn: int = 0,
         ip4__dscp: int = 0,
         ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Interface method for RAW Socket -> Packet Assembler
@@ -560,7 +562,8 @@ class Ip4TxHandler:
 
         'ip4__options' threads the socket's IP_OPTIONS block (RFC
         1122 §4.1.3.2) onto the outbound header; 'None' emits a
-        plain header.
+        plain header. 'on_complete' (if given) fires once after the
+        datagram leaves the send queue — the SO_SNDBUF release hook.
         """
 
         kwargs: dict[str, Any] = {
@@ -577,7 +580,7 @@ class Ip4TxHandler:
             kwargs["ip4__ttl"] = ip4__ttl
         if ip4__options is not None:
             kwargs["ip4__options"] = ip4__options
-        self._if._marshal_tx_async(lambda: self._phtx_ip4(**kwargs))
+        self._if._marshal_tx_async(lambda: self._phtx_ip4(**kwargs), on_complete=on_complete)
 
     def __send_out_packet(
         self,

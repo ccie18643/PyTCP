@@ -299,13 +299,24 @@ self._signal_readable()
   allowed, completion-hook release, blocking SO_SNDTIMEO EAGAIN, default
   never blocks). Harness `dispatch_async` mock updated to fire `on_complete`
   (mirrors production).
-- **Scoped out (follow-ons):** RAW / PING send-buffer accounting (same
-  `on_complete` seam extends to `send_ip4_packet` / the ping path); a
-  sub-second `SO_SNDTIMEO` / `SO_RCVTIMEO` via `setsockopt` (blocked today
-  by the SOL_SOCKET int-guard on the datagram sockets — float timeouts flow
-  through `settimeout()` instead); TCP `SO_SNDBUF` (TCP has its own send
-  buffering / retransmit queue, a separate model). `SO_RCVBUF`-on-TCP
-  (receive-window derivation) also remains open.
+- **Shipped (RAW / PING extension):** the same accounting now covers RAW
+  and PING. RAW send is fire-and-forget like UDP, so `send_ip4_packet` /
+  `send_ip6_packet` (+ their base delegators) gained the `on_complete`
+  release hook and `RawSocket.send` / `sendto` charge / release exactly as
+  UDP does. PING's ICMP send path is **synchronous** (blocking
+  `_marshal_tx`), so `PingSocket._send_echo` charges before the send and
+  releases in a `finally` — the charge is held only for the send's
+  duration, so it never accumulates for a single sender and only bounds
+  concurrent senders sharing one socket. `SO_SNDBUF` is now uniform across
+  all three datagram flavours. Tests: `TestRawSocketSoSndbuf` (2 —
+  non-blocking EAGAIN, completion-hook release), `TestPingSocketSoSndbuf`
+  (1 — charged-during / released-after balance).
+- **Still scoped out (follow-ons):** a sub-second `SO_SNDTIMEO` /
+  `SO_RCVTIMEO` via `setsockopt` (blocked today by the SOL_SOCKET int-guard
+  on the datagram sockets — float timeouts flow through `settimeout()`
+  instead); TCP `SO_SNDBUF` (TCP has its own send buffering / retransmit
+  queue, released on ACK, not on wire-write — a separate model, wrong to
+  fold into this counter); `SO_RCVBUF`-on-TCP (receive-window derivation).
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 

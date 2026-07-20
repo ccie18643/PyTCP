@@ -3019,6 +3019,7 @@ class PacketHandler(Subsystem, ABC):
         ip4__ecn: int = 0,
         ip4__dscp: int = 0,
         ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Enqueue an outbound IPv4 RAW datagram (delegates to the IPv4 TX sub-handler).
@@ -3033,6 +3034,7 @@ class PacketHandler(Subsystem, ABC):
             ip4__ecn=ip4__ecn,
             ip4__dscp=ip4__dscp,
             ip4__options=ip4__options,
+            on_complete=on_complete,
         )
 
     ###
@@ -3100,6 +3102,7 @@ class PacketHandler(Subsystem, ABC):
         ip6__hop: int | None = None,
         ip6__ecn: int = 0,
         ip6__dscp: int = 0,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Enqueue an outbound IPv6 RAW datagram (delegates to the IPv6 TX sub-handler).
@@ -3113,6 +3116,7 @@ class PacketHandler(Subsystem, ABC):
             ip6__hop=ip6__hop,
             ip6__ecn=ip6__ecn,
             ip6__dscp=ip6__dscp,
+            on_complete=on_complete,
         )
 
     def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:

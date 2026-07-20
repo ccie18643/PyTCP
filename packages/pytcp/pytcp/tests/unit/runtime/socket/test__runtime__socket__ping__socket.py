@@ -150,3 +150,63 @@ class TestPingSocketRcvbuf(_PingSocketTestCase):
             50,
             msg="With SO_RCVBUF unset every Echo Reply must be enqueued.",
         )
+
+
+class TestPingSocketSoSndbuf(_PingSocketTestCase):
+    """
+    The PING-socket SO_SNDBUF send-buffer accounting test. The ICMP
+    send path is synchronous (blocking '_marshal_tx'), so the charge
+    is held only for the duration of the send and released in a
+    'finally'; it never accumulates for a single sender and only
+    bounds concurrent senders sharing one socket.
+    """
+
+    def test__ping__so_sndbuf_charged_during_send_and_released_after(self) -> None:
+        """
+        Ensure a ping send charges the outstanding-bytes counter for
+        the duration of the (synchronous) transmit and releases it to
+        zero afterwards — the balanced charge/release wiring on the
+        blocking ICMP send path.
+
+        Reference: Linux net/core/sock.c sk_wmem_alloc
+        (charged at enqueue, freed on TX completion).
+        """
+
+        from types import SimpleNamespace
+
+        from net_proto import Icmp4MessageEchoRequest
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        s = PingSocket(family=AddressFamily.INET4, protocol=IpProto.ICMP4)
+        self.addCleanup(s.close)
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 1000)
+
+        request = bytes(Icmp4MessageEchoRequest(id=0x1234, seq=1, data=b"payload"))
+
+        during: list[int] = []
+
+        def _send_icmp4(**_: object) -> None:
+            during.append(s._snd_outstanding)
+
+        stub = SimpleNamespace(send_icmp4_packet=_send_icmp4)
+
+        with (
+            patch("pytcp.runtime.socket.ping__socket.stack.egress_packet_handler", return_value=stub),
+            patch("pytcp.runtime.socket.ping__socket.stack.has_route_to", return_value=True),
+            patch(
+                "pytcp.runtime.socket.ping__socket.pick_local_ip_address",
+                return_value=Ip4Address("10.0.0.1"),
+            ),
+        ):
+            s.sendto(request, ("10.0.0.5", 0))
+
+        self.assertEqual(
+            during,
+            [len(request)],
+            msg="Outstanding must equal the datagram size while the synchronous send is in flight.",
+        )
+        self.assertEqual(
+            s._snd_outstanding,
+            0,
+            msg="Outstanding must be released to 0 after the synchronous send completes.",
+        )

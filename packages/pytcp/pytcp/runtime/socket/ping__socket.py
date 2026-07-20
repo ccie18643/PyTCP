@@ -319,20 +319,30 @@ class PingSocket(socket):
         else:
             local_ip_address = self._local_ip_address
 
-        if self._address_family is AddressFamily.INET6:
-            assert isinstance(local_ip_address, Ip6Address) and isinstance(remote_ip_address, Ip6Address)
-            stack.egress_packet_handler(remote_ip_address).send_icmp6_packet(
-                ip6__local_address=local_ip_address,
-                ip6__remote_address=remote_ip_address,
-                icmp6__message=Icmp6MessageEchoRequest(id=self._id, seq=sequence, data=payload),
-            )
-        else:
-            assert isinstance(local_ip_address, Ip4Address) and isinstance(remote_ip_address, Ip4Address)
-            stack.egress_packet_handler(remote_ip_address).send_icmp4_packet(
-                ip4__local_address=local_ip_address,
-                ip4__remote_address=remote_ip_address,
-                icmp4__message=Icmp4MessageEchoRequest(id=self._id, seq=sequence, data=payload),
-            )
+        # SO_SNDBUF accounting: the ICMP send path is synchronous
+        # (blocking '_marshal_tx'), so the charge is held only for the
+        # duration of the send and released in a 'finally'. For a
+        # single sender it never accumulates; it only bounds concurrent
+        # senders sharing one socket, matching Linux 'sk_wmem_alloc'.
+        nbytes = len(data)
+        self._charge_sndbuf(nbytes)
+        try:
+            if self._address_family is AddressFamily.INET6:
+                assert isinstance(local_ip_address, Ip6Address) and isinstance(remote_ip_address, Ip6Address)
+                stack.egress_packet_handler(remote_ip_address).send_icmp6_packet(
+                    ip6__local_address=local_ip_address,
+                    ip6__remote_address=remote_ip_address,
+                    icmp6__message=Icmp6MessageEchoRequest(id=self._id, seq=sequence, data=payload),
+                )
+            else:
+                assert isinstance(local_ip_address, Ip4Address) and isinstance(remote_ip_address, Ip4Address)
+                stack.egress_packet_handler(remote_ip_address).send_icmp4_packet(
+                    ip4__local_address=local_ip_address,
+                    ip4__remote_address=remote_ip_address,
+                    icmp4__message=Icmp4MessageEchoRequest(id=self._id, seq=sequence, data=payload),
+                )
+        finally:
+            self._release_sndbuf(nbytes)
 
         __debug__ and log("socket", f"<B><lr>[{self}]</> - Sent {len(data)} bytes of data")
         return len(data)
