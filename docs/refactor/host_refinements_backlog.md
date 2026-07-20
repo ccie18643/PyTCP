@@ -221,6 +221,18 @@ self._signal_readable()
   broadcast-send gate is now uniform across all datagram flavours (UDP /
   RAW / PING).** TCP cannot send to a broadcast (connection-oriented), so
   the sweep is complete.
+- **Shipped (multicast hop-count, part 1/2 — de-conflation):** `IP_TTL` /
+  `IPV6_UNICAST_HOPS` were bleeding into multicast sends — a socket that set
+  the unicast TTL override had it applied to multicast datagrams too, unlike
+  Linux which keeps `inet->uc_ttl` / `np->hop_limit` (unicast) separate from
+  `inet->mc_ttl` / `np->mcast_hops` (multicast). Made `_effective_ip_ttl`
+  destination-aware: it returns the unicast override only for a unicast
+  destination; a multicast destination falls to the handler's multicast
+  default (Hop-Limit / TTL = 1). Threaded the destination through all seven
+  call sites (UDP send/sendto, RAW send/sendto ×2 families, TCP TX — TCP is
+  always unicast). Tests: `TestSocketUnicastHopDoesNotBleedIntoMulticast`
+  (4). Part 2 adds the `IP_MULTICAST_TTL` / `IPV6_MULTICAST_HOPS` knobs so a
+  sender can *raise* the multicast hop count.
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

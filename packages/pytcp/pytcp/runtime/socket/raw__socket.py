@@ -345,7 +345,7 @@ class RawSocket(socket):
                         local=cast(Ip6Address, self._local_ip_address),
                         remote=cast(Ip6Address, self._remote_ip_address),
                     ),
-                    ip6__hop=self._effective_ip_ttl(),
+                    ip6__hop=self._effective_ip_ttl(self._remote_ip_address),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
                 )
@@ -355,7 +355,7 @@ class RawSocket(socket):
                     ip4__remote_address=cast(Ip4Address, self._remote_ip_address),
                     ip4__proto=self._ip_proto,
                     ip4__payload=data,
-                    ip4__ttl=self._effective_ip_ttl(),
+                    ip4__ttl=self._effective_ip_ttl(self._remote_ip_address),
                     ip4__ecn=self._effective_ip_ecn(),
                     ip4__dscp=self._effective_ip_dscp(),
                 )
@@ -409,7 +409,7 @@ class RawSocket(socket):
                         local=cast(Ip6Address, local_ip_address),
                         remote=cast(Ip6Address, remote_ip_address),
                     ),
-                    ip6__hop=self._effective_ip_ttl(),
+                    ip6__hop=self._effective_ip_ttl(remote_ip_address),
                     ip6__ecn=self._effective_ip_ecn(),
                     ip6__dscp=self._effective_ip_dscp(),
                 )
@@ -419,7 +419,7 @@ class RawSocket(socket):
                     ip4__remote_address=cast(Ip4Address, remote_ip_address),
                     ip4__proto=self._ip_proto,
                     ip4__payload=data,
-                    ip4__ttl=self._effective_ip_ttl(),
+                    ip4__ttl=self._effective_ip_ttl(self._remote_ip_address),
                     ip4__ecn=self._effective_ip_ecn(),
                     ip4__dscp=self._effective_ip_dscp(),
                 )

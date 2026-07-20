@@ -1302,14 +1302,24 @@ class socket(ABC):
                 return self._effective_pmtu()
         return None
 
-    def _effective_ip_ttl(self) -> int | None:
+    def _effective_ip_ttl(self, remote_ip_address: Ip4Address | Ip6Address, /) -> int | None:
         """
         Get the effective per-socket TTL (IPv4) or Hop-Limit (IPv6)
-        override based on the socket's address family. Returns 'None'
-        if no override is set, in which case the packet handler's
-        default applies.
+        override for a datagram to 'remote_ip_address', or 'None'
+        when no override applies — in which case the packet
+        handler's per-destination default (Hop-Limit / TTL = 1 for
+        multicast, 64 for unicast) governs.
+
+        IP_TTL / IPV6_UNICAST_HOPS bind unicast sends only; a
+        multicast destination is never affected by them, matching
+        Linux which keeps the unicast and multicast hop knobs
+        separate (inet->uc_ttl vs inet->mc_ttl; np->hop_limit vs
+        np->mcast_hops). A multicast destination therefore falls to
+        the handler's multicast default here.
         """
 
+        if remote_ip_address.is_multicast:
+            return None
         if self._address_family is AddressFamily.INET6:
             return self._ipv6_unicast_hops
         return self._ip_ttl

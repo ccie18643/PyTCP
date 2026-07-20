@@ -251,7 +251,7 @@ class TcpTxEngine:
             # IP TX handler apply the stack default; a positive int
             # threads through to the outbound IP header's TTL /
             # Hop-Limit field.
-            ip__ttl=session._socket._effective_ip_ttl(),
+            ip__ttl=session._socket._effective_ip_ttl(session._remote_ip_address),
             ip__ecn=ip__ecn,
             # Linux IP_TOS / IPV6_TCLASS DSCP marking (M4 of
             # socket_linux_parity_audit.md): the high 6 bits of the
