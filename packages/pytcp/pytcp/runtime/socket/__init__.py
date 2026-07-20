@@ -194,6 +194,7 @@ class IpOption(IntEnum):
     IP_RECVTTL = 12  # int 0/1: enable IP_TTL cmsg on recvmsg (Linux ip(7))
     IP_RECVTOS = 13  # int 0/1: enable IP_TOS cmsg on recvmsg (RFC 1122 §4.1.4 MAY)
     IP_MTU = 14  # int (getsockopt only): effective PMTU for connected peer (RFC 1122 §3.4 GET_MAXSIZES)
+    IP_MULTICAST_TTL = 33  # int -1..255: per-socket multicast TTL (default 1; 0 = host scope, RFC 1112 §6.1)
     IP_ADD_MEMBERSHIP = 35  # ip_mreq bytes: join an IPv4 multicast group (RFC 1112 / 3376)
     IP_DROP_MEMBERSHIP = 36  # ip_mreq bytes: leave an IPv4 multicast group (RFC 1112 / 3376)
     IP_UNBLOCK_SOURCE = 37  # ip_mreq_source bytes: unblock a source on an EXCLUDE-mode group (RFC 3376 / 3678)
@@ -211,6 +212,7 @@ IP_RECVERR = IpOption.IP_RECVERR
 IP_RECVTTL = IpOption.IP_RECVTTL
 IP_RECVTOS = IpOption.IP_RECVTOS
 IP_MTU = IpOption.IP_MTU
+IP_MULTICAST_TTL = IpOption.IP_MULTICAST_TTL
 IP_ADD_MEMBERSHIP = IpOption.IP_ADD_MEMBERSHIP
 IP_DROP_MEMBERSHIP = IpOption.IP_DROP_MEMBERSHIP
 IP_UNBLOCK_SOURCE = IpOption.IP_UNBLOCK_SOURCE
@@ -227,6 +229,7 @@ class IpV6Option(IntEnum):
     """
 
     IPV6_UNICAST_HOPS = 16  # int 1-255: per-socket Hop-Limit override
+    IPV6_MULTICAST_HOPS = 18  # int -1..255: per-socket multicast Hop-Limit (default 1; 0 = host scope)
     IPV6_JOIN_GROUP = 20  # ipv6_mreq bytes: join an IPv6 multicast group (RFC 3493 §5.2)
     IPV6_LEAVE_GROUP = 21  # ipv6_mreq bytes: leave an IPv6 multicast group (RFC 3493 §5.2)
     IPV6_MTU = 24  # int (getsockopt only): effective PMTU for connected peer
@@ -239,6 +242,7 @@ class IpV6Option(IntEnum):
 
 
 IPV6_UNICAST_HOPS = IpV6Option.IPV6_UNICAST_HOPS
+IPV6_MULTICAST_HOPS = IpV6Option.IPV6_MULTICAST_HOPS
 IPV6_JOIN_GROUP = IpV6Option.IPV6_JOIN_GROUP
 IPV6_LEAVE_GROUP = IpV6Option.IPV6_LEAVE_GROUP
 # Linux 'IPV6_ADD_MEMBERSHIP' / 'IPV6_DROP_MEMBERSHIP' are stdlib-
@@ -572,12 +576,14 @@ class socket(ABC):
     _so_rcvtimeo: float | None
     _so_sndtimeo: float | None
     _ip_ttl: int | None
+    _ip_multicast_ttl: int | None
     _ip_tos: int
     _ip_options: bytes
     _ip_recvopts: bool
     _ip_recvtos: bool
     _ip_recverr: bool
     _ipv6_unicast_hops: int | None
+    _ipv6_multicast_hops: int | None
     _ipv6_tclass: int
     _ipv6_recvtclass: bool
     _ipv6_recverr: bool
@@ -640,12 +646,14 @@ class socket(ABC):
         self._so_rcvtimeo = None
         self._so_sndtimeo = None
         self._ip_ttl = None
+        self._ip_multicast_ttl = None
         self._ip_tos = 0
         self._ip_options = bytes()
         self._ip_recvopts = False
         self._ip_recvtos = False
         self._ip_recverr = False
         self._ipv6_unicast_hops = None
+        self._ipv6_multicast_hops = None
         self._ipv6_tclass = 0
         self._ipv6_recvtclass = False
         self._ipv6_recverr = False
@@ -822,6 +830,17 @@ class socket(ABC):
                 if not 0 < int(value) < 256:
                     raise OSError(errno.EINVAL, f"IP_TTL must be in 1..255, got {value!r}")
                 self._ip_ttl = int(value)
+                return True
+            case _ if optname == IP_MULTICAST_TTL:
+                # Per-socket multicast TTL, separate from the unicast
+                # IP_TTL (Linux inet->mc_ttl). Accepts -1..255: -1 resets
+                # to the default (1); 0 keeps the datagram host-local
+                # (RFC 1112 §6.1). 'None' storage means "use the default".
+                if not isinstance(value, int):
+                    raise OSError(errno.EINVAL, f"IP_MULTICAST_TTL value must be int, got {type(value).__name__}")
+                if not -1 <= int(value) < 256:
+                    raise OSError(errno.EINVAL, f"IP_MULTICAST_TTL must be in -1..255, got {value!r}")
+                self._ip_multicast_ttl = None if int(value) == -1 else int(value)
                 return True
             case _ if optname == IP_TOS:
                 if not isinstance(value, int):
@@ -1055,6 +1074,10 @@ class socket(ABC):
         match optname:
             case _ if optname == IP_TTL:
                 return self._ip_ttl or 0
+            case _ if optname == IP_MULTICAST_TTL:
+                # Linux getsockopt reports the multicast default (1) when
+                # no override is set, not 0.
+                return self._ip_multicast_ttl if self._ip_multicast_ttl is not None else 1
             case _ if optname == IP_TOS:
                 return self._ip_tos
             case _ if optname == IP_OPTIONS:
@@ -1081,6 +1104,18 @@ class socket(ABC):
                 if not 0 < int(value) < 256:
                     raise OSError(errno.EINVAL, f"IPV6_UNICAST_HOPS must be in 1..255, got {value!r}")
                 self._ipv6_unicast_hops = int(value)
+                return True
+            case _ if optname == IPV6_MULTICAST_HOPS:
+                # Per-socket multicast Hop-Limit, separate from the
+                # unicast IPV6_UNICAST_HOPS (Linux np->mcast_hops).
+                # Accepts -1..255: -1 resets to the default (1); 0 keeps
+                # the datagram host-local. 'None' storage means
+                # "use the default".
+                if not isinstance(value, int):
+                    raise OSError(errno.EINVAL, f"IPV6_MULTICAST_HOPS value must be int, got {type(value).__name__}")
+                if not -1 <= int(value) < 256:
+                    raise OSError(errno.EINVAL, f"IPV6_MULTICAST_HOPS must be in -1..255, got {value!r}")
+                self._ipv6_multicast_hops = None if int(value) == -1 else int(value)
                 return True
             case _ if optname == IPV6_TCLASS:
                 self._ipv6_tclass = int(value) & 0xFF
@@ -1290,6 +1325,10 @@ class socket(ABC):
         match optname:
             case _ if optname == IPV6_UNICAST_HOPS:
                 return self._ipv6_unicast_hops or 0
+            case _ if optname == IPV6_MULTICAST_HOPS:
+                # Linux getsockopt reports the multicast default (1) when
+                # no override is set, not 0.
+                return self._ipv6_multicast_hops if self._ipv6_multicast_hops is not None else 1
             case _ if optname == IPV6_TCLASS:
                 return self._ipv6_tclass
             case _ if optname == IPV6_RECVTCLASS:
@@ -1310,19 +1349,40 @@ class socket(ABC):
         handler's per-destination default (Hop-Limit / TTL = 1 for
         multicast, 64 for unicast) governs.
 
-        IP_TTL / IPV6_UNICAST_HOPS bind unicast sends only; a
-        multicast destination is never affected by them, matching
-        Linux which keeps the unicast and multicast hop knobs
-        separate (inet->uc_ttl vs inet->mc_ttl; np->hop_limit vs
-        np->mcast_hops). A multicast destination therefore falls to
-        the handler's multicast default here.
+        IP_TTL / IPV6_UNICAST_HOPS bind unicast sends only and
+        IP_MULTICAST_TTL / IPV6_MULTICAST_HOPS bind multicast sends
+        only, matching Linux which keeps the two knobs separate
+        (inet->uc_ttl vs inet->mc_ttl; np->hop_limit vs
+        np->mcast_hops). A multicast destination with no multicast
+        override falls to the handler's multicast default (1).
+
+        A returned value of 0 is a multicast host-scope send
+        (IP_MULTICAST_TTL / IPV6_MULTICAST_HOPS = 0, RFC 1112 §6.1);
+        callers gate it via '_multicast_send_suppressed' before
+        reaching the TX handler, so it is never passed downstream.
         """
 
         if remote_ip_address.is_multicast:
-            return None
+            if self._address_family is AddressFamily.INET6:
+                return self._ipv6_multicast_hops
+            return self._ip_multicast_ttl
         if self._address_family is AddressFamily.INET6:
             return self._ipv6_unicast_hops
         return self._ip_ttl
+
+    def _multicast_send_suppressed(self, remote_ip_address: Ip4Address | Ip6Address, /) -> bool:
+        """
+        Return whether an outbound datagram to 'remote_ip_address'
+        must be dropped rather than transmitted because the socket's
+        multicast hop-count override (IP_MULTICAST_TTL /
+        IPV6_MULTICAST_HOPS) is 0 — RFC 1112 §6.1 restricts a
+        hop-count-0 multicast datagram to the same host. PyTCP has no
+        local multicast loopback, so such a datagram reaches no one:
+        the send is accepted (the caller reports the byte count) and
+        no frame is put on the wire, matching Linux 'ip_mc_output'.
+        """
+
+        return remote_ip_address.is_multicast and self._effective_ip_ttl(remote_ip_address) == 0
 
     def _effective_ip_ecn(self) -> int:
         """

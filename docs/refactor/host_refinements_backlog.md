@@ -233,6 +233,20 @@ self._signal_readable()
   always unicast). Tests: `TestSocketUnicastHopDoesNotBleedIntoMulticast`
   (4). Part 2 adds the `IP_MULTICAST_TTL` / `IPV6_MULTICAST_HOPS` knobs so a
   sender can *raise* the multicast hop count.
+- **Shipped (multicast hop-count, part 2/2 — the knobs):** added
+  `IP_MULTICAST_TTL` (33) and `IPV6_MULTICAST_HOPS` (18) as accepted /
+  stored / honored socket options (enum members + bare aliases + public
+  re-exports). setsockopt accepts -1..255 (−1 resets to the default;
+  out-of-range → `EINVAL`); getsockopt reports the value or the Linux
+  default of 1. `_effective_ip_ttl` now returns the multicast override for
+  a multicast destination, so a sender can raise the multicast Hop-Limit
+  above 1 independently of the unicast knob. A value of 0 is RFC 1112 §6.1
+  host scope — since PyTCP has no local multicast loopback, the send is
+  accepted (byte count returned) but no frame is emitted, gated by a new
+  `_multicast_send_suppressed` helper at the UDP / RAW send sites. Tests:
+  `TestSocketMulticastHopOverride` (8). **The multicast hop-count item is
+  complete.** (`IP_MULTICAST_LOOP` / `IP_MULTICAST_IF` and the IPv6
+  equivalents remain unimplemented — separate, lower-value knobs.)
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

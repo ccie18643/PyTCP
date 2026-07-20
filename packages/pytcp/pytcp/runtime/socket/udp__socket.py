@@ -488,6 +488,11 @@ class UdpSocket(socket):
                 "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
             )
 
+        # IP_MULTICAST_TTL / IPV6_MULTICAST_HOPS = 0: host scope only,
+        # do not put the datagram on the wire (RFC 1112 §6.1).
+        if self._multicast_send_suppressed(self._remote_ip_address):
+            return len(data)
+
         self._egress_handler(self._remote_ip_address).send_udp_packet(
             ip__local_address=self._local_ip_address,
             ip__remote_address=self._remote_ip_address,
@@ -567,6 +572,11 @@ class UdpSocket(socket):
                 errno.EACCES,
                 "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
             )
+
+        # IP_MULTICAST_TTL / IPV6_MULTICAST_HOPS = 0: host scope only,
+        # do not put the datagram on the wire (RFC 1112 §6.1).
+        if self._multicast_send_suppressed(remote_ip_address):
+            return len(data)
 
         self._egress_handler(remote_ip_address).send_udp_packet(
             ip__local_address=local_ip_address,
