@@ -102,7 +102,13 @@ class Ip6TxHandler:
         self._if._packet_stats_tx.ip6__pre_assemble += 1
 
         if ip6__hop is None:
-            ip6__hop = self._if._effective_ip6_hop_limit()
+            # Linux 'IPV6_DEFAULT_MCASTHOPS' (net/ipv6/af_inet6.c
+            # inet6_create): outbound multicast datagrams default to
+            # Hop-Limit=1 so multicast does not escape the local link
+            # unless the caller explicitly opts in — mirroring the
+            # IPv4 TTL=1 default. Unicast reads the RA-advertised /
+            # protocol default via '_effective_ip6_hop_limit'.
+            ip6__hop = 1 if ip6__dst.is_multicast else self._if._effective_ip6_hop_limit()
 
         assert 0 < ip6__hop < 256
 

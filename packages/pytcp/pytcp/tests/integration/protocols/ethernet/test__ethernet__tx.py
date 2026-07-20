@@ -448,13 +448,13 @@ _IP6__FOREIGN_SRC = Ip6Address("2001:db8:99::1")
                 #   Version / Traffic Class / Flow Label : 0x60000000
                 #   Payload Length : 0 bytes
                 #   Next Header    : 255 (Reserved)
-                #   Hop Limit      : 64
+                #   Hop Limit      : 1 (multicast default; Linux IPV6_DEFAULT_MCASTHOPS)
                 #   Source IP      : 2001:db8:0:1::7
                 #   Destination IP : ff02::1
                 #
                 # Summary: IPv6 all-nodes multicast mapped to the corresponding Ethernet multicast MAC.
                 b"\x33\x33\x00\x00\x00\x01\x02\x00\x00\x00\x00\x07\x86\xdd\x60\x00"
-                b"\x00\x00\x00\x00\xff\x40\x20\x01\x0d\xb8\x00\x00\x00\x01\x00\x00"
+                b"\x00\x00\x00\x00\xff\x01\x20\x01\x0d\xb8\x00\x00\x00\x01\x00\x00"
                 b"\x00\x00\x00\x00\x00\x07\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00\x00\x00\x00\x01",
             ],

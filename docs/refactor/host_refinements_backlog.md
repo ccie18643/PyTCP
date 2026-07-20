@@ -181,6 +181,22 @@ self._signal_readable()
   (see R3), `X3` listen()-on-unbound → `EINVAL` (breaks examples; land as
   an explicit breaking-change commit + update `examples/`).
 - **Effort:** open-ended (do a few per session). **Risk:** low per fix.
+- **Audit (done):** swept every stored setsockopt attribute for a data-path
+  read. Result: almost everything is HONORED. The only strictly-DEAD
+  accepted options are `SO_SNDBUF` / `SO_SNDTIMEO` (both deferred to R3 — they
+  need the TX-completion signal). Partial-honor gaps noted for later: `SO_BROADCAST`
+  gates only limited-broadcast on UDP (not directed/subnet, not RAW/PING);
+  `SO_RCVBUF` unread on TCP; `IP_OPTIONS` emitted only on the UDP TX path.
+  Multicast TX-shaping options (`IP_MULTICAST_TTL/LOOP/IF`,
+  `IPV6_MULTICAST_HOPS/LOOP/IF`) are not accepted at all (ENOPROTOOPT) — a
+  distinct "not-implemented" bucket, not "stored-and-ignored".
+- **Shipped:** IPv6 outbound multicast default Hop-Limit was 64 (leaked past
+  the local link) — asymmetric with the IPv4 side, which already defaults
+  multicast to TTL=1. Fixed `packet_handler__ip6__tx.py` to default
+  multicast destinations to Hop-Limit=1 (Linux `IPV6_DEFAULT_MCASTHOPS`),
+  the None-hop path only; explicit `ip6__hop` still wins and ND/MLD/RA keep
+  their protocol-mandated values. Tests: `TestIp6TxMulticastHopLimit` (3) in
+  `test__ip6__tx.py`; the Ethernet-TX multicast golden updated 64→1.
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 
