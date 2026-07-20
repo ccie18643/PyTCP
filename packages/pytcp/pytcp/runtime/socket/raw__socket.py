@@ -179,7 +179,7 @@ class RawSocket(socket):
             return
         if level == IPPROTO_IP and self._ipproto_ip_setsockopt(optname, value):
             return
-        if isinstance(value, int) and level == IPPROTO_IPV6 and self._ipproto_ipv6_setsockopt(optname, value):
+        if level == IPPROTO_IPV6 and self._ipproto_ipv6_setsockopt(optname, value):
             return
         raise OSError(
             errno.ENOPROTOOPT,

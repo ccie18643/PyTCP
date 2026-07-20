@@ -1834,6 +1834,22 @@ class socket(ABC):
         # outside the lock against the snapshotted reference.
         return source_filter is None or source_filter.allows(source)
 
+    def ip6_multicast_source_admits(self, *, ifindex: int, group: Ip6Address, source: Ip6Address) -> bool:
+        """
+        RFC 3810 §4.1 data-plane source-delivery gate (Linux
+        'ip_mc_sf_allow' in 'ip6_mc_input'): admit an inbound IPv6
+        multicast datagram only if this socket's source filter for
+        '(ifindex, group)' admits 'source'. A socket with no filter for
+        the pair keeps any-source delivery. Shared by the UDP and RAW
+        delivery paths. The IPv6 analogue of 'ip4_multicast_source_admits'.
+        """
+
+        with self._lock__ip6_source_filters:
+            source_filter = self._ip6_source_filters.get((ifindex, group))
+        # 'Ip6MulticastFilter' is immutable, so 'allows' is evaluated
+        # outside the lock against the snapshotted reference.
+        return source_filter is None or source_filter.allows(source)
+
     def getsockname(self) -> tuple[str, int]:
         """
         Get the local address and port. Reads through the

@@ -197,6 +197,16 @@ class Ip6RxHandler:
             socket = stack.sockets.get(socket_id, None)
             if not isinstance(socket, RawSocket) or id(socket) in delivered:
                 continue
+            # RFC 3810 §4.1 data-plane source-delivery filter (Linux
+            # 'ip_mc_sf_allow' in 'raw6_local_deliver'): a matched RAW
+            # socket whose source filter rejects the datagram's source is
+            # skipped — it does not receive the datagram, but delivery to
+            # other matching sockets and the chain walker still proceeds.
+            if packet_rx.ip6.dst.is_multicast and not socket.ip6_multicast_source_admits(
+                ifindex=self._if._ifindex, group=packet_rx.ip6.dst, source=packet_rx.ip6.src
+            ):
+                self._if._packet_stats_rx.raw__multicast_source_filtered__drop += 1
+                continue
             delivered.add(id(socket))
             self._if._packet_stats_rx.raw__socket_match += 1
             __debug__ and log(

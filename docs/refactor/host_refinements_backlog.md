@@ -127,6 +127,16 @@ until the user says "push".
   in `packet_handler__icmp6__rx.py` into the sysctl-backed `mld__constants`
   (on-touch migration). Tests: 3 retransmit tests. P5 (RX source-delivery
   gate) is the last piece before the §4.2/§5.2 adherence flip.
+- [x] **IPv6 SSM data-plane source gate (R4 P5) — R4 DONE** — the RFC 3810
+  §4.1 receive-side source filter. `Socket.ip6_multicast_source_admits`
+  (mirror of the v4 gate) + the shared UDP RX gate extended for IPv6 + the
+  IPv6 RAW RX delivery gate; both bump the existing
+  `udp/raw__multicast_source_filtered__drop` counters. Fixed a RawSocket
+  `setsockopt` bug that gated IPPROTO_IPV6 dispatch on `isinstance(value,
+  int)`, blocking the bytes-valued membership options. Tests:
+  `test__icmp6__mld__source_data_filter{,__raw}.py` (6). RFC 3810
+  §4.1/§4.2/§5.1/§6 adherence flipped to met in lockstep. **R4 (IPv6 SSM)
+  is complete — full listener-role parity with the IGMPv3 track.**
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -189,7 +199,7 @@ self._signal_readable()
   **Risk:** medium (touches the TX path). **Prereq:** understand how the
   TX ring signals completion; there may be no per-datagram completion today.
 
-### R4 — IPv6 per-socket source filters = MLDv2 SSM track (large, highest value)
+### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 
 - **Why:** IPv6 has only any-source `IPV6_JOIN_GROUP` / `IPV6_LEAVE_GROUP`
   (handled at runtime/socket/__init__.py ~1029). IPv4 has the full
@@ -294,9 +304,20 @@ self._signal_readable()
     `packet_handler__icmp6__rx.py` into the sysctl-backed `mld__constants`
     (qualified module access). Tests: 3 retransmit tests added to
     `test__icmp6__mld__source_state_change.py`.
-  - P5: RX source-delivery filter for IPv6 UDP + RAW (`Ip6MulticastFilter.allows`).
-  - Adherence: update `docs/rfc/icmp6/rfc3810__mld2/adherence.md` (§4.2.12 /
-    §5.1 / §5.2 source records) + a socket-parity note, in lockstep.
+  - **P5 — SHIPPED:** the §4.1 data-plane source-delivery gate. Added
+    `Socket.ip6_multicast_source_admits` (reads `_ip6_source_filters`,
+    mirror of `ip4_multicast_source_admits`), extended the shared UDP RX
+    gate `__phrx_udp__multicast_source_allowed` for IPv6, and added the
+    RAW gate to the IPv6 RX delivery loop
+    (`packet_handler__ip6__rx.py`) — both bump the existing
+    `udp/raw__multicast_source_filtered__drop` counters. Also fixed a
+    RawSocket bug: `setsockopt` gated IPPROTO_IPV6 dispatch on
+    `isinstance(value, int)`, blocking the bytes-valued membership
+    options — removed (the IPPROTO_IP line had no such guard). Tests:
+    `test__icmp6__mld__source_data_filter{,__raw}.py` (3 + 3). RFC 3810
+    §4.1 / §4.2 / §5.1 / §6 adherence rows flipped to met in lockstep.
+- **R4 — DONE** (P1-P5 shipped). Full IPv6 SSM listener parity with the
+  IGMPv3 track.
 - **Effort:** large (multi-phase, mirrors a whole shipped track). **Risk:**
   medium. **Value:** highest — real v4/v6 parity.
 
