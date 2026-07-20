@@ -32,7 +32,9 @@ pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py
 ver 3.0.8
 """
 
+import random
 import struct
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from net_addr import Buffer, Ip6Address
@@ -71,12 +73,15 @@ from net_proto.protocols.ip6_hbh.options.ip6_hbh__option__router_alert import (
     Ip6HbhOptionRouterAlert,
 )
 from net_proto.protocols.ip6_hbh.options.ip6_hbh__options import Ip6HbhOptions
+from pytcp import stack
 from pytcp.lib.ip6_multicast_filter import (
     Ip6MulticastFilter,
     Ip6MulticastFilterMode,
 )
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
+from pytcp.protocols.icmp6 import mld__constants
+from pytcp.runtime.timer import TimerHandle
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
@@ -89,12 +94,31 @@ MLD__ALL_MLDV2_ROUTERS = Ip6Address("ff02::16")
 MLD__ALL_NODES = Ip6Address("ff02::1")
 
 
+@dataclass(frozen=True, kw_only=True, slots=True)
+class _MldPendingChange:
+    """
+    A pending MLDv2 state-change for one group awaiting robustness
+    retransmission — the source-bearing §6.1 difference records to
+    re-send in MLDv2 mode, the reception-edge direction to re-send in
+    MLDv1 compatibility mode ('True' for a join → MLDv1 Report, 'False'
+    for a leave → MLDv1 Done, 'None' for a source-only change an
+    older-version host cannot express), and the number of
+    retransmissions still owed. The IPv6 analogue of '_IgmpPendingChange'.
+    """
+
+    records: tuple[Icmp6Mld2MulticastAddressRecord, ...]
+    coarse_join: bool | None
+    remaining: int
+
+
 class Icmp6TxHandler:
     """
     The outbound ICMPv6 packet handler for one interface.
     """
 
     _if: PacketHandler
+    _mld_state_change__pending: dict[Ip6Address, _MldPendingChange]
+    _mld_state_change__handle: TimerHandle | None
 
     def __init__(self, *, interface: PacketHandler) -> None:
         """
@@ -102,6 +126,8 @@ class Icmp6TxHandler:
         """
 
         self._if = interface
+        self._mld_state_change__pending = {}
+        self._mld_state_change__handle = None
 
     def _phtx_icmp6(
         self,
@@ -394,6 +420,19 @@ class Icmp6TxHandler:
             )
         ]
 
+    def _emit_mld1_coarse(self, group: Ip6Address, coarse_join: bool | None, /) -> None:
+        """
+        Emit the coarse MLDv1 form of a state-change for 'group' while in
+        MLDv1 Host Compatibility Mode: a Report on a join edge, a Done on a
+        leave edge, nothing for a source-only change (MLDv1 has no source
+        concept). 'coarse_join' is True (join), False (leave) or None.
+        """
+
+        if coarse_join is True:
+            self._send_icmp6_mld1_report(group)
+        elif coarse_join is False:
+            self._send_icmp6_mld1_done(group)
+
     def _send_mld_state_change(
         self,
         group: Ip6Address,
@@ -406,27 +445,125 @@ class Icmp6TxHandler:
         Emit an unsolicited state-change Report for 'group' describing the
         transition from filter 'old' to filter 'new' (RFC 3810 §6.1) in
         the form dictated by the interface's Host Compatibility Mode
-        (§8.3). In MLDv2 mode the Report carries the source-bearing §6.1
-        difference records; in MLDv1 mode it degrades to the coarse
-        Report / Done (MLDv1 has no source concept), keyed only off the
-        reception edge. The all-nodes group ff02::1 is never reported
-        (RFC 3810 §6). The IPv6 analogue of '_send_igmp_state_change'.
+        (§8.3), and schedule its robustness retransmissions. In MLDv2 mode
+        the Report carries the source-bearing §6.1 difference records; in
+        MLDv1 mode it degrades to the coarse Report / Done keyed only off
+        the reception edge (MLDv1 has no source concept). The all-nodes
+        group ff02::1 is never reported (RFC 3810 §6).
+
+        A new change supersedes any retransmit train still pending for the
+        same group (overwrite + re-seed). A change that produces no record
+        (an idempotent re-add) schedules no retransmit. The IPv6 analogue
+        of '_send_igmp_state_change'.
         """
 
         if group == MLD__ALL_NODES:
             return
 
+        records = self._mld_state_change_records(group, old, new)
         # The coarse MLDv1 form keys only off the reception edge — a
-        # source-only change within a still-joined membership is invisible
-        # to an older-version querier.
+        # source-only change within a still-joined membership (coarse_join
+        # None) is invisible to an older-version querier.
+        coarse_join = (
+            True
+            if new.has_reception and not old.has_reception
+            else False if old.has_reception and not new.has_reception else None
+        )
+
         if self._if._mld_host_compatibility_mode() is MldVersion.V1:
-            if new.has_reception and not old.has_reception:
-                self._send_icmp6_mld1_report(group)
-            elif old.has_reception and not new.has_reception:
-                self._send_icmp6_mld1_done(group)
+            self._emit_mld1_coarse(group, coarse_join)
+        else:
+            self._emit_mld2_report(records)
+
+        # RFC 3810 §9.1 — read the Robustness Variable live so an operator
+        # override resolves per change.
+        repeats = mld__constants.MLD__ROBUSTNESS_VARIABLE - 1
+        if not records or repeats <= 0:
+            self._mld_state_change__pending.pop(group, None)
             return
 
-        self._emit_mld2_report(self._mld_state_change_records(group, old, new))
+        self._mld_state_change__pending[group] = _MldPendingChange(
+            records=tuple(records),
+            coarse_join=coarse_join,
+            remaining=repeats,
+        )
+        self._arm_mld_state_change_retransmit()
+
+    def _arm_mld_state_change_retransmit(self) -> None:
+        """
+        Ensure a single retransmit ticket is scheduled for the pending
+        state-change records. RFC 3810 §6.1 spaces the robustness
+        retransmissions at intervals drawn uniformly at random from (0,
+        'mld.unsolicited_report_interval' ms]; the ticket re-arms itself
+        from each fire rather than scheduling the whole train up front, so
+        a change arriving mid-train is picked up by the next fire. Reading
+        the interval knob via qualified module access so an operator
+        override resolves on each re-arm. The IPv6 analogue of
+        '_arm_state_change_retransmit'.
+        """
+
+        if self._mld_state_change__handle is not None:
+            return
+
+        delay_ms = random.randint(1, mld__constants.MLD__UNSOLICITED_REPORT_INTERVAL__MS)
+        self._mld_state_change__handle = stack.timer.call_later(delay_ms, self._fire_mld_state_change_retransmit)
+
+    def _fire_mld_state_change_retransmit(self) -> None:
+        """
+        Emit one robustness retransmission of the currently-pending
+        state-change records in the current Host Compatibility Mode's form
+        — MLDv2 coalesces them into a single Report, MLDv1 emits one
+        coarse Report / Done per group — then decrement each entry's
+        remaining-repeat count, drop the exhausted ones, and re-arm the
+        ticket while any repeats remain (RFC 3810 §6.1 / §8.3). The IPv6
+        analogue of '_fire_state_change_retransmit'.
+        """
+
+        # Runs on the Timer thread. The pending per-group change map and
+        # the Host Compatibility Mode deadlines are mutated / written by
+        # the RX and application threads under the interface multicast
+        # lock, so this fire takes the same lock (the RLock is reentrant,
+        # so the nested compat-mode / emit reads are fine).
+        with self._if._lock__multicast:
+            self._mld_state_change__handle = None
+
+            groups = list(self._mld_state_change__pending)
+
+            if self._if._mld_host_compatibility_mode() is MldVersion.V1:
+                for group in groups:
+                    self._emit_mld1_coarse(group, self._mld_state_change__pending[group].coarse_join)
+            else:
+                records: list[Icmp6Mld2MulticastAddressRecord] = []
+                for group in groups:
+                    records.extend(self._mld_state_change__pending[group].records)
+                self._emit_mld2_report(records)
+
+            for group in groups:
+                pending = self._mld_state_change__pending[group]
+                if pending.remaining <= 1:
+                    del self._mld_state_change__pending[group]
+                else:
+                    self._mld_state_change__pending[group] = _MldPendingChange(
+                        records=pending.records,
+                        coarse_join=pending.coarse_join,
+                        remaining=pending.remaining - 1,
+                    )
+
+            if self._mld_state_change__pending:
+                self._arm_mld_state_change_retransmit()
+
+    def _cancel_mld_state_change_retransmits(self) -> None:
+        """
+        Cancel the in-flight state-change retransmit ticket and drop every
+        pending per-group change record (RFC 3810 §8.2.1 — a
+        compatibility-mode change cancels all pending retransmissions). The
+        IPv6 analogue of '_cancel_state_change_retransmits'.
+        """
+
+        if self._mld_state_change__handle is not None:
+            stack.timer.cancel(self._mld_state_change__handle)
+            self._mld_state_change__handle = None
+        self._mld_state_change__pending.clear()
 
     def __send_icmp6_mld_via_hbh_ra(self, icmp6_packet_tx: Icmp6Assembler, /, *, ip6__dst: Ip6Address) -> None:
         """

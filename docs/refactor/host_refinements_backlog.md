@@ -115,6 +115,18 @@ until the user says "push".
   removed. Single immediate emission — the §6.1 robustness retransmit train
   is P4b. Tests: `test__icmp6__mld__source_state_change.py` (7). RFC 3810
   §4.2/§5.2 adherence flip waits for P4b + P5.
+- [x] **IPv6 SSM robustness retransmit train (R4 P4b)** — the RFC 3810 §6.1
+  state-change retransmit machine. `_send_mld_state_change` now schedules
+  RV-1 retransmits (`_MldPendingChange` + `_mld_state_change__pending` +
+  `_arm`/`_fire`/`_cancel_mld_state_change_retransmit(s)`, mirroring the v4
+  IGMP train) at random(1, `mld.unsolicited_report_interval`] via
+  `stack.timer`, re-arming per fire; a compat-mode change (MLDv1 Query)
+  cancels the train. Added three MLD policy sysctls (`mld.robustness` /
+  `mld.unsolicited_report_interval` / `mld.query_interval`), folding the
+  hardcoded `MLD__ROBUSTNESS_VARIABLE` / `MLD__QUERY_INTERVAL__MS` locals
+  in `packet_handler__icmp6__rx.py` into the sysctl-backed `mld__constants`
+  (on-touch migration). Tests: 3 retransmit tests. P5 (RX source-delivery
+  gate) is the last piece before the §4.2/§5.2 adherence flip.
 
 **The canonical SO_RCVBUF guard pattern** (mirror for any new datagram socket):
 
@@ -268,8 +280,20 @@ self._signal_readable()
     `_arm`/`_fire`/`_cancel` machinery). Tests-first:
     `test__icmp6__mld__source_state_change.py` (7) — ALLOW / BLOCK / TO_EX /
     TO_IN records with source lists, mirroring the v4 track.
-  - P4b: the §6.1 robustness retransmit-train state machine
-    (`_mld_state_change__pending` + `_arm`/`_fire`/`_cancel`), mirror v4.
+  - **P4b — SHIPPED:** the §6.1 robustness retransmit-train state machine.
+    Added `_MldPendingChange` + `_mld_state_change__pending` /
+    `_mld_state_change__handle` on the ICMPv6 TX handler and
+    `_arm`/`_fire`/`_cancel_mld_state_change_retransmit(s)` mirroring the v4
+    IGMP machinery: `_send_mld_state_change` now schedules RV-1 retransmits
+    at random(1, `mld.unsolicited_report_interval`] via `stack.timer`, the
+    ticket re-arms per fire, and a compat-mode change (MLDv1 Query) cancels
+    the train (wired into `_mld_arm_v1_compatibility`). Three new MLD
+    policy sysctls (`mld.robustness` / `mld.unsolicited_report_interval` /
+    `mld.query_interval`); the on-touch migration folded the hardcoded
+    `MLD__ROBUSTNESS_VARIABLE` / `MLD__QUERY_INTERVAL__MS` locals out of
+    `packet_handler__icmp6__rx.py` into the sysctl-backed `mld__constants`
+    (qualified module access). Tests: 3 retransmit tests added to
+    `test__icmp6__mld__source_state_change.py`.
   - P5: RX source-delivery filter for IPv6 UDP + RAW (`Ip6MulticastFilter.allows`).
   - Adherence: update `docs/rfc/icmp6/rfc3810__mld2/adherence.md` (§4.2.12 /
     §5.1 / §5.2 source records) + a socket-parity note, in lockstep.
@@ -284,13 +308,13 @@ core (`_Ip6GroupMembership` / `_ip6_multicast_filters` / `_ip6_multicast_refs`
 / `mc6_*` / `_ip6_multicast_filter_for`, all under `_lock__multicast`) AND
 the socket surface (`stack.membership6`, refcounted `IPV6_JOIN_GROUP`, the
 `MCAST_*_SOURCE_*` family with `group_source_req`, per-socket
-`_ip6_source_filters`, close-time release) are done. **P4a SHIPPED** — the
+`_ip6_source_filters`, close-time release) are done. **P4a + P4b SHIPPED** — the
 `_send_mld_state_change` source-bearing state-change records (ALLOW / BLOCK /
-CHANGE_TO_*) now fire on all three edges (join / leave / mid-delta),
-single-emission. **Remaining: P4b** (the §6.1 robustness retransmit-train
-state machine — mirror the v4 `_igmp_state_change__pending` /
-`_arm`/`_fire`/`_cancel`), **P5** (RX `Ip6MulticastFilter.allows` source-
-delivery gate for UDP + RAW). After P4b/P5 flip the RFC 3810 §4.2 / §5.2
+CHANGE_TO_*) fire on all three edges (join / leave / mid-delta) AND
+retransmit RV-1 times per the §6.1 robustness train (`_MldPendingChange` +
+`_arm`/`_fire`/`_cancel`, cancelled on a compat-mode change; three new
+`mld.*` sysctls). **Remaining: P5** (RX `Ip6MulticastFilter.allows` source-
+delivery gate for UDP + RAW). After P5 flip the RFC 3810 §4.2 / §5.2
 adherence rows.
 
 - **Handler (`runtime/packet_handler/__init__.py`) — the deep, no-GIL-locked

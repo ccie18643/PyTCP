@@ -38,11 +38,30 @@ ver 3.0.8
 # MLDv2 regardless of the queriers heard.
 MLD__FORCE_VERSION = 0
 
-# Sysctl registration. The constant above is a policy knob,
+# RFC 3810 §9.1 Robustness Variable (default 2). A host transmits an
+# unsolicited state-change Report RV total times (the initial Report plus
+# RV-1 retransmits) so the membership change survives the loss of up to
+# RV-1 packets. The IPv6 analogue of 'IGMP__ROBUSTNESS_VARIABLE'.
+MLD__ROBUSTNESS_VARIABLE = 2
+
+# RFC 3810 §9.11 Unsolicited Report Interval, in milliseconds (the RFC
+# default is 1 second). Each state-change-Report retransmit is spaced by
+# a value drawn uniformly at random from (0, this interval]. The IPv6
+# analogue of 'IGMP__UNSOLICITED_REPORT_INTERVAL__MS'.
+MLD__UNSOLICITED_REPORT_INTERVAL__MS = 1000
+
+# RFC 3810 §9.2 Query Interval default (125 s), in milliseconds. An MLDv1
+# Query carries no QQIC, so this default is the [Query Interval] term of
+# the §9.12 Older Version Querier Present Timeout the host arms when it
+# hears such a Query. The IPv6 analogue of 'IGMP__QUERY_INTERVAL__MS'.
+MLD__QUERY_INTERVAL__MS = 125_000
+
+# Sysctl registration. Every constant above is a policy knob,
 # operator-tunable at boot via 'stack.init(sysctls={...})' or at
-# runtime via 'pytcp.stack.sysctl["mld.version"] = N'.
+# runtime via 'pytcp.stack.sysctl["mld...."] = N'.
 from pytcp.stack.sysctl import (  # noqa: E402
     is_int_in_range,
+    is_positive_int,
     register,
 )
 
@@ -53,4 +72,28 @@ register(
     default=MLD__FORCE_VERSION,
     validator=is_int_in_range("mld.version", low=0, high=2),
     description="RFC 3810 §8 forced MLD Host Compatibility Mode — 0 = auto fallback, 1/2 = pin MLDv1/MLDv2.",
+)
+register(
+    key="mld.robustness",
+    module_name=__name__,
+    attr="MLD__ROBUSTNESS_VARIABLE",
+    default=MLD__ROBUSTNESS_VARIABLE,
+    validator=is_positive_int("mld.robustness"),
+    description="RFC 3810 §9.1 Robustness Variable — unsolicited state-change Report transmission count.",
+)
+register(
+    key="mld.unsolicited_report_interval",
+    module_name=__name__,
+    attr="MLD__UNSOLICITED_REPORT_INTERVAL__MS",
+    default=MLD__UNSOLICITED_REPORT_INTERVAL__MS,
+    validator=is_positive_int("mld.unsolicited_report_interval"),
+    description="RFC 3810 §9.11 Unsolicited Report Interval — state-change Report retransmit spacing, ms.",
+)
+register(
+    key="mld.query_interval",
+    module_name=__name__,
+    attr="MLD__QUERY_INTERVAL__MS",
+    default=MLD__QUERY_INTERVAL__MS,
+    validator=is_positive_int("mld.query_interval"),
+    description="RFC 3810 §9.2 Query Interval — [Query Interval] term of the MLDv1 querier-present timeout, ms.",
 )

@@ -66,6 +66,7 @@ from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__message__query import (
 from pytcp import stack
 from pytcp.lib.dad_slot_registry import DadSignalResult
 from pytcp.lib.logger import log
+from pytcp.protocols.icmp6 import mld__constants
 from pytcp.protocols.icmp6.icmp6__echo_gate import should_emit_echo_reply
 from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
@@ -80,14 +81,6 @@ from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
-
-
-# RFC 3810 §9.1 / §9.2 — MLD Robustness Variable and Query Interval
-# defaults, used to compute the §9.12 Older Version Querier Present
-# Timeout = [Robustness Variable] x [Query Interval] + [Query Response
-# Interval] when an MLDv1 Query arms the compatibility timer.
-MLD__ROBUSTNESS_VARIABLE = 2
-MLD__QUERY_INTERVAL__MS = 125_000
 
 
 def _mld2_mrc_to_mrd_ms(mrc: int) -> int:
@@ -1233,9 +1226,16 @@ class Icmp6RxHandler:
         arming.
         """
 
-        timeout_ms = MLD__ROBUSTNESS_VARIABLE * MLD__QUERY_INTERVAL__MS + max_response_delay_ms
+        timeout_ms = (
+            mld__constants.MLD__ROBUSTNESS_VARIABLE * mld__constants.MLD__QUERY_INTERVAL__MS + max_response_delay_ms
+        )
         with self._if._lock__multicast:
+            old_mode = self._if._mld_host_compatibility_mode()
             self._if._mld__v1_querier_present_until_ms = stack.timer.now_ms + timeout_ms
+            # RFC 3810 §8.2.1 — a compatibility-mode change (MLDv2→MLDv1)
+            # cancels every pending state-change retransmission.
+            if self._if._mld_host_compatibility_mode() is not old_mode:
+                self._if._icmp6_tx._cancel_mld_state_change_retransmits()
 
     def _mld_query__schedule_response(self, mrd_ms: int, /) -> None:
         """

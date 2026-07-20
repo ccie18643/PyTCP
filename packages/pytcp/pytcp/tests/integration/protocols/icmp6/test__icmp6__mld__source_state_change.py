@@ -41,9 +41,11 @@ ver 3.0.8
 
 import struct
 from typing import override
+from unittest.mock import patch
 
-from net_addr import Ip6Address
+from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6Mld2MulticastAddressRecordType as RecordType
+from net_proto.lib.inet_cksum import inet_cksum
 from pytcp import stack
 from pytcp.runtime.socket import (
     IPPROTO_IPV6,
@@ -55,6 +57,7 @@ from pytcp.runtime.socket import (
     AddressFamily,
 )
 from pytcp.runtime.socket.udp__socket import UdpSocket
+from pytcp.stack import sysctl
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 
 _GROUP = Ip6Address("ff15::1234")
@@ -98,6 +101,26 @@ def _group_source_req(group: Ip6Address, source: Ip6Address, *, ifindex: int = 0
     struct.pack_into("@H", gsr, 136, _AF_INET6)
     gsr[144:160] = bytes(source)
     return bytes(gsr)
+
+
+def _build_mld1_query_frame() -> bytes:
+    """
+    Build a 24-octet RFC 2710 §3.1 MLDv1 General Query frame (ICMPv6
+    type 130 to ff02::1, hop 1, from a router link-local source) — used
+    to drive the interface into MLDv1 Host Compatibility Mode.
+    """
+
+    body = b"\x27\x10" + b"\x00\x00" + b"\x00" * 16  # MRD=10000ms, ::
+    icmp6_no_cksum = b"\x82\x00\x00\x00" + body
+    ip6_src = bytes.fromhex("fe800000000000000000000000000001")  # fe80::1
+    ip6_dst = bytes.fromhex("ff020000000000000000000000000001")  # ff02::1
+    icmp6_len = len(icmp6_no_cksum)
+    pseudo = ip6_src + ip6_dst + icmp6_len.to_bytes(4, "big") + b"\x00\x00\x00" + b"\x3a"
+    cksum = inet_cksum(pseudo + icmp6_no_cksum)
+    icmp6 = icmp6_no_cksum[:2] + cksum.to_bytes(2, "big") + icmp6_no_cksum[4:]
+    ip6_header = b"\x60\x00\x00\x00" + icmp6_len.to_bytes(2, "big") + b"\x3a\x01" + ip6_src + ip6_dst
+    ethernet = b"\x33\x33\x00\x00\x00\x01" + b"\x02\x00\x00\x00\x00\x91" + b"\x86\xdd"
+    return ethernet + ip6_header + icmp6
 
 
 def _records(frame: bytes) -> list[tuple[int, frozenset[Ip6Address]]]:
@@ -265,3 +288,102 @@ class TestIcmp6MldSourceStateChange(IcmpTestCase):
             [(int(RecordType.CHANGE_TO_EXCLUDE), frozenset())],
             msg="A fresh any-source join must report CHANGE_TO_EXCLUDE.",
         )
+
+
+class TestIcmp6MldStateChangeRetransmit(IcmpTestCase):
+    """
+    The RFC 3810 §6.1 MLDv2 state-change robustness-retransmit tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Build the harness and open an IPv6 datagram socket.
+        """
+
+        super().setUp()
+        self._socket = UdpSocket(family=AddressFamily.INET6)
+        self.addCleanup(self._socket.close)
+        # The all-nodes multicast MAC (ff02::1) so the inbound MLDv1
+        # General Query frame passes the L2 RX filter.
+        self._packet_handler._mac_multicast.append(MacAddress("33:33:00:00:00:01"))
+
+    def test__retransmit__carries_source_list(self) -> None:
+        """
+        Ensure the robustness retransmission of a source state-change
+        Report carries the same source-bearing record as the immediate
+        Report.
+
+        Reference: RFC 3810 §6.1 (state-change Report retransmitted RV-1 times with its records).
+        """
+
+        with sysctl.override("mld.robustness", 2):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_JOIN_SOURCE_GROUP, _group_source_req(_GROUP, _S1))
+
+            tx = self._advance(ms=200)
+            self.assertEqual(len(tx), 1, msg="One robustness retransmit must fire at the chosen delay.")
+            self.assertEqual(
+                _records(tx[0]),
+                [(int(RecordType.ALLOW_NEW_SOURCES), frozenset({_S1}))],
+                msg="The retransmit must carry the same ALLOW_NEW_SOURCES record.",
+            )
+
+    def test__retransmit__exhausts_after_robustness_minus_one(self) -> None:
+        """
+        Ensure a Robustness Variable of 2 schedules exactly one retransmit
+        (RV-1) — a second advance past the interval fires nothing more.
+
+        Reference: RFC 3810 §9.1 (Robustness Variable — RV total transmissions).
+        """
+
+        with sysctl.override("mld.robustness", 2):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_JOIN_SOURCE_GROUP, _group_source_req(_GROUP, _S1))
+
+            self.assertEqual(len(self._advance(ms=200)), 1, msg="The first (only) retransmit must fire.")
+            self.assertEqual(len(self._advance(ms=200)), 0, msg="No further retransmit must fire after RV-1.")
+
+    def test__compat_mode_change_cancels_retransmits(self) -> None:
+        """
+        Ensure switching into MLDv1 Host Compatibility Mode (an inbound
+        MLDv1 Query) cancels the pending state-change retransmit train.
+
+        Reference: RFC 3810 §8.2.1 (a compatibility-mode change cancels pending retransmissions).
+        """
+
+        with sysctl.override("mld.robustness", 3):
+            self.enterContext(
+                patch(
+                    "pytcp.runtime.packet_handler.packet_handler__icmp6__tx.random.randint",
+                    return_value=200,
+                )
+            )
+            self._socket.setsockopt(IPPROTO_IPV6, MCAST_JOIN_SOURCE_GROUP, _group_source_req(_GROUP, _S1))
+            self.assertIn(
+                _GROUP,
+                self._packet_handler._icmp6_tx._mld_state_change__pending,
+                msg="The join must leave a retransmit train pending.",
+            )
+
+            # An MLDv1 Query flips the interface to MLDv1 compat mode,
+            # which must cancel the pending retransmit train (asserted on
+            # the pending map directly, since the Query also schedules its
+            # own current-state response frame).
+            self._drive_rx(frame=_build_mld1_query_frame())
+
+            self.assertEqual(
+                self._packet_handler._icmp6_tx._mld_state_change__pending,
+                {},
+                msg="The compat-mode change must clear the pending retransmit train.",
+            )
