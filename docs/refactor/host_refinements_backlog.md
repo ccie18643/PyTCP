@@ -333,10 +333,26 @@ self._signal_readable()
   breaking change (the examples already bind first), so no `examples/` update
   was needed. Tests: `test__tcp_socket__listen_unbound_autobinds_ephemeral_port`
   + `test__tcp_socket__listen_bound_keeps_port_and_does_not_repick`.
-- **Still scoped out (follow-ons):** TCP `SO_SNDBUF` (TCP has its own send
-  buffering / retransmit queue, released on ACK, not on wire-write — a
-  separate model, wrong to fold into this counter); `SO_RCVBUF`-on-TCP
-  (receive-window derivation).
+- **In progress — TCP `SO_SNDBUF` / `SO_RCVBUF` buffer accounting.** Scoped
+  in `docs/refactor/tcp_buffer_accounting.md` (Tracks A / B, phased). TCP has
+  its own buffering model — the send buffer is the retransmit queue (released
+  on ACK, not wire-write), and `RCV.WND` is already buffer-derived — so this
+  is a distinct feature from the datagram counter, not a fold-in. Scoped as
+  **Tiers 1–2** (honour the options + scaled windows + parity polish; medium).
+
+### R-autotune — TCP send/receive buffer auto-tuning (Tier 3, large, separate)
+
+- **Split out of the `SO_SNDBUF`/`SO_RCVBUF` item** (see
+  `docs/refactor/tcp_buffer_accounting.md` §7). Linux auto-tunes both buffers
+  by default: send-buffer autotuning (`sk_stream_moderate_sndbuf` /
+  `tcp_sndbuf_expand`, grows `sndbuf` with cwnd) and receive-buffer **Dynamic
+  Right-Sizing** (`tcp_moderate_rcvbuf` / `tcp_rcv_space_adjust` — BDP
+  estimation via RTT + receive rate, an `rcv_space` struct, the grow
+  algorithm). Strict host parity eventually needs it, but DRS alone is a
+  genuine feature (1–2+ weeks). Deferred to its own track; not required for
+  the `SO_*BUF` options to work. **Global memory-pressure accounting
+  (`tcp_mem`) is a documented non-goal** (kernel-memory management a
+  userspace stack does not own).
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 
