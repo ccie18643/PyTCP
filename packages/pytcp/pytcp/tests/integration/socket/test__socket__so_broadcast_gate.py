@@ -60,6 +60,8 @@ from pytcp.tests.lib.network_testcase import (
 )
 
 STACK__IP: Ip4Address = STACK__IP4_HOST.address
+# Subnet-directed broadcast of the stack's attached 10.0.1.0/24 network.
+STACK__DIRECTED_BROADCAST: Ip4Address = STACK__IP4_HOST.network.broadcast
 
 
 class TestSocketSoBroadcastGate(NetworkTestCase):
@@ -153,4 +155,81 @@ class TestSocketSoBroadcastGate(NetworkTestCase):
             ctx.exception.errno,
             errno.EACCES,
             msg="send on a broadcast-connected socket without SO_BROADCAST must raise EACCES.",
+        )
+
+
+class TestSocketSoBroadcastGateDirected(NetworkTestCase):
+    """
+    UDP 'sendto' / 'send' to a subnet-directed broadcast
+    destination (the all-ones host of a directly-attached
+    network, e.g. 10.0.1.255) must also have 'SO_BROADCAST'
+    enabled first or fail with EACCES — Linux gates the
+    directed broadcast exactly like the limited broadcast.
+    """
+
+    def test__udp_sendto_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure 'sendto' to a subnet-directed broadcast
+        (10.0.1.255, the broadcast of the attached
+        10.0.1.0/24 network) on a socket with
+        'SO_BROADCAST = 0' raises 'OSError(EACCES)' — Linux
+        marks the directed-broadcast route 'RTN_BROADCAST'
+        and 'udp_sendmsg' requires the flag for it.
+
+        Reference: Linux net/ipv4/udp.c udp_sendmsg (broadcast gate).
+        Reference: Linux net/ipv4/route.c ip_route_output (RTN_BROADCAST).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 9999))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="sendto to a subnet-directed broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__udp_sendto_directed_broadcast_with_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure 'sendto' to a subnet-directed broadcast on a
+        socket with 'SO_BROADCAST = 1' succeeds — the gate
+        only applies when the flag is unset.
+
+        Reference: RFC 1122 §3.3.6 (directed broadcast send).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+        sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+        sent = sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 9999))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="sendto to a directed broadcast with SO_BROADCAST=1 must return the sent byte count.",
+        )
+
+    def test__udp_connected_send_to_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure 'send' on a socket connected to a subnet-directed
+        broadcast peer with 'SO_BROADCAST = 0' raises
+        'OSError(EACCES)' — the gate applies on the connected
+        send path too.
+
+        Reference: Linux net/ipv4/udp.c udp_sendmsg (broadcast gate).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+        sock.connect((str(STACK__DIRECTED_BROADCAST), 9999))
+
+        with self.assertRaises(OSError) as ctx:
+            sock.send(b"x")
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="send on a directed-broadcast-connected socket without SO_BROADCAST must raise EACCES.",
         )

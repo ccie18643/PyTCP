@@ -477,14 +477,12 @@ class UdpSocket(socket):
         if not stack.has_route_to(self._remote_ip_address):
             raise OSError(errno.EHOSTUNREACH, "No route to host - [No route to destination]")
 
-        # H5 SO_BROADCAST gate (Linux 'udp_sendmsg'): sending to the
-        # IPv4 limited broadcast '255.255.255.255' on a connected
-        # socket requires 'SO_BROADCAST = 1'.
-        if (
-            isinstance(self._remote_ip_address, Ip4Address)
-            and self._remote_ip_address.is_limited_broadcast
-            and not self._so_broadcast
-        ):
+        # H5 SO_BROADCAST gate (Linux 'udp_sendmsg'): sending to an
+        # IPv4 broadcast destination on a connected socket requires
+        # 'SO_BROADCAST = 1' — both the limited broadcast
+        # '255.255.255.255' and a subnet-directed broadcast (Linux
+        # 'RTN_BROADCAST').
+        if not self._so_broadcast and stack.is_ip4_broadcast(self._remote_ip_address):
             raise OSError(
                 errno.EACCES,
                 "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",
@@ -557,16 +555,14 @@ class UdpSocket(socket):
         if not stack.has_route_to(remote_ip_address):
             raise OSError(errno.EHOSTUNREACH, "No route to host - [No route to destination]")
 
-        # H5 SO_BROADCAST gate (Linux 'udp_sendmsg'): sending to the
-        # IPv4 limited broadcast '255.255.255.255' requires the socket
-        # to have 'SO_BROADCAST = 1'. Without the flag we surface
-        # EACCES synchronously so apps see actionable feedback at the
-        # send call.
-        if (
-            isinstance(remote_ip_address, Ip4Address)
-            and remote_ip_address.is_limited_broadcast
-            and not self._so_broadcast
-        ):
+        # H5 SO_BROADCAST gate (Linux 'udp_sendmsg'): sending to an
+        # IPv4 broadcast destination requires the socket to have
+        # 'SO_BROADCAST = 1' — both the limited broadcast
+        # '255.255.255.255' and a subnet-directed broadcast (Linux
+        # 'RTN_BROADCAST'). Without the flag we surface EACCES
+        # synchronously so apps see actionable feedback at the send
+        # call.
+        if not self._so_broadcast and stack.is_ip4_broadcast(remote_ip_address):
             raise OSError(
                 errno.EACCES,
                 "Permission denied - [SO_BROADCAST must be enabled for broadcast send]",

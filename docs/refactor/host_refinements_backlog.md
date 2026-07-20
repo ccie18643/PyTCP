@@ -197,6 +197,15 @@ self._signal_readable()
   the None-hop path only; explicit `ip6__hop` still wins and ND/MLD/RA keep
   their protocol-mandated values. Tests: `TestIp6TxMulticastHopLimit` (3) in
   `test__ip6__tx.py`; the Ethernet-TX multicast golden updated 64→1.
+- **Shipped:** the `SO_BROADCAST` gate on UDP only caught the limited
+  broadcast `255.255.255.255`; Linux also requires the flag for a
+  subnet-directed broadcast (`RTN_BROADCAST`). Added a read-only
+  `stack.is_ip4_broadcast(dst)` introspection helper (limited broadcast +
+  each interface's directed-broadcast set via the public `ip4_broadcast`
+  accessor) and switched both UDP send/sendto gate sites to it, so a send
+  to `10.0.1.255`-style directed broadcast without `SO_BROADCAST` now
+  raises `EACCES`. Tests: `TestSocketSoBroadcastGateDirected` (3). RAW/PING
+  still do not consult `SO_BROADCAST` (separate, lower-value item).
 
 ### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
 

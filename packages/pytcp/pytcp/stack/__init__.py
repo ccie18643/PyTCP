@@ -712,6 +712,29 @@ def has_route_to(destination: Ip4Address | Ip6Address, /) -> bool:
     return _egress_handler_via_fib(destination) is not None
 
 
+def is_ip4_broadcast(destination: Ip4Address | Ip6Address, /) -> bool:
+    """
+    Return whether 'destination' is an IPv4 broadcast address the
+    SO_BROADCAST gate must guard: the limited broadcast
+    255.255.255.255, or the subnet-directed broadcast (the all-ones
+    host) of a directly-attached IPv4 network on any interface —
+    which Linux marks 'RTN_BROADCAST' in 'ip_route_output'. The UDP
+    send path consults this to raise 'EACCES' when 'SO_BROADCAST' is
+    unset (Linux 'udp_sendmsg' parity).
+
+    The limited broadcast is recognised unconditionally so the gate
+    holds even in a reduced context (no interfaces installed); the
+    directed-broadcast set is read from each interface's public
+    'ip4_broadcast' introspection surface.
+    """
+
+    if not isinstance(destination, Ip4Address):
+        return False
+    if destination.is_limited_broadcast:
+        return True
+    return any(destination in handler.ip4_broadcast for handler in interfaces.values())
+
+
 def egress_packet_handler(destination: Ip4Address | Ip6Address, /) -> PacketHandlerL2 | PacketHandlerL3:
     """
     Return the packet handler for the interface that egresses
