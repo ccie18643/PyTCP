@@ -38,6 +38,7 @@ pytcp/runtime/packet_handler_api.py
 ver 3.0.8
 """
 
+from collections.abc import Callable
 from typing import Protocol
 
 from net_addr import Buffer, Ip4Address, Ip6Address, MacAddress
@@ -148,6 +149,7 @@ class UdpEgressOwner(Protocol):
         ip__ecn: int = 0,
         ip__dscp: int = 0,
         ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Enqueue an outbound UDP datagram via the egress handler.

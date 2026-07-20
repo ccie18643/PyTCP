@@ -556,6 +556,12 @@ INADDR_BROADCAST: int = 0xFFFFFFFF
 INADDR_LOOPBACK: int = 0x7F000001
 INADDR_NONE: int = 0xFFFFFFFF
 
+# Default per-socket send-buffer bound when SO_SNDBUF is unset,
+# mirroring Linux 'net.core.wmem_default' (~208 KiB). Large enough
+# that a normally-paced sender never blocks; only an app that lowers
+# SO_SNDBUF or bursts faster than the wire drains meets the bound.
+SOCKET__SO_SNDBUF__DEFAULT: int = 212992
+
 
 class socket(ABC):
     """
@@ -579,6 +585,12 @@ class socket(ABC):
     _so_rcvbuf: int | None
     _so_rcvtimeo: float | None
     _so_sndtimeo: float | None
+    # SO_SNDBUF send-buffer accounting: bytes handed to the TX queue
+    # but not yet drained to the wire (Linux 'sk_wmem_alloc'). The
+    # condition guards the counter and wakes a blocked sender when a
+    # datagram's TX completes.
+    _snd_outstanding: int
+    _snd_buf_cond: threading.Condition
     _ip_ttl: int | None
     _ip_multicast_ttl: int | None
     _ip_multicast_loop: bool
@@ -651,6 +663,8 @@ class socket(ABC):
         self._so_rcvbuf = None
         self._so_rcvtimeo = None
         self._so_sndtimeo = None
+        self._snd_outstanding = 0
+        self._snd_buf_cond = threading.Condition()
         self._ip_ttl = None
         self._ip_multicast_ttl = None
         # Linux IP_MULTICAST_LOOP defaults on; PyTCP has no local
@@ -1419,6 +1433,58 @@ class socket(ABC):
 
         return remote_ip_address.is_multicast and self._effective_ip_ttl(remote_ip_address) == 0
 
+    def _effective_sndbuf(self) -> int:
+        """
+        Get the SO_SNDBUF send-buffer bound: the value the
+        application set, else the 'SOCKET__SO_SNDBUF__DEFAULT'
+        stand-in for Linux 'net.core.wmem_default'. PyTCP does not
+        apply Linux's 2x doubling of the requested value — the bound
+        is the value as set.
+        """
+
+        return self._so_sndbuf if self._so_sndbuf is not None else SOCKET__SO_SNDBUF__DEFAULT
+
+    def _charge_sndbuf(self, nbytes: int, /) -> None:
+        """
+        Reserve 'nbytes' of send-buffer space before queueing a
+        datagram, blocking / failing per SO_SNDBUF (Linux
+        'sock_alloc_send_pskb'). A send is always allowed when nothing
+        is outstanding, so a single datagram larger than the whole
+        buffer still goes out. Otherwise, when the charge would exceed
+        the bound:
+
+        - a non-blocking socket (and no SO_SNDTIMEO) raises
+          'BlockingIOError(EAGAIN)';
+        - a blocking socket waits on the send-buffer condition up to
+          SO_SNDTIMEO (or indefinitely when unset), raising
+          'BlockingIOError(EAGAIN)' if the timeout expires before
+          space frees.
+
+        On success the outstanding-bytes counter is incremented; the
+        matching '_release_sndbuf' fires from the TX-completion hook.
+        """
+
+        bound = self._effective_sndbuf()
+        with self._snd_buf_cond:
+            while self._snd_outstanding > 0 and self._snd_outstanding + nbytes > bound:
+                if self._so_sndtimeo is None and not self._blocking:
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+                if not self._snd_buf_cond.wait(timeout=self._so_sndtimeo):
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+            self._snd_outstanding += nbytes
+
+    def _release_sndbuf(self, nbytes: int, /) -> None:
+        """
+        Release 'nbytes' of send-buffer space when a datagram leaves
+        the send queue (the TX-completion hook), and wake any sender
+        blocked in '_charge_sndbuf'. Clamped at 0 so a double-release
+        or a close-time reset cannot drive the counter negative.
+        """
+
+        with self._snd_buf_cond:
+            self._snd_outstanding = max(0, self._snd_outstanding - nbytes)
+            self._snd_buf_cond.notify_all()
+
     def _effective_ip_ecn(self) -> int:
         """
         Get the effective ECN bits (low 2 bits of IP_TOS / IPV6_TCLASS)
@@ -1836,6 +1902,13 @@ class socket(ABC):
         with self._lock__io:
             self._closed = True
             self._close_io_runtime()
+
+        # Wake any sender blocked in '_charge_sndbuf' and clear the
+        # send-buffer accounting so a still-in-flight TX completion
+        # cannot leave the counter charged on a torn-down socket.
+        with self._snd_buf_cond:
+            self._snd_outstanding = 0
+            self._snd_buf_cond.notify_all()
 
         self._release_ip4_memberships()
         self._release_ip6_memberships()

@@ -493,6 +493,11 @@ class UdpSocket(socket):
         if self._multicast_send_suppressed(self._remote_ip_address):
             return len(data)
 
+        # SO_SNDBUF accounting: reserve send-buffer space (blocking /
+        # EAGAIN per SO_SNDTIMEO), released when the datagram's TX
+        # completes via the 'on_complete' hook.
+        nbytes = len(data)
+        self._charge_sndbuf(nbytes)
         self._egress_handler(self._remote_ip_address).send_udp_packet(
             ip__local_address=self._local_ip_address,
             ip__remote_address=self._remote_ip_address,
@@ -504,6 +509,7 @@ class UdpSocket(socket):
             ip__ecn=ecn,
             ip__dscp=dscp,
             ip4__options=self._effective_ip4_options(),
+            on_complete=lambda: self._release_sndbuf(nbytes),
         )
 
         # Phase 4b fire-and-forget: the datagram is accepted into the
@@ -578,6 +584,11 @@ class UdpSocket(socket):
         if self._multicast_send_suppressed(remote_ip_address):
             return len(data)
 
+        # SO_SNDBUF accounting: reserve send-buffer space (blocking /
+        # EAGAIN per SO_SNDTIMEO), released when the datagram's TX
+        # completes via the 'on_complete' hook.
+        nbytes = len(data)
+        self._charge_sndbuf(nbytes)
         self._egress_handler(remote_ip_address).send_udp_packet(
             ip__local_address=local_ip_address,
             ip__remote_address=remote_ip_address,
@@ -589,6 +600,7 @@ class UdpSocket(socket):
             ip__ecn=ecn,
             ip__dscp=dscp,
             ip4__options=self._effective_ip4_options(),
+            on_complete=lambda: self._release_sndbuf(nbytes),
         )
 
         # Phase 4b fire-and-forget — see 'send' above.

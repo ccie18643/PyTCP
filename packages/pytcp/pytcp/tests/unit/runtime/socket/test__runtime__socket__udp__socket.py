@@ -3165,3 +3165,169 @@ class TestUdpSocketMulticastLoop(_UdpSocketTestCase):
             1,
             msg="IPV6_MULTICAST_LOOP must round-trip 1.",
         )
+
+
+class TestUdpSocketSoSndbuf(_UdpSocketTestCase):
+    """
+    The SO_SNDBUF / SO_SNDTIMEO send-buffer accounting tests. A
+    per-socket outstanding-bytes counter (Linux 'sk_wmem_alloc') is
+    charged when a datagram is queued and released via the
+    TX-completion hook; a send that would exceed SO_SNDBUF blocks up
+    to SO_SNDTIMEO or fails with EAGAIN (non-blocking).
+
+    The fixture's 'send_udp_packet' stub swallows 'on_complete'
+    without firing it, so outstanding bytes accumulate until a test
+    fires the captured hook — exactly what is needed to exercise the
+    over-buffer paths deterministically.
+    """
+
+    def _connected_socket(self) -> UdpSocket:
+        """
+        Construct a connected IPv4 UDP socket ready for send().
+        """
+
+        s = UdpSocket(family=AddressFamily.INET4)
+        with (
+            patch(
+                "pytcp.runtime.socket.udp__socket.pick_local_ip_address",
+                return_value=Ip4Address("10.0.0.1"),
+            ),
+            patch(
+                "pytcp.runtime.socket.udp__socket.pick_local_port",
+                return_value=40000,
+            ),
+        ):
+            s.connect(("10.0.0.5", 5353))
+        return s  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
+
+    def test__so_sndbuf__nonblocking_over_buffer_raises_eagain(self) -> None:
+        """
+        Ensure a non-blocking send that would push the outstanding
+        bytes past SO_SNDBUF raises 'BlockingIOError(EAGAIN)' while
+        the buffer is not drained.
+
+        Reference: Linux net/core/sock.c sock_alloc_send_pskb
+        (SO_SNDBUF bound → EAGAIN when non-blocking).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        s.setblocking(False)
+
+        # First 80-byte datagram: nothing outstanding, always allowed.
+        self.assertEqual(s.send(b"x" * 80), 80, msg="First datagram must be accepted.")
+        # Second 80-byte datagram: 80 + 80 > 100 and buffer not drained.
+        with self.assertRaises(BlockingIOError) as ctx:
+            s.send(b"x" * 80)
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EAGAIN,
+            msg="An over-SO_SNDBUF non-blocking send must raise EAGAIN.",
+        )
+
+    def test__so_sndbuf__single_datagram_larger_than_buffer_is_allowed(self) -> None:
+        """
+        Ensure a single datagram larger than the whole SO_SNDBUF is
+        still sent when nothing is outstanding — Linux never wedges a
+        lone oversize datagram.
+
+        Reference: Linux net/core/sock.c sock_alloc_send_pskb
+        (a send proceeds when the queue is empty).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        s.setblocking(False)
+
+        self.assertEqual(
+            s.send(b"x" * 500),
+            500,
+            msg="A single datagram larger than SO_SNDBUF must still be accepted.",
+        )
+
+    def test__so_sndbuf__completion_hook_releases_and_allows_next_send(self) -> None:
+        """
+        Ensure firing the 'on_complete' hook passed to
+        'send_udp_packet' releases the outstanding bytes so a
+        subsequent send that previously would have blocked now
+        proceeds — the end-to-end TX-completion release wiring.
+
+        Reference: Linux net/core/sock.c sk_wmem_alloc
+        (freed on TX completion, waking blocked senders).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        captured: list[object] = []
+
+        def _capturing_send(*, on_complete: object = None, **_: object) -> TxStatus:
+            captured.append(on_complete)
+            return TxStatus.PASSED__ETHERNET__TO_TX_RING
+
+        self._handler.send_udp_packet = _capturing_send
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        s.setblocking(False)
+
+        s.send(b"x" * 80)
+        # Fire the TX-completion hook: outstanding drops back to 0.
+        on_complete = captured[-1]
+        assert callable(on_complete)
+        on_complete()
+
+        # The next 80-byte send now fits again.
+        self.assertEqual(
+            s.send(b"x" * 80),
+            80,
+            msg="After the completion hook releases the buffer, the next send must proceed.",
+        )
+
+    def test__so_sndbuf__blocking_send_times_out_after_so_sndtimeo(self) -> None:
+        """
+        Ensure a blocking send that would exceed SO_SNDBUF waits up to
+        SO_SNDTIMEO and then raises 'BlockingIOError(EAGAIN)' when no
+        space frees — the send-side timeout, mirroring the recv
+        SO_RCVTIMEO idiom.
+
+        Reference: Linux net/core/sock.c sock_alloc_send_pskb
+        (SO_SNDTIMEO bounds a blocking send → EAGAIN on expiry).
+        """
+
+        from pytcp.runtime.socket import SO_SNDBUF, SOL_SOCKET
+
+        s = self._connected_socket()
+        s.setsockopt(SOL_SOCKET, SO_SNDBUF, 100)
+        # Sub-second SO_SNDTIMEO for a fast test. setsockopt gates
+        # SOL_SOCKET on int, so a float timeout is set on the field
+        # directly here (the settimeout() surface carries floats for
+        # real callers).
+        s._so_sndtimeo = 0.05
+
+        s.send(b"x" * 80)
+        with self.assertRaises(BlockingIOError) as ctx:
+            s.send(b"x" * 80)
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EAGAIN,
+            msg="A blocking over-SO_SNDBUF send must raise EAGAIN after SO_SNDTIMEO.",
+        )
+
+    def test__so_sndbuf__unset_default_never_blocks_normal_send(self) -> None:
+        """
+        Ensure a socket that never sets SO_SNDBUF sends normally — the
+        large 'net.core.wmem_default' stand-in means a normally-paced
+        sender never meets the bound.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        s = self._connected_socket()
+        s.setblocking(False)
+
+        for _ in range(50):
+            self.assertEqual(s.send(b"x" * 1000), 1000, msg="A default-SO_SNDBUF send must not block.")

@@ -205,6 +205,22 @@ class AddedInterface:
         return list(self.frames_tx[before:])
 
 
+def _dispatch_async_inline(run: Any, on_complete: Any = None) -> None:
+    """
+    Mock stand-in for 'TxRing.dispatch_async': run the marshaled
+    '_phtx_*' callable inline (no worker thread under test) and fire
+    the 'on_complete' hook in a 'finally', mirroring the real
+    fire-and-forget path so SO_SNDBUF send-buffer accounting is
+    released exactly as in production.
+    """
+
+    try:
+        run()
+    finally:
+        if on_complete is not None:
+            on_complete()
+
+
 class NetworkTestCase(TestCase):
     """
     Base class for all unit tests that require mock network.
@@ -298,7 +314,7 @@ class NetworkTestCase(TestCase):
         # Phase 4b fire-and-forget marshaling boundary — run the
         # callable inline (discard the result) so async sends still
         # land frames in the mocked 'enqueue' under test.
-        mock_TxRing.dispatch_async.side_effect = lambda run: run()
+        mock_TxRing.dispatch_async.side_effect = _dispatch_async_inline
 
         # Mock the ArpCache so we can get predictable responses.
         def _mock_arp_find_entry(*, ip4_address: Ip4Address) -> MacAddress | None:
@@ -493,7 +509,7 @@ class NetworkTestCase(TestCase):
         mock_tx_ring = create_autospec(TxRing, spec_set=True)
         mock_tx_ring.enqueue.side_effect = _enqueue
         mock_tx_ring.dispatch.side_effect = lambda run: run()
-        mock_tx_ring.dispatch_async.side_effect = lambda run: run()
+        mock_tx_ring.dispatch_async.side_effect = _dispatch_async_inline
 
         # RX is injected directly via 'drive_rx' (calling '_phrx_ethernet'),
         # never read off this ring — but a real interface owns one, and

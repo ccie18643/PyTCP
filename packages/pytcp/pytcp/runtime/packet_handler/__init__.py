@@ -682,7 +682,13 @@ class PacketHandler(Subsystem, ABC):
         assert self._tx_ring is not None, "PacketHandler must have an injected TX ring to send."
         return self._tx_ring.dispatch(run)
 
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         """
         Fire-and-forget variant of '_marshal_tx' (Phase 4b async
         send): hand a '_phtx_*' call to this interface's TX worker
@@ -693,10 +699,13 @@ class PacketHandler(Subsystem, ABC):
         Linux's queued-on-send UDP semantics. Delivery failures
         (no route, ARP timeout, ICMP error) surface asynchronously,
         not through the send() return value.
+
+        'on_complete' (if given) fires once after the marshaled call
+        finishes — the UDP SO_SNDBUF send-buffer release hook.
         """
 
         assert self._tx_ring is not None, "PacketHandler must have an injected TX ring to send."
-        self._tx_ring.dispatch_async(run)
+        self._tx_ring.dispatch_async(run, on_complete=on_complete)
 
     @property
     def _ip6_unicast(self) -> list[Ip6Address]:
@@ -2473,6 +2482,7 @@ class PacketHandler(Subsystem, ABC):
         ip__ecn: int = 0,
         ip__dscp: int = 0,
         ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Enqueue an outbound UDP datagram (delegates to the UDP TX sub-handler).
@@ -2489,6 +2499,7 @@ class PacketHandler(Subsystem, ABC):
             ip__ecn=ip__ecn,
             ip__dscp=ip__dscp,
             ip4__options=ip4__options,
+            on_complete=on_complete,
         )
 
     ###
@@ -4453,13 +4464,26 @@ class PacketHandlerLoopback(
         return run()
 
     @override
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         """
         Fire-and-forget variant of '_marshal_tx' for the loopback
-        interface — run the pipeline inline (see '_marshal_tx').
+        interface — run the pipeline inline (see '_marshal_tx'). The
+        'on_complete' hook fires in a 'finally' after the inline run
+        so send-buffer accounting is released even if the pipeline
+        raises.
         """
 
-        run()
+        try:
+            run()
+        finally:
+            if on_complete is not None:
+                on_complete()
 
     @override
     def _accepts_local_dst_ip4(self, dst: Ip4Address, /) -> bool:

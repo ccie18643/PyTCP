@@ -277,22 +277,35 @@ self._signal_readable()
   `SO_SNDTIMEO` → R3 (send buffer accounting), the `X3` listen()-on-unbound
   `EINVAL` breaking-change remains an explicit opt-in item.
 
-### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (medium-large, coupled)
+### R3 — `SO_SNDBUF` accounting + `SO_SNDTIMEO` (UDP) — DONE
 
-- **Why deferred:** UDP `send` hands the datagram straight to the shared TX
-  ring (`send_udp_packet`), with **no per-socket send buffer**. Linux
-  `SO_SNDBUF` bounds `sk_wmem_alloc`; PyTCP has no such accounting.
-- **Scope:** build a per-socket outstanding-send-bytes counter
-  (increment on enqueue-to-TX, decrement on TX completion — needs a
-  completion signal from the TX ring the socket can observe), bound it by
-  `_so_sndbuf`, and on overflow either `EAGAIN` (non-blocking) or
-  block up to `SO_SNDTIMEO`. `SO_SNDTIMEO` is only meaningful once this
-  exists — do them together.
-- **Tests-first:** red tests for over-SO_SNDBUF → EAGAIN, and blocking →
-  timeout after SO_SNDTIMEO.
-- **Effort:** medium-large (the TX-completion signal is the hard part).
-  **Risk:** medium (touches the TX path). **Prereq:** understand how the
-  TX ring signals completion; there may be no per-datagram completion today.
+- **Shipped:** per-socket UDP send-buffer accounting (Linux
+  `sk_wmem_alloc`). Built the missing TX-completion signal: an
+  `on_complete` callback threaded through `send_udp_packet` →
+  `_marshal_tx_async` → `TxRing.dispatch_async` → `_TxRequest`, fired once
+  in the request's `finally` (survives a raising pipeline, a queue-full
+  frame drop, and the inline no-worker fallback). The socket charges
+  `len(data)` to a `_snd_outstanding` counter before queueing and releases
+  it from the hook; a `threading.Condition` guards the counter and wakes a
+  blocked sender. `_charge_sndbuf` bounds the charge by `SO_SNDBUF`
+  (`_effective_sndbuf`: the set value, else the
+  `SOCKET__SO_SNDBUF__DEFAULT` = 212992 `net.core.wmem_default` stand-in;
+  no Linux 2× doubling). Over-buffer behaviour: a single datagram always
+  sends when nothing is outstanding; otherwise a non-blocking socket raises
+  `EAGAIN`, a blocking socket waits on the condition up to `SO_SNDTIMEO`
+  then raises `EAGAIN`. `close()` resets the counter and wakes waiters.
+- **Tests:** `TestTxRingOnCompleteHook` (3 — hook fires once, on raise, on
+  inline), `TestUdpSocketSoSndbuf` (5 — non-blocking EAGAIN, lone oversize
+  allowed, completion-hook release, blocking SO_SNDTIMEO EAGAIN, default
+  never blocks). Harness `dispatch_async` mock updated to fire `on_complete`
+  (mirrors production).
+- **Scoped out (follow-ons):** RAW / PING send-buffer accounting (same
+  `on_complete` seam extends to `send_ip4_packet` / the ping path); a
+  sub-second `SO_SNDTIMEO` / `SO_RCVTIMEO` via `setsockopt` (blocked today
+  by the SOL_SOCKET int-guard on the datagram sockets — float timeouts flow
+  through `settimeout()` instead); TCP `SO_SNDBUF` (TCP has its own send
+  buffering / retransmit queue, a separate model). `SO_RCVBUF`-on-TCP
+  (receive-window derivation) also remains open.
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 

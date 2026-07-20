@@ -126,7 +126,13 @@ class _StubInterface:
         self.ethernet_tx_status: TxStatus = TxStatus.PASSED__ETHERNET__TO_TX_RING
         self.marshal_tx_async_calls = 0
 
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         # 'send_ip4_packet' fire-and-forget marshals '_phtx_ip4' through
         # '_marshal_tx_async'; with no TX worker under test, run inline.
         self.marshal_tx_async_calls += 1

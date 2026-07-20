@@ -91,13 +91,24 @@ class _StubInterface:
         self.ip6_tx_calls: list[dict[str, object]] = []
         self.marshal_tx_async_calls = 0
 
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         # 'send_udp_packet' fire-and-forget marshals '_phtx_udp' through
         # '_marshal_tx_async'; with no TX worker under test, run the
         # callable inline so the routing still reaches '_phtx_ip4' /
-        # '_phtx_ip6' synchronously.
+        # '_phtx_ip6' synchronously. Fire 'on_complete' in a 'finally'
+        # to mirror the real SO_SNDBUF release path.
         self.marshal_tx_async_calls += 1
-        run()
+        try:
+            run()
+        finally:
+            if on_complete is not None:
+                on_complete()
 
     def _phtx_ip4(self, **kwargs: object) -> TxStatus:
         self.ip4_tx_calls.append(kwargs)

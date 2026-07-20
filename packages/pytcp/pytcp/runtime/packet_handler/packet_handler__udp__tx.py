@@ -32,6 +32,7 @@ pytcp/runtime/packet_handler/packet_handler__udp__tx.py
 ver 3.0.8
 """
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 
 from net_addr import Buffer, Ip4Address, Ip6Address
@@ -146,6 +147,7 @@ class UdpTxHandler:
         ip__ecn: int = 0,
         ip__dscp: int = 0,
         ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Interface method for UDP Socket -> Packet Assembler
@@ -159,6 +161,10 @@ class UdpTxHandler:
         datagram is accepted into the stack the moment it is queued,
         matching Linux's queued-on-send UDP semantics. Delivery
         failures surface asynchronously, not via the caller.
+
+        'on_complete' (if given) fires once after the datagram leaves
+        the send queue — the SO_SNDBUF release hook for the calling
+        socket.
         """
 
         self._if._marshal_tx_async(
@@ -173,5 +179,6 @@ class UdpTxHandler:
                 ip__ecn=ip__ecn,
                 ip__dscp=ip__dscp,
                 ip4__options=ip4__options,
-            )
+            ),
+            on_complete=on_complete,
         )
