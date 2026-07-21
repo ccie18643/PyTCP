@@ -119,6 +119,9 @@ class _TcpSessionFsmFixture(TestCase):
 
         mock_socket = MagicMock()
         mock_socket.socket_id = object()  # unique sentinel for dict keys
+        # rcv_wnd_max derives from the socket's SO_RCVBUF at session
+        # construction; give the mock an int so window arithmetic works.
+        mock_socket._effective_rcvbuf.return_value = 65535
         self._sockets[mock_socket.socket_id] = mock_socket
 
         return TcpSession(

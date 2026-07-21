@@ -100,12 +100,16 @@ class _TcpSessionSyscallFixture(TestCase):
         Build a canonical IPv4 'TcpSession' against a MagicMock socket.
         """
 
+        mock_socket = MagicMock()
+        # rcv_wnd_max derives from the socket's SO_RCVBUF at session
+        # construction; give the mock an int so window arithmetic works.
+        mock_socket._effective_rcvbuf.return_value = 65535
         session = TcpSession(
             local_ip_address=Ip4Address("10.0.0.1"),
             local_port=8080,
             remote_ip_address=Ip4Address("10.0.0.2"),
             remote_port=44444,
-            socket=MagicMock(),
+            socket=mock_socket,
         )
         return session
 

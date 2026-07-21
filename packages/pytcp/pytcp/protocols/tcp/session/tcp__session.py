@@ -165,6 +165,13 @@ class TcpSession:
         # See 'state/tcp__state__window.py'.
         self._win: WindowState = WindowState()
         self._win.rcv_mss = self._egress_interface_mtu() - self._ip_tcp_overhead
+        # SO_RCVBUF sizes the advertised receive window: the window is
+        # 'max(0, rcv_wnd_max - len(rx_buffer))' (RFC 9293 §3.8.6),
+        # advertised scaled by 'rcv_wsc' (RFC 7323 §2.2). Derive the cap
+        # from the owning socket's SO_RCVBUF so an application can size
+        # the window; unset keeps the conservative 65535 default. Set
+        # before the SYN so the negotiated scale (rcv_wsc) covers it.
+        self._win.rcv_wnd_max = self._socket._effective_rcvbuf()
 
         # RFC 4821 / RFC 8899 per-session PLPMTUD adapter.
         # Wraps a PmtuSearch engine bound to the remote

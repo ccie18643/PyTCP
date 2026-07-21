@@ -89,33 +89,29 @@ Goal: `rcv_wnd_max` derives from the socket's `SO_RCVBUF` instead of the
 fixed 65535, so a larger receive buffer advertises a larger window.
 
 ### A1 — `_effective_rcvbuf()` + getsockopt parity (small)
-- Add `_effective_rcvbuf()` on the base socket, mirroring
-  `_effective_sndbuf()`: returns `_so_rcvbuf` if set, else a default
-  constant. **Decision:** keep the TCP default cap at the current **65535**
-  (conservative, no behaviour change when unset) rather than a Linux
-  `rmem_default`; document the choice. Add `SOCKET__SO_RCVBUF__DEFAULT`.
-- `getsockopt(SO_RCVBUF)` reports the **effective** value (Linux parity),
-  not the raw `0`-when-unset it returns today (`__init__.py:1578`).
-- Tests: effective/getsockopt round-trip; unset → default.
+**DONE** (commit `c1c0d7bd`). Added `_effective_rcvbuf()` +
+`SOCKET__SO_RCVBUF__DEFAULT = 65535` (mirrors `_effective_sndbuf`);
+`getsockopt(SO_RCVBUF)` / `(SO_SNDBUF)` now report the effective value, not
+`0`-when-unset. Datagram RX-drop still reads `_so_rcvbuf` directly (unset =
+unbounded) — reconciling it to `_effective_rcvbuf()` is a Tier-2 item.
 
-### A2 — drive `rcv_wnd_max` from `_effective_rcvbuf()` at SYN (medium)
-- At `TcpSession` construction / connection setup, set `rcv_wnd_max` from
-  the owning socket's `_effective_rcvbuf()` instead of the literal 65535.
-- **WSCALE ceiling:** the wire field is `_rcv_wnd >> rcv_wsc`
-  (`tx.py:127`); the effective ceiling is `0xFFFF << rcv_wsc`. A rcvbuf
-  larger than 64 KiB relies on the negotiated `rcv_wsc`. `rcv_wsc` is chosen
-  at SYN time — so a rcvbuf-derived cap only takes full effect when
-  `SO_RCVBUF` is set **before** `connect()` / `listen()`. The pre-handshake
-  path clamps to `min(_rcv_wnd, 0xFFFF)` (`tx.py:115`) because WSCALE isn't
-  negotiated yet — the SYN advertisement must respect that unscaled 16-bit
-  ceiling.
-- **Consider:** derive `rcv_wsc` from the desired cap so a large SO_RCVBUF
-  actually advertises a large scaled window (currently `rcv_wsc=7` fixed).
-  This is the crux of A2 and may split into A2a (cap only, cap ≤ 64 KiB) /
-  A2b (WSCALE-derived cap > 64 KiB).
-- Tests (integration, `TcpTestCase`): SO_RCVBUF=256 KiB set before connect →
-  outbound segments advertise a scaled window > 64 KiB; default → 65535;
-  window still shrinks as `_rx_buffer` fills.
+### A2 — drive `rcv_wnd_max` from `_effective_rcvbuf()` at SYN
+
+**DONE** (commit pending). `TcpSession.__init__` sets
+`self._win.rcv_wnd_max = self._socket._effective_rcvbuf()` right after the
+`WindowState()` allocation, so the advertised window derives from
+`SO_RCVBUF` (set before `connect()`/`listen()`); unset keeps 65535.
+
+**A2a/A2b collapsed** — no separate WSCALE-derivation step was needed:
+`rcv_wsc` already defaults to **7** (`tcp__state__window.py:80`), so
+`rcv_wnd_max` up to `0xFFFF << 7 ≈ 8 MiB` is advertised correctly by the
+existing `_rcv_wnd >> rcv_wsc` machinery. The pre-handshake SYN still clamps
+to `min(_rcv_wnd, 0xFFFF)` (`tx.py:115`), so a large cap advertises ≤ 64 KiB
+on the SYN then scales up post-handshake — exactly Linux behaviour. Only a
+cap **> ~8 MiB** would need a larger `rcv_wsc` (a niche future refinement,
+was the old "A2b"). Tests: `TestTcpSessionSoRcvbuf` (cap from SO_RCVBUF,
+default unset, window shrinks with occupancy against the sized cap). Harness
+`_make_active_session` gained a `so_rcvbuf=` param.
 
 ### A3 — mid-connection SO_RCVBUF change (harder / optional)
 - RFC 9293 §3.8.6.2.1: a receiver **SHOULD NOT** shrink the window (retract

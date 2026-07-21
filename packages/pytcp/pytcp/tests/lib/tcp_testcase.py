@@ -282,6 +282,7 @@ class TcpTestCase(NetworkTestCase):
         local_port: int = _DEFAULT_LOCAL_PORT,
         remote_ip: Ip4Address | Ip6Address | None = None,
         remote_port: int = _DEFAULT_REMOTE_PORT,
+        so_rcvbuf: int | None = None,
     ) -> TcpSession:
         """
         Build a 'TcpSocket' / 'TcpSession' pair on the canonical
@@ -310,6 +311,10 @@ class TcpTestCase(NetworkTestCase):
         sock._local_port = local_port
         sock._remote_ip_address = remote_ip
         sock._remote_port = remote_port
+        # Set SO_RCVBUF before the session is built so its rcv_wnd_max
+        # (advertised-receive-window cap) derives from it.
+        if so_rcvbuf is not None:
+            sock._so_rcvbuf = so_rcvbuf
         session = TcpSession(
             local_ip_address=local_ip,
             local_port=local_port,
