@@ -451,7 +451,13 @@ CLAUDE.md "Linux as tiebreaker" precedence.
 
 1. **Tier-2 `tcp.rmem` / `tcp.wmem` triples** (§6) — prerequisite clamp +
    default source. Small, no behaviour change if defaults match today's
-   constants; the observable switch is step 6.
+   constants; the observable switch is step 5. **DONE** — registered
+   `tcp.moderate_rcvbuf` (default 1) + the `tcp.rmem` / `tcp.wmem`
+   min/default/max triples in `tcp__constants.py`, each with a
+   per-value validator and a `min <= default <= max` finalize validator.
+   `.default` entries keep today's effective values (rcv 65535,
+   snd 212992); only `.max` clamps carry Linux-parity values. No runtime
+   consumer yet. Tests: `test__tcp__constants.py`.
 2. **S1 + S2** (send auto-tuning) — smaller track, exercises the sysctl
    clamp and the ACK-path trigger with low risk (grow-only widening of an
    existing gate).

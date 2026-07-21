@@ -112,6 +112,39 @@ TCP__KEEPALIVE__PROBE_MAX_COUNT = 9
 # arithmetic-friendly.
 TCP__TS_RECENT__OUTDATED_THRESHOLD_MS = 24 * 86_400 * 1_000
 
+# TCP buffer auto-tuning bounds (Tier-3 plan
+# docs/refactor/tcp_buffer_autotuning.md §6). Registered now as the clamp
+# + default source; there is NO runtime consumer yet — Track R (receive
+# Dynamic Right-Sizing) and Track S (send-buffer auto-tuning) land the
+# readers in later phases, so this registration changes no behaviour.
+#
+# The '.default' entries deliberately keep PyTCP's current effective
+# defaults (rcv 65535, snd 212992) rather than Linux's small initial
+# values: the small-default switch that makes auto-tuning observable is a
+# separate, behaviour-changing phase (plan §2 / §7 / §10 step 5). Only
+# the '.max' clamps carry Linux-parity values today.
+
+# Linux 'net.ipv4.tcp_moderate_rcvbuf' — the enable flag for
+# receive-buffer Dynamic Right-Sizing (Track R). Default 1 (on), matching
+# Linux; the DRS grow policy (R4) reads this gate.
+TCP__MODERATE_RCVBUF = 1
+
+# Linux 'net.ipv4.tcp_rmem' (min / default / max) receive-buffer bounds.
+# '.max' is the DRS grow clamp (Track R4); '.default' will seed the unset
+# 'rcv_wnd_max' once the small-default switch lands. '.max' mirrors the
+# Linux ~6 MiB default ceiling; '.min' mirrors Linux's 4096 floor.
+TCP__RMEM__MIN = 4096
+TCP__RMEM__DEFAULT = 65535
+TCP__RMEM__MAX = 6_291_456
+
+# Linux 'net.ipv4.tcp_wmem' (min / default / max) send-buffer bounds.
+# '.max' is the send-autotune grow clamp (Track S2); '.default' will seed
+# the unset send bound once the small-default switch lands. '.max' mirrors
+# the Linux ~4 MiB default ceiling; '.min' mirrors Linux's 4096 floor.
+TCP__WMEM__MIN = 4096
+TCP__WMEM__DEFAULT = 212992
+TCP__WMEM__MAX = 4_194_304
+
 # Per-interface conf-plane policy storage. 'dict[str, int]' keyed by
 # interface name with a mandatory '"default"' template slot — the
 # operator addresses a specific interface ('tcp.<ifname>.<field>') or
@@ -161,6 +194,7 @@ from typing import Any  # noqa: E402
 
 from pytcp.stack.sysctl import (  # noqa: E402
     get,
+    is_int_in_range,
     is_positive_int,
     register,
     register_finalize_validator,
@@ -357,3 +391,108 @@ def _finalize__persist_max_ge_rto_initial() -> None:
 
 
 register_finalize_validator(_finalize__persist_max_ge_rto_initial)
+
+
+# TCP buffer auto-tuning knobs (Tier-3 plan
+# docs/refactor/tcp_buffer_autotuning.md §6). Flat (not interface_scope)
+# for the first pass; no runtime consumer yet.
+register(
+    key="tcp.moderate_rcvbuf",
+    module_name=__name__,
+    attr="TCP__MODERATE_RCVBUF",
+    default=TCP__MODERATE_RCVBUF,
+    validator=is_int_in_range("tcp.moderate_rcvbuf", low=0, high=1),
+    description="Linux 'net.ipv4.tcp_moderate_rcvbuf' — enable receive-buffer DRS (0=off, 1=on).",
+)
+register(
+    key="tcp.rmem.min",
+    module_name=__name__,
+    attr="TCP__RMEM__MIN",
+    default=TCP__RMEM__MIN,
+    validator=is_positive_int("tcp.rmem.min"),
+    description="Linux 'net.ipv4.tcp_rmem[0]' — receive-buffer minimum in bytes.",
+)
+register(
+    key="tcp.rmem.default",
+    module_name=__name__,
+    attr="TCP__RMEM__DEFAULT",
+    default=TCP__RMEM__DEFAULT,
+    validator=is_positive_int("tcp.rmem.default"),
+    description="Linux 'net.ipv4.tcp_rmem[1]' — receive-buffer default (unset-rcv_wnd_max seed) in bytes.",
+)
+register(
+    key="tcp.rmem.max",
+    module_name=__name__,
+    attr="TCP__RMEM__MAX",
+    default=TCP__RMEM__MAX,
+    validator=is_positive_int("tcp.rmem.max"),
+    description="Linux 'net.ipv4.tcp_rmem[2]' — receive-buffer maximum (DRS grow clamp) in bytes.",
+)
+register(
+    key="tcp.wmem.min",
+    module_name=__name__,
+    attr="TCP__WMEM__MIN",
+    default=TCP__WMEM__MIN,
+    validator=is_positive_int("tcp.wmem.min"),
+    description="Linux 'net.ipv4.tcp_wmem[0]' — send-buffer minimum in bytes.",
+)
+register(
+    key="tcp.wmem.default",
+    module_name=__name__,
+    attr="TCP__WMEM__DEFAULT",
+    default=TCP__WMEM__DEFAULT,
+    validator=is_positive_int("tcp.wmem.default"),
+    description="Linux 'net.ipv4.tcp_wmem[1]' — send-buffer default (unset-SO_SNDBUF seed) in bytes.",
+)
+register(
+    key="tcp.wmem.max",
+    module_name=__name__,
+    attr="TCP__WMEM__MAX",
+    default=TCP__WMEM__MAX,
+    validator=is_positive_int("tcp.wmem.max"),
+    description="Linux 'net.ipv4.tcp_wmem[2]' — send-buffer maximum (send-autotune grow clamp) in bytes.",
+)
+
+
+def _finalize__rmem_triple_ordered() -> None:
+    """
+    Cross-knob constraint — the 'tcp.rmem' triple must satisfy
+    min <= default <= max. An inverted triple would let the DRS grow
+    clamp ('tcp.rmem.max') sit below the seed ('tcp.rmem.default'), so
+    the grow policy could never raise the window above the seed.
+    """
+
+    rmem_min, rmem_default, rmem_max = (
+        get("tcp.rmem.min"),
+        get("tcp.rmem.default"),
+        get("tcp.rmem.max"),
+    )
+    if not rmem_min <= rmem_default <= rmem_max:
+        raise ValueError(
+            f"sysctl 'tcp.rmem' must satisfy min <= default <= max; got "
+            f"min={rmem_min}, default={rmem_default}, max={rmem_max}.",
+        )
+
+
+def _finalize__wmem_triple_ordered() -> None:
+    """
+    Cross-knob constraint — the 'tcp.wmem' triple must satisfy
+    min <= default <= max. An inverted triple would let the
+    send-autotune grow clamp ('tcp.wmem.max') sit below the seed
+    ('tcp.wmem.default').
+    """
+
+    wmem_min, wmem_default, wmem_max = (
+        get("tcp.wmem.min"),
+        get("tcp.wmem.default"),
+        get("tcp.wmem.max"),
+    )
+    if not wmem_min <= wmem_default <= wmem_max:
+        raise ValueError(
+            f"sysctl 'tcp.wmem' must satisfy min <= default <= max; got "
+            f"min={wmem_min}, default={wmem_default}, max={wmem_max}.",
+        )
+
+
+register_finalize_validator(_finalize__rmem_triple_ordered)
+register_finalize_validator(_finalize__wmem_triple_ordered)
