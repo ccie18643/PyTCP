@@ -62,6 +62,7 @@ from pytcp.runtime.socket import (
     MSG_ERRQUEUE,
     SO_KEEPALIVE,
     SO_LINGER,
+    SO_RCVBUF,
     SOL_SOCKET,
     TCP_CONGESTION,
     TCP_FASTOPEN,
@@ -374,6 +375,15 @@ class TcpSocket(socket):
             # Drives the 3-way close-path branch in 'close()'
             # (graceful FIN / lingering wait / abortive RST).
             self._so_linger_set(value)
+            return
+        if isinstance(value, int) and level == SOL_SOCKET and optname == SO_RCVBUF:
+            self._sol_socket_setsockopt(optname, value)
+            # Propagate a mid-connection SO_RCVBUF change to the live
+            # session grow-only: it may enlarge the advertised receive
+            # window but never shrink it (RFC 9293 §3.8.6.2.1 — a
+            # receiver SHOULD NOT retract the window's right edge).
+            if self._tcp_session is not None:
+                self._tcp_session.grow_rcv_wnd_max(self._effective_rcvbuf())
             return
         if isinstance(value, int) and level == SOL_SOCKET and self._sol_socket_setsockopt(optname, value):
             return

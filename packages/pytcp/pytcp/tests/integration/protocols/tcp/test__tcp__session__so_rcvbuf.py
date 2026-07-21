@@ -39,7 +39,7 @@ pytcp/tests/integration/protocols/tcp/test__tcp__session__so_rcvbuf.py
 ver 3.0.8
 """
 
-from pytcp.runtime.socket import SOCKET__SO_RCVBUF__DEFAULT
+from pytcp.runtime.socket import SO_RCVBUF, SOCKET__SO_RCVBUF__DEFAULT, SOL_SOCKET
 from pytcp.tests.lib.tcp_testcase import TcpTestCase
 
 
@@ -104,4 +104,60 @@ class TestTcpSessionSoRcvbuf(TcpTestCase):
             session._rcv_wnd,
             262144 - 1000,
             msg="The advertised window must be the SO_RCVBUF cap minus buffered bytes.",
+        )
+
+
+class TestTcpSessionSoRcvbufMidConnection(TcpTestCase):
+    """
+    The mid-connection SO_RCVBUF grow-only tests (A3). Raising
+    SO_RCVBUF on an established connection enlarges the advertised
+    receive-window cap; lowering it is a no-op so the window's right
+    edge is never retracted (RFC 9293 §3.8.6.2.1).
+    """
+
+    def test__so_rcvbuf__mid_connection_increase_grows_the_cap(self) -> None:
+        """
+        Ensure raising SO_RCVBUF on an established connection grows
+        the advertised-receive-window cap — the receiver may open its
+        window.
+
+        Reference: RFC 9293 §3.8.6.2.1 (a receiver may enlarge the
+        window).
+        Reference: Linux socket(7) SO_RCVBUF (mid-connection resize).
+        """
+
+        session = self._drive_handshake_to_established(iss=1000, peer_iss=5000)
+        self.assertEqual(
+            session.rcv_wnd_max,
+            SOCKET__SO_RCVBUF__DEFAULT,
+            msg="A connection opened without SO_RCVBUF starts at the default cap.",
+        )
+
+        session._socket.setsockopt(SOL_SOCKET, SO_RCVBUF, 131072)
+
+        self.assertEqual(
+            session.rcv_wnd_max,
+            131072,
+            msg="Raising SO_RCVBUF mid-connection must grow the advertised-window cap.",
+        )
+
+    def test__so_rcvbuf__mid_connection_decrease_does_not_shrink_the_cap(self) -> None:
+        """
+        Ensure lowering SO_RCVBUF on an established connection does
+        NOT shrink the advertised-window cap — a receiver must not
+        retract the window's right edge.
+
+        Reference: RFC 9293 §3.8.6.2.1 (a receiver SHOULD NOT shrink
+        the window / retract the right edge).
+        """
+
+        session = self._drive_handshake_to_established(iss=1000, peer_iss=5000)
+
+        # 32768 < the 65535 default cap — a shrink request.
+        session._socket.setsockopt(SOL_SOCKET, SO_RCVBUF, 32768)
+
+        self.assertEqual(
+            session.rcv_wnd_max,
+            SOCKET__SO_RCVBUF__DEFAULT,
+            msg="Lowering SO_RCVBUF mid-connection must not shrink the advertised-window cap.",
         )

@@ -1015,6 +1015,22 @@ class TcpSession:
 
         self._tcp_nodelay = nodelay
 
+    def grow_rcv_wnd_max(self, new_max: int, /) -> None:
+        """
+        Raise the advertised-receive-window cap when SO_RCVBUF is
+        enlarged on the live session. Mutator surface for a
+        mid-connection 'setsockopt(SOL_SOCKET, SO_RCVBUF)'; the next
+        outbound segment reads the new cap.
+
+        Grow-only: a lowered SO_RCVBUF does not shrink the cap, so the
+        advertised window's right edge is never retracted (RFC 9293
+        §3.8.6.2.1 — a receiver SHOULD NOT shrink the window). The
+        monotonic update is lockless like the sibling 'set_*' mutators
+        — the FSM thread only reads 'rcv_wnd_max', never writes it.
+        """
+
+        self._win.rcv_wnd_max = max(self._win.rcv_wnd_max, new_max)
+
     def set_user_timeout_ms(self, user_timeout_ms: int, /) -> None:
         """
         Set the TCP_USER_TIMEOUT R2-abort budget (milliseconds; 0 =

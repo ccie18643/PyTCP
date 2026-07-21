@@ -113,15 +113,16 @@ was the old "A2b"). Tests: `TestTcpSessionSoRcvbuf` (cap from SO_RCVBUF,
 default unset, window shrinks with occupancy against the sized cap). Harness
 `_make_active_session` gained a `so_rcvbuf=` param.
 
-### A3 — mid-connection SO_RCVBUF change (harder / optional)
-- RFC 9293 §3.8.6.2.1: a receiver **SHOULD NOT** shrink the window (retract
-  the right edge). If SO_RCVBUF is *lowered* mid-connection, the cap must
-  not instantly retract the advertised right edge — let it take effect only
-  as the buffer drains ("cap grows freely; shrinks only via occupancy").
-- **Recommendation:** land A1+A2 first with the documented limitation
-  "`SO_RCVBUF` is honoured from the value set before `connect()`/`listen()`;
-  a mid-connection change grows the window but never retracts it." Treat A3
-  as an optional refinement.
+### A3 — mid-connection SO_RCVBUF change
+
+**DONE** (commit pending). A mid-connection `setsockopt(SO_RCVBUF)` on a
+`TcpSocket` with a live session now propagates to
+`TcpSession.grow_rcv_wnd_max(_effective_rcvbuf())`, which raises
+`rcv_wnd_max` **grow-only** — a lowered `SO_RCVBUF` is a no-op, so the
+advertised window's right edge is never retracted (RFC 9293 §3.8.6.2.1). The
+update is a lockless monotonic `max()` like the sibling `set_*` mutators (the
+FSM thread only reads `rcv_wnd_max`). Tests: `TestTcpSessionSoRcvbufMidConnection`
+(raise grows the cap; lower is a no-op). **Track A is complete.**
 
 ## 4. Track B — `SO_SNDBUF` → send-buffer backpressure
 
