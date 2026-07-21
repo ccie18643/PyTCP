@@ -455,6 +455,28 @@ feeds the same `_tx_buffer` path; a non-`None`
 `address` is rejected with `EISCONN` (a destination
 is invalid on a connected stream socket).
 
+**Send-buffer flow control (SO_SNDBUF backpressure).**
+`TcpSession._charge_tx_buffer` bounds the TX-buffer
+occupancy (`len(_tx.buffer)`) by the owning socket's
+effective `SO_SNDBUF` before appending, with TCP
+byte-stream (partial-write) semantics rather than the
+datagram all-or-nothing rule: a write into an empty
+buffer is accepted whole (a single send larger than
+`SO_SNDBUF` still proceeds); a write into a partly-full
+buffer accepts only the fitting prefix and returns that
+short count; a full buffer blocks a blocking socket on
+the socket's send-buffer condition (up to `SO_SNDTIMEO`)
+or raises `BlockingIOError(EAGAIN)` on a non-blocking
+socket. Occupancy is measured directly from the TX
+buffer — the same buffer the cum-ACK drain
+(`tcp__session__ack.py`) shrinks — so a cumulative ACK
+that frees space wakes a blocked writer via
+`_wake_sndbuf_waiters()`; `close()` / `shutdown(SHUT_WR)`
+and the terminal CLOSED transition wake it too, so it
+surfaces a closing error instead of hanging. Mirrors
+Linux `tcp_sendmsg` send-buffer backpressure; `getsockopt
+(SO_SNDBUF)` reports the effective bound.
+
 ### §3.10.3 RECEIVE Call
 
 **Adherence:** met. `recv` consumes from
@@ -557,6 +579,7 @@ locations:
 | §3.8.6.2 SWS                        | window tests                                             |
 | §3.8.6.3 Delayed ACK                | data_transfer__recv tests                                |
 | §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
+| §3.10.2 SEND / SO_SNDBUF backpressure | `test__tcp__session__so_sndbuf.py` (partial-write, non-blocking EAGAIN, oversized-into-empty, getsockopt parity, ACK-drain wake, close wake) |
 | §3.10.7 Per-state SEGMENT ARRIVES   | per-state test files                                     |
 | §3.10.8 Timeouts                    | RTO + persist + keep-alive + TIME-WAIT tests             |
 

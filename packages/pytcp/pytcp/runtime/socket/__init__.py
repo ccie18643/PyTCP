@@ -1504,6 +1504,19 @@ class socket(ABC):
             self._snd_outstanding = max(0, self._snd_outstanding - nbytes)
             self._snd_buf_cond.notify_all()
 
+    def _wake_sndbuf_waiters(self) -> None:
+        """
+        Wake every sender blocked on the send-buffer condition without
+        touching the '_snd_outstanding' datagram counter. The TCP
+        send-buffer gate measures occupancy directly from the session
+        TX buffer (not '_snd_outstanding'), so the cum-ACK drain and
+        the close path release blocked writers through this notify-only
+        hook rather than '_release_sndbuf'.
+        """
+
+        with self._snd_buf_cond:
+            self._snd_buf_cond.notify_all()
+
     def _effective_ip_ecn(self) -> int:
         """
         Get the effective ECN bits (low 2 bits of IP_TOS / IPV6_TCLASS)

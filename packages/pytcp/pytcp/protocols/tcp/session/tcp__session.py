@@ -34,6 +34,8 @@ ver 3.0.8
 
 from __future__ import annotations
 
+import errno
+import os
 import threading
 import time
 from typing import TYPE_CHECKING, override
@@ -1178,18 +1180,71 @@ class TcpSession:
         if self._closing or self._shut.wr:
             raise TcpSessionError("TCP session is closing")
 
-        if self._state in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
-            with self._lock__tx_buffer:
-                self._tx.buffer.extend(data)
-            # Kick the FSM pump OUTSIDE '_lock__tx_buffer' (the
-            # 'tcp_fsm' lock order is _lock__fsm -> _lock__tx_buffer;
-            # taking _lock__fsm while holding _lock__tx_buffer here
-            # would invert it and deadlock).
-            self._kick_pump()
-            return len(data)
+        if self._state not in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+            # This error should be raised when session is locally or fully closed.
+            raise TcpSessionError("TCP session not in ESTABLISHED or CLOSE_WAIT state")
 
-        # This error should be raised when session is locally or fully closed.
-        raise TcpSessionError("TCP session not in ESTABLISHED or CLOSE_WAIT state")
+        if not data:
+            return 0
+
+        accepted = self._charge_tx_buffer(data)
+        # Kick the FSM pump OUTSIDE '_lock__tx_buffer' / the
+        # send-buffer condition (the 'tcp_fsm' lock order is
+        # _lock__fsm -> _lock__tx_buffer; taking _lock__fsm while
+        # holding _lock__tx_buffer here would invert it and deadlock).
+        self._kick_pump()
+        return accepted
+
+    def _charge_tx_buffer(self, data: bytes, /) -> int:
+        """
+        Charge 'data' against the owning socket's SO_SNDBUF and append
+        the accepted prefix to the TX buffer, returning the number of
+        bytes accepted. Bounds the send buffer's occupancy by SO_SNDBUF
+        with TCP byte-stream (partial-write) semantics (RFC 9293 §3.9
+        SEND; Linux 'tcp_sendmsg' send-buffer backpressure):
+
+        - buffer empty -> the whole write is accepted, so a single
+          send() larger than SO_SNDBUF still goes out (mirrors the
+          datagram 'nothing-outstanding-is-always-allowed' rule);
+        - room available -> the fitting prefix is accepted (partial
+          write) and the caller re-sends the remainder;
+        - buffer full -> a non-blocking socket (and no SO_SNDTIMEO)
+          raises 'BlockingIOError(EAGAIN)'; a blocking socket waits on
+          the send-buffer condition (woken by the cum-ACK drain or the
+          close path) up to SO_SNDTIMEO, raising 'BlockingIOError(EAGAIN)'
+          on timeout.
+
+        Occupancy is measured directly from 'len(self._tx.buffer)' —
+        the authoritative send-buffer size the ACK drain and the TFO
+        pre-load both update — so there is no parallel counter to
+        reconcile; only the socket's send-buffer condition machinery is
+        reused. The writer holds the condition across the occupancy
+        read and the atomic 'wait()', so a concurrent drain/close notify
+        (which also takes the condition) cannot slip in between and be
+        lost.
+        """
+
+        socket = self._socket
+        cond = socket._snd_buf_cond
+        with cond:
+            while True:
+                # Re-validate on every wake: a close / shutdown / reset
+                # that fired while the writer was parked must surface as
+                # a closing error rather than queue late data.
+                if self._closing or self._shut.wr or self._state not in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+                    raise TcpSessionError("TCP session is closing")
+                bound = socket._effective_sndbuf()
+                with self._lock__tx_buffer:
+                    occupancy = len(self._tx.buffer)
+                    room = bound - occupancy
+                    if occupancy == 0 or room > 0:
+                        accepted = len(data) if occupancy == 0 else min(len(data), room)
+                        self._tx.buffer.extend(data[:accepted])
+                        return accepted
+                if socket._so_sndtimeo is None and not socket._blocking:
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+                if not cond.wait(timeout=socket._so_sndtimeo):
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
 
     def receive(self, *, byte_count: int | None = None, timeout: float | None = None) -> bytes:
         """
@@ -1251,6 +1306,10 @@ class TcpSession:
         )
 
         self.tcp_fsm(syscall=SysCall.CLOSE)
+        # RFC 9293 §3.10.6: a CLOSE forbids further SEND. Wake any
+        # writer blocked in the SO_SNDBUF gate so it observes the
+        # closing state and errors rather than queueing late data.
+        self._socket._wake_sndbuf_waiters()
 
     def shutdown(self, *, how: int) -> None:
         """
@@ -1474,6 +1533,11 @@ class TcpSession:
             # close-complete event (SO_LINGER {l_onoff=1,
             # l_linger>0}).
             self._event__closed.set()
+            # RFC 9293 §3.9 SEND backpressure: the connection is gone,
+            # so release any writer blocked in the SO_SNDBUF gate; it
+            # re-checks the (now non-writable) state and surfaces a
+            # closing error instead of hanging on a dead session.
+            self._socket._wake_sndbuf_waiters()
             stack.sockets.unregister(self._socket)
             # Cancel every per-session logical timer and release
             # the coalesced service handle so nothing fires

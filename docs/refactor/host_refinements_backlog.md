@@ -333,12 +333,17 @@ self._signal_readable()
   breaking change (the examples already bind first), so no `examples/` update
   was needed. Tests: `test__tcp_socket__listen_unbound_autobinds_ephemeral_port`
   + `test__tcp_socket__listen_bound_keeps_port_and_does_not_repick`.
-- **In progress — TCP `SO_SNDBUF` / `SO_RCVBUF` buffer accounting.** Scoped
+- **Tier-1 DONE — TCP `SO_SNDBUF` / `SO_RCVBUF` buffer accounting.** Scoped
   in `docs/refactor/tcp_buffer_accounting.md` (Tracks A / B, phased). TCP has
   its own buffering model — the send buffer is the retransmit queue (released
   on ACK, not wire-write), and `RCV.WND` is already buffer-derived — so this
-  is a distinct feature from the datagram counter, not a fold-in. Scoped as
-  **Tiers 1–2** (honour the options + scaled windows + parity polish; medium).
+  is a distinct feature from the datagram counter, not a fold-in. **Track A
+  (SO_RCVBUF → advertised receive window, A1–A3) and Track B (SO_SNDBUF →
+  send-buffer backpressure with partial-write, B1–B3) have shipped**
+  (`test__tcp__session__so_rcvbuf.py`, `test__tcp__session__so_sndbuf.py`).
+  **Tier-2** parity polish (Linux-style larger static defaults, 2× doubling,
+  the `tcp_rmem`/`tcp_wmem` sysctl set, `SO_*BUFFORCE`) remains, per
+  `tcp_buffer_accounting.md` §7.
 
 ### R-autotune — TCP send/receive buffer auto-tuning (Tier 3, large, separate)
 

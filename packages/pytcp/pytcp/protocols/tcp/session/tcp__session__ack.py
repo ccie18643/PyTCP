@@ -739,6 +739,12 @@ class TcpAckProcessor:
         # Purge acked data from TX buffer.
         with session._lock__tx_buffer:
             session._tx.drain(bytes_count=session._tx_buffer_una)
+        # RFC 9293 §3.9 SEND backpressure: the cum-ACK just freed
+        # send-buffer space, so wake any writer blocked in the
+        # SO_SNDBUF gate. The notify is independent of '_lock__fsm' /
+        # '_lock__tx_buffer' (both released here), so it cannot invert
+        # the lock order.
+        session._socket._wake_sndbuf_waiters()
         __debug__ and log(
             "tcp-ss",
             f"[{session}] - Purged TX buffer up to SEQ {session._snd_seq.una}",

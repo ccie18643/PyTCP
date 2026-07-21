@@ -1,8 +1,10 @@
 # TCP `SO_SNDBUF` / `SO_RCVBUF` — buffer accounting scoping
 
-Status: **scoping** (no code yet). Track: the last open item of the
-host-refinements backlog (`docs/refactor/host_refinements_backlog.md`).
-None of this blocks a 3.0.8 release.
+Status: **Tier-1 complete** (Track A A1–A3 + Track B B1–B3 shipped). Track:
+the last open item of the host-refinements backlog
+(`docs/refactor/host_refinements_backlog.md`). Tier-2 parity polish and the
+separately-tracked Tier-3 auto-tuning (§7) remain. None of this blocks a
+3.0.8 release.
 
 ## 1. Summary
 
@@ -130,14 +132,37 @@ Goal: bound `_tx.buffer` occupancy by `SO_SNDBUF`; a `send()` that would
 overflow blocks (up to `SO_SNDTIMEO`) or does a partial / `EAGAIN` write.
 
 ### B1 — release wiring from the cum-ACK drain (small–medium)
-- On the ACK drain (`ack.py:741`), after `self._tx.drain(...)`, release the
-  drained payload byte count on the owning socket's send-buffer counter
-  (`_release_sndbuf` / `_snd_buf_cond.notify_all`). Route session→socket via
-  `session._socket`. Inversion-safe (condition independent of `_lock__fsm`).
-- Charge counterpart lands in B2; B1 alone is inert (nothing charges yet),
-  so B1+B2 are effectively one commit or B1 folds into B2.
+
+**DONE** (folded into the B2 commit). After the cum-ACK drain
+(`tcp__session__ack.py`), the session calls
+`self._socket._wake_sndbuf_waiters()` — a **notify-only** hook added to the
+socket base class that does `with _snd_buf_cond: notify_all()` WITHOUT
+touching the `_snd_outstanding` datagram counter. Per the §6 locked
+decision, TCP occupancy is measured directly from `len(_tx.buffer)`, so
+there is no counter to decrement on release — only the blocked-writer wake.
+Inversion-safe (the condition is independent of `_lock__fsm` /
+`_lock__tx_buffer`, both released before the notify). The same hook is
+called from the terminal CLOSED transition (`_change_state`), covering
+abort / peer-RST, and from `close()` / `shutdown(SHUT_WR)`.
 
 ### B2 — the send gate + partial-write semantics (medium, the meat)
+
+**DONE.** `TcpSession._charge_tx_buffer(data)` is the gate: under the
+socket's `_snd_buf_cond` it re-checks liveness, measures
+`occupancy = len(_tx.buffer)` under `_lock__tx_buffer`, and — buffer empty →
+accept whole (single write > SO_SNDBUF still proceeds); room > 0 → accept the
+fitting prefix (partial write, returns short count); buffer full → EAGAIN
+(non-blocking, no SO_SNDTIMEO) or wait on the condition up to SO_SNDTIMEO
+(blocking) then EAGAIN. The writer holds the condition across the occupancy
+read and the atomic `wait()`, so a concurrent drain/close notify cannot be
+lost (textbook CV usage). `TcpSession.send` early-returns 0 on empty data,
+else delegates to the gate and kicks the pump outside the locks.
+`getsockopt(SO_SNDBUF)` already reports the effective value (A1). Tests:
+`test__tcp__session__so_sndbuf.py` — partial-write, non-blocking EAGAIN,
+oversized-into-empty, getsockopt parity, ACK-drain wake (threaded),
+close wake (threaded). **B3 rides along** (see below).
+
+### B2 (original plan text, retained for reference) — the send gate + partial-write semantics
 - Gate `TcpSession.send` (or `TcpSocket.send`) by `_so_sndbuf` against
   current buffer occupancy (`len(self._tx.buffer)`), charging `len(data)`.
 - **TCP byte-stream semantics differ from datagram all-or-nothing:**
@@ -165,10 +190,15 @@ overflow blocks (up to `SO_SNDTIMEO`) or does a partial / `EAGAIN` write.
   blocked writer.
 
 ### B3 — TFO pre-load reconciliation (small)
-- `preload_tx_buffer` (`tcp__session.py:1053`) also fills the buffer; ensure
-  its bytes are accounted the same way (charge on preload, released on the
-  same ACK drain). Likely automatic if occupancy is measured from
-  `len(self._tx.buffer)`.
+
+**DONE (automatic).** As predicted, measuring occupancy from
+`len(self._tx.buffer)` makes TFO pre-load self-accounting: `preload_tx_buffer`
+writes the same buffer, so its bytes count toward the gate's occupancy and are
+released on the same cum-ACK drain. No separate charge/release path was needed.
+
+**Track B is complete.** All three tracks (A1–A3, B1–B3) of this
+backlog item have landed; only the Tier-2 parity polish and the
+separately-tracked Tier-3 auto-tuning remain (§7).
 
 ## 5. Recommended ordering &amp; risk
 
