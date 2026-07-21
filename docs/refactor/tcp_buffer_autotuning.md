@@ -267,6 +267,15 @@ on ACK processing, when SO_SNDBUF unset and cwnd is growing:
 
 ### S1 — the auto bound + `_effective_sndbuf` integration (small)
 
+**DONE.** `_sndbuf_auto: int` on the socket base
+(`runtime/socket/__init__.py`, init 0), grown grow-only via the named
+mutator `_grow_sndbuf_auto(target)` (single-writer, no lock).
+`_effective_sndbuf()` returns `_so_sndbuf` when set, else
+`max(SOCKET__SO_SNDBUF__DEFAULT, _sndbuf_auto)` — datagram sockets keep
+`_sndbuf_auto == 0` so their bound is unchanged.
+
+Original plan text:
+
 - Add `_sndbuf_auto: int = 0` on the socket base
   (`runtime/socket/__init__.py`, near `_so_sndbuf`), a grow-only value
   written by the RX/ACK thread and read by the app thread.
@@ -277,6 +286,23 @@ on ACK processing, when SO_SNDBUF unset and cwnd is growing:
   more data on the next wake with **zero** new wiring in the gate.
 
 ### S2 — the expand policy + trigger (small–medium, the meat)
+
+**DONE.** `TcpSession._maybe_expand_sndbuf()` computes
+`2 * max(INITIAL_WINDOW_FACTOR * snd_mss, cwnd)` (RFC 6928 IW floor,
+`per_mss = snd_mss` per the locked no-overhead deviation, `reordering+1`
+term omitted as IW-dominated), clamps at live `tcp__constants.TCP__WMEM__MAX`
+(qualified-module read = current sysctl value), and calls
+`_grow_sndbuf_auto`; a no-op when `_so_sndbuf is not None`
+(SOCK_SNDBUF_LOCK) or `snd_mss <= 0`. Triggered from
+`tcp__session__ack.py` phase 5, right after `_wake_sndbuf_waiters()` —
+cwnd is already grown in phase 1, so the bound tracks the current window.
+Tests: `test__tcp__session__sndbuf_autotune.py` (ACK grows the bound,
+`_effective_sndbuf` reflects it, `tcp.wmem.max` clamp, grow-only, explicit
+SO_SNDBUF freezes it). Note: auto-tuning correctly fires on the handshake
+ACK too, so a mid-connection `SO_SNDBUF` freezes the *already-grown* bound
+rather than a zero one.
+
+Original plan text:
 
 - New `TcpSession._maybe_expand_sndbuf()`: implement §5's target; write
   `self._socket._sndbuf_auto = max(self._socket._sndbuf_auto,
@@ -460,7 +486,12 @@ CLAUDE.md "Linux as tiebreaker" precedence.
    consumer yet. Tests: `test__tcp__constants.py`.
 2. **S1 + S2** (send auto-tuning) — smaller track, exercises the sysctl
    clamp and the ACK-path trigger with low risk (grow-only widening of an
-   existing gate).
+   existing gate). **DONE** — `_sndbuf_auto` + `_grow_sndbuf_auto` on the
+   socket, `_effective_sndbuf` widened, `TcpSession._maybe_expand_sndbuf`
+   fired from the phase-5 ACK path. Observable now via `_sndbuf_auto` and
+   (for cwnd whose 2× exceeds the 208 KiB default) `_effective_sndbuf`;
+   fully observable once step 5 lands the small default. Tests:
+   `test__tcp__session__sndbuf_autotune.py`.
 3. **R1** (receiver RTT estimator) — the DRS prerequisite; self-contained,
    unit-testable in isolation.
 4. **R2 + R3 + R4** (DRS struct, trigger, grow policy) — the large piece;

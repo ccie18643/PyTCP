@@ -745,6 +745,10 @@ class TcpAckProcessor:
         # '_lock__tx_buffer' (both released here), so it cannot invert
         # the lock order.
         session._socket._wake_sndbuf_waiters()
+        # Linux 'tcp_sndbuf_expand': phase 1 may have grown cwnd, so
+        # grow the auto-tuning send-buffer bound to track it (Tier-3
+        # Track S). No-op when SO_SNDBUF is set (SOCK_SNDBUF_LOCK).
+        session._maybe_expand_sndbuf()
         __debug__ and log(
             "tcp-ss",
             f"[{session}] - Purged TX buffer up to SEQ {session._snd_seq.una}",

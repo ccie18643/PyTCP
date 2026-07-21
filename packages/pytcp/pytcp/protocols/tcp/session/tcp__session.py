@@ -69,7 +69,7 @@ from pytcp.protocols.tcp.state.tcp__state__shutdown import ShutdownState
 from pytcp.protocols.tcp.state.tcp__state__timestamps import TimestampsState
 from pytcp.protocols.tcp.state.tcp__state__tx_buffer import TxBufferState
 from pytcp.protocols.tcp.state.tcp__state__window import WindowState
-from pytcp.protocols.tcp.tcp__cwnd import compute_ecn_event_ssthresh
+from pytcp.protocols.tcp.tcp__cwnd import INITIAL_WINDOW_FACTOR, compute_ecn_event_ssthresh
 from pytcp.protocols.tcp.tcp__enums import (
     CcMode,
     ConnError,
@@ -1245,6 +1245,33 @@ class TcpSession:
                     raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
                 if not cond.wait(timeout=socket._so_sndtimeo):
                     raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+
+    def _maybe_expand_sndbuf(self) -> None:
+        """
+        Grow the auto-tuning send-buffer bound to track the congestion
+        window (Tier-3 Track S, mirroring Linux 'tcp_sndbuf_expand').
+        Called from the inbound-ACK path after cwnd growth: the target
+        is two windows of data — '2 * max(IW, cwnd)' — floored at the
+        RFC 6928 initial window so a small-cwnd connection still queues
+        usefully, and clamped at 'tcp.wmem.max'. 'per_mss' is the bare
+        MSS (no skb-truesize overhead — the same no-2x / no-overhead
+        deviation locked for Tier-1); the Linux 'reordering + 1' term is
+        omitted (dominated by IW = 10 in practice).
+
+        A no-op when the application set SO_SNDBUF explicitly
+        (SOCK_SNDBUF_LOCK disables auto-tuning) or before the MSS is
+        known. The grow-only store lives on the socket; only the RX/ACK
+        thread writes it, so no lock is taken.
+        """
+
+        socket = self._socket
+        if socket._so_sndbuf is not None:
+            return
+        smss = self._win.snd_mss
+        if smss <= 0:
+            return
+        target = 2 * max(INITIAL_WINDOW_FACTOR * smss, self._cc.cwnd)
+        socket._grow_sndbuf_auto(min(target, tcp__constants.TCP__WMEM__MAX))
 
     def receive(self, *, byte_count: int | None = None, timeout: float | None = None) -> bytes:
         """

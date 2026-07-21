@@ -599,6 +599,11 @@ class socket(ABC):
     # datagram's TX completes.
     _snd_outstanding: int
     _snd_buf_cond: threading.Condition
+    # TCP send-buffer auto-tuning bound (Tier-3 Track S). Grow-only;
+    # written by the owning TcpSession on the RX/ACK thread, read by the
+    # app thread via '_effective_sndbuf()'. Stays 0 for datagram sockets
+    # (no auto-tuning), so their effective bound is the static default.
+    _sndbuf_auto: int
     _ip_ttl: int | None
     _ip_multicast_ttl: int | None
     _ip_multicast_loop: bool
@@ -673,6 +678,7 @@ class socket(ABC):
         self._so_sndtimeo = None
         self._snd_outstanding = 0
         self._snd_buf_cond = threading.Condition()
+        self._sndbuf_auto = 0
         self._ip_ttl = None
         self._ip_multicast_ttl = None
         # Linux IP_MULTICAST_LOOP defaults on; PyTCP has no local
@@ -1443,14 +1449,29 @@ class socket(ABC):
 
     def _effective_sndbuf(self) -> int:
         """
-        Get the SO_SNDBUF send-buffer bound: the value the
-        application set, else the 'SOCKET__SO_SNDBUF__DEFAULT'
-        stand-in for Linux 'net.core.wmem_default'. PyTCP does not
-        apply Linux's 2x doubling of the requested value — the bound
-        is the value as set.
+        Get the SO_SNDBUF send-buffer bound. An explicit application
+        value (SOCK_SNDBUF_LOCK) always wins and pins the bound. When
+        unset, the bound is the larger of the 'SOCKET__SO_SNDBUF__DEFAULT'
+        stand-in (Linux 'net.core.wmem_default') and the TCP
+        auto-tuning bound '_sndbuf_auto' (Tier-3 Track S; 0 for
+        datagram sockets, so their bound is the static default). PyTCP
+        does not apply Linux's 2x doubling of the requested value.
         """
 
-        return self._so_sndbuf if self._so_sndbuf is not None else SOCKET__SO_SNDBUF__DEFAULT
+        if self._so_sndbuf is not None:
+            return self._so_sndbuf
+        return max(SOCKET__SO_SNDBUF__DEFAULT, self._sndbuf_auto)
+
+    def _grow_sndbuf_auto(self, target: int, /) -> None:
+        """
+        Raise the auto-tuning send-buffer bound to 'target', grow-only
+        (a lower target is a no-op). Called by the owning TcpSession's
+        send-buffer expand policy on the RX/ACK thread; the app thread
+        only reads '_sndbuf_auto' via '_effective_sndbuf()', so the
+        single-writer 'max()' needs no lock.
+        """
+
+        self._sndbuf_auto = max(self._sndbuf_auto, target)
 
     def _effective_rcvbuf(self) -> int:
         """
