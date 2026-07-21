@@ -358,6 +358,14 @@ self._signal_readable()
   the `SO_*BUF` options to work. **Global memory-pressure accounting
   (`tcp_mem`) is a documented non-goal** (kernel-memory management a
   userspace stack does not own).
+- **Full implementation plan scoped:** `docs/refactor/tcp_buffer_autotuning.md`
+  — Track R (receive DRS: R1 receiver-RTT estimator → R2 `RcvSpaceState` →
+  R3 trigger → R4 grow policy) and Track S (send auto-tuning: S1 auto bound →
+  S2 expand policy), both actuators reusing the shipped Tier-1 primitives
+  (`grow_rcv_wnd_max`, the `_effective_sndbuf()` gate). Registers the Tier-2
+  `tcp.rmem`/`tcp.wmem` triples + `tcp.moderate_rcvbuf`; the load-bearing
+  decision is pairing Track S with a small initial send default (§2/§7). No
+  code yet.
 
 ### R4 — IPv6 per-socket source filters = MLDv2 SSM track — DONE (P1-P5 shipped)
 
