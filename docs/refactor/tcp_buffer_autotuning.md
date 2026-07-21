@@ -377,6 +377,24 @@ row.
 
 ## 9. Testing strategy
 
+**Tests-first / RED discipline (mandatory,
+`feature_implementation.md` §2).** Every numbered phase opens with the
+failing test(s) that pin the behaviour, run BEFORE the implementation,
+and **verified to fail for the predicted reason** — not merely to fail.
+The predicted pre-implementation failure mode is stated per case below so
+the RED step is auditable (mirroring Track B, where 4 of 6 cases were red
+pre-impl for their predicted reasons). The two companion cases that pass
+pre-impl (a getsockopt-parity read, an unset-default read) are noted as
+such; a case that passes before the code exists is not pinning that
+code and must be re-examined. Each test file passes the §7.2
+docstring-audit; docstrings open `Ensure …` and carry the trailing
+`Reference:` line (RFC 9293 §3.8.6 for the window envelope, plus a
+`PyTCP test infrastructure (no RFC clause).` fallback where the behaviour
+is a Linux-default with no RFC clause). Layer per
+`feature_implementation.md` §2.1: R1's estimator EWMA is a candidate for
+an added unit test on the pure update function; everything else is
+integration (FSM + wire-level).
+
 Integration (`TcpTestCase`), mirroring `test__tcp__session__so_rcvbuf.py`
 / `test__tcp__session__so_sndbuf.py`:
 
@@ -384,22 +402,43 @@ Integration (`TcpTestCase`), mirroring `test__tcp__session__so_rcvbuf.py`
   - Receiver RTT estimator (R1): drive inbound data segments carrying
     TSecr echoing our TSval; assert `_rcv_rtt.rtt_ms` converges (EWMA) —
     pure state test, no wall clock (`FakeTimer` + injected `now_ms`).
+    *RED:* pre-impl `_rcv_rtt` does not exist / `rtt_ms` stays `None`
+    (`AttributeError` or unchanged-`None` assert).
   - DRS grow (R4): establish with timestamps, feed a full BDP of data +
     app drains, advance one receiver-RTT, assert `rcv_wnd_max` grew per
     the formula and the advertised window (`_rcv_wnd >> rcv_wsc`) widened.
-  - Clamp: assert the grow saturates at `tcp.rmem.max`.
+    *RED:* pre-impl `rcv_wnd_max` stays at the 65535 seed (no grow policy
+    wired) — the assert on the grown value fails.
+  - Clamp: assert the grow saturates at `tcp.rmem.max`. *RED:* pre-impl
+    no grow at all, so the saturation value is never reached.
   - Lock: set `SO_RCVBUF` explicitly, replay the same load, assert
-    `rcv_wnd_max` does **not** move (DRS disabled).
+    `rcv_wnd_max` does **not** move (DRS disabled). *Passes pre-impl*
+    (nothing grows it yet) — a regression guard that only bites once R4
+    lands, so it MUST be paired with the grow test in the same commit or
+    it pins nothing.
   - Cadence: two adjusts within one RTT collapse to one measurement.
+    *RED:* pre-impl there is no adjust to collapse — assert the single
+    measurement fails once R3 exists but over-fires.
 - **Track S:**
   - Expand (S2): drive ACKs that grow cwnd, assert `_effective_sndbuf()`
     rises to `2*cwnd*snd_mss` (with the small-default switch active) and
-    saturates at `tcp.wmem.max`.
+    saturates at `tcp.wmem.max`. *RED:* pre-impl `_effective_sndbuf()`
+    returns the static default regardless of cwnd — the assert on the
+    grown bound fails.
   - A blocked `_charge_tx_buffer` writer is admitted after an ACK both
     drains *and* expands the bound (compose with the Tier-1 wake test).
+    *RED:* pre-impl the writer is admitted only by the drain, not the
+    expand — assert it is admitted by the expand alone (buffer not yet
+    drained) fails.
   - Lock: explicit `SO_SNDBUF` freezes the bound across cwnd growth.
-- **Sysctl:** `tcp.moderate_rcvbuf=0` disables DRS entirely; the
-  `min<=default<=max` finalize validator rejects a bad triple.
+    *Passes pre-impl* — regression guard, pair with the expand test.
+- **Sysctl:** `tcp.moderate_rcvbuf=0` disables DRS entirely (*RED* once
+  R4 exists: the grow that fires with the knob on must not fire with it
+  off); the `min<=default<=max` finalize validator rejects a bad triple
+  (*RED* pre-impl: no validator registered, the bad triple is accepted).
+
+Every phase's RED run is captured in the commit body ("N red pre-impl for
+<reason>, M companion guards green"), matching the Track B commit.
 
 Adherence: refresh `docs/rfc/tcp/rfc9293__tcp/adherence.md` §3.8.6
 (managing the window) and §3.10.2 (SEND) with the auto-tuning behaviour;
