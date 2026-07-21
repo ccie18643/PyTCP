@@ -562,6 +562,14 @@ INADDR_NONE: int = 0xFFFFFFFF
 # SO_SNDBUF or bursts faster than the wire drains meets the bound.
 SOCKET__SO_SNDBUF__DEFAULT: int = 212992
 
+# Default per-socket receive-buffer size when SO_RCVBUF is unset. Kept
+# conservative at the historical TCP receive-window cap (65535) so
+# wiring it into the TCP advertised window and datagram RX-drop cap
+# changes no behaviour for a socket that never sets SO_RCVBUF; adopting
+# a larger Linux 'net.core.rmem_default'-style default is a follow-on
+# (see docs/refactor/tcp_buffer_accounting.md §7, Tier 2).
+SOCKET__SO_RCVBUF__DEFAULT: int = 65535
+
 
 class socket(ABC):
     """
@@ -1444,6 +1452,17 @@ class socket(ABC):
 
         return self._so_sndbuf if self._so_sndbuf is not None else SOCKET__SO_SNDBUF__DEFAULT
 
+    def _effective_rcvbuf(self) -> int:
+        """
+        Get the SO_RCVBUF receive-buffer size: the value the
+        application set, else the 'SOCKET__SO_RCVBUF__DEFAULT'
+        stand-in for Linux 'net.core.rmem_default'. The TCP advertised
+        receive window and the datagram RX-drop cap derive from this;
+        PyTCP does not apply Linux's 2x doubling of the requested value.
+        """
+
+        return self._so_rcvbuf if self._so_rcvbuf is not None else SOCKET__SO_RCVBUF__DEFAULT
+
     def _charge_sndbuf(self, nbytes: int, /) -> None:
         """
         Reserve 'nbytes' of send-buffer space before queueing a
@@ -1573,9 +1592,9 @@ class socket(ABC):
             case _ if optname == SO_BROADCAST:
                 return int(self._so_broadcast)
             case _ if optname == SO_SNDBUF:
-                return self._so_sndbuf or 0
+                return self._effective_sndbuf()
             case _ if optname == SO_RCVBUF:
-                return self._so_rcvbuf or 0
+                return self._effective_rcvbuf()
             case _ if optname == SO_RCVTIMEO:
                 return self._so_rcvtimeo or 0.0
             case _ if optname == SO_SNDTIMEO:

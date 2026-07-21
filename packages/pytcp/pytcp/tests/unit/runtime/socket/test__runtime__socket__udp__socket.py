@@ -2095,6 +2095,26 @@ class TestUdpSocketSolSocketOptions(_UdpSocketTestCase):
             msg="SO_RCVBUF must round-trip the configured value.",
         )
 
+    def test__udp_socket__so_rcvbuf_getsockopt_reports_default_when_unset(self) -> None:
+        """
+        Ensure getsockopt(SO_RCVBUF) reports the effective default
+        receive-buffer size on a socket that never set it, rather
+        than 0 — Linux getsockopt never reports a zero buffer.
+
+        Reference: Linux socket(7) SO_RCVBUF (getsockopt returns the
+        effective buffer size, not 0).
+        """
+
+        from pytcp.runtime.socket import SOCKET__SO_RCVBUF__DEFAULT
+
+        s = UdpSocket(family=AddressFamily.INET4)
+
+        self.assertEqual(
+            s.getsockopt(SOL_SOCKET, SO_RCVBUF),
+            SOCKET__SO_RCVBUF__DEFAULT,
+            msg="An unset SO_RCVBUF must getsockopt as the effective default, not 0.",
+        )
+
     def test__udp_socket__ip_ttl_round_trip(self) -> None:
         """
         Ensure setsockopt(IPPROTO_IP, IP_TTL, 32) round-trips and
