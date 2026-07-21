@@ -1447,20 +1447,42 @@ class socket(ABC):
 
         return remote_ip_address.is_multicast and self._effective_ip_ttl(remote_ip_address) == 0
 
+    def _default_sndbuf(self) -> int:
+        """
+        Get the unset-SO_SNDBUF send-buffer default. The base value is
+        the 'SOCKET__SO_SNDBUF__DEFAULT' stand-in for Linux
+        'net.core.wmem_default' — the datagram default. 'TcpSocket'
+        overrides this to the operator-tunable 'tcp.wmem.default'
+        (Linux 'tcp_wmem[1]').
+        """
+
+        return SOCKET__SO_SNDBUF__DEFAULT
+
+    def _default_rcvbuf(self) -> int:
+        """
+        Get the unset-SO_RCVBUF receive-buffer default. The base value
+        is the 'SOCKET__SO_RCVBUF__DEFAULT' stand-in for Linux
+        'net.core.rmem_default' — the datagram default. 'TcpSocket'
+        overrides this to the operator-tunable 'tcp.rmem.default'
+        (Linux 'tcp_rmem[1]').
+        """
+
+        return SOCKET__SO_RCVBUF__DEFAULT
+
     def _effective_sndbuf(self) -> int:
         """
         Get the SO_SNDBUF send-buffer bound. An explicit application
         value (SOCK_SNDBUF_LOCK) always wins and pins the bound. When
-        unset, the bound is the larger of the 'SOCKET__SO_SNDBUF__DEFAULT'
-        stand-in (Linux 'net.core.wmem_default') and the TCP
-        auto-tuning bound '_sndbuf_auto' (Tier-3 Track S; 0 for
-        datagram sockets, so their bound is the static default). PyTCP
-        does not apply Linux's 2x doubling of the requested value.
+        unset, the bound is the larger of '_default_sndbuf()' (the
+        per-flavour default — 'net.core.wmem_default' for datagram
+        sockets, 'tcp.wmem.default' for TCP) and the TCP auto-tuning
+        bound '_sndbuf_auto' (Tier-3 Track S; 0 for datagram sockets).
+        PyTCP does not apply Linux's 2x doubling of the requested value.
         """
 
         if self._so_sndbuf is not None:
             return self._so_sndbuf
-        return max(SOCKET__SO_SNDBUF__DEFAULT, self._sndbuf_auto)
+        return max(self._default_sndbuf(), self._sndbuf_auto)
 
     def _grow_sndbuf_auto(self, target: int, /) -> None:
         """
@@ -1476,13 +1498,14 @@ class socket(ABC):
     def _effective_rcvbuf(self) -> int:
         """
         Get the SO_RCVBUF receive-buffer size: the value the
-        application set, else the 'SOCKET__SO_RCVBUF__DEFAULT'
-        stand-in for Linux 'net.core.rmem_default'. The TCP advertised
-        receive window and the datagram RX-drop cap derive from this;
-        PyTCP does not apply Linux's 2x doubling of the requested value.
+        application set, else '_default_rcvbuf()' (the per-flavour
+        default — 'net.core.rmem_default' for datagram sockets,
+        'tcp.rmem.default' for TCP). The TCP advertised receive window
+        and the datagram RX-drop cap derive from this; PyTCP does not
+        apply Linux's 2x doubling of the requested value.
         """
 
-        return self._so_rcvbuf if self._so_rcvbuf is not None else SOCKET__SO_RCVBUF__DEFAULT
+        return self._so_rcvbuf if self._so_rcvbuf is not None else self._default_rcvbuf()
 
     def _charge_sndbuf(self, nbytes: int, /) -> None:
         """

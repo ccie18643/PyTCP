@@ -350,13 +350,17 @@ Original plan text:
   by the same ACK's `_wake_sndbuf_waiters()`, then re-reads the widened
   `_effective_sndbuf()`.
 
-### S3 — pairing with the small initial default (see §2 / §7)
+### S3 — pairing with the initial default (see §2 / §7)
 
-Only meaningful once the Tier-2 `tcp.wmem` triple lands and the unset
-send default drops to `tcp.wmem.default` (small). Until then S2 grows
-only above 208 KiB (near-inert). Land S1/S2 behind the Tier-2 default
-switch, or ship S with the default-switch in the same series so the
-behaviour is observable.
+**Resolved conservatively (step 5).** The unset send floor is now sourced
+from `tcp.wmem.default` (via the `TcpSocket._default_sndbuf()` override),
+but the shipped value stays PyTCP's conservative 208 KiB rather than
+Linux's small 16 KiB. So S2 remains near-inert on the common path (it
+grows only once `2*cwnd*mss` exceeds 208 KiB) — a deliberate trade: no
+per-connection behaviour change, and an operator who wants Linux-style
+small-start-plus-autotune sets `tcp.wmem.default=16384` with no code
+change. Send auto-tuning is fully *functional*; whether it is *visible*
+on a given connection is now an operator knob.
 
 ## 6. Sysctl knobs (registered as part of this work)
 
@@ -381,10 +385,16 @@ means **Track R/S subsumes that slice of Tier-2**. Keep them flat (not
 
 ## 7. Decisions to lock
 
-- **Pair Track S with the small-default switch (§2).** Send auto-tuning
-  against the 208 KiB static default is cosmetic. Ship S2 together with
-  adopting `tcp.wmem.default` as the unset send bound, or the track
-  delivers no observable parity.
+- **Default sourcing over default *value* (§2, revised at step 5).** The
+  original decision was to pair Track S with adopting Linux's *small*
+  send default so auto-tuning is immediately visible. The project instead
+  chose to **keep PyTCP's conservative 208 KiB / 65535 defaults** and
+  only re-source them from `tcp.wmem.default` / `tcp.rmem.default`
+  (operator-tunable). Rationale: zero per-connection behaviour change and
+  no test churn, while still giving the `.default` knobs live consumers —
+  the Linux small-start behaviour is one `sysctl` away with no code.
+  Send auto-tuning is therefore near-inert on the common path by design,
+  not by omission.
 - **DRS is timestamps-gated for the first pass (R1).** The receiver RTT
   estimator uses the RFC 7323 TSecr echo. The no-timestamps
   `tcp_rcv_rtt_measure` fallback is a documented follow-on, not first-pass
@@ -537,10 +547,23 @@ CLAUDE.md "Linux as tiebreaker" precedence.
    `test__tcp__session__drs.py`. **DRS is functionally complete** (still
    inert on the common path until step 5 raises throughput enough to
    grow, but it fires whenever per-RTT throughput exceeds the window).
-5. **The small-default switch** (§2 / §7) — flip the unset `SO_SNDBUF`
-   (and optionally `rcv_wnd_max`) default to the Tier-2 `.default`,
-   making auto-tuning observable. Behaviour-changing → its own deliberate
-   commit with the test-churn it implies.
+5. **The default-sourcing switch** (§2 / §7) — **DONE, but conservative
+   by decision.** Rather than dropping to Linux's *small* initial values
+   (which would have made auto-tuning immediately observable at the cost
+   of changing every unset-buffer connection's start point), the project
+   chose to **keep PyTCP's conservative 65535 / 212992 defaults** and
+   only re-source them from the `tcp.rmem.default` / `tcp.wmem.default`
+   sysctls. A `_default_rcvbuf()` / `_default_sndbuf()` template method
+   on the base socket (generic `net.core.*_default`) is overridden by
+   `TcpSocket` (`tcp_rmem[1]` / `tcp_wmem[1]`), so `_effective_rcvbuf()`
+   / `_effective_sndbuf()` — and thus the `rcv_wnd_max` seed and the TCP
+   send floor — become operator-tunable with **zero behaviour change**
+   (the shipped knob values equal the old constants). This gives the
+   `.default` knobs live consumers and completes the Linux default
+   sourcing; adopting the small values remains available as a pure
+   sysctl override (`sysctl tcp.wmem.default=16384`) with no further
+   code. Tests: `test__tcp__session__buffer_defaults.py`. **No test
+   churn** — values unchanged.
 6. **R0 / no-TS fallback** — optional follow-ons, only if a consumer needs
    >8 MiB windows or DRS on non-timestamped connections.
 

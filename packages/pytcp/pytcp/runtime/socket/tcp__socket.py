@@ -50,6 +50,7 @@ from net_proto.lib.enums import IpProto
 from net_proto.lib.proto_enum import ProtoEnum
 from pytcp import stack
 from pytcp.lib.logger import log
+from pytcp.protocols.tcp import tcp__constants
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import CcMode, FsmState
 from pytcp.protocols.tcp.tcp__errors import TcpSessionError
@@ -285,6 +286,29 @@ class TcpSocket(socket):
         """
 
         return self._parent_socket
+
+    @override
+    def _default_sndbuf(self) -> int:
+        """
+        Get the unset-SO_SNDBUF send-buffer default for TCP: the
+        operator-tunable 'tcp.wmem.default' (Linux 'tcp_wmem[1]'),
+        distinct from the datagram 'net.core.wmem_default'. Read via
+        qualified module access so a runtime sysctl override is picked
+        up live.
+        """
+
+        return tcp__constants.TCP__WMEM__DEFAULT
+
+    @override
+    def _default_rcvbuf(self) -> int:
+        """
+        Get the unset-SO_RCVBUF receive-buffer default for TCP: the
+        operator-tunable 'tcp.rmem.default' (Linux 'tcp_rmem[1]'),
+        distinct from the datagram 'net.core.rmem_default'. Seeds the
+        advertised-window cap ('rcv_wnd_max') at session construction.
+        """
+
+        return tcp__constants.TCP__RMEM__DEFAULT
 
     def status(self) -> TcpStatus:
         """
