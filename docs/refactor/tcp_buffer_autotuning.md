@@ -209,6 +209,23 @@ for a pure receiver.
   timestamps-gated for the first pass (Linux DRS is materially weaker
   without timestamps too).
 
+**R2 + R3 + R4 are DONE** (autotune step 4). `RcvSpaceState`
+(`state/tcp__state__rcv_space.py`: `space` / `copied_anchor` / `time_ms`)
++ `self._rcv_copied_total` bumped in `receive()`; `_rcv_space.space`
+seeded from `rcv_wnd_max` at construction.
+`TcpSession._maybe_adjust_rcv_space()` runs from `receive()` after the
+drain: gates on `_rcv_rtt.rtt_ms` present and one RTT elapsed, computes
+`2*copied + 16*advmss` + the sender-rate term, clamps at
+`min(tcp.rmem.max, 0xFFFF << rcv_wsc)` (the R0 WSCALE ceiling), and calls
+the grow-only `grow_rcv_wnd_max`; a no-op under
+`_so_rcvbuf is not None` (SOCK_RCVBUF_LOCK) or `tcp.moderate_rcvbuf == 0`.
+Tests: `test__tcp__session__drs.py` (grow, cadence gate, no-RTT skip,
+SO_RCVBUF lock, moderate_rcvbuf off, rmem.max clamp, receive()-path
+trigger). The grow tests establish with WSCALE negotiated — without a
+non-zero `rcv_wsc` the R0 ceiling correctly caps the window at 65535.
+
+Original plan text (R2/R3/R4):
+
 ### R2 — the `RcvSpaceState` struct (small)
 
 - New `state/tcp__state__rcv_space.py` `@dataclass(slots=True)`
@@ -513,7 +530,13 @@ CLAUDE.md "Linux as tiebreaker" precedence.
    `tcp__session__ack.py` phase-5 TSecr hook; timestamps-gated. Tests:
    `test__tcp__state__rcv_rtt.py`, `test__tcp__session__rcv_rtt.py`.
 4. **R2 + R3 + R4** (DRS struct, trigger, grow policy) — the large piece;
-   lands on top of R1.
+   lands on top of R1. **DONE** — `RcvSpaceState` + copied counter +
+   `_maybe_adjust_rcv_space()` fired from `receive()`, driving the
+   grow-only `grow_rcv_wnd_max`, clamped at `tcp.rmem.max` / the WSCALE
+   ceiling, gated on `tcp.moderate_rcvbuf` + `SO_RCVBUF` unset. Tests:
+   `test__tcp__session__drs.py`. **DRS is functionally complete** (still
+   inert on the common path until step 5 raises throughput enough to
+   grow, but it fires whenever per-RTT throughput exceeds the window).
 5. **The small-default switch** (§2 / §7) — flip the unset `SO_SNDBUF`
    (and optionally `rcv_wnd_max`) default to the Tier-2 `.default`,
    making auto-tuning observable. Behaviour-changing → its own deliberate

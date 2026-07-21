@@ -63,6 +63,7 @@ from pytcp.protocols.tcp.state.tcp__state__keepalive import KeepaliveState
 from pytcp.protocols.tcp.state.tcp__state__persist import PersistState
 from pytcp.protocols.tcp.state.tcp__state__rack_tlp import RackTlpState
 from pytcp.protocols.tcp.state.tcp__state__rcv_rtt import RcvRttState
+from pytcp.protocols.tcp.state.tcp__state__rcv_space import RcvSpaceState
 from pytcp.protocols.tcp.state.tcp__state__recv_seq import RecvSeqState
 from pytcp.protocols.tcp.state.tcp__state__rtt_sample import RttSampleState
 from pytcp.protocols.tcp.state.tcp__state__send_seq import SendSeqState
@@ -344,6 +345,13 @@ class TcpSession:
         # cadence). Fed from the inbound TSecr echo, so it produces an
         # RTT even on a pure receiver. See 'state/tcp__state__rcv_rtt.py'.
         self._rcv_rtt: RcvRttState = RcvRttState()
+        # Tier-3 Track R DRS measurement window. 'space' seeds from the
+        # initial 'rcv_wnd_max' (set above from SO_RCVBUF) so the first
+        # grow fires only once per-RTT throughput exceeds the start
+        # window. '_rcv_copied_total' is the cumulative count of bytes
+        # the application has drained via 'receive()'.
+        self._rcv_space: RcvSpaceState = RcvSpaceState(space=self._win.rcv_wnd_max)
+        self._rcv_copied_total: int = 0
         self._retransmit_count: int = 0
         # RFC 6298 §5.7 second-clause SYN-retransmit counter.
         # Decoupled from '_retransmit_count' (which
@@ -1304,6 +1312,9 @@ class TcpSession:
 
             rx_buffer = self._rx_buffer[:byte_count]
             del self._rx_buffer[:byte_count]
+            # Tier-3 Track R: count bytes the application copies out so
+            # the DRS measurement can compute per-RTT throughput.
+            self._rcv_copied_total += byte_count
 
             # Clear the event only when the buffer is fully drained
             # AND the remote end is still open. When the remote
@@ -1325,7 +1336,60 @@ class TcpSession:
                 # half (matches BSD select-on-read-EOF semantics).
                 self._socket._drain_readable()
 
+        # Tier-3 Track R DRS: the app just drained the buffer, so run
+        # the once-per-RTT receive-window adjust (Linux calls
+        # 'tcp_rcv_space_adjust' from 'tcp_recvmsg'). Outside the
+        # rx-buffer lock — it touches only app-thread DRS state and the
+        # lockless grow-only 'grow_rcv_wnd_max'.
+        self._maybe_adjust_rcv_space()
+
         return bytes(rx_buffer)
+
+    def _maybe_adjust_rcv_space(self) -> None:
+        """
+        Receive-buffer Dynamic Right-Sizing (Tier-3 Track R, mirroring
+        Linux 'tcp_rcv_space_adjust'). At most once per receiver-RTT,
+        when the application has drained more than the previously
+        measured per-RTT bytes ('space'), grow 'rcv_wnd_max' toward the
+        estimated bandwidth-delay product:
+
+            rcvwin = 2 * copied + 16 * advmss          # BDP + loss slack
+            rcvwin += 2 * rcvwin * (copied - space) // space   # sender-rate headroom
+            target = min(rcvwin, tcp.rmem.max, 0xFFFF << rcv_wsc)
+
+        'per_mss' is the bare advertised MSS (no skb-truesize / no
+        'tcp_adv_win_scale' overhead — the same deviation locked for
+        Tier-1), so the window value maps directly to the buffer size.
+        The WSCALE-ceiling clamp keeps the grown window expressible under
+        the shift negotiated at handshake (RFC 7323).
+
+        A no-op until the receiver RTT estimate exists, before one RTT
+        has elapsed since the last measurement, when 'tcp.moderate_rcvbuf'
+        is off, or when SO_RCVBUF is set (SOCK_RCVBUF_LOCK). Runs on the
+        application thread; the actuator 'grow_rcv_wnd_max' is grow-only
+        and lockless.
+        """
+
+        rtt_ms = self._rcv_rtt.rtt_ms
+        if rtt_ms is None:
+            return
+        now_ms = stack.timer.now_ms
+        if now_ms - self._rcv_space.time_ms < rtt_ms:
+            return
+
+        copied = self._rcv_copied_total - self._rcv_space.copied_anchor
+        if copied > self._rcv_space.space:
+            if self._socket._so_rcvbuf is None and tcp__constants.TCP__MODERATE_RCVBUF:
+                advmss = self._win.rcv_mss
+                rcvwin = 2 * copied + 16 * advmss
+                rcvwin += 2 * (rcvwin * (copied - self._rcv_space.space) // self._rcv_space.space)
+                target = min(rcvwin, tcp__constants.TCP__RMEM__MAX, 0xFFFF << self._win.rcv_wsc)
+                if target > self._win.rcv_wnd_max:
+                    self.grow_rcv_wnd_max(target)
+            self._rcv_space.space = copied
+
+        self._rcv_space.copied_anchor = self._rcv_copied_total
+        self._rcv_space.time_ms = now_ms
 
     def close(self) -> None:
         """
