@@ -166,6 +166,22 @@ once per receiver-RTT, when the app has just drained the rx buffer:
 
 ### R1 — receiver-side RTT estimator (the prerequisite, medium)
 
+**DONE.** `RcvRttState` (`state/tcp__state__rcv_rtt.py`, `@dataclass(slots=True)`):
+`rtt_ms: int | None` (α=1/8 EWMA, `None` until first sample) + `last_tsecr`
+for the within-RTT dedup; `observe(sample_ms, tsecr)` seeds on the first
+sample, folds via `(7*old + sample)//8` after, and no-ops on a repeated
+TSecr. Instantiated `self._rcv_rtt` in `TcpSession.__init__`. Hook: phase 5
+of `tcp__session__ack.py`, on a new-data segment with `send_ts` and a
+truthy `tcp__tsecr`, sample `(stack.timer.now_ms - tcp__tsecr) & 0xFFFF_FFFF`
+— the same formula the phase-3 *sender* sample uses, but fired on inbound
+data so a pure receiver (ACK-only) still gets an RTT. Timestamps-gated
+(the no-TS `tcp_rcv_rtt_measure` fallback stays deferred, §7). Tests:
+`test__tcp__state__rcv_rtt.py` (unit — EWMA/dedup) +
+`test__tcp__session__rcv_rtt.py` (integration — RX-path seed/fold/dedup +
+no-TS leaves it unset). The DRS reader (R3/R4) consumes `_rcv_rtt.rtt_ms`.
+
+Original plan text:
+
 **Why it's needed:** DRS gates its once-per-RTT cadence on a *receiver*
 RTT. On a bulk download PyTCP only sends bare ACKs, so `_rto_state.srtt_ms`
 never gets a sample (no acked data of ours) — it stays `None` and DRS
@@ -493,7 +509,9 @@ CLAUDE.md "Linux as tiebreaker" precedence.
    fully observable once step 5 lands the small default. Tests:
    `test__tcp__session__sndbuf_autotune.py`.
 3. **R1** (receiver RTT estimator) — the DRS prerequisite; self-contained,
-   unit-testable in isolation.
+   unit-testable in isolation. **DONE** — `RcvRttState` +
+   `tcp__session__ack.py` phase-5 TSecr hook; timestamps-gated. Tests:
+   `test__tcp__state__rcv_rtt.py`, `test__tcp__session__rcv_rtt.py`.
 4. **R2 + R3 + R4** (DRS struct, trigger, grow policy) — the large piece;
    lands on top of R1.
 5. **The small-default switch** (§2 / §7) — flip the unset `SO_SNDBUF`

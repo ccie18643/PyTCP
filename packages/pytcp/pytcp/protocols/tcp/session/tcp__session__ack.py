@@ -715,6 +715,19 @@ class TcpAckProcessor:
         if packet_rx_md.tcp__data and overlap_prefix < len(packet_rx_md.tcp__data):
             new_data = packet_rx_md.tcp__data[overlap_prefix:]
             session._enqueue_rx_buffer(new_data)
+            # RFC 7323 §4 / Linux 'tcp_rcv_rtt_measure_ts': sample a
+            # RECEIVER-side RTT from the echoed TSecr on this new-data
+            # segment. Unlike the phase-3 sender sample (which needs our
+            # data to be acked), this fires on a pure download where we
+            # only send ACKs — the DRS cadence gate (Tier-3 Track R)
+            # needs it. Deduped on TSecr inside 'observe' so a burst
+            # within one RTT yields a single sample. A truthy 'tcp__tsecr'
+            # covers both the None and the no-echo 0 cases.
+            if session._ts.send_ts and packet_rx_md.tcp__tsecr:
+                session._rcv_rtt.observe(
+                    sample_ms=(stack.timer.now_ms - packet_rx_md.tcp__tsecr) & 0xFFFF_FFFF,
+                    tsecr=packet_rx_md.tcp__tsecr,
+                )
             __debug__ and log(
                 "tcp-ss",
                 f"[{session}] - Enqueued {len(new_data)} bytes starting at "

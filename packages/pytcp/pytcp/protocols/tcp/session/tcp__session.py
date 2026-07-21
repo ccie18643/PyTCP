@@ -62,6 +62,7 @@ from pytcp.protocols.tcp.state.tcp__state__fastopen import FastOpenState
 from pytcp.protocols.tcp.state.tcp__state__keepalive import KeepaliveState
 from pytcp.protocols.tcp.state.tcp__state__persist import PersistState
 from pytcp.protocols.tcp.state.tcp__state__rack_tlp import RackTlpState
+from pytcp.protocols.tcp.state.tcp__state__rcv_rtt import RcvRttState
 from pytcp.protocols.tcp.state.tcp__state__recv_seq import RecvSeqState
 from pytcp.protocols.tcp.state.tcp__state__rtt_sample import RttSampleState
 from pytcp.protocols.tcp.state.tcp__state__send_seq import SendSeqState
@@ -339,6 +340,10 @@ class TcpSession:
         # §5.7 idle-baseline 'last_send_time_ms'. See
         # 'state/tcp__state__rtt_sample.py'.
         self._rtt: RttSampleState = RttSampleState()
+        # RFC 7323 §4 receiver-side RTT estimator (Tier-3 Track R DRS
+        # cadence). Fed from the inbound TSecr echo, so it produces an
+        # RTT even on a pure receiver. See 'state/tcp__state__rcv_rtt.py'.
+        self._rcv_rtt: RcvRttState = RcvRttState()
         self._retransmit_count: int = 0
         # RFC 6298 §5.7 second-clause SYN-retransmit counter.
         # Decoupled from '_retransmit_count' (which
