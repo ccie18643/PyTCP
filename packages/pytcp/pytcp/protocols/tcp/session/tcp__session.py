@@ -70,7 +70,7 @@ from pytcp.protocols.tcp.state.tcp__state__send_seq import SendSeqState
 from pytcp.protocols.tcp.state.tcp__state__shutdown import ShutdownState
 from pytcp.protocols.tcp.state.tcp__state__timestamps import TimestampsState
 from pytcp.protocols.tcp.state.tcp__state__tx_buffer import TxBufferState
-from pytcp.protocols.tcp.state.tcp__state__window import WindowState
+from pytcp.protocols.tcp.state.tcp__state__window import WindowState, derive_rcv_wscale
 from pytcp.protocols.tcp.tcp__cwnd import INITIAL_WINDOW_FACTOR, compute_ecn_event_ssthresh
 from pytcp.protocols.tcp.tcp__enums import (
     CcMode,
@@ -176,6 +176,13 @@ class TcpSession:
         # the window; unset keeps the conservative 65535 default. Set
         # before the SYN so the negotiated scale (rcv_wsc) covers it.
         self._win.rcv_wnd_max = self._socket._effective_rcvbuf()
+        # RFC 7323 §2.2 window scale: size the offered receive-scale
+        # shift for the DRS ceiling ('tcp.rmem.max'), not the initial
+        # window, so a raised ceiling stays advertisable once DRS grows
+        # the window past 65535 << 7 (Linux 'tcp_select_initial_window').
+        # The default 6 MiB rmem.max derives shift 7 — no behaviour
+        # change. Set before the SYN emits the WSCALE option.
+        self._win.rcv_wsc = derive_rcv_wscale(tcp__constants.TCP__RMEM__MAX)
 
         # RFC 4821 / RFC 8899 per-session PLPMTUD adapter.
         # Wraps a PmtuSearch engine bound to the remote

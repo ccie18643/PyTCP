@@ -35,6 +35,32 @@ ver 3.0.8
 
 from dataclasses import dataclass
 
+# RFC 7323 §2.3 maximum window-scale shift.
+WINDOW_SCALE__MAX_SHIFT: int = 14
+
+# The unscaled 16-bit advertised-window ceiling.
+WINDOW__UNSCALED_MAX: int = 0xFFFF
+
+
+def derive_rcv_wscale(space: int, /) -> int:
+    """
+    Compute the receive window-scale shift (RFC 7323 §2.2) needed to
+    advertise 'space' bytes of receive window: the smallest shift for
+    which 'WINDOW__UNSCALED_MAX << shift >= space', capped at the
+    RFC 7323 §2.3 maximum of 14.
+
+    Mirrors Linux 'tcp_select_initial_window', which sizes the shift
+    from 'tcp_rmem[2]' (the DRS ceiling) rather than the initial
+    window, so the negotiated scaling can express the whole buffer the
+    receive window may auto-tune up to. The default 6 MiB 'tcp.rmem.max'
+    yields shift 7 — the canonical Linux value.
+    """
+
+    shift = 0
+    while shift < WINDOW_SCALE__MAX_SHIFT and (WINDOW__UNSCALED_MAX << shift) < space:
+        shift += 1
+    return shift
+
 
 @dataclass(slots=True)
 class WindowState:

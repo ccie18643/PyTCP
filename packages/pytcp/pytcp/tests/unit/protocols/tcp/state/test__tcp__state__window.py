@@ -33,7 +33,10 @@ ver 3.0.8
 import inspect
 from unittest import TestCase
 
-from pytcp.protocols.tcp.state.tcp__state__window import WindowState
+from pytcp.protocols.tcp.state.tcp__state__window import (
+    WindowState,
+    derive_rcv_wscale,
+)
 
 
 class TestWindowState(TestCase):
@@ -140,3 +143,62 @@ class TestWindowState__BumpMaxBoundary(TestCase):
             1000,
             msg="An equal window must not change max_window (strict '>').",
         )
+
+
+class TestDeriveRcvWscale(TestCase):
+    """
+    The SYN-time receive window-scale derivation (RFC 7323 §2.2).
+    """
+
+    def test__derive_rcv_wscale__unscaled_for_uint16_ceiling(self) -> None:
+        """
+        Ensure a space that fits in the unscaled 16-bit window derives
+        shift 0.
+
+        Reference: RFC 7323 §2.2 (window scale option).
+        """
+
+        self.assertEqual(derive_rcv_wscale(65535), 0, msg="65535 needs no scaling.")
+
+    def test__derive_rcv_wscale__one_byte_over_needs_shift_1(self) -> None:
+        """
+        Ensure a space one byte past the unscaled ceiling derives
+        shift 1.
+
+        Reference: RFC 7323 §2.2 (window scale option).
+        """
+
+        self.assertEqual(derive_rcv_wscale(65536), 1, msg="65536 needs shift 1.")
+
+    def test__derive_rcv_wscale__default_rmem_max_derives_7(self) -> None:
+        """
+        Ensure the default 6 MiB rmem.max derives shift 7 — the
+        canonical Linux value, so the wiring changes no behaviour.
+
+        Reference: RFC 7323 §2.2 (window scale option).
+        Reference: Linux tcp_select_initial_window (shift for tcp_rmem[2]).
+        """
+
+        # 65535 << 6 = 4194240 < 6291456 <= 8388480 = 65535 << 7.
+        self.assertEqual(derive_rcv_wscale(6_291_456), 7, msg="6 MiB derives shift 7.")
+
+    def test__derive_rcv_wscale__ten_mb_derives_8(self) -> None:
+        """
+        Ensure a 10 MB space derives shift 8 (the smallest shift whose
+        scaled window covers it).
+
+        Reference: RFC 7323 §2.2 (window scale option).
+        """
+
+        # 65535 << 7 = 8388480 < 10000000 <= 16776960 = 65535 << 8.
+        self.assertEqual(derive_rcv_wscale(10_000_000), 8, msg="10 MB derives shift 8.")
+
+    def test__derive_rcv_wscale__caps_at_14(self) -> None:
+        """
+        Ensure the derived shift saturates at the RFC 7323 maximum of
+        14 for spaces beyond what any shift can express.
+
+        Reference: RFC 7323 §2.3 (maximum window scale of 14).
+        """
+
+        self.assertEqual(derive_rcv_wscale(10**15), 14, msg="Shift must cap at 14.")
