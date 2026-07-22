@@ -6,7 +6,7 @@ lockstep with `PyTCP-net_proto` and `PyTCP-net_addr` — they share a
 version. Releases before 3.0.8 are on the
 [GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
 
-## 3.0.8 — 2026-07-19
+## 3.0.8 — 2026-07-22
 
 The daemon-backed userspace. 3.0.7 split the stack into a daemon that
 owns the interface and a thin client boundary; 3.0.8 builds the
@@ -62,6 +62,23 @@ stack-internal loopback interface lets one daemon talk to itself.
   in v1 compatibility mode), and stack shutdown gracefully leaves every
   joined group — the IPv6 analogue of the IGMP leave, closing the last
   host-conformance gap in the multicast plane.
+
+- **TCP send/receive buffer sizing and auto-tuning.** `SO_RCVBUF` now
+  drives the advertised receive window (grow-only on a mid-connection
+  raise so the window's right edge is never retracted), and `SO_SNDBUF`
+  bounds the send buffer with TCP byte-stream backpressure — a full
+  buffer blocks honoring `SO_SNDTIMEO`, does a partial write, or returns
+  `EAGAIN`. On top of that, Linux-style auto-tuning: receive-buffer
+  Dynamic Right-Sizing grows the advertised window toward the
+  bandwidth-delay product (`tcp_rcv_space_adjust`), and the send buffer
+  grows with the congestion window (`tcp_sndbuf_expand`) — working on
+  both timestamped and timestamp-less connections, with the receive
+  window scale sized at SYN for the configured ceiling. New
+  `tcp.rmem` / `tcp.wmem` (min/default/max) and `tcp.moderate_rcvbuf`
+  sysctls make the buffer bounds and DRS operator-tunable
+  (`net.ipv4.tcp_rmem` / `tcp_wmem` / `tcp_moderate_rcvbuf` parity). The
+  conservative default buffer sizes are unchanged, so a connection that
+  sets no option and no sysctl behaves exactly as before.
 
 ### Changed
 
