@@ -82,8 +82,10 @@ symmetric and hash-consistent only for non-subclassable leaves.
 
 ## Public API
 
-`from net_addr import …` exposes the concrete value types, the ABCs
-(for typing), the `IpVersion` enum, the length constants
+`from net_addr import …` exposes the concrete value types, the family
+ABCs `IpAddress` / `IfAddr` / `IpMask` / `IpNetwork` / `IpWildcard` (for
+typing — the `Base` / `Ip` / `Address` roots stay internal to their
+submodules), the `IpVersion` enum, the length constants
 (`IP4__ADDRESS_LEN`, `IP6__ADDRESS_LEN`, `MAC__ADDRESS_LEN`), and the
 full `*Error` tree. The opt-in `ClickType*` argument types
 (`ClickTypeIp4Address`, `ClickTypeIp6IfAddr`, …) are re-exported
@@ -118,7 +120,7 @@ construction. PyTCP does **not** mirror stdlib `ipaddress`'s
 `ValueError` / `IndexError`: catch `NetAddrError` (or a precise
 subclass) instead.
 
-## Installation
+## Install
 
 ```bash
 pip install PyTCP-net_addr

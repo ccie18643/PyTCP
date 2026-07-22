@@ -38,11 +38,14 @@ sudo pytcp stack start -i tap7                                    # autoconfigur
 sudo python -m pytcp.daemon -i tap7 --ip4-address 192.168.1.77/24 # or a static address
 ```
 
-The client programs find the daemon through `$PYTCP_DAEMON_SOCKET` (the
-same default the daemon uses):
+The client programs and the daemon default to the same control socket —
+`$XDG_RUNTIME_DIR/pytcp.sock`, falling back to `/tmp/pytcp.sock` when
+`XDG_RUNTIME_DIR` is unset — so on a typical desktop no configuration is
+needed. Only set `PYTCP_DAEMON_SOCKET` if you started the daemon on a
+non-default path, and point the clients at the same value:
 
 ```bash
-export PYTCP_DAEMON_SOCKET=/tmp/pytcp.sock
+export PYTCP_DAEMON_SOCKET=/run/pytcp/pytcp.sock   # match the daemon's --ipc-socket
 ```
 
 ## The examples
@@ -67,19 +70,19 @@ With the daemon up and `$PYTCP_DAEMON_SOCKET` exported:
 
 # TCP Echo — start the async server on the stack, echo from the client
 ./examples/tcp_echo_server__async.py --host 192.168.1.77 &
-python -m examples.tcp_echo_client 192.168.1.77 --message malpi
+./examples/tcp_echo_client.py 192.168.1.77 --message malpi
 
 # UDP Echo
 ./examples/udp_echo_server__async.py --host 192.168.1.77 &
-python -m examples.udp_echo_client 192.168.1.77 --message malpi
+./examples/udp_echo_client.py 192.168.1.77 --message malpi
 
 # Async FTP — serve a directory, then LIST / RETR from the client
 ./examples/ftp_server__async.py --host 192.168.1.77 --root /srv/ftp &
 ./examples/ftp_client__async.py --host 192.168.1.77 --get blob.bin > got.bin
 
 # Multicast service discovery — announce on one stack, discover on another
-python -m examples.mcast_announce --service echo --host 192.168.1.77 --service-port 7 &
-python -m examples.mcast_discover
+./examples/mcast_announce.py --service echo --host 192.168.1.77 --service-port 7 &
+./examples/mcast_discover.py
 ```
 
 The FTP pair is verified live end to end against a real `ftplib` client and

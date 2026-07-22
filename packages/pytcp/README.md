@@ -230,7 +230,7 @@ Python **3.14+**, Linux (TAP/TUN), POSIX.
 
 ## Current state (3.0.8)
 
-- ~230 source modules. On top of the 3.0.7 kernel/userspace IPC layer
+- ~240 source modules. On top of the 3.0.7 kernel/userspace IPC layer
   (`ipc` AF_UNIX RPC + SCM_RIGHTS fd-passing, a `client` out-of-process
   mirror, a first-class `daemon` entry point), 3.0.8 adds the two
   user-facing layers on top of that boundary: the **1:1 stdlib-`socket`

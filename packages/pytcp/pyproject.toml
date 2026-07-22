@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "PyTCP"
-description = "Pure-Python, zero-dependency TCP/IP stack — Ethernet through RFC 9293 TCP — running in user space on a TAP/TUN interface, embeddable in-process or run as a daemon, with a Berkeley-sockets API."
+description = "Pure-Python, zero-dependency TCP/IP stack — Ethernet through RFC 9293 TCP — running in user space on a TAP/TUN interface as a daemon (the supported mode), with a Berkeley-sockets API and a 1:1 stdlib-socket drop-in."
 readme = "README.md"
 authors = [{ name = "Sebastian Majewski", email = "ccie18643@gmail.com" }]
 license = "GPL-3.0-or-later"

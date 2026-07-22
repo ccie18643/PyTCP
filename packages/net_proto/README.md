@@ -5,12 +5,16 @@ the [PyTCP](https://github.com/ccie18643/PyTCP) TCP/IP stack —
 extracted as its own distribution and usable on its own.
 
 ```python
-from net_proto import IpProto
-from net_proto.protocols.udp.udp__parser import UdpParser
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
+from net_proto.protocols.udp.udp__parser import UdpParser
 
+# Assemble (TX): serialise header + payload into a list of buffers.
 datagram = UdpAssembler(udp__sport=12345, udp__dport=53, udp__payload=b"query")
-parsed = UdpParser(packet_rx)          # raises UdpIntegrityError / UdpSanityError on bad wire input
+buffers: list[bytes] = []
+datagram.assemble(buffers)
+
+# Parse (RX): raises UdpIntegrityError / UdpSanityError on bad wire input.
+parsed = UdpParser(packet_rx)
 ```
 
 ## Why

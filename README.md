@@ -42,6 +42,7 @@ socket, so run them as the same user (here, all under `sudo`).
 
 ```bash
 # 1. Clone, build the venv (Python 3.14+), create a TAP on a bridge.
+#    ('make bridge' uses brctl — install 'bridge-utils' if it is missing.)
 git clone https://github.com/ccie18643/PyTCP && cd PyTCP
 make venv
 sudo make bridge && sudo make tap7
@@ -54,9 +55,12 @@ In another terminal, operate the running stack with Linux-lookalike
 tools:
 
 ```bash
+sudo venv/bin/pytcp stack status        # is the daemon running?  (exit 0 / 3)
 sudo venv/bin/pytcp ss                  # list sockets            (like 'ss')
 sudo venv/bin/pytcp address             # interface addresses     (like 'ip addr')
 sudo venv/bin/pytcp route               # routing table           (like 'ip route')
+sudo venv/bin/pytcp neighbor            # ARP / ND caches         (like 'ip neighbor')
+sudo venv/bin/pytcp sysctl              # tunables                (like 'sysctl -a')
 sudo venv/bin/pytcp ping 192.168.177.1  # ICMP echo               (like 'ping')
 sudo venv/bin/pytcp tcpdump -i tap7     # capture + decode        (like 'tcpdump')
 sudo venv/bin/pytcp stack stop          # stop the daemon
@@ -90,7 +94,7 @@ path is unsupported and mainly for advanced embedding. See
 #### Stack & sockets (engineering, non-RFC)
 
  - Zero-copy packet parser and assembler (buffer-protocol / memoryview based).
- - `net_addr` value-type library for MAC / IPv4 / IPv6 addresses, networks, masks, ACL wildcards and interface-addresses - immutable, hashable, `@final` leaves, one `NetAddrError` tree; no Python standard-library dependency.
+ - `net_addr` value-type library for MAC / IPv4 / IPv6 addresses, networks, masks, ACL wildcards and interface-addresses - immutable, hashable, `@final` leaves, one `NetAddrError` tree; no dependencies beyond the Python standard library.
  - Importable as a zero-runtime-dependency library (stdlib only), split into three independent packages: `net_addr`, `net_proto`, `pytcp`.
  - Event-driven millisecond-resolution timer (heap-based deadline scheduler, no polling tick).
  - Runtime-tunable sysctl registry mirroring the Linux `/proc/sys/net/` surface (boot-time and live overrides).
@@ -162,6 +166,7 @@ path is unsupported and mainly for advanced embedding. See
  - ECN and Accurate ECN (RFC 3168, RFC 9768)
  - Blind-attack and ICMP-attack hardening, randomised ISS and ports, robust TIME-WAIT (RFC 5961, RFC 5927, RFC 6528, RFC 1337, RFC 6191)
  - Keep-alive, zero-window probing, silly-window-syndrome avoidance, Nagle
+ - Send / receive buffer sizing and Linux-style auto-tuning — `SO_RCVBUF`-driven advertised window with receive-buffer Dynamic Right-Sizing (`tcp_rcv_space_adjust`), `SO_SNDBUF` send-buffer backpressure with send-buffer auto-tuning (`tcp_sndbuf_expand`), WSCALE sized for the buffer ceiling, tunable via `tcp_rmem` / `tcp_wmem` / `tcp_moderate_rcvbuf` sysctls
 
 #### DHCPv4 client
 
@@ -305,18 +310,23 @@ Linux process talks to the kernel. The client never boots the stack.
 
 Start the daemon (it owns the TAP interface). The first-class entry point
 ships in the package — `python -m pytcp.daemon` (or the `pytcpd` console
-script after install); it defaults the socket to `$XDG_RUNTIME_DIR/pytcp.sock`:
+script after install). The control socket defaults to
+`$XDG_RUNTIME_DIR/pytcp.sock`; this example pins an explicit path with
+`--ipc-socket` so the client below can match it verbatim:
 
 ```bash
 sudo make bridge && sudo make tap7 && make venv
-sudo PYTHONPATH=. venv/bin/python -m pytcp.daemon --ipc-socket /tmp/pytcp.sock
+sudo PYTHONPATH=. venv/bin/python -m pytcp.daemon -i tap7 --ipc-socket /tmp/pytcp.sock
 # or via the CLI (installs as the 'pytcp' / 'pytcpd' console scripts):
-sudo pytcp stack start -i tap7
+sudo pytcp --ipc-socket /tmp/pytcp.sock stack start -i tap7
 ```
 
 Then, from any other process, open a TCP socket *through the daemon* and
 echo off a remote server — note the client imports `pytcp.client`, not
-`pytcp.stack` / `pytcp.socket`, and calls no `stack.init()`:
+`pytcp.stack` / `pytcp.socket`, and calls no `stack.init()`. The
+`socket_path` must equal the daemon's control socket (the explicit
+`/tmp/pytcp.sock` here, or its `$XDG_RUNTIME_DIR/pytcp.sock` default when
+`--ipc-socket` is omitted):
 
 ```python
 from pytcp.client import connect
