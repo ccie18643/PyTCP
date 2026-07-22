@@ -101,3 +101,50 @@ class TestRcvRttState(TestCase):
             40,
             msg="A repeated TSecr must not contribute a second sample.",
         )
+
+
+class TestRcvRttStateWindowFallback(TestCase):
+    """
+    observe_window() min-smoothing behaviour (no-timestamps path).
+    """
+
+    def test__rcv_rtt__window_first_sample_seeds(self) -> None:
+        """
+        Ensure the first window-based sample seeds the smoothed RTT
+        directly.
+
+        Reference: RFC 9293 §3.8.6 (receive window management).
+        """
+
+        state = RcvRttState()
+        state.observe_window(sample_ms=50)
+        self.assertEqual(state.rtt_ms, 50, msg="First window sample must seed rtt_ms.")
+
+    def test__rcv_rtt__window_larger_sample_ignored(self) -> None:
+        """
+        Ensure a larger window-based sample is ignored — the fallback
+        takes the minimum (Linux win_dep=1) because the window-time
+        measure biases high.
+
+        Reference: RFC 9293 §3.8.6 (receive window management).
+        Reference: Linux tcp_rcv_rtt_update (win_dep min).
+        """
+
+        state = RcvRttState()
+        state.observe_window(sample_ms=50)
+        state.observe_window(sample_ms=80)
+        self.assertEqual(state.rtt_ms, 50, msg="A larger window sample must not raise rtt_ms.")
+
+    def test__rcv_rtt__window_smaller_sample_lowers(self) -> None:
+        """
+        Ensure a smaller window-based sample lowers the smoothed RTT
+        toward the true minimum.
+
+        Reference: RFC 9293 §3.8.6 (receive window management).
+        Reference: Linux tcp_rcv_rtt_update (win_dep min).
+        """
+
+        state = RcvRttState()
+        state.observe_window(sample_ms=50)
+        state.observe_window(sample_ms=30)
+        self.assertEqual(state.rtt_ms, 30, msg="A smaller window sample must lower rtt_ms.")

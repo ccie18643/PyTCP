@@ -58,6 +58,15 @@ class RcvRttState:
     # 'rcv_rtt_last_tsecr').
     last_tsecr: int | None = None
 
+    # No-timestamps fallback anchor (Linux 'rcv_rtt_est'). When TSopt
+    # is not active, RTT is measured as the wall-time to receive one
+    # advertised window of data: 'fallback_seq' is 'rcv_nxt + rcv_wnd'
+    # at the anchor, 'fallback_time_ms' the anchor time, and
+    # 'fallback_active' guards the "no anchor yet" state.
+    fallback_seq: int = 0
+    fallback_time_ms: int = 0
+    fallback_active: bool = False
+
     def observe(self, *, sample_ms: int, tsecr: int) -> None:
         """
         Fold a receiver RTT sample ('now_ms - TSecr') into the
@@ -75,3 +84,16 @@ class RcvRttState:
             self.rtt_ms = sample_ms
         else:
             self.rtt_ms = (7 * self.rtt_ms + sample_ms) // 8
+
+    def observe_window(self, *, sample_ms: int) -> None:
+        """
+        Fold a no-timestamps window-based RTT sample. The window-time
+        measure biases high (delayed ACKs, application stalls), so —
+        like Linux 'tcp_rcv_rtt_update' with win_dep=1 — it takes the
+        minimum rather than an EWMA: the first sample seeds the
+        estimate, later samples lower it toward the true RTT but never
+        raise it.
+        """
+
+        if self.rtt_ms is None or sample_ms < self.rtt_ms:
+            self.rtt_ms = sample_ms

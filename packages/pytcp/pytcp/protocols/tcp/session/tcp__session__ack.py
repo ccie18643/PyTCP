@@ -715,19 +715,36 @@ class TcpAckProcessor:
         if packet_rx_md.tcp__data and overlap_prefix < len(packet_rx_md.tcp__data):
             new_data = packet_rx_md.tcp__data[overlap_prefix:]
             session._enqueue_rx_buffer(new_data)
-            # RFC 7323 §4 / Linux 'tcp_rcv_rtt_measure_ts': sample a
-            # RECEIVER-side RTT from the echoed TSecr on this new-data
-            # segment. Unlike the phase-3 sender sample (which needs our
-            # data to be acked), this fires on a pure download where we
-            # only send ACKs — the DRS cadence gate (Tier-3 Track R)
-            # needs it. Deduped on TSecr inside 'observe' so a burst
-            # within one RTT yields a single sample. A truthy 'tcp__tsecr'
-            # covers both the None and the no-echo 0 cases.
-            if session._ts.send_ts and packet_rx_md.tcp__tsecr:
-                session._rcv_rtt.observe(
-                    sample_ms=(stack.timer.now_ms - packet_rx_md.tcp__tsecr) & 0xFFFF_FFFF,
-                    tsecr=packet_rx_md.tcp__tsecr,
-                )
+            # Receiver-side RTT measurement for DRS (Tier-3 Track R).
+            # Fires on new-data segments; unlike the phase-3 sender
+            # sample (which needs our data to be acked) it works on a
+            # pure download where we only send ACKs.
+            now_ms = stack.timer.now_ms
+            if session._ts.send_ts:
+                # RFC 7323 §4 / Linux 'tcp_rcv_rtt_measure_ts': sample
+                # from the echoed TSecr. Deduped on TSecr inside
+                # 'observe' so a burst within one RTT yields a single
+                # sample. A truthy 'tcp__tsecr' covers both the None and
+                # the no-echo 0 cases.
+                if packet_rx_md.tcp__tsecr:
+                    session._rcv_rtt.observe(
+                        sample_ms=(now_ms - packet_rx_md.tcp__tsecr) & 0xFFFF_FFFF,
+                        tsecr=packet_rx_md.tcp__tsecr,
+                    )
+            else:
+                # No timestamps — Linux 'tcp_rcv_rtt_measure': measure
+                # the wall-time to receive one advertised window of
+                # data. Anchor at 'rcv_nxt + rcv_wnd'; once 'rcv_nxt'
+                # reaches it, one window (≈ one RTT, since the sender
+                # cannot outrun a window per round trip) has arrived.
+                rcv_rtt = session._rcv_rtt
+                if rcv_rtt.fallback_active and not lt32(session._rcv_seq.nxt, rcv_rtt.fallback_seq):
+                    rcv_rtt.observe_window(sample_ms=(now_ms - rcv_rtt.fallback_time_ms) & 0xFFFF_FFFF)
+                    rcv_rtt.fallback_active = False
+                if not rcv_rtt.fallback_active:
+                    rcv_rtt.fallback_seq = add32(session._rcv_seq.nxt, session._rcv_wnd)
+                    rcv_rtt.fallback_time_ms = now_ms
+                    rcv_rtt.fallback_active = True
             __debug__ and log(
                 "tcp-ss",
                 f"[{session}] - Enqueued {len(new_data)} bytes starting at "

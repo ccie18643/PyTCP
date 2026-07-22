@@ -271,7 +271,24 @@ Original plan text (R2/R3/R4):
   single-writer invariant the grow-only mutator relies on
   (no-GIL note §8).
 
-### R0 — WSCALE headroom (decision, likely no code)
+### R0 — WSCALE headroom (step 6a) — **DONE**
+
+**Implemented rather than deferred** (the original decision was to keep a
+fixed `rcv_wsc=7`). `derive_rcv_wscale(space)`
+(`state/tcp__state__window.py`) returns the smallest shift (≤14) whose
+`0xFFFF << shift` covers `space`, and `TcpSession.__init__` sets
+`rcv_wsc = derive_rcv_wscale(tcp.rmem.max)` before the SYN emits the
+WSCALE option — mirroring Linux `tcp_select_initial_window`, which sizes
+the shift for `tcp_rmem[2]` (the DRS ceiling), not the initial window.
+The default 6 MiB `tcp.rmem.max` derives shift **7**, so there is zero
+behaviour change on the common path; a raised `tcp.rmem.max` derives a
+larger shift so DRS can advertise past 8 MiB (the R4
+`min(tcp.rmem.max, 0xFFFF << rcv_wsc)` clamp then stops binding below the
+raised ceiling). Tests: `test__tcp__state__window.py::TestDeriveRcvWscale`
+(unit) + `test__tcp__session__rcv_wscale.py` (integration — default→7,
+10 MB→8, DRS grows to 10 MB).
+
+Original R0 note (decision, superseded):
 
 DRS grows `rcv_wnd_max`, but the advertised window is
 `rcv_wnd_max >> rcv_wsc` with `rcv_wsc` fixed at handshake (RFC 7323 — a
@@ -564,8 +581,17 @@ CLAUDE.md "Linux as tiebreaker" precedence.
    sysctl override (`sysctl tcp.wmem.default=16384`) with no further
    code. Tests: `test__tcp__session__buffer_defaults.py`. **No test
    churn** — values unchanged.
-6. **R0 / no-TS fallback** — optional follow-ons, only if a consumer needs
-   >8 MiB windows or DRS on non-timestamped connections.
+6. **R0 / no-TS fallback** — **BOTH DONE** (originally scoped as optional
+   follow-ons). **6a (R0):** `rcv_wsc` derived at SYN from `tcp.rmem.max`
+   so DRS can advertise past 8 MiB when the ceiling is raised; default
+   config still derives shift 7 (no change). **6b (no-TS):** when TSopt
+   is not negotiated, the receiver RTT is measured from the wall-time to
+   receive one advertised window (Linux `tcp_rcv_rtt_measure`, min-fold),
+   so DRS runs on timestamp-less connections too — the more
+   parity-relevant half, since Linux autotunes such connections by
+   default. Tests: `test__tcp__session__rcv_wscale.py`,
+   `test__tcp__session__rcv_rtt_no_ts.py` + the two state unit files.
+   **Tier-3 is now complete.**
 
 Each numbered item is one tests-first commit (or a small pair), `make
 lint` clean, §7.2 docstring-audit clean, adherence + this doc updated in
