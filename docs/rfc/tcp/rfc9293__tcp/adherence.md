@@ -380,6 +380,35 @@ Cross-cut with RFC 1122 §4.2.3.2 (audited).
 
 **Adherence:** met.
 
+#### §3.8.6.4 Advertised-window sizing (receive-buffer auto-tuning)
+
+RFC 9293 §3.8.6 leaves the *size* of the advertised
+receive window to the implementation. PyTCP sizes it
+dynamically, mirroring Linux receive-buffer Dynamic
+Right-Sizing (`tcp_rcv_space_adjust`).
+
+**Adherence:** met (Linux-parity extension). The
+advertised window is `max(0, rcv_wnd_max -
+len(rx_buffer))` (`session/tcp__session.py` `_rcv_wnd`
+property), scaled by `rcv_wsc` (RFC 7323). `rcv_wnd_max`
+is seeded from the socket's `SO_RCVBUF`, else
+`tcp.rmem.default`, and grown at runtime by DRS
+(`_maybe_adjust_rcv_space`, run from `receive()`): once
+per receiver-RTT, when the application has drained more
+than the previous per-RTT measurement, `rcv_wnd_max`
+grows toward `2*copied + 16*advmss` plus a sender-rate
+term, clamped at `min(tcp.rmem.max, 0xFFFF << rcv_wsc)`.
+DRS is gated on the `tcp.moderate_rcvbuf` sysctl and
+disabled when `SO_RCVBUF` is set explicitly
+(SOCK_RCVBUF_LOCK), so an explicit option pins the
+window. The receiver RTT it needs comes from the RFC
+7323 TSecr echo on inbound data, or — without negotiated
+timestamps — from the wall-time to receive one
+advertised window (Linux `tcp_rcv_rtt_measure`). The
+offered `rcv_wsc` is derived at SYN from `tcp.rmem.max`
+(RFC 7323 §2.2) so the negotiated scaling can express
+the whole grown window.
+
 ---
 
 ## §3.9 Interfaces
@@ -578,7 +607,9 @@ locations:
 | §3.8.6.1 Persist timer              | data_transfer__send / window persist tests              |
 | §3.8.6.2 SWS                        | window tests                                             |
 | §3.8.6.3 Delayed ACK                | data_transfer__recv tests                                |
+| §3.8.6.4 Advertised-window DRS      | `test__tcp__session__so_rcvbuf.py` (SO_RCVBUF sizing); `test__tcp__session__drs.py` (grow toward BDP, cadence gate, rmem.max clamp, moderate_rcvbuf/SO_RCVBUF lock, receive()-path trigger); `test__tcp__session__rcv_rtt.py` / `test__tcp__session__rcv_rtt_no_ts.py` (RTT source); `test__tcp__session__rcv_wscale.py` (WSCALE ceiling) |
 | §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
+| §3.10.2 SEND / SO_SNDBUF autotune   | `test__tcp__session__sndbuf_autotune.py` (grows with cwnd, wmem.max clamp, grow-only, SO_SNDBUF lock); `test__tcp__session__buffer_defaults.py` (wmem.default floor) |
 | §3.10.2 SEND / SO_SNDBUF backpressure | `test__tcp__session__so_sndbuf.py` (partial-write, non-blocking EAGAIN, oversized-into-empty, getsockopt parity, ACK-drain wake, close wake) |
 | §3.10.7 Per-state SEGMENT ARRIVES   | per-state test files                                     |
 | §3.10.8 Timeouts                    | RTO + persist + keep-alive + TIME-WAIT tests             |

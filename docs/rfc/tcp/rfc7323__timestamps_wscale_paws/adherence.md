@@ -64,16 +64,23 @@ option presence:
 > the error but MUST use 14 instead of the specified
 > value."
 
-**Adherence:** met (need to verify the clamp). The
-default `_rcv_wsc = 7`
-(`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:165`) yields a
-~8 MB max receive window (65535 << 7), well within
-the 14 cap. The wire-level option's `shift_count`
-field accepts up to 255 at the assembler level
-(uint8); the protocol-level clamp to 14 happens at
-the inbound adoption site. A regression that
-adopted shift > 14 would manifest as oversized
-window field shifts.
+**Adherence:** met. The offered receive shift is no
+longer a flat default — `TcpSession.__init__` sets
+`rcv_wsc = derive_rcv_wscale(tcp.rmem.max)`
+(`packages/pytcp/pytcp/protocols/tcp/state/tcp__state__window.py`,
+`derive_rcv_wscale`), sizing the shift for the
+receive-buffer DRS ceiling (Linux
+`tcp_select_initial_window`). The derivation returns
+the smallest shift whose `0xFFFF << shift` covers
+`tcp.rmem.max` and is itself **capped at 14**
+(`WINDOW_SCALE__MAX_SHIFT`), so the outbound offer can
+never exceed the RFC limit regardless of how large an
+operator sets `tcp.rmem.max`. The default 6 MiB
+`tcp.rmem.max` derives shift 7 (65535 << 7 ≈ 8 MiB),
+the canonical Linux value. The wire-level option's
+`shift_count` field accepts up to 255 at the assembler
+level (uint8); the protocol-level clamp to 14 on the
+*inbound* adoption side is separate and unchanged.
 
 ### Window field unscaled on SYN / SYN+ACK
 
@@ -252,6 +259,31 @@ not feed the RTO estimator.
 multiple per-RTT samples from TSecr-based RTTM
 correctly; the alpha=1/8 / beta=1/4 weights work
 correctly with multiple samples per RTT.
+
+### §4 (extension) Receiver-side RTT estimator (DRS)
+
+Beyond the RTO sample above (which needs *our* data to
+be acked), PyTCP keeps a separate **receiver-side** RTT
+estimate for receive-buffer Dynamic Right-Sizing —
+mirroring Linux `rcv_rtt_est` / `tcp_rcv_rtt_measure_ts`
+— so a pure receiver that only sends ACKs still measures
+a round trip.
+
+**Adherence:** met (Linux-parity extension). On an
+inbound new-data segment carrying a valid TSecr,
+`RcvRttState.observe`
+(`packages/pytcp/pytcp/protocols/tcp/state/tcp__state__rcv_rtt.py`)
+folds `now_ms - TSecr` via an alpha=1/8 EWMA, deduped on
+the echoed TSecr so a within-RTT burst yields one
+sample (the phase-5 hook in
+`session/tcp__session__ack.py`). When TSopt was **not**
+negotiated, the fallback `observe_window` measures the
+wall-time to receive one advertised window of data
+(anchor at `rcv_nxt + rcv_wnd`) and takes the minimum,
+matching Linux `tcp_rcv_rtt_measure` (`win_dep=1`). The
+estimate feeds the DRS cadence gate (RFC 9293 §3.8.6.4)
+but never the RFC 6298 RTO, so it cannot perturb
+retransmission timing.
 
 ### §4.3 Which Timestamp to Echo (cases A, B, C)
 
@@ -480,6 +512,23 @@ typical PyTCP use cases.
 
 **Status:** locked in.
 
+### §4 (extension) Receiver-side RTT estimator (DRS)
+
+- **Unit:**
+  `test__tcp__state__rcv_rtt.py::TestRcvRttState`
+  pins the TSecr EWMA fold + within-RTT dedup;
+  `::TestRcvRttStateWindowFallback` pins the
+  no-timestamps `observe_window` min-fold.
+- **Integration:**
+  `test__tcp__session__rcv_rtt.py` pins the RX-path
+  TSecr sample (seed / EWMA / dedup, and that a no-TS
+  connection stays unset after a single segment);
+  `test__tcp__session__rcv_rtt_no_ts.py` pins the
+  window-based fallback seeding the estimate and
+  enabling DRS growth on a timestamp-less connection.
+
+**Status:** locked in.
+
 ### §4.3 Which TSval to echo
 
 - **Integration:**
@@ -563,6 +612,7 @@ regression guard.
 | §3.2 TSopt on RST                               | n/a (gap)                                      |
 | §3.2 SHOULD drop missing-TSopt                  | n/a (gap)                                      |
 | §4 RTTM rule                                    | locked in                                      |
+| §4 Receiver-side RTT estimator (DRS)            | locked in (unit + integration, TS + no-TS)     |
 | §4.2 EWMA with multiple samples                 | locked in (covered by RFC 6298 audit)          |
 | §4.3 Which TSval to echo (A/B/C)                | locked in (Last.ACK.sent gate test)            |
 | §5.2 PAWS basic                                 | locked in                                      |
@@ -578,7 +628,7 @@ regression guard.
 |-------------------------------------------------|-----------------------------------------|
 | §2.2 WSCALE wire format                         | met                                     |
 | §2.2 Bilateral negotiation                      | met                                     |
-| §2.2 Max shift count = 14                       | met (default 7)                         |
+| §2.2 Max shift count = 14                       | met (derived from tcp.rmem.max, cap 14) |
 | §2.2 SYN window unscaled                        | met                                     |
 | §2.3 Snd/Rcv.Wind.Shift state                   | met                                     |
 | §2.4 Window retraction handling                 | met (cross-cut RFC 1122)                |
@@ -587,6 +637,7 @@ regression guard.
 | §3.2 TSopt on RST                               | met (synchronized states)               |
 | §3.2 SHOULD drop missing-TSopt                  | met                                     |
 | §4 RTTM rule                                    | met                                     |
+| §4 Receiver-side RTT estimator (DRS)            | met (Linux-parity; TS + no-TS)          |
 | §4.2 EWMA multi-sample                          | met                                     |
 | §4.3 TSval-to-echo (A/B/C)                      | met (Last.ACK.sent gate via RCV.NXT)    |
 | §5.2 PAWS                                       | met                                     |
