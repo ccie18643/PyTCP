@@ -1,9 +1,27 @@
-# RFC adherence correctness sweep — findings & remaining work
+# RFC adherence correctness sweep — findings (COMPLETE)
 
 Full audit of all 125 `docs/rfc/**/adherence.md` records against the
-current code (2026-07). Pass 1 (commit 8a2e37b6) applied verified
-corrections to 46 records before the run was interrupted by the session
-usage limit. This file is the driving checklist to finish the rest.
+current code (2026-07). **COMPLETE**: pass 1 (commit 8a2e37b6, 46
+records) + pass 2 (commit 0ae03834, 50 records) = 96 records corrected;
+the remaining ~29 were already accurate. This file is the historical
+findings record; the corrections have shipped.
+
+Minor residuals left for a future touch (in already-corrected records,
+each noted by its editor as unflagged-for-that-record):
+- `arp/rfc1027__proxy_arp` lines 74 / 177-180: stale prose ("1-hour
+  age timeout", "packet-queue SHOULD gap") that now contradicts the
+  corrected `rfc1122__host_requirements_arp` record.
+- `udp/rfc768__udp` (+ `tcp/rfc6056`, `arp/rfc826` cross-refs): the
+  "RX rejects sport=0" deviation no longer holds (parser accepts
+  sport=0; only dport=0 is rejected).
+- `tcp/rfc6056__port_randomization`: code snippet still cites the
+  nonexistent `stack.EPHEMERAL_PORT_RANGE` (now
+  `STACK__EPHEMERAL_PORT_RANGE__LOW/HIGH`).
+- `dhcp4/rfc8910__captive_portal`: "no DHCPv6 client at all" is stale
+  (a `Dhcp6Client` now exists) — the option-114 verdict is unaffected.
+- Pervasive bare `file:line` numbers in un-flagged paragraphs of large
+  handler files will keep drifting on any code change (inherent to
+  line-anchored docs).
 
 Legend: [WRONG]=wrong met/deferred verdict; [STALE]=stale file:line;
 [TEST]=broken test ref; [PROSE]=stale mechanism prose; [contradiction]=
