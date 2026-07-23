@@ -8,11 +8,7 @@
 | Date        | March 2008                                        |
 | Source text | [`rfc5175.txt`](rfc5175.txt)                      |
 
-This adherence record is a **stub**. The audit will be
-filled in when an RA flag-extension consumer lands in
-PyTCP.
-
-## Status: deferred (MAY per RFC 8504 §5.6; no consumer)
+## Status: partial (MAY per RFC 8504 §5.6; option parsed, no consumer flag reacts)
 
 The base Router Advertisement message carries an 8-bit
 flags field; six bits are assigned (M, O, H, plus the 2-bit
@@ -21,15 +17,20 @@ available for future assignment. RFC 5175 defines a 48-bit
 extension via a separate ND option, allowing future RA
 flags to be advertised without exhausting the 8-bit field.
 
-PyTCP does not parse RA Flags Option today. RFC 8504 §5.6
-explicitly notes "no flags have been defined that make use
-of the new option" — implementations MAY parse it for
-forward-compatibility but no current standard requires
-consumption.
+PyTCP parses the RA Flags Option today. The wire codec
+`Icmp6NdOptionRaFlags` (type 26, `RA_FLAGS_EXTENSION`) lives
+at
+`packages/net_proto/net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__ra_flags.py`
+and is dispatched from the ND options walker
+`.../icmp6/message/nd/option/icmp6__nd__options.py:195-196`.
+RFC 8504 §5.6 explicitly notes "no flags have been defined
+that make use of the new option" — implementations MAY
+parse it for forward-compatibility but no current standard
+requires consumption.
 
-This is an inert deferral: nothing to implement until a
-real consumer flag is defined and PyTCP needs to react to
-it.
+The remaining gap is inert: the option is parsed, but no
+consumer flag reacts to it — there is nothing to react to
+until a real extension flag is defined.
 
 ## Cross-references
 

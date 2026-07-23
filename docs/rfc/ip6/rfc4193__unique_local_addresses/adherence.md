@@ -40,13 +40,13 @@ operator configures.
 
 | Section | Topic                                              | Status |
 |---------|----------------------------------------------------|--------|
-| §3      | `fc00::/7` prefix reserved for ULAs                | met (predicate exists at `packages/net_addr/net_addr/ip6_address.py:229-234`) |
+| §3      | `fc00::/7` prefix reserved for ULAs                | met (predicate exists at `packages/net_addr/net_addr/ip6_address.py:570-575`) |
 | §3.1    | Local-Bit (L=1 → fd00::/8) assignment              | met (predicate matches both halves of `fc00::/7`) |
 | §3.2.2  | Global ID pseudo-random algorithm                  | n/a (operator / provisioning concern; host consumes) |
 | §4.1    | ULAs MUST NOT be propagated to global routing      | n/a (no forwarding — Phase-2 forwarding plane concern) |
 | §4.3    | Site border filtering of ULAs                      | n/a (no forwarding — Phase-2 forwarding plane concern) |
 | §4.4    | DNS leakage of ULA records                         | n/a (resolver is application-layer) |
-| §4.7    | Choice of source addresses (RFC 3484/6724)         | met (cross-reference: source selection rules in `packages/pytcp/pytcp/lib/ip6_source_selection.py`) |
+| §4.7    | Choice of source addresses (RFC 3484/6724)         | met (cross-reference: source selection rules in `packages/pytcp/pytcp/protocols/ip6/ip6__source_selection.py`) |
 
 ---
 
@@ -66,13 +66,14 @@ operator configures.
 
 **Adherence:** met. The `fc00::/7` prefix is recognised by
 `Ip6Address.is_private`
-(`packages/net_addr/net_addr/ip6_address.py:229-234`):
+(`packages/net_addr/net_addr/ip6_address.py:570-575`):
 
 ```python
 @property
+@override
 def is_private(self) -> bool:
     """
-    Check if address is IPv6 Unique Local (fc00::/7).
+    Check if IPv6 address is private.
     """
 
     return self._address & IP6__PRIVATE_PREFIX_MASK == IP6__PRIVATE_PREFIX
@@ -80,7 +81,7 @@ def is_private(self) -> bool:
 
 with `IP6__PRIVATE_PREFIX = 0xFC00_0000_0000_0000_0000_0000_0000_0000`
 and `IP6__PRIVATE_PREFIX_MASK = 0xFE00_0000_0000_0000_0000_0000_0000_0000`
-at `:63-64`. The mask covers exactly the high 7 bits, so both
+at `:64-65`. The mask covers exactly the high 7 bits, so both
 the L=0 (`fc00::/8`, reserved) and L=1 (`fd00::/8`, locally-
 assigned) halves of `fc00::/7` match.
 
@@ -167,13 +168,13 @@ PyTCP delegates DNS to the stdlib resolver via
 > source addresses with longer prefix matches."
 
 **Adherence:** met. PyTCP's RFC 6724 (which obsoletes RFC
-3484) implementation in `packages/pytcp/pytcp/lib/ip6_source_selection.py`
+3484) implementation in `packages/pytcp/pytcp/protocols/ip6/ip6__source_selection.py`
 does not give ULA a special tier in the precedence table —
 ULA candidates compete against Global Unicast candidates
 through the standard policy-table label-match (RFC 6724 §5
 rule 6) and longest-matching-prefix (rule 8) tiebreaks. The
 default policy table at
-`packages/pytcp/pytcp/lib/ip6_policy_table.py::DEFAULT_POLICY_TABLE` mirrors
+`packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py::DEFAULT_POLICY_TABLE` mirrors
 RFC 6724 verbatim (`fc00::/7` has label 13 / precedence 3,
 distinct from Global label 1 / precedence 50) so a ULA
 destination naturally prefers a ULA source via rule 6 without
@@ -190,7 +191,7 @@ documents the rule-by-rule walk-through.
 ### §3 `fc00::/7` prefix recognition
 
 - **Unit:**
-  `packages/net_addr/net_addr/tests/unit/test__ip6_address.py::TestIp6AddressIsPrivate`
+  `packages/net_addr/net_addr/tests/unit/test__ip6_address.py::TestNetAddrIp6Address::test__net_addr__ip6_address__is_private`
   — parameterised matrix of `fc00::`, `fcff::`, `fd00::`,
   `fdff::`, and out-of-range neighbours; asserts
   `is_private` matches the §3 boundary.
@@ -199,10 +200,12 @@ documents the rule-by-rule walk-through.
 
 ### §4.7 ULA in source-selection sort key
 
-- **Unit:**
-  `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip6_source_selection.py`
-  — RFC 6724 source-selection rule-by-rule cases. The
-  policy-table label match (rule 6) ensures a ULA
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/ip6/test__ip6__rfc6724_source_selection.py`
+  — RFC 6724 source-selection rule-by-rule cases (the
+  `packages/pytcp/pytcp/tests/unit/protocols/ip6/test__ip6__source_selection.py`
+  unit file covers the scope / common-prefix-length helpers
+  only). The policy-table label match (rule 6) ensures a ULA
   destination picks a ULA source when both are available.
 
 **Status:** locked in indirectly (the rule-6 case covers the

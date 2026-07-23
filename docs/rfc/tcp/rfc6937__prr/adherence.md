@@ -233,7 +233,7 @@ integration tests at
 ### §3 PRR initialisation at recovery entry
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__cwnd.py::TestTcpCwndPrr::test__cwnd__prr__entry_initializes_recover_fs_prr_delivered_prr_out`
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__cwnd.py::TestTcpCwndPrr::test__cwnd__prr__recovery_entry_initialises_recover_fs_and_prr_counters`
   drives a fast-retransmit entry and asserts all
   four initialisations (`_recover_fs == flight_size`,
   `_prr_delivered == 0`, `_prr_out == 0`,

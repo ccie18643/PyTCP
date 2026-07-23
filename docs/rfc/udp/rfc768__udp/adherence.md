@@ -16,7 +16,7 @@ in RFC 768. The audit was performed by reading the RFC
 text fresh and inspecting `packages/net_proto/net_proto/protocols/udp/`,
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py`,
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__tx.py`,
-and `packages/pytcp/pytcp/socket/udp__socket.py` directly. Adherence
+and `packages/pytcp/pytcp/runtime/socket/udp__socket.py` directly. Adherence
 levels are described in plain language. Sections without
 normative content (Introduction, Protocol Application,
 References) are omitted.
@@ -114,7 +114,7 @@ runs to completion with `parser.sport == 0` and
 >  particular internet destination address."
 
 **Adherence:** met. The RX dispatch path at
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:128-147`
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:186-219`
 constructs a `UdpMetadata` keyed by
 `(ip__local_address, udp__local_port)` and walks the
 socket table for a matching listener — so the same dport
@@ -171,27 +171,35 @@ zero-payload datagram emits `plen = 8` (the RFC minimum).
 **Adherence:** met. The 16-bit one's-complement sum is
 computed by `packages/net_proto/net_proto/lib/inet_cksum.py:39-78` over all
 buffers passed in. The UDP TX path at
-`packages/net_proto/net_proto/protocols/udp/udp__assembler.py:79-80` calls:
+`packages/net_proto/net_proto/protocols/udp/udp__assembler.py:102-103` calls:
 
 ```python
-header[6:8] = inet_cksum(header, self._payload, init=self.pshdr_sum).to_bytes(2)
+cksum = inet_cksum(header, self._payload, init=self.pshdr_sum)
+header[6:8] = (cksum or 0xFFFF).to_bytes(2)
 ```
 
 where `pshdr_sum` is the precomputed IP pseudo-header
 contribution (the IPv4 / IPv6 TX paths populate it).
 
-The RX path at `udp__parser.py:91-94` verifies:
+The RX path at `udp__parser.py:111-140` verifies:
 
 ```python
-if int.from_bytes(self._frame[6:8]) != 0 and inet_cksum(
-    self._frame[: self._ip__payload_len], init=self._ip__pshdr_sum
-):
+raw_cksum = int.from_bytes(self._frame[6:8])
+
+if raw_cksum == 0:
+    ...
+    return
+
+if inet_cksum(self._frame[: self._ip__payload_len], init=self._ip__pshdr_sum):
     raise UdpIntegrityError("The packet checksum must be valid.")
 ```
 
-`inet_cksum(...)` returns 0 when the data + pseudo-header
-sum to all-ones (the one's-complement zero), so a valid
-inbound packet passes the predicate.
+The `raw_cksum == 0` early-return handles the "no
+checksum" sentinel (and the RFC 8200 §8.1 IPv6 discard);
+the subsequent unconditional `inet_cksum(...)` returns 0
+when the data + pseudo-header sum to all-ones (the one's-
+complement zero), so a valid inbound packet passes the
+predicate.
 
 > "If the computed checksum is zero, it is transmitted as
 >  all ones (the equivalent in one's complement
@@ -200,10 +208,11 @@ inbound packet passes the predicate.
 >  debugging or for higher level protocols that don't
 >  care)."
 
-**Adherence (RX zero-skip):** met. The `!= 0` guard at
-`udp__parser.py:91` ensures a wire value of `0x0000`
-bypasses checksum validation, treating the datagram as
-"sender did not generate a checksum."
+**Adherence (RX zero-skip):** met. The `raw_cksum == 0`
+early-return guard at `udp__parser.py:111-113` ensures a
+wire value of `0x0000` bypasses checksum validation,
+treating the datagram as "sender did not generate a
+checksum."
 
 **Adherence (TX zero-→-all-ones substitution):** met.
 Both UDP serialization paths apply the substitution
@@ -277,7 +286,7 @@ the IPv4 layer constructs it per RFC 791 + RFC 1122
 >  destination ports and addresses to be sent."
 
 **Adherence:** met. The BSD-socket facade at
-`packages/pytcp/pytcp/socket/udp__socket.py` exposes the full UDP user
+`packages/pytcp/pytcp/runtime/socket/udp__socket.py` exposes the full UDP user
 interface:
 
 - `bind(address)` at `udp__socket.py:202` — create a
@@ -400,7 +409,7 @@ clarifications come from:
 - **RFC 1122 §4.1.3.4 ICMP messages**: a UDP receiver
   with no matching socket SHOULD emit ICMP Port
   Unreachable. PyTCP wires this at
-  `packet_handler__udp__rx.py:180-230` with rate-limiting
+  `packet_handler__udp__rx.py:260-303` with rate-limiting
   via `try_emit_icmp_error` and counters
   `udp__no_socket_match__respond_icmp4_unreachable` /
   `udp__no_socket_match__respond_icmp6_unreachable`.
@@ -502,7 +511,7 @@ the natural follow-ups when a reader extends the audit.
 ### BSD socket facade
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__udp__socket.py`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__udp__socket.py`
   — pins `bind` / `connect` / `send` / `sendto` / `recv`
   / `recvfrom` / `recvmsg` / `close` plus the
   `setsockopt`/`getsockopt` plumbing.
@@ -567,4 +576,4 @@ rule, and both UDP TX serialization paths substitute
 - IPv4 host requirements (incl. UDP §4.1): [`../../ip4/rfc1122__host_requirements_ip4/adherence.md`](../../ip4/rfc1122__host_requirements_ip4/adherence.md)
 - IPv6 UDP checksum-mandatory rule: [`../../ip6/rfc8200__ipv6/adherence.md`](../../ip6/rfc8200__ipv6/adherence.md)
 - ICMP Port Unreachable on no matching socket: [`../../icmp4/rfc792__icmp4/adherence.md`](../../icmp4/rfc792__icmp4/adherence.md) and [`../../icmp6/rfc4443__icmp6/adherence.md`](../../icmp6/rfc4443__icmp6/adherence.md)
-- PyTCP UDP socket facade lives at `packages/pytcp/pytcp/socket/udp__socket.py`; broader socket-API parity audit at `docs/refactor/socket_linux_parity_audit.md`.
+- PyTCP UDP socket facade lives at `packages/pytcp/pytcp/runtime/socket/udp__socket.py`; broader socket-API parity audit at `docs/refactor/socket_linux_parity_audit.md`.

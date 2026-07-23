@@ -56,7 +56,7 @@ directly. Non-normative content (§1 Status, §2 Introduction,
 > those with '1110' as their high-order four bits."
 
 **Adherence:** met. `Ip4Address.is_multicast` recognises 224/4
-(`packages/net_addr/net_addr/ip4_address.py:164-169`):
+(`packages/net_addr/net_addr/ip4_address.py:204-210`):
 
 ```python
 return self._address & 0xF0_00_00_00 == 0xE0_00_00_00
@@ -111,7 +111,7 @@ network" half of the §6.1 contract is also honoured.
 
 **Adherence:** met. `Ip4Address.multicast_mac` maps the
 high-23-bits of the IPv4 multicast address into the
-`01:00:5E:` MAC prefix (`packages/net_addr/net_addr/ip4_address.py:108-126`). The
+`01:00:5E:` MAC prefix (`packages/net_addr/net_addr/ip4_address.py:120-131`). The
 Ethernet TX path consumes this when resolving the destination
 MAC for multicast frames
 (`packet_handler__ethernet__tx.py`).
@@ -124,8 +124,8 @@ MAC for multicast frames
 > 01-00-5E-00-00-00 (hex)."
 
 **Adherence:** met. `Ip4Address.multicast_mac`
-(`packages/net_addr/net_addr/ip4_address.py:108-125`) returns
-`MacAddress(MAC__IP4_MULTICAST_PREFIX | self._address & 0x0000_007F_FFFF)`
+(`packages/net_addr/net_addr/ip4_address.py:120-131`) returns
+`MacAddress(MAC__IP4_MULTICAST_PREFIX | self._address & 0x7F_FFFF)`
 which is exactly the high-23-bits mapping.
 
 ## §7 Receiving Multicast IP Datagrams
@@ -152,7 +152,9 @@ Robustness Variable), and inbound Membership Queries elicit a
 current-state Report after the §5.2 random delay. The detailed
 audit is in the RFC 3376 and RFC 2236 records. The
 querier-version (v1/v2) fallback state machine (RFC 3376 §7)
-is the one deferred host-side piece.
+is also implemented — an older-version Query flips the
+interface into IGMPv2/v1 Host Compatibility Mode (see
+`test__igmp__version_fallback.py`).
 
 ## §9 ICMP
 
@@ -198,7 +200,7 @@ these gates.
 ### §6.1 Multicast outbound TTL default = 1
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc1112MulticastTtl`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc1112MulticastTtl`
   Three cases: multicast dst + no caller TTL → TTL=1;
   multicast dst + caller-supplied TTL → caller value
   preserved; unicast dst + no caller TTL → TTL=64
@@ -226,8 +228,8 @@ these gates.
   record's test audit.
 
 **Status:** locked in (IGMPv3). The §7 querier-version (v1/v2)
-fallback is the deferred host-side piece — see the RFC 3376
-record.
+fallback is covered by `test__igmp__version_fallback.py` — see
+the RFC 3376 record.
 
 ### Test coverage summary
 
@@ -255,6 +257,6 @@ record.
 | §7 IGMP group management                            | met (IGMPv3; RFC 3376 record) |
 
 PyTCP reaches RFC 1112 Level 2: multicast send + receive plus
-IGMP group management. The one deferred host-side gap is the
-RFC 3376 §7 querier-version (v1/v2) fallback, tracked in the
-RFC 3376 record.
+IGMP group management, including the RFC 3376 §7 querier-version
+(v1/v2) Host Compatibility Mode fallback (audited in the
+RFC 3376 record).

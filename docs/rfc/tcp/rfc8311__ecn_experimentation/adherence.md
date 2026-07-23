@@ -52,14 +52,16 @@ relaxation via two mechanisms:
    `packages/pytcp/pytcp/protocols/tcp/tcp__cwnd.py:145-175`. The
    inline citation explicitly references RFC 8511.
 
-2. **RFC 9341 AccECN (Accurate ECN)**: PyTCP
+2. **RFC 9768 AccECN (Accurate ECN)**: PyTCP
    supports the AccECN feedback that conveys CE-mark
-   counts beyond a single-bit ECE flag. Implemented
-   via `_advertise_accecn` (line 313) and the
-   AE+CWR+ECE encoding at line 1393-1430.
+   counts beyond a single-bit ECE flag. Advertised
+   via `AdvertiseState.accecn`
+   (`tcp__state__advertise.py:73`) and the AE+CWR+ECE
+   handshake encoding in
+   `fsm/tcp__fsm__syn_sent.py:365-369`.
 
 Both mechanisms are documented in their own RFCs
-(8511, 9341), satisfying the §4.1 "documented in an
+(8511, 9768), satisfying the §4.1 "documented in an
 Experimental RFC" gating clause for the more
 aggressive cwnd response behaviour.
 
@@ -98,40 +100,35 @@ adopted it.
 > the use of ECN with TCP control packets and
 > retransmitted segments."
 
-**Adherence:** PyTCP follows the original RFC 3168
-restriction — control packets (SYN, FIN, RST,
-pure ACKs) and retransmits do NOT carry ECT. The
-gate at `packages/pytcp/pytcp/protocols/tcp/tcp__session.py:1500`:
+**Adherence:** not leveraged. PyTCP does NOT take
+advantage of the §4.3 relaxation — it keeps the
+conservative RFC 3168 behaviour, marking both
+control packets (SYN, FIN, RST, pure ACKs) and
+retransmitted segments Not-ECT. The gate at
+`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__tx.py:244-245`:
 
 ```python
-ip__ecn = 2 if (self._ecn_enabled and data) else 0
+is_retransmit = bool(data) and lt32(seq, session._snd_seq.max)
+ip__ecn = 2 if (session._ecn.enabled and data and not is_retransmit) else 0
 ```
 
-emits ECT only when `data` is non-empty. Since
-control packets typically have empty `data`, they
-get Not-ECT. Retransmits also pass through this
-same gate — ECT is unconditionally emitted on data
-segments regardless of whether the data is new or
-retransmitted.
-
-Wait — the retransmit case: PyTCP DOES emit ECT(0)
-on retransmits because `data` is non-empty for any
-data segment, new or retransmitted. The §4.3
-relaxation permits this; the RFC 3168 §6.1.5
-restriction (audited in the RFC 3168 record as a
-gap) is now permissible under RFC 8311 §4.3.
+emits ECT(0) only when `data` is non-empty **and**
+the segment is not a retransmit. Control packets
+have empty `data`, so they get Not-ECT; retransmits
+are excluded by the explicit `not is_retransmit`
+term, so they get Not-ECT too.
 
 So:
 
 - TCP control packets carry Not-ECT (PyTCP
   conformant with RFC 3168 conservative default).
-- Retransmits carry ECT(0) (PyTCP takes advantage
-  of RFC 8311 §4.3 relaxation, even though it's
-  unintentional).
+- Retransmits carry Not-ECT (PyTCP keeps the RFC
+  3168 §6.1.5 restriction; it does NOT adopt the
+  §4.3 relaxation).
 
-The "RFC 3168 §6.1.5 not met" gap noted in the RFC
-3168 audit is therefore re-classified as "complies
-with RFC 8311 §4.3 relaxation".
+The "RFC 3168 §6.1.5 met" invariant noted in the RFC
+3168 audit therefore holds — PyTCP does not relax it
+under RFC 8311 §4.3.
 
 ---
 
@@ -160,20 +157,22 @@ No test surface.
 The "control packets carry Not-ECT" invariant is
 implicitly verified by every ECN integration test
 that checks `ip__ecn` on outbound non-data segments.
-The "retransmits carry ECT(0)" behaviour is not
-specifically tested but follows from the gate at
-line 1500.
+The "retransmits carry Not-ECT" behaviour is not
+specifically tested but follows from the explicit
+`not is_retransmit` term in the gate at
+`session/tcp__session__tx.py:244-245`.
 
 **Status:** locked in by construction (control
-packets); locked in indirectly (retransmits).
+packets); locked in indirectly (retransmits also
+Not-ECT).
 
 ### Test coverage summary
 
 | Aspect                                       | Coverage                                       |
 |----------------------------------------------|------------------------------------------------|
-| §4.1 Alternative cwnd response (ABE/AccECN)  | locked in (cross-ref RFC 8511, RFC 9341)       |
+| §4.1 Alternative cwnd response (ABE/AccECN)  | locked in (cross-ref RFC 8511, RFC 9768)       |
 | §4.2 Router marking variants                 | n/a (router-side)                              |
-| §4.3 ECT on retransmits                      | locked in indirectly                           |
+| §4.3 ECT on retransmits                      | locked in indirectly (Not-ECT, conservative)   |
 | §4.3 ECT on control packets                  | locked in by construction (Not-ECT on control) |
 
 ---
@@ -187,19 +186,14 @@ packets); locked in indirectly (retransmits).
 | §4.1 AccECN feedback                            | leveraged                               |
 | §4.2 Marking variants (router-side)             | n/a                                     |
 | §4.2 ECT(1) for L4S                             | not implemented                         |
-| §4.3 ECT on TCP retransmits                     | leveraged (relaxation taken)            |
+| §4.3 ECT on TCP retransmits                     | not leveraged (Not-ECT, conservative)   |
 | §4.3 ECT on TCP control packets                 | not leveraged (Not-ECT, conservative)   |
 
-PyTCP takes advantage of two RFC 8311 §4 relaxations:
+PyTCP takes advantage of one RFC 8311 §4 relaxation:
 
 1. The alternative cwnd response (§4.1) via RFC 8511
-   ABE and RFC 9341 AccECN — both shipped per their
+   ABE and RFC 9768 AccECN — both shipped per their
    respective audits.
-2. The ECT-on-retransmits relaxation (§4.3) — PyTCP
-   emits ECT(0) on retransmits along with new data.
-   This was previously a strict RFC 3168 §6.1.5
-   violation; under RFC 8311 §4.3 it becomes
-   permissible experimental behaviour.
 
 PyTCP does NOT take advantage of:
 
@@ -207,13 +201,18 @@ PyTCP does NOT take advantage of:
   active research; adopting it would require
   implementing the L4S sender-side response (RFC
   9330+) which is a substantial separate project.
+- ECT on TCP retransmits (§4.3). The emission gate
+  carries an explicit `not is_retransmit` term, so
+  retransmits stay Not-ECT — PyTCP keeps the RFC
+  3168 §6.1.5 restriction rather than adopting the
+  relaxation.
 - ECT on TCP control packets (§4.3). PyTCP keeps
   the conservative RFC 3168 default; adopting the
   relaxation is permissible but offers limited
   benefit.
 
 RFC 8311 is a permissive update; PyTCP's partial
-adoption (ABE + AccECN + retransmit ECT) leverages
-the most consequential relaxations while keeping
-the conservative defaults for the experimental
-extensions PyTCP has not yet integrated.
+adoption (ABE + AccECN) leverages the §4.1 cwnd-response
+relaxation while keeping the conservative RFC 3168
+defaults for the §4.2 / §4.3 experimental extensions
+PyTCP has not yet integrated.

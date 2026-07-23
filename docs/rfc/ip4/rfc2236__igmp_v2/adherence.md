@@ -158,18 +158,32 @@ router work. PyTCP is a host (group member) only.
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/igmp/test__igmp__membership_change.py`
   Join / leave emit IGMPv3 state-change Reports (the v2-form
-  equivalent is deferred).
+  equivalent is covered by the version-fallback tests below).
 
 **Status:** locked in for the IGMPv3 form.
 
 ### §3 v2-compatibility behaviours
 
-**Status:** n/a (not implemented; deferred). When the §7
-compatibility mode lands, the natural tests drive a v2 Query and
-assert the host (a) answers in the v2 Report form for the
-older-querier-present window and (b) sends a v2 Leave Group to
-224.0.0.2 on leave; and that report suppression fires on hearing
-another host's Report while a v2 timer runs.
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/igmp/test__igmp__version_fallback.py`
+  `TestIgmpVersionFallbackReportForm` drives the §7 older-querier
+  compatibility mode and asserts the host answers a join with a
+  **v2 Report to the group** (`test__igmp__v2_mode__join_emits_v2_report_to_group`),
+  sends a **v2 Leave Group to 224.0.0.2** on leave
+  (`test__igmp__v2_mode__leave_emits_v2_leave_to_all_routers`),
+  and answers a v2 Query with a per-group v2 Report
+  (`test__igmp__v2_mode__query_response_is_per_group_v2_report`).
+  `TestIgmpVersionFallback` pins the mode machine itself (v2/v1
+  Query flips the mode, revert-to-v3 timeout, forced-version pin).
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/igmp/test__igmp__v2_report_suppression.py`
+  `TestIgmpV2ReportSuppression` proves a v2 Report from another
+  host suppresses this host's pending response
+  (`test__igmp__v2__report_from_another_host_suppresses_pending_response`)
+  and that an unsuppressed response is still sent
+  (`test__igmp__v2__unsuppressed_response_is_sent`).
+
+**Status:** locked in.
 
 ### Test coverage summary
 
@@ -178,8 +192,8 @@ another host's Report while a v2 timer runs.
 | §2 v2 message wire forms            | locked in |
 | §2.3 checksum                       | locked in |
 | §3 join/leave reporting (IGMPv3)    | locked in |
-| §3 v2-form report / Leave-to-224.0.0.2 | n/a (deferred §7) |
-| §3 report suppression               | n/a (not used under IGMPv3) |
+| §3 v2-form report / Leave-to-224.0.0.2 | locked in (`test__igmp__version_fallback.py`) |
+| §3 report suppression               | locked in (`test__igmp__v2_report_suppression.py`) |
 | §3 querier role                     | n/a (Phase 2 router) |
 
 ---
@@ -191,15 +205,16 @@ another host's Report while a v2 timer runs.
 | §2 8-octet message wire forms           | met (codec) |
 | §2.3 checksum                           | met    |
 | §3 join/leave reporting                 | met via IGMPv3 |
-| §3 IGMPv2-form reports / Leave (224.0.0.2) | not implemented (deferred §7) |
-| §3 report suppression                   | not implemented (n/a under IGMPv3) |
+| §3 IGMPv2-form reports / Leave (224.0.0.2) | met (RFC 3376 §7 compatibility mode) |
+| §3 report suppression                   | met (in v1/v2 compatibility mode) |
 | §3 querier / router role                | out of scope (Phase 2) |
 
 PyTCP supersedes IGMPv2 with IGMPv3 (RFC 3376) and implements the
 IGMPv2 message wire forms required for interoperation. The
 IGMPv2-specific host behaviours — answering in the v2 Report
 form, the Leave Group to 224.0.0.2, and report suppression — are
-the RFC 3376 §7 older-version compatibility mode, deferred as a
-cohesive block (the wire forms are ready; only the version-mode
-state machine is unwired). The querier role is Phase-2 router
-work.
+implemented as the RFC 3376 §7 older-version Host Compatibility
+Mode: an older-version Query flips the interface into IGMPv2 (or
+IGMPv1) mode, `_igmp_host_compatibility_mode()` selects the v2
+report / Leave forms, and report suppression fires while a v2
+timer runs. The querier role is Phase-2 router work.

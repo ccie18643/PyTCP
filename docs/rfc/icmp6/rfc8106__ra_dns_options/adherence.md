@@ -8,10 +8,7 @@
 | Date        | March 2017                                        |
 | Source text | [`rfc8106.txt`](rfc8106.txt)                      |
 
-This adherence record is a **stub**. The audit will be
-filled in if and when PyTCP grows a DNS-resolver consumer.
-
-## Status: deferred (MUST per RFC 8504 §8.3 — but contextually N/A for the stack)
+## Status: partial (MUST per RFC 8504 §8.3 — wire codecs parsed, no resolver consumer)
 
 RFC 8106 defines two RA options:
 
@@ -20,9 +17,18 @@ RFC 8106 defines two RA options:
 - **DNSSL** (DNS Search List) — domain suffixes for
   unqualified-name resolution.
 
-PyTCP does not parse either option today. RFC 8504 §8.3
-classifies the support as MUST: "Implementations MUST
-include support for the DNS RA option."
+PyTCP parses both options today. The RDNSS wire codec
+(`Icmp6NdOptionRdnss`, type 25) lives at
+`packages/net_proto/net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__rdnss.py`
+and the DNSSL codec (`Icmp6NdOptionDnssl`, type 31) at
+`.../icmp6__nd__option__dnssl.py`; both are dispatched from
+the ND options walker
+`.../icmp6/message/nd/option/icmp6__nd__options.py:193-198`.
+What is deferred is the DNS-resolver *consumer* — no
+component reads the parsed RDNSS/DNSSL list and configures a
+resolver. RFC 8504 §8.3 classifies the support as MUST:
+"Implementations MUST include support for the DNS RA
+option."
 
 The MUST is contextual: PyTCP is a network stack, not a
 DNS-aware host. The DNS resolver is application-layer

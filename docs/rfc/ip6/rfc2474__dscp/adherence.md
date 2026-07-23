@@ -39,9 +39,9 @@ scope.
 > two-bit currently unused (CU) field is reserved."
 
 **Adherence:** met (with CU bits redefined). `Ip6Header.dscp: int` is
-a 6-bit field (`packages/net_proto/net_proto/protocols/ip6/ip6__header.py:100`,
-asserted `is_uint6` at `:115`), and `Ip6Header.ecn: int` is the 2-bit
-field occupying the former CU slot (`:101,117`). They pack into the
+a 6-bit field (`packages/net_proto/net_proto/protocols/ip6/ip6__header.py:99`,
+asserted `is_uint6` at `:114`), and `Ip6Header.ecn: int` is the 2-bit
+field occupying the former CU slot (`:100,116`). They pack into the
 Traffic Class octet inside `ver << 28 | dscp << 22 | ecn << 20 | flow`
 at `:149` and unpack at `:169-170`
 (`dscp = (tc >> 22) & 0x3f`, `ecn = (tc >> 20) & 0x03`). The post-RFC
@@ -52,7 +52,7 @@ at `:149` and unpack at `:169-170`
 is settable per-socket and marked on every outbound packet, not just
 stored in the header struct. `setsockopt(IPPROTO_IPV6, IPV6_TCLASS,
 dscp<<2 | ecn)` threads the high 6 bits through
-`socket._effective_ip_dscp()` (`socket/__init__.py:1140-1150`,
+`socket._effective_ip_dscp()` (`runtime/socket/__init__.py:1575-1584`,
 `(self._ipv6_tclass >> 2) & 0x3f`) → `ip__dscp` / `ip6__dscp` → the
 `Ip6Assembler.dscp` field, across UDP, TCP, and raw sockets. Each IPv6
 fragment inherits the original datagram's DSCP + ECN: the IPv6
@@ -115,7 +115,7 @@ available, it is the only PHB.
   `packages/pytcp/pytcp/tests/integration/protocols/udp/test__udp__fragmentation.py::TestUdpFragmentationDscp`
   (IPv6 case) — every fragment carries the DSCP + ECN.
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__raw__socket.py::TestRawSocketDscp`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__raw__socket.py::TestRawSocketDscp`
   — `_effective_ip_dscp()` IPv6 high-6-bit extraction.
 
 **Status:** locked in.

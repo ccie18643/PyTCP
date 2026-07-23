@@ -394,9 +394,14 @@ RTO.
 > TS.Recent and SEG.SEQ <= Last.ACK.sent (see Section
 > 4.3), then record its timestamp in TS.Recent."
 
-**Adherence:** partial — same as §4.3 audit above.
-The `Last.ACK.sent` check is missing; PyTCP updates
-`_ts_recent` whenever the TSval is non-stale.
+**Adherence:** met — same as §4.3 audit above.
+`check_paws_and_update_ts_recent`
+(`session/tcp__session__validate.py:258`) gates the
+`TS.Recent` refresh on
+`flag_syn or le32(seq, rcv_nxt)` — the safe tightening
+of `SEG.SEQ <= Last.ACK.sent` — and only applies the
+update (`:302-303`) when that gate holds, so an OOO
+segment cannot inflate `TS.Recent`.
 
 ### R4) In-sequence segment
 
@@ -497,9 +502,12 @@ typical PyTCP use cases.
   acknowledgement fires from the data path. The
   SYN-segment exemption (RFC 6191 §3 reuse path) is
   pinned indirectly by the existing
-  `test__rfc6191__syn_without_tsopt_falls_back_to_challenge_ack`
-  test which verifies a SYN-without-TSopt to TIME_WAIT
-  still elicits the challenge ACK.
+  `test__rfc6191__syn_without_tsopt_with_seq_evidence_accepts_reuse`
+  and `test__rfc6191__no_evidence_falls_back_to_challenge_ack`
+  tests (in `test__tcp__session__close__time_wait.py`)
+  which verify a SYN-without-TSopt to TIME_WAIT accepts
+  reuse when sequence evidence exists and otherwise
+  falls back to the challenge ACK.
 
 **Status:** locked in.
 
@@ -609,8 +617,8 @@ regression guard.
 | §2.4 Window retraction                          | covered in RFC 1122 audit                      |
 | §3.2 TSopt wire format                          | locked in                                      |
 | §3.2 TSopt on every non-RST                     | locked in                                      |
-| §3.2 TSopt on RST                               | n/a (gap)                                      |
-| §3.2 SHOULD drop missing-TSopt                  | n/a (gap)                                      |
+| §3.2 TSopt on RST                               | locked in                                      |
+| §3.2 SHOULD drop missing-TSopt                  | locked in                                      |
 | §4 RTTM rule                                    | locked in                                      |
 | §4 Receiver-side RTT estimator (DRS)            | locked in (unit + integration, TS + no-TS)     |
 | §4.2 EWMA with multiple samples                 | locked in (covered by RFC 6298 audit)          |

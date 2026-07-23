@@ -46,9 +46,10 @@ For all 15:
   structurally impossible.
 - **RX**: `Icmp4Parser._parse()` has no arm for any of these
   type values, so the message is constructed as
-  `Icmp4MessageUnknown` and the RX handler dispatches to
-  `__phrx_icmp4__unknown`, which silently discards (logs +
-  bumps the `icmp4__unknown` counter).
+  `Icmp4MessageUnknown`, whose `validate_sanity` raises
+  `Icmp4SanityError`; `_phrx_icmp4` catches the resulting
+  `PacketValidationError` and silently discards (logs +
+  bumps the `icmp4__failed_parse__drop` counter).
 
 The behaviour is regression-pinned by:
 
@@ -142,17 +143,17 @@ adherence record.
 
 ## Test coverage audit
 
-| Aspect                                                                  | Coverage |
-|-------------------------------------------------------------------------|----------|
-| §3 host generation MUST NOT happen (TX-side structural)                 | shipped — codebase grep returns no hits for any deprecated-type name |
-| §3 host RX silently discards deprecated types                           | shipped — see test classes below |
-| §3 Type 17 (Address Mask Request) RX no TX                              | shipped — `test__icmp4__rx__addr_mask_request__no_tx` |
-| §3 Type 17 RX bumps `icmp4__unknown`                                    | shipped — `test__icmp4__rx__addr_mask_request__packet_stats_rx` |
-| §3 Type 4 (Source Quench, related RFC 6633) RX no TX                    | shipped — `TestIcmp4Rx__SourceQuench__Rfc6633` |
-| §3 generic unknown type (Type 99) silent discard                        | shipped — `TestIcmp4Rx__UnknownType` |
-| §3 14 other deprecated types (6, 15, 16, 18, 30–36, 37, 38, 39)         | covered transitively — they share the unknown-type code path with Types 17 and 99 |
-| §4 RFC 1788 Historic                                                    | n/a (no implementation impact) |
-| §5 security-tier logging of deprecated-type discard                     | partial — debug log present, security tier is Phase-2 polish (see RFC 6633 §8 audit) |
+| Aspect                                                          | Coverage |
+|-----------------------------------------------------------------|----------|
+| §3 host generation MUST NOT happen (TX-side structural)         | shipped — codebase grep returns no hits for any deprecated-type name |
+| §3 host RX silently discards deprecated types                   | shipped — see test classes below |
+| §3 Type 17 (Address Mask Request) RX no TX                      | shipped — `test__icmp4__rx__addr_mask_request__no_tx` |
+| §3 Type 17 RX bumps `icmp4__failed_parse__drop`                 | shipped — `test__icmp4__rx__addr_mask_request__packet_stats_rx` |
+| §3 Type 4 (Source Quench, related RFC 6633) RX no TX            | shipped — `TestIcmp4Rx__SourceQuench__Rfc6633` |
+| §3 generic unknown type (Type 99) silent discard                | shipped — `TestIcmp4Rx__UnknownType` |
+| §3 14 other deprecated types (6, 15, 16, 18, 30–36, 37, 38, 39) | covered transitively — they share the unknown-type code path with Types 17 and 99 |
+| §4 RFC 1788 Historic                                            | n/a (no implementation impact) |
+| §5 security-tier logging of deprecated-type discard             | partial — debug log present, security tier is Phase-2 polish (see RFC 6633 §8 audit) |
 
 The 14 untested-individually deprecated types share a single
 code path with Types 17 and 99: the `Icmp4Parser._parse()`

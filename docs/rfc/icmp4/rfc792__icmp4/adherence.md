@@ -16,18 +16,18 @@ generates and processes RFC 792 messages is audited in detail at
 Implementation status by ICMPv4 type, as of the recent ICMP
 host-requirements work:
 
-| Type  | Name                    | Status                                         |
-|-------|-------------------------|------------------------------------------------|
-| 0     | Echo Reply              | met (RX + RAW socket delivery)                 |
-| 3     | Destination Unreachable | met (parser + emitter; demux to TCP/UDP/PMTUD) |
-| 4     | Source Quench           | deliberate non-implementation (RFC 6633)       |
-| 5     | Redirect                | not implemented (parsed as Unknown)            |
-| 8     | Echo Request            | met (Smurf gate at v4 echo handler)            |
-| 11    | Time Exceeded           | met (parser + RFC 5927 §6 soft-error plumbing) |
-| 12    | Parameter Problem       | met (parser + RFC 5927 §6 soft-error plumbing) |
-| 13/14 | Timestamp / Reply       | deliberate non-implementation (RFC 6633)       |
-| 15/16 | Information Req/Reply   | deliberate non-implementation (obsolete)       |
-| 17/18 | Address Mask            | deliberate non-implementation (RFC 6633)       |
+| Type  | Name                    | Status                                            |
+|-------|-------------------------|---------------------------------------------------|
+| 0     | Echo Reply              | met (RX + RAW socket delivery)                    |
+| 3     | Destination Unreachable | met (parser + emitter; demux to TCP/UDP/PMTUD)    |
+| 4     | Source Quench           | deliberate non-implementation (RFC 6633)          |
+| 5     | Redirect                | not implemented (parsed as Unknown)               |
+| 8     | Echo Request            | met (Smurf gate at v4 echo handler)               |
+| 11    | Time Exceeded           | met (parser + RFC 5927 §6 soft-error plumbing)    |
+| 12    | Parameter Problem       | met (parser + RFC 5927 §6 soft-error plumbing)    |
+| 13/14 | Timestamp / Reply       | deliberate non-implementation (RFC 1122 §3.2.2.8) |
+| 15/16 | Information Req/Reply   | deliberate non-implementation (obsolete)          |
+| 17/18 | Address Mask            | deliberate non-implementation (RFC 6918)          |
 
 The audit will be expanded into a per-section walkthrough using the
 [`rfc_adherence_audit`](../../../../.claude/skills/rfc_adherence_audit/SKILL.md)

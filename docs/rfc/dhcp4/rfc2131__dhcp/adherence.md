@@ -37,8 +37,8 @@ carries:
 - RFC 1542 §3.2 `secs` advance (Phase 1).
 - RFC 2131 §4.1 randomised exponential backoff (Phase 1).
 - RFC 2131 §3.1 step 5 DHCPDECLINE on ARP conflict
-  (Phase 2.2) via a packet-handler callback running the
-  RFC 5227 §2.1.1 Probe loop.
+  (Phase 2.2) via the injected `Ip4Acd` engine running the
+  RFC 5227 §2.1.1 Probe loop (`acd.probe`).
 - RFC 2131 §4.4.1 [1, 10]-second startup desync delay
   (Phase 2.1).
 - RFC 2131 §4.4.1 multi-OFFER collection window
@@ -63,7 +63,7 @@ A two-step `sync` API (`fetch()` / `release(lease)` /
 primitives for tests and operator CLI tools.
 
 A separate kernel/userspace boundary surface at
-`packages/pytcp/pytcp/stack/address.py` (`Ip4AddressApi`) mediates
+`packages/pytcp/pytcp/stack/address.py` (`AddressApi`) mediates
 every address mutation; the lifecycle never writes
 `_ip4_ifaddr` directly. The Phase 4.5 FSM → API mutation
 table is wired end-to-end (see the table in the Overall
@@ -82,15 +82,20 @@ Remaining items against the per-RFC adherence catalogue:
   consumer for DNS/NTP/etc. configuration today.
   Tracked in `docs/refactor/ip4_audit_punchlist.md` as
   the DHCPv4 Phase 9 backlog item.
-- **RFC 3396 long-option concatenation** — parser-side
-  feature with no current consumer. Existing PyTCP
-  codecs produce payloads short enough that wire-level
-  splitting never happens. Land alongside RFC 3442
-  Classless Static Routes when that arrives.
-- **Phase 7 multi-default-gateway / route-table
-  integration** — blocked on the Route API (not yet
-  shipped; tracked under the Phase-3 sanctioned-API
-  punch list).
+
+RFC 3396 long-option concatenation and the RFC 3442
+Classless Static Route consumer both shipped: the
+`_concatenated_classless_static_route_data` helper at
+`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__options.py:330-401`
+gathers the RFC 3396 concatenation of every Classless
+Static Route fragment before decoding, and the client's
+`_install_lease_routes`
+(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:435`)
+installs the resulting routes through the shipped Route
+API (`RouteApi` at `packages/pytcp/pytcp/stack/route.py:96`,
+via `add_route` / `replace_default`). The former
+Phase-7 multi-default-gateway / route-table integration
+is therefore no longer blocked.
 
 ---
 
@@ -178,7 +183,7 @@ emits `Dhcp4OptionClientId(self._expected_client_id)`
 in DISCOVER, REQUEST, and DECLINE. As of Phase 3 the
 CID wire form is the RFC 4361 §6.1 layout —
 type=0xff + 4-byte IAID + DUID — built via
-'packages/pytcp/pytcp/lib/dhcp_uid.build_client_id'. The MAC-derived
+'packages/pytcp/pytcp/protocols/dhcp4/dhcp4__uid.build_client_id'. The MAC-derived
 DUID-LL is the default; operator override via the
 'dhcp.duid' sysctl takes precedence on every
 emission. See `rfc4361__node_specific_client_id` for
@@ -267,15 +272,18 @@ sanity layer rather than leaking a raw `ValueError`.
 >  network address and lease duration."
 
 **Adherence:** met for the broadcast; lease-time hint
-not used. `_send_discover` at
-`dhcp4_client.py:1004-1029` builds the DISCOVER with a
-Param Request List (option 55) requesting SUBNET_MASK
-and ROUTER, plus a Host Name option. It does NOT include
-'requested IP address' (option 50) or 'IP address lease
-time' (option 51) — both are MAY clauses, so this is
-compliant. The DISCOVER is sent via the BSD-socket-style
-`connect(("255.255.255.255", 67))` at
-`dhcp4_client.py:752` inside `_do_init_to_bound`.
+included. `_send_discover` at
+`dhcp4_client.py:1752-1788` builds the DISCOVER with a
+Param Request List (option 55) requesting
+CLASSLESS_STATIC_ROUTE, SUBNET_MASK, and ROUTER, plus a
+Host Name option and — as a MAY — an 'IP address lease
+time' (option 51) hint sourced from the
+`dhcp.requested_lease_time` sysctl (default 86400 s =
+1 day; set 0 to omit). It does NOT include 'requested IP
+address' (option 50), which is also a MAY clause, so this
+is compliant. The DISCOVER is sent via the BSD-socket-style
+`connect(("255.255.255.255", 67))` inside
+`_do_init_to_bound`.
 
 > "3. The client receives one or more DHCPOFFER messages
 >  ... The client chooses one server from which to
@@ -343,22 +351,21 @@ DISCOVER on each window timeout. Defaults follow RFC 2131
 >  restarts the configuration process."
 
 **Adherence:** met (Phase 2.2). `Dhcp4Client.__init__`
-accepts an `arp_dad_verifier: Callable[[Ip4Address], bool]`
-callback that 'fetch()' invokes against the offered
-'yiaddr' after a valid ACK. The packet handler wires
-this to `_arp_dad_probe_address` — a new extracted
-helper that runs the RFC 5227 §2.1.1 probe loop for a
-single candidate. On a False return (conflict),
-'fetch()' emits a DHCPDECLINE carrying Server
-Identifier (option 54) + Requested IP Address (option
-50) + Client Identifier echo (RFC 6842) + ciaddr=0,
-sleeps `dhcp.decline_backoff_ms` (default 10000 ms
-per the SHOULD floor), and returns the `_NAK_RESTART`
-sentinel — the outer NAK-restart loop already provides
-the bounded retry budget. On a True return, the lease
-is returned to the caller, which skips the redundant
-re-DAD via the `dhcp_verified_address` shortcut and
-proceeds to RFC 5227 §2.3 Announcements.
+accepts an injected `acd: Ip4Acd | None` engine (the
+userspace RFC 5227 ACD conflict-detector over the
+AF_PACKET socket). After a valid ACK the acquisition path
+runs `acd.probe(address=ip4_host.address)` against the
+offered 'yiaddr' (`dhcp4_client.py:1485`). On a conflict
+(`AcdResult.success` False), the client emits a DHCPDECLINE
+carrying Server Identifier (option 54) + Requested IP
+Address (option 50) + Client Identifier echo (RFC 6842) +
+ciaddr=0, waits `dhcp.decline_backoff_ms` (default 10000 ms
+per the SHOULD floor) on an interruptible stop-event, and
+returns the `_NAK_RESTART` sentinel — the outer NAK-restart
+loop already provides the bounded retry budget. On success
+the lease is returned; the daemon-mode BOUND transition
+then begins ongoing RFC 5227 §2.3/§2.4 defense of the
+committed address via `acd.start_defense`.
 
 > "The client SHOULD wait a minimum of ten seconds
 >  before restarting the configuration process to avoid
@@ -488,10 +495,11 @@ get no DHCP-supplied parameters.
 >  DHCPDISCOVER message, it MUST include that list in
 >  any subsequent DHCPREQUEST messages."
 
-**Adherence:** met. DISCOVER (`dhcp4_client.py:1018-1023`),
-REQUEST (`:1052-1057`), and the RENEW/REBIND REQUEST
-(`:596-601`) all include the same
-`Dhcp4OptionParamReqList([SUBNET_MASK, ROUTER])`.
+**Adherence:** met. DISCOVER (`dhcp4_client.py:1763-1768`),
+the SELECTING REQUEST (`_send_request:1811-1816`), and the
+RENEW/REBIND REQUEST (`_send_request_renew:1201-1206`) all
+include the same
+`Dhcp4OptionParamReqList([CLASSLESS_STATIC_ROUTE, SUBNET_MASK, ROUTER])`.
 
 > "The client SHOULD include the 'maximum DHCP message
 >  size' option to let the server know how large the
@@ -580,7 +588,7 @@ RELEASE path likewise unicasts to `lease.server_id`
 
 **Adherence:** met. Every DHCPv4 client socket binds to
 `("0.0.0.0", 68)`; the UDP layer's `_get_ip_addresses`
-(`packages/pytcp/pytcp/socket/udp__socket.py:148-195`) deliberately
+(`packages/pytcp/pytcp/runtime/socket/udp__socket.py:148-195`) deliberately
 skips `pick_local_ip_address` for the DHCP-client
 (sport=68/dport=67) connect path so the local address
 stays unspecified for the whole FSM lifecycle. Outbound
@@ -647,10 +655,11 @@ processes is sourced from CPython's default `random`
 seed.
 
 The client validates inbound xid against the outbound:
-`_recv_offer` and `_recv_ack` both drop any frame whose
-xid does not match the value the client emitted. A stray
-DHCP reply for an unrelated transaction is silently
-discarded (return None) rather than being honoured.
+the shared `_recv_within_window` (`dhcp4_client.py:1582`)
+drops any frame whose xid does not match the value the
+client emitted (`:1660`), on both the OFFER and the ACK
+leg. A stray DHCP reply for an unrelated transaction is
+silently discarded (continue) rather than being honoured.
 
 > "A client that cannot receive unicast IP datagrams
 >  until its protocol software has been configured with
@@ -786,10 +795,12 @@ T1/T2/lease-expiry deadlines.
 >  message, the DHCPOFFER message must be silently
 >  discarded."
 
-**Adherence:** met. `_recv_offer` validates
-`offer.xid == xid` against the locally generated xid and
-returns None (silent discard) on mismatch. The matching
-guard in `_recv_ack` covers the REQUEST → ACK leg.
+**Adherence:** met. `_recv_within_window` validates
+`packet.xid == xid` against the locally generated xid and
+drops the frame (silent discard) on mismatch. The same
+guard covers both the OFFER and the REQUEST → ACK leg
+(the two legs pass different `expected_type` values into
+the one receive helper).
 
 > "The client collects DHCPOFFER messages over a period
 >  of time, selects one DHCPOFFER message from the
@@ -815,30 +826,26 @@ for tight-boot and test scenarios).
 >  server."
 
 **Adherence:** met (Phase 2.2). See §3.1 step 5 above —
-'Dhcp4Client' invokes the caller-supplied
-`arp_dad_verifier` callback (wired to
-`PacketHandlerL2._arp_dad_probe_address`) against the
-offered 'yiaddr' after a valid ACK. The packet
-handler's RFC 5227 §2.1.1 Probe loop runs inside the
-callback; on conflict the client emits DHCPDECLINE,
-sleeps `dhcp.decline_backoff_ms`, and restarts from
-DISCOVER via the bounded `_NAK_RESTART` outer loop. The
-"drop the address, disable IPv4" failure mode that
-pre-dated Phase 2.2 is gone.
+'Dhcp4Client' runs `acd.probe(address=...)` on the
+injected `Ip4Acd` engine against the offered 'yiaddr'
+after a valid ACK. The engine's RFC 5227 §2.1.1 Probe
+loop runs over the AF_PACKET socket; on conflict the
+client emits DHCPDECLINE, waits `dhcp.decline_backoff_ms`,
+and restarts from DISCOVER via the bounded `_NAK_RESTART`
+outer loop. The "drop the address, disable IPv4" failure
+mode that pre-dated Phase 2.2 is gone.
 
 > "The client SHOULD broadcast an ARP reply to announce
 >  the client's new IP address."
 
 **Adherence:** met. After `_do_init_to_bound` returns a
 valid lease, the `_on_bound` transition
-(`dhcp4_client.py:269-284`) invokes the
-`arp_dad_announcer` callback wired by the packet handler
-to `_arp_dad_announce_address`
-(`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1815-1828`),
-which emits the RFC 5227 §2.3
-ANNOUNCE_NUM=2 gratuitous ARP Announcements. The trigger
-is technically RFC 5227, not the DHCP path directly, but
-the user-visible behaviour matches the SHOULD.
+(`dhcp4_client.py:400-432`) calls
+`acd.start_defense(address=lease.ip4_host.address)`
+(`:429-430`), which emits the RFC 5227 §2.3 ANNOUNCE_NUM
+gratuitous-ARP burst and holds the defense socket. The
+trigger is technically RFC 5227, not the DHCP path
+directly, but the user-visible behaviour matches the SHOULD.
 
 ---
 
@@ -1034,11 +1041,11 @@ unicast replies (server → leased IP) and REBIND
 broadcast replies (server → 255.255.255.255 to a host
 that owns a different unicast IP) had no listening
 socket to match and were silently dropped at UDP RX. The
-fix at `packages/pytcp/pytcp/socket/udp__socket.py:148-195` skips
+fix at `packages/pytcp/pytcp/runtime/socket/udp__socket.py:148-195` skips
 `pick_local_ip_address` for DHCPv4/v6 client sockets and
 keeps their local at 0.0.0.0 / :: across the whole FSM
 lifecycle; the fix at
-`packages/pytcp/pytcp/socket/udp__metadata.py:67-93` enumerates both
+`packages/pytcp/pytcp/runtime/socket/udp__metadata.py:67-93` enumerates both
 (sender-unicast) and (limited-broadcast) shapes so RENEW
 and REBIND replies both find the listener. Locked in by
 `packages/pytcp/pytcp/tests/integration/protocols/dhcp4/test__dhcp4__rx_socket_lookup.py`
@@ -1100,7 +1107,7 @@ is expected from the server.
 ### §3.1 DISCOVER → REQUEST flow
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py`
+  `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py`
   Exercises `fetch()` end-to-end with a mocked socket:
   the client emits a DISCOVER with the right options,
   receives a stubbed OFFER, emits a REQUEST with the
@@ -1111,7 +1118,7 @@ is expected from the server.
 
 ### §2 / §4.4.1 / §3.1 step 4 — Phase 0 Client Identifier + xid + NAK
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py`
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py`
   - `TestDhcp4ClientFetchClientIdInRequest` —
     round-trips the emitted REQUEST through the real
     Dhcp4Parser and asserts `request.client_id` equals
@@ -1136,38 +1143,37 @@ is expected from the server.
 
 ### §3.1 step 5 — DHCPDECLINE on ARP conflict (Phase 2.2)
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py::TestDhcp4ClientFetchArpDad`
-  - `invokes_arp_dad_verifier_with_leased_address` — the
-    'arp_dad_verifier' callback is called exactly once
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py::TestDhcp4ClientFetchArpDad`
+  - `test__dhcp4_client__fetch_probes_leased_address_via_acd`
+    — the `Ip4Acd` engine's `probe` is called exactly once
     with the offered 'yiaddr' after a valid ACK.
-  - `without_verifier_returns_lease_unverified` —
-    backward compatibility: no callback ⇒ no DAD
+  - `test__dhcp4_client__fetch_without_acd_returns_lease_unverified`
+    — backward compatibility: no `acd` engine ⇒ no DAD
     inside the client.
-  - `verifier_conflict_emits_decline_message` — DECLINE
-    TX carries message-type 4, Server Identifier,
+  - `test__dhcp4_client__fetch_probe_conflict_emits_decline_message`
+    — DECLINE TX carries message-type 4, Server Identifier,
     Requested IP Address, Client Identifier echo, and
     ciaddr=0.
-  - `verifier_false_then_true_restarts_and_returns_lease`
+  - `test__dhcp4_client__fetch_probe_false_then_true_restarts_and_returns_lease`
     — DECLINE-then-restart succeeds on the retry; 5 TXs
     total (D, R, DECL, D, R).
-  - `verifier_always_false_exhausts_restart_budget` —
-    bounded by 'dhcp.nak_max_restarts'; 4 rounds × 3 TXs
+  - `test__dhcp4_client__fetch_probe_always_false_exhausts_restart_budget`
+    — bounded by 'dhcp.nak_max_restarts'; 4 rounds × 3 TXs
     = 12 emissions, fetch returns None.
-  - `decline_path_honours_decline_backoff_sleep` —
-    time.sleep called with decline_backoff_ms/1000.0.
+  - `test__dhcp4_client__fetch_decline_path_honours_decline_backoff_sleep`
+    — post-DECLINE wait uses decline_backoff_ms/1000.0.
 - **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__constants.py`
   — 'dhcp.decline_backoff_ms' default 10000 ms, accepts
   0, rejects negatives.
-- **Integration:** existing `test__arp__dad.py` suite (13
-  tests) re-validates the underlying RFC 5227 §2.1.1
-  probe loop via the extracted
-  `_arp_dad_probe_address` helper.
+- **Integration:** existing `test__arp__dad.py` suite
+  re-validates the underlying RFC 5227 §2.1.1 probe loop
+  via the `Ip4Acd` engine.
 
 **Status:** locked in (Phase 2.2).
 
 ### §4.4.1 — Initial 1-10 s random delay (Phase 2.1)
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py::TestDhcp4ClientFetchInitialDelay`
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py::TestDhcp4ClientFetchInitialDelay`
   - `initial_delay_uses_default_bounds` — `random.uniform(1.0, 10.0)`
     is the canonical draw at the default sysctl values; the
     drawn value flows to `time.sleep(...)`.
@@ -1187,7 +1193,7 @@ is expected from the server.
 
 ### §4.1 — Retransmission backoff (Phase 1)
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py`
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py`
   - `TestDhcp4ClientFetchBackoffSilence` —
     `silent_server_runs_5_attempts` pins 5 recv +
     5 send (1 initial + 4 retransmits) under server
@@ -1217,7 +1223,7 @@ is expected from the server.
 
 ### §4.4 / §4.4.5 — Client FSM (Phase 4 commit C)
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py::TestDhcp4ClientLeaseLifecycle`
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py::TestDhcp4ClientLeaseLifecycle`
   - `do_bound_transitions_to_renewing_when_t1_elapsed`
     — BOUND → RENEWING fires at T1 (= 0.5 × lease).
   - `do_bound_stays_bound_when_t1_not_elapsed`
@@ -1260,7 +1266,7 @@ is expected from the server.
     `pick_local_ip4_address` latching bug fixed
     post-Phase-4).
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__udp__metadata.py::TestUdpMetadataSocketIdsDhcp::test__udp_metadata__socket_ids_dhcp4`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__udp__metadata.py::TestUdpMetadataSocketIdsDhcp::test__udp_metadata__socket_ids_dhcp4`
   — pins the two-entry shape returned by
   `UdpMetadata.socket_ids` for the DHCPv4 client.
 
@@ -1378,7 +1384,7 @@ is expected from the server.
 | Aspect                                              | Coverage                                                           |
 |-----------------------------------------------------|--------------------------------------------------------------------|
 | Wire-format (header, options, magic cookie, sizes)  | locked in (~3 700 lines of unit tests)                             |
-| Linear DISCOVER → REQUEST happy path                | locked in (`test__lib__dhcp4_client.py`)                           |
+| Linear DISCOVER → REQUEST happy path                | locked in (`test__dhcp4__client.py`)                           |
 | Client Identifier in REQUEST                        | locked in (Phase 0 — `TestDhcp4ClientFetchClientIdInRequest`)      |
 | DHCPNAK handling (bounded restart)                  | locked in (Phase 0 — `TestDhcp4ClientFetchNakRestart`)             |
 | ARP conflict → DHCPDECLINE                          | locked in (Phase 2.2 — `TestDhcp4ClientFetchArpDad`)               |
@@ -1459,19 +1465,19 @@ place.
 
 The 'Dhcp4Client' runs as a long-running 'Subsystem'
 under 'stack.start()' / 'stack.stop()', consuming the
-Phase-3-clean 'Ip4AddressApi' boundary surface
-(`stack.address.add_ifaddr` / `.replace_ifaddr` /
-`.remove_ifaddr`) for all address mutations. The Phase 4.5
-FSM → API mutation table is wired end-to-end:
+Phase-3-clean 'AddressApi' boundary surface
+(`stack.address.add` / `.replace` / `.remove`) for all
+address mutations. The Phase 4.5 FSM → API mutation table
+is wired end-to-end:
 
-| Transition                                  | Address-API call                                  |
-|---------------------------------------------|---------------------------------------------------|
-| `INIT → BOUND` (first lease)                | `add_ifaddr(ip4_ifaddr=...)`                          |
-| `BOUND → RENEWING → BOUND` (same IP)        | none — internal lease bookkeeping only            |
-| `BOUND → RENEWING → BOUND` (different IP)   | `replace_ifaddr(old, new, abort_bound_sessions=...)`|
-| `RENEW / REBIND NAK → INIT`                 | `remove_ifaddr(addr, abort_bound_sessions=...)`     |
-| lease expiry without ACK                    | `remove_ifaddr(addr, abort_bound_sessions=...)`     |
-| `stack.stop()` (graceful)                   | `send_release()` + `remove_ifaddr(...)`             |
+| Transition                                  | Address-API call                                       |
+|---------------------------------------------|--------------------------------------------------------|
+| `INIT → BOUND` (first lease)                | `add(ifaddr=...)`                                      |
+| `BOUND → RENEWING → BOUND` (same IP)        | none — internal lease bookkeeping only                 |
+| `BOUND → RENEWING → BOUND` (different IP)   | `replace(old_address=, new_ifaddr=, abort_bound_sessions=)`|
+| `RENEW / REBIND NAK → INIT`                 | `remove(address=, abort_bound_sessions=)`              |
+| lease expiry without ACK                    | `remove(address=, abort_bound_sessions=)`              |
+| `stack.stop()` (graceful)                   | `send_release()` + `remove(address=, ...)`             |
 
 **Deliberate deviation from Linux.** The
 'dhcp.abort_sessions_on_lease_change' sysctl (default 1)
@@ -1487,8 +1493,8 @@ setting the sysctl to 0.
 the UDP socket layer was silently dropping every RENEW
 unicast and REBIND broadcast reply once a lease was in
 place; the fixes at
-`packages/pytcp/pytcp/socket/udp__socket.py:148-195` and
-`packages/pytcp/pytcp/socket/udp__metadata.py:67-93` are pinned by the
+`packages/pytcp/pytcp/runtime/socket/udp__socket.py:148-195` and
+`packages/pytcp/pytcp/runtime/socket/udp__metadata.py:67-93` are pinned by the
 new integration test
 `packages/pytcp/pytcp/tests/integration/protocols/dhcp4/test__dhcp4__rx_socket_lookup.py`.
 Verified end-to-end against a live DHCP server — eight

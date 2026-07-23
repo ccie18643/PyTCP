@@ -19,7 +19,7 @@ enumerates candidate sources from `_ip6_ifaddr`, applies a
 lexicographic sort encoded with rules 1, 2, 3, 6, 7, and 8,
 and returns the winner. The pure helpers — RFC 4007/4291
 scope extraction and the §2.2 CommonPrefixLen — live in
-`packages/pytcp/pytcp/lib/ip6_source_selection.py`; the §10.3 default policy
+`packages/pytcp/pytcp/protocols/ip6/ip6__source_selection.py`; the §10.3 default policy
 table backing rule 6 lives in
 `packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py`.
 Rules 4 (home address), 5 (outgoing interface), and 5.5
@@ -64,7 +64,7 @@ Per-RFC mechanism inventory:
 | §          | Mechanism                                                  | Status                             | Where                                                                                            |
 |------------|------------------------------------------------------------|------------------------------------|--------------------------------------------------------------------------------------------------|
 | §2.1       | Configurable address-selection policy table                | met                                | `packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py` exposes `DEFAULT_POLICY_TABLE` + operator override (`set_policy_table` / `reset_policy_table` / `get_policy_table`, the `ip addrlabel` analogue) |
-| §2.2       | CommonPrefixLen helper                                     | met                                | `common_prefix_len` (`packages/pytcp/pytcp/lib/ip6_source_selection.py`)                                        |
+| §2.2       | CommonPrefixLen helper                                     | met                                | `common_prefix_len` (`packages/pytcp/pytcp/protocols/ip6/ip6__source_selection.py`)                                        |
 | §3.1       | Scope comparisons                                          | met                                | `ip6_address_scope` returns RFC 4007 / 4291 codepoints                                           |
 | §5 rule 1  | Prefer same address                                        | met                                | `_select_ip6_source` short-circuits when the destination is owned                                |
 | §5 rule 2  | Prefer appropriate scope                                   | met                                | sort key encodes `(scope >= dst_scope, -scope)`; the selector additionally returns `None` when the winner's scope < dst (RFC 4007 §6 hardening) |
@@ -81,7 +81,7 @@ Per-RFC mechanism inventory:
 
 ## Test coverage
 
-- `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip6_source_selection.py`
+- `packages/pytcp/pytcp/tests/unit/protocols/ip6/test__ip6__source_selection.py`
   - `TestIp6AddressScope` — RFC 4007/4291 scope mapping for
     loopback, link-local, ULA, GUA, and the four multicast
     scope codepoints (interface-, link-, site-, global-)
@@ -137,7 +137,7 @@ Per-RFC mechanism inventory:
     longer non-matching prefix (rule 6 > rule 8); ULA
     source for ULA destination; rule 8 fallback when rule 6
     ties; rule 3 outranks rule 6
-- `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip4_source_selection.py`
+- `packages/pytcp/pytcp/tests/unit/protocols/ip4/test__ip4__source_selection.py`
   - `TestIp4AddressScope` — loopback / link-local / global
     scope mapping for the v4 family
   - `TestIp4CommonPrefixLen` — 32-bit common-prefix

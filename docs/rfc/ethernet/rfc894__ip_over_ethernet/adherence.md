@@ -175,14 +175,14 @@ ARP requests on miss (see
 > ones, FF-FF-FF-FF-FF-FF hex)."
 
 **Adherence:** met. `packages/pytcp/pytcp/runtime/packet_handler/
-packet_handler__ethernet__tx.py:211-238` maps both the
+packet_handler__ethernet__tx.py:234-255` maps both the
 limited broadcast (`255.255.255.255`) and the network
 broadcast (per-subnet `network.broadcast`) to
 `MacAddress(0xFFFFFFFFFFFF)`. The `net_addr` library
 provides the constant at
-`packages/net_addr/net_addr/mac_address.py:42` (`MAC__BROADCAST =
+`packages/net_addr/net_addr/mac_address.py:43` (`MAC__BROADCAST =
 0xFFFF_FFFF_FFFF`). The `is_broadcast` predicate at
-`packages/net_addr/net_addr/mac_address.py:154` recognises the broadcast
+`packages/net_addr/net_addr/mac_address.py:186` recognises the broadcast
 MAC on the inbound path.
 
 ---
@@ -244,7 +244,7 @@ implement it."
 **Adherence:** met. PyTCP's struct-pack format strings
 use the `"!"` prefix throughout
 (`ETHERNET__HEADER__STRUCT = "! 6s 6s H"` at
-`packages/net_proto/net_proto/protocols/ethernet/ethernet__header.py:57`),
+`packages/net_proto/net_proto/protocols/ethernet/ethernet__header.py:56`),
 which selects network (big-endian) byte order. Every IP
 / TCP / UDP header struct similarly uses `"!"`.
 

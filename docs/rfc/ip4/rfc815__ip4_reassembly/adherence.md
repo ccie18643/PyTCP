@@ -140,20 +140,22 @@ holds the list head as a normal Python attribute
 > length field in the internet header should be filled in."
 
 **Adherence:** met. On completion the RX handler rewrites the
-reassembled header explicitly
-(`packet_handler__ip4__rx.py:337-341`):
+reassembled header explicitly, preserving the first fragment's
+IHL and options (`packet_handler__ip4__rx.py:409-413`):
 
 ```
-header = bytearray(header_bytes)
-header[0] = 0x45                            # ver=4, IHL=5 (options dropped)
-struct.pack_into("!H", header, 2, IP4__HEADER__LEN + len(payload))  # Total Length
+header = bytearray(header_bytes)                                    # full first-fragment header incl. options
+header[1] = (header[1] & 0xFC) | (result.ecn & 0x03)               # aggregated ECN (DSCP preserved)
+struct.pack_into("!H", header, 2, len(header) + len(payload))      # Total Length
 header[6] = header[7] = header[10] = header[11] = 0                 # Flags+Offset, cksum
 struct.pack_into("!H", header, 10, inet_cksum(memoryview(header))) # recompute cksum
 ```
 
 The Total Length field is updated to the joined header+payload
-length, Flags/Offset are cleared, and the header checksum is
-recomputed.
+length (including options), the aggregated ECN is patched into
+the TOS byte, Flags/Offset are cleared, and the header checksum
+is recomputed. `header[0]` is left untouched so the original
+IHL / options are preserved (see §6).
 
 ## §6 Options (variable header size)
 

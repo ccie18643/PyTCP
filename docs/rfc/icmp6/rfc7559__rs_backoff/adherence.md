@@ -47,7 +47,7 @@ releases. All four timing constants are sysctl-tunable.
 
 **Adherence:** met.
 `_send_icmp6_nd_router_solicitations_with_backoff` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1431-1456`
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3534-3559`
 implements the algorithm:
 
 ```python
@@ -174,5 +174,5 @@ thread wakes immediately.
   — parent classification (MUST).
 - `docs/rfc/icmp6/rfc4861__ipv6_nd/adherence.md` — parent
   ND record.
-- Source: `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1431-1456`
+- Source: `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3534-3559`
   (`_send_icmp6_nd_router_solicitations_with_backoff`).

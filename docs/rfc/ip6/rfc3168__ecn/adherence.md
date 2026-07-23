@@ -48,8 +48,8 @@ FIFO and no AQM.
 
 **Adherence:** met. `Ip6Header.ecn: int` is the 2-bit field occupying
 the low 2 bits of the Traffic Class octet
-(`packages/net_proto/net_proto/protocols/ip6/ip6__header.py:101`,
-asserted `is_uint2` at `:117`). The Traffic Class is packed as
+(`packages/net_proto/net_proto/protocols/ip6/ip6__header.py:100`,
+asserted `is_uint2` at `:116`). The Traffic Class is packed as
 `ver << 28 | dscp << 22 | ecn << 20 | flow` at `:149` and unpacked at
 `:169-170` (`dscp = (tc >> 22) & 0x3f`, `ecn = (tc >> 20) & 0x03`).
 The four codepoints (Not-ECT 00, ECT(1) 01, ECT(0) 10, CE 11) are
@@ -113,7 +113,7 @@ This is the IPv6 analogue of the IPv4 patch
 **Adherence:** met. An application sets the IPv6 Traffic Class —
 including the ECN bits — via `setsockopt(IPPROTO_IPV6, IPV6_TCLASS,
 …)`. `_effective_ip_ecn()` returns the low 2 bits for an IPv6 socket
-(`socket/__init__.py:1129-1138`, `self._ipv6_tclass & 0x03`), threaded
+(`runtime/socket/__init__.py:1564-1572`, `self._ipv6_tclass & 0x03`), threaded
 through `ip__ecn` → `ip6__ecn` into the outbound IPv6 header for UDP,
 TCP, and raw sockets. (DSCP — the high 6 bits — is marked in parallel;
 see `docs/rfc/ip6/rfc2474__dscp/adherence.md`.) This supersedes the

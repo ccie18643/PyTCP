@@ -447,16 +447,21 @@ encapsulated and routed via the IP layer.
 > "TCP MUST act on an ICMP error message passed up
 > from the IP layer."
 
-**Adherence:** met (minimal interpretation; cross-cut
-RFC 1122 §4.2.3.9 audit). PyTCP "acts on" ICMP errors
-indirectly: the offending segment's RTO eventually
-triggers the RFC 1122 §4.2.3.5 R2 abort threshold,
-terminating the connection. The TCP layer does not
-crash, the connection does not hang indefinitely, and
-unrecoverable destinations are recovered via R2.
-Stronger interpretations (per-error early abort,
-socket-level error propagation) cross-cut the
-gap-reported RFC 1191 / RFC 4821 PMTUD records.
+**Adherence:** met. The IP layer builds an
+`IcmpMetadata` for each inbound ICMP error and passes
+it to the owning session via
+`TcpSession.tcp_fsm(icmp=...)`
+(`session/tcp__session.py:2136`), which dispatches to
+the per-state ICMP handlers
+(`fsm__listen__icmp` / `fsm__syn_sent__icmp` /
+`fsm__icmp__synchronized` in `fsm/tcp__fsm.py`). PMTU-
+category errors drive the RFC 1191 / RFC 4821 PMTUD
+paths; the error is additionally surfaced to the
+application through the Linux-style `IP_RECVERR` /
+`IPV6_RECVERR` error queue
+(`runtime/socket/tcp__socket.py`). The RFC 1122
+§4.2.3.5 R2 abort threshold remains the backstop for
+any category that does not early-abort.
 
 ### §3.9.2.3 Source Address Validation
 
@@ -608,7 +613,7 @@ locations:
 | §3.8.6.2 SWS                        | window tests                                             |
 | §3.8.6.3 Delayed ACK                | data_transfer__recv tests                                |
 | §3.8.6.4 Advertised-window DRS      | `test__tcp__session__so_rcvbuf.py` (SO_RCVBUF sizing); `test__tcp__session__drs.py` (grow toward BDP, cadence gate, rmem.max clamp, moderate_rcvbuf/SO_RCVBUF lock, receive()-path trigger); `test__tcp__session__rcv_rtt.py` / `test__tcp__session__rcv_rtt_no_ts.py` (RTT source); `test__tcp__session__rcv_wscale.py` (WSCALE ceiling) |
-| §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
+| §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__runtime__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
 | §3.10.2 SEND / SO_SNDBUF autotune   | `test__tcp__session__sndbuf_autotune.py` (grows with cwnd, wmem.max clamp, grow-only, SO_SNDBUF lock); `test__tcp__session__buffer_defaults.py` (wmem.default floor) |
 | §3.10.2 SEND / SO_SNDBUF backpressure | `test__tcp__session__so_sndbuf.py` (partial-write, non-blocking EAGAIN, oversized-into-empty, getsockopt parity, ACK-drain wake, close wake) |
 | §3.10.7 Per-state SEGMENT ARRIVES   | per-state test files                                     |
@@ -648,7 +653,7 @@ records for the detailed coverage claims.
 | §3.8.6.2 SWS avoidance                          | met                                     |
 | §3.8.6.3 Delayed ACK                            | met                                     |
 | §3.9.1 User/TCP interface (OPEN-FLUSH)          | met (FLUSH application-discretionary)   |
-| §3.9.2.2 ICMP messages                          | met (R2 abort fallback; PMTUD via RFC 1191/4821) |
+| §3.9.2.2 ICMP messages                          | met (FSM dispatch + IP_RECVERR; PMTUD via RFC 1191/4821) |
 | §3.9.2.3 Source validation                      | met (via RFC 5961)                      |
 | §3.10 Event processing (per-state)              | met                                     |
 
@@ -667,10 +672,7 @@ remaining gaps are:
 4. **§3.9.1.7 FLUSH** — rarely-used user-API call
    not implemented. The semantics are application-
    discretionary.
-5. **§3.9.2.2 ICMP error propagation** — partial;
-   PyTCP silently drops ICMP errors rather than
-   propagating them to TCP sessions.
-6. **TIME_WAIT_DELAY = 30s** — documented deviation
+5. **TIME_WAIT_DELAY = 30s** — documented deviation
    from RFC's recommended 2*MSL ≈ 240s, kept as a
    pragmatic engineering choice and noted in source
    comments.

@@ -131,22 +131,25 @@ state correctly.
 > if the SYN/ACK is (0,0,1), or to Not ECN if (0,0,0)."
 
 **Adherence:** met. The active-open SYN+ACK handler
-also checks `_advertise_ecn` separately at
-`tcp__session.py:1413-1415`. If the peer's SYN+ACK
+also checks `session._advertise.ecn` separately in
+`fsm/tcp__fsm__syn_sent.py`. If the peer's SYN+ACK
 has neither NS nor CWR set but has ECE only, the
-session falls back to RFC 3168 ECN (`_ecn_enabled =
-True` set in the FSM handler).
+session falls back to RFC 3168 ECN
+(`session._ecn.enabled = True`).
 
 The RFC's "Broken" combination ((1,1,1) reflected in
-SYN/ACK) is not specially handled — PyTCP would
-interpret it as AccECN-confirmed (CE-on-SYN) per the
-codepoint encoding. This is a §3.1.2 fourth-block gap
-where AccECN's SHOULD fall back to Not ECN to mitigate
-the broken-server case.
+the SYN/ACK) IS specially handled.
+`fsm/tcp__fsm__syn_sent.py:379-383` computes
+`is_broken_reflection` from `(NS and CWR and ECE)`;
+when set, the branch does nothing — neither
+`session._accecn.enabled` nor `session._ecn.enabled`
+is set — so the connection falls back to Not ECN per
+the §3.1.2 fourth-block SHOULD, mitigating the
+broken-server case.
 
-**Status:** partial — the four valid AccECN
-combinations and the RFC 3168 fallback work; the
-broken-server (1,1,1) reflection is not detected.
+**Status:** met — the four valid AccECN combinations,
+the RFC 3168 fallback, and the broken-server (1,1,1)
+reflection detection all work (commit `f61adf0a`).
 
 ---
 
@@ -233,24 +236,34 @@ acknowledgement when in AccECN mode.
 > Sender, it initializes its counters to s.cep = 5,
 > s.e0b = s.e1b = 1, and s.ceb = 0."
 
-**Adherence:** met for the receiver-side counters.
-`tcp__session.py:361-378` initialises:
+**Adherence:** met for the receiver-side counters and
+the `s.cep` sender-side mirror. `AccEcnState` in
+`state/tcp__state__accecn.py` initialises the
+receiver-side counters to their spec values:
 
 ```python
-self._accecn_r_cep: int = 5     # matches RFC
-self._accecn_r_ect0_b: int = 1  # matches RFC (since commit 7b7cae0b)
-self._accecn_r_ce_b: int = 0    # matches RFC (r.ceb)
-self._accecn_r_ect1_b: int = 1  # matches RFC (since commit 7b7cae0b)
-self._accecn_s_ce_b: int = 0    # matches RFC initial s.ceb
+r_cep: int = ACCECN__INITIAL_CEP        # 5, matches RFC
+r_ect0_b: int = ACCECN__INITIAL_BYTE_COUNTER    # 1, r.e0b
+r_ce_b: int = ACCECN__INITIAL_CE_BYTE_COUNTER   # 0, r.ceb
+r_ect1_b: int = ACCECN__INITIAL_BYTE_COUNTER    # 1, r.e1b
 ```
 
-PyTCP does not maintain `s.cep`, `s.e0b`, or `s.e1b`
-sender-side counters (only `s.ceb`). These are needed
-for full §3.4 sender-side feedback consumption and
-remain a deferred implementation gap.
+and the sender-side counters `s_cep` (`:136`, initial
+5), `s_disabled` (`:137`), and `s_ce_b` (`:163`, r.ceb
+mirror). `s.cep` drives the §3.2.2.1 Table-4 server
+inference and the §3.2.2.5 ACE-fallback delta.
 
-**Status:** met (receiver-side, commit `7b7cae0b`);
-sender-side `s.cep` / `s.e0b` / `s.e1b` not tracked.
+PyTCP does not maintain the `s.e0b` / `s.e1b`
+sender-side byte-counter mirrors; those feed the
+optional §3.4 byte-accurate sender feedback path and
+remain absent. The core sender feedback loop consumes
+the peer's r.ceb byte counter directly from the inbound
+AccECN option, so the missing mirrors do not block
+congestion response.
+
+**Status:** met (receiver-side, commit `7b7cae0b`;
+sender-side `s.cep` shipped commit `7b877496`);
+`s.e0b` / `s.e1b` byte mirrors not tracked.
 
 ---
 

@@ -45,8 +45,8 @@ spread across the router set.
 >  it SHOULD distribute outgoing connections among them."
 
 **Adherence:** met.
-`_get_icmp6_default_router_for_destination` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:974-1002`
+`get_icmp6_default_router_for_destination` at
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:2187-2224`
 implements the §3 modulo-hash algorithm:
 
 ```python
@@ -150,5 +150,5 @@ constraint.
 - `docs/rfc/icmp6/rfc8028__first_hop_router_selection/adherence.md`
   — sibling multihoming-aware first-hop selection (Phase-1
   deferred).
-- Source: `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:974-1002`
-  (`_get_icmp6_default_router_for_destination`).
+- Source: `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:2187-2224`
+  (`get_icmp6_default_router_for_destination`).

@@ -55,7 +55,7 @@ also reduces the cwnd value to no more than the new
 ssthresh value."
 
 The same logic appears in the AccECN branch at
-`tcp__session.py:3623-3639` for RFC 9341 byte-counter
+`session/tcp__session.py:2213-2229` for RFC 9768 byte-counter
 delta detection — the ABE multiplier applies to all
 ECN-class events regardless of feedback mechanism.
 
@@ -135,9 +135,9 @@ ECE in the next RTT triggers another ABE reduction.
 
 **Adherence:** met. The ABE multiplier is applied
 on both the RFC 3168 ECN path (`packet_rx_md.tcp__flag_ece`)
-and the RFC 9341 AccECN path (`tcp__accecn0_counters`),
+and the RFC 9768 AccECN path (`tcp__accecn0_counters`),
 without requiring AccECN. PyTCP gates each path
-independently on `_ecn_enabled` and `_accecn_enabled`
+independently on `_ecn.enabled` and `_accecn.enabled`
 respectively.
 
 ---
@@ -241,7 +241,7 @@ loss-event path drives `compute_loss_event_ssthresh()`
 | §3 cwnd collapse to ssthresh            | locked in |
 | §3.1 0.8-0.85 multiplier choice         | locked in |
 | §4.2 one-per-RTT gating                 | locked in |
-| RFC 9341 AccECN parity                  | locked in |
+| RFC 9768 AccECN parity                  | locked in |
 
 ---
 
@@ -259,7 +259,7 @@ loss-event path drives `compute_loss_event_ssthresh()`
 | §5 backwards compat with non-ECN paths   | met                             |
 
 PyTCP's ABE implementation is complete and exercised
-on both the RFC 3168 ECE path and the RFC 9341 AccECN
+on both the RFC 3168 ECE path and the RFC 9768 AccECN
 path. The 0.85 multiplier choice (vs the spec's 0.8
 recommendation) is within §3.1's experimental range
 and matches the CUBIC-tested value, which is
