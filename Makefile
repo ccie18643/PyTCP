@@ -56,6 +56,23 @@ $(VENV)/bin/activate: requirements.txt requirements_dev.txt
 
 venv: $(VENV)/bin/activate
 
+# Bare 'make' builds everything: the venv with all three packages
+# editable-installed (the canonical build step). It then prints the
+# short "how to start the stack" crib. Running the stack itself is NOT
+# a make target — it goes through the 'pytcp' CLI ('pytcp stack start'),
+# the single supported entry point.
+.DEFAULT_GOAL := all
+
+all: venv
+	@echo
+	@echo 'PyTCP built. To run the stack (daemon + CLI):'
+	@echo
+	@echo '  sudo make bridge && sudo make tap7        # one-time: TAP on br0 (root)'
+	@echo '  sudo venv/bin/pytcp stack start -i tap7   # start the stack daemon'
+	@echo '  sudo venv/bin/pytcp ss                    # drive it, like "ss"'
+	@echo
+	@echo 'See "sudo venv/bin/pytcp --help" for the full command set.'
+
 # Run an example-capture / e2e scenario. Needs root + the TAP/bridge
 # (sudo make bridge && sudo make tap7). Usage:
 #   sudo make capture SCENARIO=ip6-tcp-monkeys
@@ -218,7 +235,7 @@ remove_interfaces:
 	@ip tuntap del name tap7 mode tap
 	@ip tuntap del name tap9 mode tap
 
-.PHONY: venv capture clean lint \
+.PHONY: all venv capture clean lint \
 	test test__pytcp__integration test__net_addr__unit \
 	test__net_proto__unit test__examples__unit validate \
 	bench__rx_ring profile__rx_ring benchmark \

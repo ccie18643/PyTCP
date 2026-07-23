@@ -65,7 +65,7 @@ Feature triage uses this north star:
 
 ```bash
 # Setup
-make venv                 # create virtual environment (Python 3.14+)
+make                      # build everything (default goal = 'make all': venv + editable installs)
 source venv/bin/activate
 
 # Development
@@ -73,10 +73,11 @@ make lint                 # codespell + isort + black + flake8 + mypy + pylint +
 make test                 # run all three test suites via unittest
 make validate             # lint + test together
 
-# Run the stack (requires TAP interface and sudo for bridge/tap/tun setup)
-make tap7                 # create tap7 interface (sudo)
-make bridge               # set up bridge (sudo)
-make run                  # run stack on tap7
+# Run the stack (daemon + CLI; requires sudo for bridge/tap/tun setup)
+sudo make bridge && sudo make tap7        # one-time: create a TAP on br0 (sudo)
+sudo venv/bin/pytcp stack start -i tap7   # start the stack daemon
+sudo venv/bin/pytcp ss                    # drive it (like 'ss'); see 'pytcp --help'
+sudo venv/bin/pytcp stack stop            # stop the daemon
 
 # Clean
 make clean                # remove venv, caches, build artifacts
