@@ -13,11 +13,13 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(("10.0.1.1", 7))     # a real, selectable fd backs this socket
 ```
 
-Every program here takes its socket from an injectable `make_socket`
-factory, so the same application logic is exercised over real loopback
-sockets in the project's test suite and wired to daemon sockets by its
-`main` entry point. They double as the proof points that off-the-shelf
-protocol code — including **blocking** stdlib programs and **`asyncio`**
+Most programs here take their socket from an injectable `make_socket`
+factory (`ping` is the exception — it drives the shared
+`pytcp.cli.cli__ping` engine), so the same application logic is
+exercised over real loopback sockets in the project's test suite and
+wired to daemon sockets by its `main` entry point. They double as the
+proof points that off-the-shelf protocol code — including **blocking**
+stdlib programs and **`asyncio`**
 servers and clients — runs unmodified over PyTCP.
 
 > These examples are for **writing applications** against a running stack.
@@ -39,10 +41,11 @@ sudo python -m pytcp.daemon -i tap7 --ip4-address 192.168.1.77/24 # or a static 
 ```
 
 The client programs and the daemon default to the same control socket —
-`$XDG_RUNTIME_DIR/pytcp.sock`, falling back to `/tmp/pytcp.sock` when
-`XDG_RUNTIME_DIR` is unset — so on a typical desktop no configuration is
-needed. Only set `PYTCP_DAEMON_SOCKET` if you started the daemon on a
-non-default path, and point the clients at the same value:
+`$XDG_RUNTIME_DIR/pytcp.sock`, falling back to the system temp dir
+(typically `/tmp/pytcp.sock`) when `XDG_RUNTIME_DIR` is unset — so on a
+typical desktop no configuration is needed. Only set
+`PYTCP_DAEMON_SOCKET` if you started the daemon on a non-default path,
+and point the clients at the same value:
 
 ```bash
 export PYTCP_DAEMON_SOCKET=/run/pytcp/pytcp.sock   # match the daemon's --ipc-socket

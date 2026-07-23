@@ -20,7 +20,7 @@ The stack covers Ethernet II and IEEE 802.3 framing, ARP, IPv4 and IPv6 (extensi
 
 The project's goal is a pure-Python stack that is feature-equivalent to the Linux kernel network stack. RFC text is the primary authority; where a spec is silent or offers a choice, PyTCP follows Linux. Host-stack parity is the current scope; router-grade forwarding is planned.
 
-Behaviour is covered by roughly 13,450 unit and integration tests and tracked against more than 120 per-RFC adherence audits kept in the repository under `docs/rfc/`.
+Behaviour is covered by roughly 13,650 unit and integration tests and tracked against more than 120 per-RFC adherence audits kept in the repository under `docs/rfc/`.
 
 The stack has zero runtime dependencies (standard library only) and exposes a Berkeley-sockets-style API so it can be used in place of the standard socket layer. It is organised as three independently-published, strictly-layered packages — each usable on its own:
 
@@ -106,7 +106,7 @@ path is unsupported and mainly for advanced embedding. See
  - Runs as a **daemon**: out-of-process clients open real (SCM_RIGHTS-passed) socket fds and drive the control APIs over an AF_UNIX boundary, either through the explicit `pytcp.client` API or a **1:1 stdlib-`socket` drop-in** (`import pytcp.socket as socket`) that runs off-the-shelf blocking and `asyncio` programs unmodified, with DNS resolved through the stack.
  - Single `pytcp` CLI multitool (zero-dependency): `stack` / `ss` / `link` / `address` / `route` / `neighbor` / `sysctl` control-plane tools plus `ping` / `host` / `nc` / `traceroute` / `tcpdump` (a daemon-native capture that decodes both ingress and the stack's own egress).
  - Loopback interface (`lo`): 127.0.0.0/8 · ::1 and own-address local delivery, traffic looping inside the stack with no wire frames.
- - Native `unittest` suite (~13,450 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
+ - Native `unittest` suite (~13,650 unit + integration tests); per-RFC adherence audits in `docs/rfc/`.
 
 #### Ethernet
 
@@ -166,7 +166,7 @@ path is unsupported and mainly for advanced embedding. See
  - ECN and Accurate ECN (RFC 3168, RFC 9768)
  - Blind-attack and ICMP-attack hardening, randomised ISS and ports, robust TIME-WAIT (RFC 5961, RFC 5927, RFC 6528, RFC 1337, RFC 6191)
  - Keep-alive, zero-window probing, silly-window-syndrome avoidance, Nagle
- - Send / receive buffer sizing and Linux-style auto-tuning — `SO_RCVBUF`-driven advertised window with receive-buffer Dynamic Right-Sizing (`tcp_rcv_space_adjust`), `SO_SNDBUF` send-buffer backpressure with send-buffer auto-tuning (`tcp_sndbuf_expand`), WSCALE sized for the buffer ceiling, tunable via `tcp_rmem` / `tcp_wmem` / `tcp_moderate_rcvbuf` sysctls
+ - Send / receive buffer sizing and Linux-style auto-tuning — `SO_RCVBUF`-driven advertised window with receive-buffer Dynamic Right-Sizing (`tcp_rcv_space_adjust`), `SO_SNDBUF` send-buffer backpressure with send-buffer auto-tuning (`tcp_sndbuf_expand`), WSCALE sized for the buffer ceiling, tunable via the `tcp.rmem.*` / `tcp.wmem.*` / `tcp.moderate_rcvbuf` sysctls
 
 #### DHCPv4 client
 

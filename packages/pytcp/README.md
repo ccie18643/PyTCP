@@ -52,9 +52,11 @@ TAP/TUN fd ─> RxRing ─> PacketHandler (per protocol, RX) ─> Socket queues 
 ```
 
 - **`Subsystem` base** — every background service (RX/TX rings,
-  neighbor caches, timer, DHCPv4 / DHCPv6 clients, link-local / ACD)
-  extends `Subsystem` and runs its own thread with an event-driven
-  loop.
+  neighbor caches, timer, DHCPv4 / DHCPv6 clients, link-local address
+  configuration) extends `Subsystem` and runs its own thread with an
+  event-driven loop. (Address-conflict detection is a socket-driven
+  helper the DHCPv4 / link-local subsystems drive, not a subsystem of
+  its own.)
 - **Packet handlers** — RX and TX paths are composed from
   per-protocol sub-handlers (`packet_handler__<proto>__<rx|tx>.py`).
   Every branch bumps a per-protocol stat counter for observability.
@@ -201,9 +203,9 @@ bridge setup). Bridged TAP interfaces (Ethernet) are created on the
 `br0` bridge, so the bridge comes first:
 
 ```bash
-make bridge                     # create the br0 bridge (sudo)
-make tap7                       # create tap7, add it to br0 (sudo)
-make tap9                       # create a second tap, tap9, on br0 (sudo)
+sudo make bridge                # create the br0 bridge
+sudo make tap7                  # create tap7, add it to br0
+sudo make tap9                  # create a second tap, tap9, on br0
 sudo pytcp stack start -i tap7  # run the stack daemon on tap7
 sudo pytcp stack start -i tap7 -i tap9   # multi-interface (repeat -i)
 ```
@@ -239,8 +241,8 @@ Python **3.14+**, Linux (TAP/TUN), POSIX.
   `ss` / `link` / `address` / `route` / `neighbor` / `sysctl` + `ping` /
   `host` / `nc` / `traceroute` / `tcpdump`), plus a **loopback interface**
   (`lo`, 127.0.0.0/8 · ::1, own-IP local delivery). The pytcp suite runs
-  ~4,800 unit + integration tests (the full repo suite, across all
-  three packages + examples, is ~13,450). Lint clean (codespell +
+  ~5,000 unit + integration tests (the full repo suite, across all
+  three packages, is ~13,650). Lint clean (codespell +
   isort + black + flake8 + mypy strict + pylint + pyright +
   import-linter).
 - Host-stack feature-complete (North Star Phase 1), reachable
