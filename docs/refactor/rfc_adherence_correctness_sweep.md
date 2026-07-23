@@ -6,22 +6,29 @@ records) + pass 2 (commit 0ae03834, 50 records) = 96 records corrected;
 the remaining ~29 were already accurate. This file is the historical
 findings record; the corrections have shipped.
 
-Minor residuals left for a future touch (in already-corrected records,
-each noted by its editor as unflagged-for-that-record):
+Minor residuals — all RESOLVED in the pre-3.0.8 close-out commit:
 - `arp/rfc1027__proxy_arp` lines 74 / 177-180: stale prose ("1-hour
-  age timeout", "packet-queue SHOULD gap") that now contradicts the
-  corrected `rfc1122__host_requirements_arp` record.
-- `udp/rfc768__udp` (+ `tcp/rfc6056`, `arp/rfc826` cross-refs): the
-  "RX rejects sport=0" deviation no longer holds (parser accepts
-  sport=0; only dport=0 is rejected).
-- `tcp/rfc6056__port_randomization`: code snippet still cites the
-  nonexistent `stack.EPHEMERAL_PORT_RANGE` (now
-  `STACK__EPHEMERAL_PORT_RANGE__LOW/HIGH`).
-- `dhcp4/rfc8910__captive_portal`: "no DHCPv6 client at all" is stale
-  (a `Dhcp6Client` now exists) — the option-114 verdict is unaffected.
+  age timeout", "packet-queue SHOULD gap") that contradicted the
+  corrected `rfc1122__host_requirements_arp` record. **Fixed** — now
+  cites the NUD `reachable_time` invalidation timeout and the
+  `queued_packets` deque, matching §1122.
+- `udp/rfc768__udp`: "RX rejects sport=0" was already corrected in
+  pass 1 (record states sport=0 is accepted per RFC 768). The
+  `tcp/rfc6056` and `arp/rfc826` cross-refs were re-checked and carry
+  no stale sport=0 reject claim. **No change needed.**
+- `tcp/rfc6056__port_randomization`: code snippet cited the nonexistent
+  `stack.EPHEMERAL_PORT_RANGE`. **Fixed** — snippet now calls
+  `_ephemeral_port_pool()` and the reference points at
+  `STACK__EPHEMERAL_PORT_RANGE__LOW/HIGH` (:258-259) plus the
+  `_ephemeral_port_pool` helper (:106).
+- `dhcp4/rfc8910__captive_portal`: "no DHCPv6 client at all" was stale
+  (a `Dhcp6Client` exists). **Fixed** — rationale now reads "the
+  DHCPv6 client does not request or parse option 103"; the
+  option-114 verdict is unaffected (option 103 genuinely absent).
 - Pervasive bare `file:line` numbers in un-flagged paragraphs of large
   handler files will keep drifting on any code change (inherent to
-  line-anchored docs).
+  line-anchored docs). This is staleness that re-accrues, not a
+  contradiction or wrong verdict — left as-is by design.
 
 Legend: [WRONG]=wrong met/deferred verdict; [STALE]=stale file:line;
 [TEST]=broken test ref; [PROSE]=stale mechanism prose; [contradiction]=

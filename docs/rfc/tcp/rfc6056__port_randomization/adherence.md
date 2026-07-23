@@ -120,7 +120,7 @@ def pick_local_port_for(
         digest_size=4,
     ).digest()
     offset = int.from_bytes(digest, "big")
-    pool = list(stack.EPHEMERAL_PORT_RANGE)
+    pool = list(_ephemeral_port_pool())
     used = {socket.local_port for socket in stack.sockets.values()}
     pool_len = len(pool)
     for i in range(pool_len):
@@ -301,6 +301,6 @@ a conformance impact.
 - **RFC 5961 blind-attack hardening (companion security audit):** [`../rfc5961__blind_attack_hardening/adherence.md`](../rfc5961__blind_attack_hardening/adherence.md)
 - **RFC 9293 TCP base spec (`bind()` / `connect()` user/TCP interface):** [`../rfc9293__tcp/adherence.md`](../rfc9293__tcp/adherence.md)
 - Shared picker: `packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:122::pick_local_port`
-- Ephemeral range constant: `packages/pytcp/pytcp/stack/__init__.py:175::EPHEMERAL_PORT_RANGE`
+- Ephemeral range constants: `packages/pytcp/pytcp/stack/__init__.py:258-259::STACK__EPHEMERAL_PORT_RANGE__LOW/HIGH` (pool built by `packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:106::_ephemeral_port_pool`)
 - Secret-key pattern: `packages/pytcp/pytcp/stack/__init__.py` (`TCP__ISS_SECRET`, `TCP__FASTOPEN_SECRET`, `IP6__FLOW_SECRET`)
 - Socket-API parity: `docs/refactor/socket_linux_parity_audit.md`

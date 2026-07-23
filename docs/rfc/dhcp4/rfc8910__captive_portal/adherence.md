@@ -27,8 +27,8 @@ Each carries a URI to the captive-portal API endpoint
 
 - DHCPv4 option 114 not in `Dhcp4OptionType`
   (`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py:56-76`).
-- DHCPv6 option 103 not implemented (PyTCP has no
-  DHCPv6 client at all).
+- DHCPv6 option 103 not implemented (PyTCP's DHCPv6
+  client does not request or parse option 103).
 - RA option 37 not in `Icmp6NdOption*` codecs under
   `packages/net_proto/net_proto/protocols/icmp6/message/nd/options/`.
 
@@ -167,7 +167,7 @@ is fixed, the natural test plan:
 | §2 PRL entry for option 114 in DISCOVER/REQUEST          | not implemented              |
 | §3 Precedence resolution across multiple sources         | n/a (no sources implemented) |
 | §4 URI consumer plumbing                                 | n/a                          |
-| DHCPv6 option 103 (in `docs/rfc/dhcp6/`)                 | n/a (no DHCPv6 client)       |
+| DHCPv6 option 103 (in `docs/rfc/dhcp6/`)                 | not implemented              |
 | IPv6 RA option type 37 (in `docs/rfc/icmp6/`)            | not implemented              |
 
 **Principal compliance note.** Captive-Portal

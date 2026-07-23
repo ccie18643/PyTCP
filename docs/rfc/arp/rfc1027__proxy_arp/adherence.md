@@ -71,9 +71,11 @@ explicitly:
    of proxy ARP raises the importance of a working
    ARP-cache invalidation timeout — see the cross-reference
    to [`../rfc1122__host_requirements_arp/adherence.md`](../rfc1122__host_requirements_arp/adherence.md).
-   PyTCP's age-based timeout (1 hour default) is generous
-   for proxy-ARP scenarios; that's a SHOULD-strength
-   configurability gap noted in the §1122 audit.
+   PyTCP satisfies that requirement via the RFC 4861 NUD
+   state machine: a confirmed `REACHABLE` entry ages to
+   `STALE` after `neighbor.reachable_time` seconds and is
+   re-probed before reuse, with the timeout operator-tunable
+   through `pytcp.stack.sysctl["neighbor.reachable_time"]`.
 
 The remainder of this document walks RFC 1027's normative
 clauses with the standard "deferred to Phase 2" call-out.
@@ -175,9 +177,9 @@ first (the cache is updated by both, but the *first*
 response is what enables the IP-layer transmission that
 populated the cache before the second response arrived).
 
-If PyTCP later adds the RFC 1122 §2.3.2.2 packet-queue
-(currently a SHOULD gap — see the §1122 audit), the queued
-packet would flush on the first reply and ride to the first
+PyTCP's RFC 1122 §2.3.2.2 packet-queue (the per-entry
+`queued_packets` deque — see the §1122 audit) flushes the
+queued packet on the first reply, so it rides to the first
 responding gateway, even more cleanly satisfying §2.3.
 
 ---
