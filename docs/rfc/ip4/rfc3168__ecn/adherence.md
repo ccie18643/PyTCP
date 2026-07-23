@@ -55,9 +55,9 @@ yields a drop, matching Linux behaviour).
 
 **Adherence:** met. `Ip4Header.ecn: int` is the 2-bit field at
 the low-order end of the TOS byte
-(`packages/net_proto/net_proto/protocols/ip4/ip4__header.py:100,130`). Pack/unpack
+(`packages/net_proto/net_proto/protocols/ip4/ip4__header.py:99,129`). Pack/unpack
 preserve the bit positions
-(`ip4__header.py:183,219`).
+(`ip4__header.py:182,218`).
 
 > "ECT(0) codepoint is '10', ECT(1) codepoint is '01', CE
 > codepoint is '11', Not-ECT codepoint is '00'."
@@ -116,7 +116,7 @@ via `aggregate_ecn()`. The aggregation table follows Linux
   the IPv4 RX handler bumps `ip4__frag__ecn_mixed__drop` and
   drops the packet.
 
-The IPv4 RX handler at `packet_handler__ip4__rx.py:339-349`
+The IPv4 RX handler at `packet_handler__ip4__rx.py:409-413`
 patches byte 1 of the reassembled header with the aggregated
 ECN (DSCP preserved from first fragment):
 
@@ -211,7 +211,7 @@ full-functionality decapsulation) become relevant.
   propagation, ECT(0)+ECT(1)→ECT(0), CE+Not-ECT drop,
   ECT+Not-ECT drop, default ecn=0 backwards-compat.
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__rx.py::TestPacketHandlerIp4RxRfc3168EcnAggregationOnReassembly`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__rx.py::TestIp4RxRfc3168EcnAggregationOnReassembly`
   5 wire-level cases driving two-fragment flows into
   `_phrx_ethernet` and inspecting the reassembled datagram on
   the wire: same-ECN propagates the codepoint, CE+ECT(0)

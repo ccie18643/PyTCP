@@ -26,7 +26,7 @@ Each carries a URI to the captive-portal API endpoint
 (RFC 8908). PyTCP implements none of the three:
 
 - DHCPv4 option 114 not in `Dhcp4OptionType`
-  (`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py:43-54`).
+  (`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py:56-76`).
 - DHCPv6 option 103 not implemented (PyTCP has no
   DHCPv6 client at all).
 - RA option 37 not in `Icmp6NdOption*` codecs under
@@ -76,10 +76,11 @@ parses into `Dhcp4OptionUnknown`.
 >  SHOULD include the option in the Parameter Request
 >  List in DHCPREQUEST messages."
 
-**Adherence:** not met. PyTCP's PRL contains only
-SUBNET_MASK and ROUTER
-(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:142-147`,
-`:195-200`).
+**Adherence:** not met. PyTCP's PRL contains
+CLASSLESS_STATIC_ROUTE, SUBNET_MASK, and ROUTER — but
+not option 114
+(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1763`
+DISCOVER, `:1811` REQUEST).
 
 > "In all variants of this option, the URI MUST be that
 >  of the captive portal API endpoint."

@@ -56,12 +56,12 @@ target routers and DS-domain boundaries — n/a for host scope.
 
 **Adherence:** met (with CU bits redefined). `Ip4Header.dscp:
 int` is a 6-bit field
-(`packages/net_proto/net_proto/protocols/ip4/ip4__header.py:99,128`) and
+(`packages/net_proto/net_proto/protocols/ip4/ip4__header.py:98,127`) and
 `Ip4Header.ecn: int` is the 2-bit field that occupies the
 former CU slot
-(`ip4__header.py:100,130`). The TOS-byte pack at
-`ip4__header.py:183` combines them as
-`self.dscp << 2 | self.ecn`; unpack at `ip4__header.py:218-219`
+(`ip4__header.py:99,129`). The TOS-byte pack at
+`ip4__header.py:182` combines them as
+`self.dscp << 2 | self.ecn`; unpack at `ip4__header.py:217-218`
 splits them via `dscp__ecn >> 2` and `dscp__ecn & 0b11`.
 
 The original RFC 2474 said the CU bits are "currently unused";
@@ -111,7 +111,7 @@ mistake.
 > malfunction."
 
 **Adherence:** met. `Ip4Header.dscp` accepts any 6-bit value
-(`is_uint6` check at `ip4__header.py:128`). No code path in
+(`is_uint6` check at `ip4__header.py:127`). No code path in
 PyTCP dispatches on DSCP, so unrecognised codepoints behave
 identically to recognised ones: delivered to the upper layer.
 The "MUST NOT malfunction" hardening is trivially met because
@@ -185,7 +185,7 @@ behaviour is implemented.
   — every IPv4 / IPv6 fragment of an over-MTU datagram
   carries the DSCP + ECN, not just the first.
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__raw__socket.py::TestRawSocketDscp`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__raw__socket.py::TestRawSocketDscp`
   — `_effective_ip_dscp()` high-6-bit extraction (v4 + v6)
   and the raw-send `ip4__dscp` threading.
 

@@ -44,17 +44,17 @@ Summary, §8 References) are omitted.
 | §3.1    | Congestion Control Guidelines               | application obligation (stack does not undermine; no CC primitives provided) |
 | §3.2    | Message Size Guidelines / PMTU              | partial — stack ships PMTUD per RFCs 1191 / 8201; sets DF=1 on UDP TX; PLPMTUD per RFC 8899 is a deferred Phase-1 polish item |
 | §3.3    | Reliability Guidelines                      | application obligation |
-| §3.4    | Checksum Guidelines                         | met (TX always cksum; RX verifies non-zero cksum); IPv6 zero-cksum tunneling is covered by RFC 6935/6936 audit (deferred) |
-| §3.4.1  | IPv6 Zero UDP Checksum                      | partial — default-mode discard now in force (Phase-1 fix); per-port opt-in for tunnels deferred to Phase-3 socket options |
+| §3.4    | Checksum Guidelines                         | met (TX always cksum; RX verifies non-zero cksum); IPv6 zero-cksum tunneling is covered by RFC 6935/6936 audit (shipped) |
+| §3.4.1  | IPv6 Zero UDP Checksum                      | met — default-mode discard in force + per-port opt-in shipped (`UDP_NO_CHECK6_RX` / `UDP_NO_CHECK6_TX`) |
 | §3.4.2  | UDP-Lite                                    | N/A — UDP-Lite is a separate protocol (proto 136); PyTCP does not implement it |
 | §3.5    | Middlebox Traversal Guidelines              | application obligation |
 | §3.6    | Limited Applicability / Controlled Envs     | application obligation |
 | §4.1    | Multicast Congestion Control                | application obligation |
 | §4.2    | Message Size Guidelines for Multicast       | application obligation; PyTCP's multicast TX path is RFC 1112 / RFC 4861 SNMA |
-| §5.1    | Using UDP Ports                             | partial — sender SHOULD NOT use sport=0 (TX default violates, RX rejects) ; randomized source port now RFC 6056-conformant via `secrets.choice` |
+| §5.1    | Using UDP Ports                             | partial — sender SHOULD NOT use sport=0 (raw `_phtx_udp` default violates; parser accepts sport=0 per RFC 768) ; randomized source port now RFC 6056-conformant via `secrets.choice` |
 | §5.1.1  | Source-port entropy + IPv6 flow label       | met (RFC 6437 flow-label auto-wire shipped) |
 | §5.1.2  | Multiple UDP ports per application          | application obligation |
-| §5.2    | ICMP Guidelines                             | met at stack layer (notify_* socket callbacks deliver ICMP errors); application-side `IP_RECVERR` API parity is a Phase-3 item |
+| §5.2    | ICMP Guidelines                             | met (notify_* socket callbacks deliver ICMP errors; `IP_RECVERR` / `MSG_ERRQUEUE` error-queue API shipped) |
 
 ---
 
@@ -102,15 +102,19 @@ but the stack's job is to expose PMTU.
   silent in-network fragmentation.
 - **PLPMTUD (RFC 8899) for UDP:** not implemented; a
   Phase-1 polish item.
-- **Per-socket PMTU query (`IP_MTU` getsockopt):** not
-  exposed; the `GET_MAXSIZES` abstract API from RFC 1122
-  §3.4 has no concrete consumer surface in the BSD socket
-  facade today.
+- **Per-socket PMTU query (`IP_MTU` / `IPV6_MTU`
+  getsockopt):** exposed. `getsockopt(IPPROTO_IP, IP_MTU)`
+  (and the IPv6 `IPV6_MTU`) returns the discovered path MTU
+  from `stack.pmtu_cache`, falling back to the egress
+  interface MTU when no PMTU has been learned — the
+  RFC 1122 §3.4 `GET_MAXSIZES` surface. See
+  `packages/pytcp/pytcp/runtime/socket/__init__.py:1144`
+  (IP_MTU) / `:1403` (IPV6_MTU).
 
-**Verdict:** partial — PyTCP exposes PMTU to itself, but
-does not expose it back to the application via
-`getsockopt(IP_MTU)` / `IPV6_PATHMTU`. Phase-3
-socket-parity item.
+**Verdict:** partial — PyTCP exposes PMTU both to itself
+and back to the application via `getsockopt(IP_MTU)` /
+`IPV6_MTU`. The residual gap is PLPMTUD (RFC 8899), a
+deferred Phase-1 polish item.
 
 ---
 
@@ -166,13 +170,16 @@ Cross-reference: full discussion in the
 >  that is specifically enabled."
 
 **Adherence:** met. The MUST default-enabled side is
-met on both TX (always cksums; no opt-out) and RX
+met on both TX (always cksums unless opted out) and RX
 (IPv6 cksum=0 is rejected via `UdpZeroCksumIp6Error`
 with the dedicated `udp__ip6_zero_cksum__drop` counter
 for observability). The "receiving endpoint MUST only
 allow zero-checksum on a specifically-enabled port"
-half is conformant because PyTCP doesn't enable
-zero-checksum mode on any port today.
+half is met by the per-port opt-in: only a socket that
+set `UDP_NO_CHECK6_RX` (via `setsockopt(SOL_UDP,
+UDP_NO_CHECK6_RX, 1)`) accepts inbound cksum=0 IPv6
+datagrams on its bound port; every other port keeps the
+default discard.
 
 Cross-reference: full discussion in the
 [RFC 6935/6936 audit](../rfc6935__udp_zero_cksum_ipv6/adherence.md).
@@ -337,10 +344,13 @@ transient ICMP soft errors) are application obligations
 — PyTCP exposes the error type/code/embedded-datagram
 fields and lets the app decide.
 
-The Linux `IP_RECVERR` / `MSG_ERRQUEUE` API parity item
-(error queue surfaced via `recv()`) is a Phase-3
-socket-parity follow-up documented at
-`docs/refactor/socket_linux_parity_audit.md`.
+The Linux `IP_RECVERR` / `IPV6_RECVERR` / `MSG_ERRQUEUE`
+API parity — the error queue surfaced via
+`recvmsg(MSG_ERRQUEUE)` with an `IP_RECVERR` / `IPV6_RECVERR`
+cmsg — is shipped:
+`packages/pytcp/pytcp/runtime/socket/udp__socket.py::recvmsg`
+(`:797`, `MSG_ERRQUEUE` branch at `:828`) dequeues an error-
+queue entry and builds the cmsg (`:919-930`).
 
 ---
 
@@ -356,8 +366,8 @@ audits — this section enumerates the cross-references.
 | §3.2    | DF=1 on outbound UDP IPv4                    | [RFC 1191 audit](../../ip4/rfc1191__pmtud_ip4/adherence.md); UDP TX integration test covers the IPv4 path |
 | §3.4    | UDP checksum on by default (TX + RX)         | [RFC 768 audit](../rfc768__udp/adherence.md); `test__udp__assembler__operation.py` + `test__udp__parser__integrity_checks.py` |
 | §3.4.1  | IPv6 zero-cksum default = checksumming on    | [RFC 768 audit](../rfc768__udp/adherence.md) + [RFC 6935/6936 audit](../rfc6935__udp_zero_cksum_ipv6/adherence.md) (task #570) |
-| §5.1    | Sender SHOULD NOT use sport=0                | gap — see [RFC 6056 audit](../rfc6056__port_randomization/adherence.md) (task #572) |
-| §5.1    | Randomized source port                       | gap — see RFC 6056 audit (task #572) |
+| §5.1    | Sender SHOULD NOT use sport=0                | partial — BSD socket layer picks ephemeral; raw `_phtx_udp` permits sport=0. See [RFC 6056 audit](../rfc6056__port_randomization/adherence.md) |
+| §5.1    | Randomized source port                       | met — `secrets.choice` + Linux-parity range; see [RFC 6056 audit](../rfc6056__port_randomization/adherence.md) |
 | §5.1.1  | IPv6 Flow Label set                          | [RFC 6437 audit](../../ip6/rfc6437__flow_label/adherence.md); `test__ip6__rfc6437_flow_label.py` |
 | §5.2    | UDP layer passes ICMP errors up              | [RFC 1122 §4.1 audit](../rfc1122__host_requirements_udp/adherence.md) §4.1.3.3; `packages/pytcp/pytcp/tests/unit/socket/test__socket__udp__socket.py` |
 
@@ -373,13 +383,13 @@ expressed through the cross-referenced audits.
 | Aspect                                                | Status |
 |-------------------------------------------------------|--------|
 | §3.1 Congestion control                               | application obligation (stack does not undermine) |
-| §3.2 Message size / PMTUD                             | partial — PMTUD wired; PLPMTUD deferred; per-socket PMTU exposure deferred |
+| §3.2 Message size / PMTUD                             | partial — PMTUD wired + per-socket PMTU exposure (`IP_MTU` / `IPV6_MTU`); PLPMTUD (RFC 8899) deferred |
 | §3.3 Reliability                                      | application obligation |
 | §3.4 Checksum default on (TX + RX)                    | met |
 | §3.4 IPv6 cksum required (TX)                         | met |
-| §3.4 IPv6 cksum=0 RX must discard (no per-port opt-in) | met (see RFC 6935 audit) |
+| §3.4 IPv6 cksum=0 RX must discard by default          | met (see RFC 6935 audit) |
 | §3.4.1 Default cksum-on for IPv6                      | met |
-| §3.4.1 Per-port enable list for IPv6 zero-cksum       | not implemented |
+| §3.4.1 Per-port enable list for IPv6 zero-cksum       | met (`UDP_NO_CHECK6_RX` / `UDP_NO_CHECK6_TX`) |
 | §3.4.2 UDP-Lite                                       | N/A (separate protocol, not implemented) |
 | §3.5 Middlebox traversal                              | application obligation |
 | §3.6 Limited applicability                            | application obligation |
@@ -388,19 +398,24 @@ expressed through the cross-referenced audits.
 | §5.1 Receiver SHOULD NOT bind port 0                  | met (bind(0) means "pick ephemeral", not "listen on port 0") |
 | §5.1 Random source port (RFC 6056)                    | met (`secrets.choice` + Linux-parity range — see dedicated RFC 6056 audit) |
 | §5.1.1 IPv6 flow label set                            | met (RFC 6437 auto-wire shipped) |
-| §5.2 UDP passes ICMP errors up                        | met (stack layer); IP_RECVERR API parity deferred |
+| §5.2 UDP passes ICMP errors up                        | met (stack layer + `IP_RECVERR` / `MSG_ERRQUEUE` error-queue API shipped) |
 
 PyTCP **broadly satisfies its stack-side obligations**
-under RFC 8085. The remaining stack-side gaps are:
+under RFC 8085. The two previously-flagged stack-side
+gaps are now closed:
 
-1. **No per-port IPv6 zero-cksum opt-in** — covered by
+1. **Per-port IPv6 zero-cksum opt-in** — shipped via
+   `UDP_NO_CHECK6_RX` / `UDP_NO_CHECK6_TX`; see
    [RFC 6935/6936 audit](../rfc6935__udp_zero_cksum_ipv6/adherence.md).
-2. **No `IP_MTU` / `IPV6_PATHMTU` getsockopt to expose
-   discovered PMTU** to the application — Phase-3 socket-
-   parity item.
-3. **TCP Algorithm 3 (RFC 6056 §3.3.3) not implemented**
-   — covered by [TCP-side RFC 6056 audit](../../tcp/rfc6056__port_randomization/adherence.md);
-   does not affect UDP conformance.
+2. **`IP_MTU` / `IPV6_MTU` getsockopt** to expose the
+   discovered PMTU to the application — shipped.
+
+The residual stack-side item is PLPMTUD (RFC 8899) for
+UDP, a deferred Phase-1 polish item (classical PMTUD per
+RFCs 1191 / 8201 is wired). TCP Algorithm 3
+(RFC 6056 §3.3.3) is a TCP-side concern covered by the
+[TCP-side RFC 6056 audit](../../tcp/rfc6056__port_randomization/adherence.md);
+it does not affect UDP conformance.
 
 The previously-flagged ephemeral port allocator gap
 (narrow range, step=2, non-cryptographic entropy) has

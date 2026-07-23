@@ -69,28 +69,28 @@ TX path skips the option. The MUST NOT is enforced.
 **Adherence:** met. The wire format is implemented at
 `packages/net_proto/net_proto/protocols/tcp/options/tcp__option__sack.py`:
 kind=5, length=8*n+2, blocks as (left, right) 32-bit
-unsigned integer pairs. The 4-block cap is enforced at
-`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:1701-1703`:
+unsigned integer pairs. Both the 4-block cap and the
+3-block-with-TSopt cap are enforced in `build_sack_blocks`
+(`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__tx.py:662-677`):
 
 ```python
-for seq, packet_rx_md in self._ooo_packet_queue.items():
-    if len(blocks) >= 4:
+block_cap = 3 if session._ts.send_ts else 4
+blocks: list[tuple[int, int]] = []
+if session._pending_dsack is not None:
+    blocks.append(session._pending_dsack)
+    session._pending_dsack = None
+for seq, packet_rx_md in reversed(session._ooo_packet_queue.items()):
+    if len(blocks) >= block_cap:
         break
-    blocks.append(...)
+    blocks.append((seq, add32(seq, len(packet_rx_md.tcp__data))))
 ```
 
-The 3-block cap when timestamps are present is NOT
-enforced — `_build_sack_blocks` always allows 4. With
-TSopt's 12 bytes (10 bytes + 2 NOPs), 4 SACK blocks
-would yield 12 + 2 + 4*8 = 46 bytes of options, which
-exceeds the 40-byte option budget. PyTCP's TX path
-will assemble such a segment but the IP / TCP option
-budget enforcement may break.
-
-This is a real conformance gap: when both TSopt and
-4 SACK blocks are present, the segment exceeds the
-option budget. Closing the gap requires capping at 3
-blocks when `_send_ts` is True. ~3 LOC fix.
+When TSopt is negotiated (`session._ts.send_ts`), the cap
+drops to 3 so the option size stays within budget:
+10 (TSopt) + 2 (SACK header) + 3*8 (blocks) = 36 ≤ 40
+bytes. Without TSopt, up to 4 blocks fit: 2 + 4*8 = 34 ≤
+40 bytes. RFC 2018 §3's "a maximum of 3 SACK blocks will
+be allowed in this case" is satisfied at the build site.
 
 ---
 
@@ -169,10 +169,12 @@ emitted in newest-first order behind it.
 > "The data receiver SHOULD include as many distinct
 > SACK blocks as possible in the SACK option."
 
-**Adherence:** met within the 4-block cap. The loop at
-line 1701-1703 iterates the OOO queue until 4 blocks
-are accumulated (with the §3 / TSopt-coexistence cap
-not yet enforced — see §3 audit above).
+**Adherence:** met within the block cap. The loop in
+`build_sack_blocks`
+(`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__tx.py:675-677`)
+iterates the OOO queue until `block_cap` blocks are
+accumulated (3 with TSopt, 4 without — see §3 audit
+above).
 
 ### Repeat recent blocks (lost-ACK robustness)
 
@@ -513,14 +515,14 @@ RACK-TLP independently catches any reneged ranges.
 | §3 3-block cap with TSopt                   | locked in (block_cap = 3 if `_send_ts`)         |
 | §4 Bilateral negotiation MUST NOT           | locked in                                       |
 | §4 SACK on every dup-ACK                    | locked in                                       |
-| §4 First block reflects triggering segment  | n/a (gap not closed)                            |
+| §4 First block reflects triggering segment  | locked in                                       |
 | §4 As many blocks as possible               | locked in (within 4-cap)                        |
 | §4 Repeat recent blocks                     | locked in (implicit via OOO-queue persistence)  |
 | §5 Record SACK info                         | locked in (49+ unit tests for scoreboard)       |
 | §5 Skip SACKed on retransmit                | locked in                                       |
-| §5 Clear SACKed bits on RTO                 | n/a (gap not closed)                            |
+| §5 Clear SACKed bits on RTO                 | superseded (RFC 6675 §5.1)                      |
 | §5 Retransmit left-edge after RTO           | locked in                                       |
-| §5 Ignore prior SACK info on RTO retransmit | n/a (gap not closed)                            |
+| §5 Ignore prior SACK info on RTO retransmit | superseded (RFC 6675 §5.1)                      |
 | §5.1 Congestion control preserved           | locked in                                       |
 
 ---

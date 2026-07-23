@@ -28,8 +28,8 @@ Security boilerplate, §8 References) is omitted.
 ## Top-line adherence
 
 PyTCP **meets** the host-side filtering posture for the
-sensitive options (LSRR / SSRR drop-by-default gated by
-`IP4__ACCEPT_SOURCE_ROUTE`). For the operationally-benign
+sensitive options (LSRR / SSRR drop-by-default gated by the
+per-interface `ip4.accept_source_route` sysctl). For the operationally-benign
 options (EOL, NOP, Record Route, Timestamp, Router Alert,
 Stream ID, deprecated MTU Probe / Reply), PyTCP accepts the
 frame and delivers it normally — matching the RFC 7126 §4.5.5
@@ -41,7 +41,7 @@ alignment) are enforced uniformly across all option kinds.
 |---------|---------------------------|--------------------------|---------------|
 | §4.1    | End of Option List (0)    | accept                   | accepted (typed `Ip4OptionEol`) |
 | §4.2    | No Operation (1)          | accept                   | accepted (typed `Ip4OptionNop`) |
-| §4.3    | LSRR (131)                | **drop by default**      | dropped by default (gate `IP4__ACCEPT_SOURCE_ROUTE=False`) |
+| §4.3    | LSRR (131)                | **drop by default**      | dropped by default (gate `ip4.accept_source_route=False`) |
 | §4.4    | SSRR (137)                | **drop by default**      | dropped by default (same gate) |
 | §4.5    | Record Route (7)          | drop by default (routers); host-side accept | accepted, no action |
 | §4.6    | Stream Identifier (136)   | drop (obsolete)          | accepted but no typed dispatch (Unknown), no action |
@@ -81,10 +81,12 @@ parsed normally and ignored (used for alignment padding).
 > be documented."
 
 **Adherence:** met. PyTCP applies the drop-by-default policy
-to **both** LSRR and SSRR jointly via the
-`stack.IP4__ACCEPT_SOURCE_ROUTE` flag
-(`packages/pytcp/pytcp/stack/__init__.py:136`, default `False`). The RX
-handler (`packet_handler__ip4__rx.py:130-144`) drops any
+to **both** LSRR and SSRR jointly via the per-interface
+`ip4.accept_source_route` sysctl (backing dict
+`IP4__ACCEPT_SOURCE_ROUTE` in
+`packages/pytcp/pytcp/stack/__init__.py:217`, default `{"default": False}`,
+read via `sysctl_iface.get_for_iface`). The RX
+handler (`packet_handler__ip4__rx.py:146-158`) drops any
 LSRR/SSRR-bearing frame with the
 `ip4__source_route__drop` counter and a `<WARN>` log message
 when the gate is off. The default matches Linux
@@ -197,7 +199,7 @@ options stream.
 ### §4.3 / §4.4 LSRR / SSRR drop-by-default
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__rx__source_route.py`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__source_route.py`
   Matrix: LSRR with gate off → drop, LSRR with gate on → accept,
   SSRR with gate off → drop, SSRR with gate on → accept. Counter
   `ip4__source_route__drop` verified.
@@ -207,7 +209,7 @@ options stream.
 ### Per-option wire codec (every option kind)
 
 - **Unit:** one file per option in
-  `packages/net_proto/net_proto/tests/unit/protocols/ip4/options/`
+  `packages/net_proto/net_proto/tests/unit/protocols/ip4/`
   (`test__ip4__option__eol.py`, `..__nop.py`, `..__rr.py`,
   `..__lsrr.py`, `..__ssrr.py`, `..__timestamp.py`,
   `..__router_alert.py`, `..__cipso.py`, `..__unknown.py`).

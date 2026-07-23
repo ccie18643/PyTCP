@@ -449,9 +449,9 @@ implicit on-link prefix is assumed, matching the MUST.
 ### §18.2.1 SOL_MAX_DELAY first-SOLICIT jitter
 
 - **Unit:**
-  `::TestDhcp6ClientSolicitDelay::test__dhcp6_client__solicit_delay_sleeps_random_interval`
-  and `..._solicit_delay_zero_does_not_sleep` assert the first SOLICIT is
-  preceded by a [0, SOL_MAX_DELAY] sleep (and that a drawn 0 transmits
+  `::TestDhcp6ClientSolicitDelay::test__dhcp6_client__solicit_delay_waits_random_interval`
+  and `..._solicit_delay_zero_does_not_wait` assert the first SOLICIT is
+  preceded by a [0, SOL_MAX_DELAY] wait (and that a drawn 0 transmits
   immediately).
 - **Unit:**
   `packages/pytcp/pytcp/tests/unit/protocols/dhcp6/test__dhcp6__constants.py::TestDhcp6ConstantsDefaults::test__dhcp6_constants__sol_max_delay_ms_default`

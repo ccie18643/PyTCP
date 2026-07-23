@@ -126,12 +126,12 @@ or audit references these as governing specifications.
 ### Deprecated options fall through to Ip4OptionUnknown on receive
 
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/ip4/options/test__ip4__option__unknown.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/ip4/test__ip4__option__unknown.py`
   Verifies that any option type not matched by the typed
   dispatch chain in `Ip4Options.from_buffer` is parsed into an
   `Ip4OptionUnknown` with the original type byte preserved.
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/ip4/options/test__ip4__options.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/ip4/test__ip4__options.py`
   Container composition tests include an `Ip4OptionUnknown` in
   the option stream and verify round-trip identity.
 

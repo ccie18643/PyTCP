@@ -390,11 +390,11 @@ not a behavioural defect.
 ### (2.1) Initial RTO ≥ 1 s
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__rto.py::TestInitialState`
+  `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__rto.py::TestRtoInitialState`
   pins `initial_state().rto_ms == INITIAL_RTO_MS == 1000`.
 - **Constants:**
-  `test__rto__initial_rto_ms_is_one_second` and
-  `test__rto__min_rto_ms_is_one_second` pin the
+  `test__rto__initial_rto_is_1_second` and
+  `test__rto__min_rto_is_at_least_1_second` pin the
   constant values.
 
 **Status:** locked in.
@@ -402,7 +402,7 @@ not a behavioural defect.
 ### (2.2) First-sample formula
 
 - **Unit:**
-  `test__tcp__rto.py::TestUpdate::test__rto__first_sample_sets_srtt_to_r_and_rttvar_to_r_div_2`
+  `test__tcp__rto.py::TestRtoUpdateFirstSample::test__rto__update__first_sample_500ms_canonical_values`
   drives `update(initial_state(), R)` and pins the
   resulting `srtt == R`, `rttvar == R // 2`,
   `rto = srtt + K * rttvar` formula.
@@ -412,8 +412,8 @@ not a behavioural defect.
 ### (2.3) Subsequent-sample EWMA
 
 - **Unit:**
-  `test__tcp__rto.py::TestUpdate` parameterised cases
-  cover multiple sample-vs-SRTT deltas, asserting the
+  `test__tcp__rto.py::TestRtoUpdateSubsequentSample`
+  cases cover multiple sample-vs-SRTT deltas, asserting the
   EWMA formula and verifying the RTTVAR-before-SRTT
   ordering.
 
@@ -421,15 +421,15 @@ not a behavioural defect.
 
 ### (2.4) RTO floor at 1 s
 
-- **Unit:** `test__tcp__rto.py::TestClampRto` pins the
+- **Unit:** `test__tcp__rto.py::TestRtoClamp` pins the
   clamp behaviour.
 
 **Status:** locked in.
 
 ### (2.5) RTO ceiling 60 s
 
-- **Unit:** `TestClampRto::test__rto__clamp_rto_above_max_clamps_to_max`
-  and `TestBackOff::test__rto__back_off_clamps_at_max_rto`
+- **Unit:** `TestRtoClamp::test__rto__clamp_rto__above_max_clamped_down`
+  and `TestRtoBackOff::test__rto__back_off__caps_at_max_rto`
   pin the upper bound.
 
 **Status:** locked in.
@@ -474,7 +474,7 @@ Covered by RFC 7323 audit (separately).
 ### §5.1 Arm timer on data send
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rto.py::TestTcpRtoRetransmitTimer::test__data_transmit_arms_session_level_retransmit_timer`
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rto.py::TestTcpRtoRetransmitTimer::test__rto__data_transmit_arms_session_level_retransmit_timer`
   pins the "if not running, arm" semantic.
 
 **Status:** locked in.
@@ -482,7 +482,7 @@ Covered by RFC 7323 audit (separately).
 ### §5.2 Stop timer on all-acked
 
 - **Integration:**
-  `test__tcp__session__rto.py::test__cumulative_ack_draining_in_flight_stops_retransmit_timer`
+  `test__tcp__session__rto.py::test__rto__cumulative_ack_draining_in_flight_stops_retransmit_timer`
   pins the unregister-on-SND.UNA-equals-SND.MAX path.
 
 **Status:** locked in.
@@ -505,10 +505,10 @@ Covered by RFC 7323 audit (separately).
 
 ### §5.5 Back off RTO
 
-- **Unit:** `TestBackOff` covers the doubling +
+- **Unit:** `TestRtoBackOff` covers the doubling +
   clamping logic.
 - **Integration:**
-  `test__tcp__session__rto.py::test__retransmit_timeout_backs_off_rto_state`
+  `test__tcp__session__rto.py::test__rto__retransmit_timeout_backs_off_rto_state`
   drives an RTO and asserts the doubled `rto_ms`.
 
 **Status:** locked in.

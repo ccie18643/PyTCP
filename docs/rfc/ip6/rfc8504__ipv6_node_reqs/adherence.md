@@ -41,7 +41,7 @@ classified as one of:
 | §5.1    | RFC 8200 IPv6                                  | shipped             |
 | §5.2    | Extension Headers                              | shipped             |
 | §5.3    | Excessive option protections                   | shipped (`ip6.ext_hdr_max_*` sysctls + RX cap gate) |
-| §5.4    | RFC 4861 Neighbor Discovery                    | shipped (NUD + RFC 7559 + RFC 4311 + RFC 4429 + RFC 7527; Redirect is Phase-2 router) |
+| §5.4    | RFC 4861 Neighbor Discovery                    | partial (NUD + RFC 7559 + RFC 4311 + RFC 4429 + RFC 7527 shipped; Redirect TX + RFC 6980 TX-refuse gate are follow-ups) |
 | §5.5    | RFC 3971 SEND                                  | deliberately skipped (crypto extension) |
 | §5.6    | RFC 5175 RA Flags Option                       | deferred (no consumer in PyTCP) |
 | §5.7    | PMTU Discovery (RFC 8201) + min MTU            | shipped             |
@@ -100,7 +100,7 @@ implemented in `packages/net_proto/net_proto/protocols/ethernet_802_3/`.
 > be silently discarded."
 
 **Adherence:** shipped. Overlap detection lands in the
-shared `packages/pytcp/pytcp/lib/ip_frag_table.py::IpFragTable.add_fragment`
+shared `packages/pytcp/pytcp/protocols/ip/ip_frag_table.py::IpFragTable.add_fragment`
 with strict-reading policy (RFC 5722 §3); duplicate
 fragments are also dropped. See the
 [RFC 5722 audit](../rfc5722__overlapping_fragments/adherence.md)
@@ -122,10 +122,14 @@ fragments in isolation per RFC 6946 §4 (commit `909c3e06`).
 > "All nodes SHOULD support the setting and use of the IPv6
 > Flow Label field as defined in [RFC6437]."
 
-**Adherence:** partial. The IPv6 header carries a Flow
+**Adherence:** shipped. The IPv6 header carries a Flow
 Label field (`packages/net_proto/net_proto/protocols/ip6/ip6__header.py`); the
-TX path defaults to `flow=0`. A discrete-uniform Flow Label
-generator per the RFC 6437 recommendation is not yet wired.
+IPv6 TX path auto-computes a stable 20-bit label from the
+`(src, dst)` pair via `compute_ip6_flow_label`
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__tx.py:141-162`),
+gated by the `ip6.flow_label_generation` sysctl (default 1;
+set 0 to emit `flow=0`). See the
+[RFC 6437 audit](../rfc6437__flow_label/adherence.md).
 
 > "All conformant IPv6 implementations MUST be capable of
 > sending and receiving IPv6 packets; forwarding
@@ -177,7 +181,7 @@ padding, and PyTCP matches that behaviour. Setting any cap
 to 0 disables that check.
 
 The cap-check helper lives at
-`packages/pytcp/pytcp/lib/ip6_ext_hdr_limits.py::check_ext_hdr_option_caps`;
+`packages/pytcp/pytcp/protocols/ip6/ip6__ext_hdr_limits.py::check_ext_hdr_option_caps`;
 the RX wiring is at
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__rx.py::_phrx_ip6_hbh`
 and `::_phrx_ip6_dest_opts`. A cap violation drops the
@@ -313,7 +317,7 @@ paths.
 per host (`_ip6_ifaddr` is a `list[Ip6IfAddr]`). Per-host
 prefix delegation (RFC 8273) is **deferred**.
 
-### §6.3 RFC 4862 SLAAC — partial
+### §6.3 RFC 4862 SLAAC — shipped
 
 **Adherence:** shipped.
 
@@ -344,14 +348,20 @@ support. The RFC marks DHCPv6 as SHOULD.
 
 ### §6.6 RFC 6724 Default Address Selection — partial
 
-**Adherence:** partial. PyTCP picks the source address by
-matching the destination's prefix to a configured host
-prefix; this covers the common case (Rule 5: "prefer
-matching label"). The full RFC 6724 rule set (Rule 1
-"prefer same address", Rule 2 "prefer appropriate scope",
-etc.) is partially implemented via `is_link_local` /
-`is_global_unicast` predicates in `net_addr`. RFC 8028
-Rule 5.5 update is **deferred**.
+**Adherence:** partial. PyTCP runs the RFC 6724 default
+source-address selection algorithm in
+`_select_ip6_source`
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__tx.py:363`):
+Rule 1 (prefer same address) short-circuits when the
+destination is itself owned, and the remaining candidates
+are ranked by a lexicographic key encoding Rule 2 (scope),
+Rule 3 (avoid deprecated), Rule 6 (matching label via the
+§10.3 default policy table), Rule 7 (temp-address
+preference, gated on `icmp6.use_tempaddr`), and Rule 8
+(longest matching prefix). Rules 4 (home address) and 5 /
+5.5 (outgoing interface / next-hop) are out of scope for a
+single-interface host. Full clause-by-clause coverage is in
+the [RFC 6724 audit](../rfc6724__default_address_selection/adherence.md).
 
 ---
 

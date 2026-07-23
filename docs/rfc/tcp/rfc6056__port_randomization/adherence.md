@@ -12,9 +12,9 @@
 This is the **TCP-side** RFC 6056 audit. The picker
 itself is a cross-protocol primitive — one
 implementation at
-`packages/pytcp/pytcp/socket/socket__bind_helpers.py:140-152::pick_local_port` serves
-both `packages/pytcp/pytcp/socket/tcp__socket.py` and
-`packages/pytcp/pytcp/socket/udp__socket.py`. This record therefore
+`packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:122::pick_local_port` serves
+both `packages/pytcp/pytcp/runtime/socket/tcp__socket.py` and
+`packages/pytcp/pytcp/runtime/socket/udp__socket.py`. This record therefore
 **inherits the implementation findings from the UDP-side
 audit** at
 [`../../udp/rfc6056__port_randomization/adherence.md`](../../udp/rfc6056__port_randomization/adherence.md);
@@ -50,23 +50,23 @@ that don't apply equally to UDP:
 1. **§3.5 recommends Algorithm 3 (hash-based) for TCP.**
    Linux uses Algorithm 3 for TCP source-port selection
    (`__inet_hash_connect` in
-   `net/ipv4/inet_hashtables.c`); PyTCP uses the same
-   set-pop fallback as UDP.
+   `net/ipv4/inet_hashtables.c`); PyTCP uses Algorithm 3
+   on the `connect()` path (`pick_local_port_for`) and
+   the Algorithm 1 set-pop fallback only on `bind(0)`,
+   where the remote tuple is not yet known.
 2. **TCP connections are long-lived**, so the
    port-reuse-frequency property Algorithm 3/4 optimize
-   matters more for TCP than UDP. PyTCP's set-pop picks
-   from a pool of unused ports so reuse is bounded by
-   the pool size — fine in practice for small concurrent
-   socket counts, but Algorithm 3 would give
-   per-destination subspaces that scale better.
+   matters more for TCP than UDP. PyTCP's Algorithm 3
+   walk starts from a per-destination secret-keyed
+   offset, giving the per-destination subspaces that
+   scale better than a plain unused-port pool.
 3. **The RFC 6528 ISS-secret infrastructure already
    exists** (`TCP__ISS_SECRET` at `packages/pytcp/pytcp/stack/__init__.py`;
    used by `compute_iss` for sequence-number selection).
-   Adding Algorithm 3 for TCP source ports would reuse
-   that keyed-hash pattern almost verbatim — only the
-   inputs change (replace `local_port` with
-   `local_ip + remote_ip + remote_port` for the hash
-   tuple).
+   Algorithm 3 for TCP source ports reuses that
+   keyed-hash pattern almost verbatim via
+   `TCP__PORT_SECRET` — only the inputs change (the hash
+   tuple is `local_ip + remote_ip + remote_port`).
 
 ---
 
@@ -105,7 +105,7 @@ destination AND the per-stack secret. Two consequences:
 
 **Adherence:** met. PyTCP ships
 `pick_local_port_for(*, local_ip, remote_ip, remote_port)`
-at `packages/pytcp/pytcp/socket/socket__bind_helpers.py`:
+at `packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py`:
 
 ```python
 def pick_local_port_for(
@@ -131,7 +131,7 @@ def pick_local_port_for(
 ```
 
 The TCP `connect()` call site at
-`packages/pytcp/pytcp/socket/tcp__socket.py` orders operations so the
+`packages/pytcp/pytcp/runtime/socket/tcp__socket.py` orders operations so the
 destination IP is resolved before the picker runs, then
 invokes `pick_local_port_for(local_ip, remote_ip,
 remote_port)` to derive the source port. The
@@ -141,7 +141,7 @@ allocation pattern as `TCP__ISS_SECRET` /
 `TCP__FASTOPEN_SECRET` / `IP6__FLOW_SECRET`.
 
 The unit tests at
-`packages/pytcp/pytcp/tests/unit/socket/test__socket__bind_helpers.py::TestPickLocalPortFor`
+`packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__bind_helpers.py::TestPickLocalPortFor`
 pin the three RFC-relevant properties:
 
 - **Deterministic for same inputs** (same offset for the
@@ -184,23 +184,24 @@ shape Linux's `__inet_hash_connect` implements.
 
 ### §3.4 Secret-Key Considerations for Hash-Based Algorithms
 
-When Algorithm 3 lands, the secret-key handling MUST
-follow the established PyTCP pattern:
+Algorithm 3's secret-key handling follows the
+established PyTCP pattern:
 
-- Generate via `secrets.token_bytes(16)` at module
-  import (`packages/pytcp/pytcp/stack/__init__.py`).
-- Never persist to disk.
+- Generated via `secrets.token_bytes(16)` at module
+  import (`TCP__PORT_SECRET` in
+  `packages/pytcp/pytcp/stack/__init__.py`).
+- Never persisted to disk.
 - Re-keying on process restart is acceptable (and
   desirable — RFC 6056 §3.4 notes "the secret should be
   regularly regenerated").
-- Mirror the naming convention: `TCP__PORT_SECRET`
+- Mirrors the naming convention: `TCP__PORT_SECRET`
   alongside the existing `TCP__ISS_SECRET` /
   `TCP__FASTOPEN_SECRET` / `IP6__FLOW_SECRET`.
 
-The existing
+The
 [RFC 6528 ISS hash audit](../rfc6528__iss_hash/adherence.md)
-documents the established pattern — Algorithm 3 for
-ports would consume the same scaffolding.
+documents the same established pattern — Algorithm 3 for
+ports consumes the same scaffolding.
 
 ---
 
@@ -226,27 +227,10 @@ UDP audit:
 The UDP audit covers the picker's general test surface.
 TCP-specific tests for RFC 6056 conformance would be:
 
-### §3.3.3 TCP Algorithm 3 — per-destination isolation
-
-**No test surface — Phase-2 hardening not implemented.**
-When Algorithm 3 lands, the natural test is:
-
-1. Open many TCP `connect()`s to a fixed
-   `(remote_ip, remote_port)` and verify the source-port
-   sequence spreads across the range with the
-   deterministic-but-secret-keyed offset.
-2. Open `connect()`s to TWO different remote
-   destinations and verify the source-port subspaces are
-   independent (knowing the source port for destination
-   A reveals nothing about destination B).
-3. Mock `secrets.token_bytes` to a known secret; verify
-   the offset for a given `(local, remote)` tuple
-   matches the computed BLAKE2s hash.
-
 ### §3.3.3 Algorithm 3 — per-destination isolation
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__bind_helpers.py::TestPickLocalPortFor`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__bind_helpers.py::TestPickLocalPortFor`
   — 5 tests: same inputs + secret → same port;
   different `remote_ip` → different ports; different
   secret → different ports; skips ports in use (linear
@@ -257,8 +241,8 @@ When Algorithm 3 lands, the natural test is:
 ### §3.5 lazy-binding (bind before connect)
 
 **Existing test:**
-`packages/pytcp/pytcp/tests/unit/socket/test__socket__tcp__socket.py:296+`
-patches `pytcp.socket.tcp__socket.pick_local_port` for
+`packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__tcp__socket.py:296+`
+patches `pytcp.runtime.socket.tcp__socket.pick_local_port` for
 the ephemeral-assignment-on-`bind(0)` path. The test
 pins the picker is called via the bare (no-destination)
 `pick_local_port` route — matching RFC 6056 §3.5's
@@ -316,7 +300,7 @@ a conformance impact.
 - **RFC 6528 ISS hashing (template for Algorithm 3 secret-key handling):** [`../rfc6528__iss_hash/adherence.md`](../rfc6528__iss_hash/adherence.md)
 - **RFC 5961 blind-attack hardening (companion security audit):** [`../rfc5961__blind_attack_hardening/adherence.md`](../rfc5961__blind_attack_hardening/adherence.md)
 - **RFC 9293 TCP base spec (`bind()` / `connect()` user/TCP interface):** [`../rfc9293__tcp/adherence.md`](../rfc9293__tcp/adherence.md)
-- Shared picker: `packages/pytcp/pytcp/socket/socket__bind_helpers.py:140-152::pick_local_port`
+- Shared picker: `packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:122::pick_local_port`
 - Ephemeral range constant: `packages/pytcp/pytcp/stack/__init__.py:175::EPHEMERAL_PORT_RANGE`
 - Secret-key pattern: `packages/pytcp/pytcp/stack/__init__.py` (`TCP__ISS_SECRET`, `TCP__FASTOPEN_SECRET`, `IP6__FLOW_SECRET`)
 - Socket-API parity: `docs/refactor/socket_linux_parity_audit.md`

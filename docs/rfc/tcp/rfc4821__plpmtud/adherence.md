@@ -102,13 +102,12 @@ prefix.
 > the largest non-probe packet permitted by PLPMTUD for
 > the path."
 
-**Adherence:** not implemented. PyTCP stores only the
-classical-PMTUD scalar — `pmtu_cache[dst]` is the
-single value, no search-range state. The plan
-introduces `PmtuSearch[A]` at `packages/pytcp/pytcp/lib/plpmtud.py`
-with `_min_mtu` / `_candidate_mtu` / `_max_mtu` /
-`_ack_size` corresponding to RFC 4821's three state
-variables.
+**Adherence:** met. Beyond the classical-PMTUD scalar
+`pmtu_cache[dst]`, PyTCP ships the search-range state in
+`PmtuSearch[A]` at `packages/pytcp/pytcp/lib/plpmtud.py`, whose
+`_min_mtu` / `_candidate_mtu` / `_max_mtu` / `_ack_size`
+attributes map onto RFC 4821's search_low / probe /
+search_high / eff_pmtu state variables.
 
 ---
 
@@ -119,16 +118,21 @@ variables.
 > range of environments. Given today's technologies, a
 > value of 1024 bytes is probably safe enough."
 
-**Adherence:** not implemented (no active probing
-engine).
+**Adherence:** met. `PmtuSearch.__init__` seeds
+`_min_mtu` to the family floor (`MIN_PLPMTU__IP4 = 576`
+/ `MIN_PLPMTU__IP6 = 1280`) and `_base_mtu` to the
+per-family `BASE_PLPMTU__IP4` / `BASE_PLPMTU__IP6`
+initial size — safe over a wide range of environments.
 
 > "There SHOULD be per-protocol and per-route
 > configuration options to override initial values for
 > eff_pmtu and other PLPMTUD state variables."
 
-**Adherence:** not implemented. Plan provides a
-constructor-parameter override for the engine; sysctl
-exposure is deferred to a follow-on commit.
+**Adherence:** met. The engine takes an `interface_mtu`
+constructor parameter, and the operator-facing
+`tcp.mtu_probing` / `tcp.base_mss` sysctls (shipped in
+the close-out) expose the per-protocol override that
+RFC 4821 §7.2 recommends.
 
 ---
 
@@ -142,18 +146,21 @@ exposure is deferred to a follow-on commit.
 > small enough that further probing is no longer worth
 > its cost."
 
-**Adherence:** not implemented. Plan's `PmtuSearch`
-engine performs the binary search (search_low /
-search_high midpoint per RFC 8899 §5.3.1) with 8-byte
-granularity.
+**Adherence:** met. `PmtuSearch._next_candidate`
+performs the binary search (search_low / search_high
+midpoint per RFC 8899 §5.3.1) at `LADDER_GRANULARITY = 8`
+byte alignment, and declares convergence — entering
+`PmtuState.SEARCH_COMPLETE` — once the remaining gap
+falls at or below `LADDER_GRANULARITY`.
 
 > "When the timer expires, search_high should be reset
 > to its initial value (described above) so that
 > probing can resume."
 
-**Adherence:** not implemented. Plan's
-`PMTU_RAISE_TIMER` (default 600 s per RFC 8899 §5.1.1)
-re-enters SEARCHING from SEARCH_COMPLETE.
+**Adherence:** met. `PMTU_RAISE_TIMER__SEC` (default
+600 s per RFC 8899 §5.1.1) resets `_search_high` to
+`_max_mtu` and re-enters SEARCHING from SEARCH_COMPLETE
+inside `next_probe_size`.
 
 ---
 
@@ -163,14 +170,14 @@ re-enters SEARCHING from SEARCH_COMPLETE.
 > accumulate enough data to meet the pre-conditions for
 > probing."
 
-**Adherence:** not implemented. The cwnd-exempt
-accounting for probe segments (no consumption of
-congestion window) is a Phase 3 plan item: probes will
-be tagged on the in-flight record so
-`bytes_in_flight()` skips them. Without that, a probe
-of 9000 bytes on a 14000-byte cwnd would consume ~64%
-of cwnd for diagnostic traffic — RFC 4821 §7.4
-explicitly forbids this.
+**Adherence:** Linux-pragmatic deviation. PyTCP does
+not exempt probe segments from congestion-window
+accounting — a probe consumes cwnd like any other data
+segment. This matches Linux's `tcp_mtu_probing`, which
+likewise counts probes against cwnd; the strict RFC 4821
+§7.4 cwnd-exempt requirement is deliberately not
+honoured (see the §7.4 row in the overall table for the
+rationale).
 
 ---
 
@@ -183,11 +190,14 @@ explicitly forbids this.
 > including the outermost IP headers, is equal to the
 > probe size."
 
-**Adherence:** not implemented. PyTCP does not
-construct probe segments — only data segments sized to
-the current MSS via `tcp__session.py` segment-factory
-TX path. Plan adds `build_probe_segment(seq, size)` and
-gates emit on adapter `maybe_probe(now)`.
+**Adherence:** met. The TcpSession TX path
+(`session/tcp__session__tx.py:441-477`) sizes the next
+data segment up to the engine's `probe_payload`
+candidate when it exceeds `snd_mss`, enough data is
+buffered, and the operator has enabled probing
+(`tcp.mtu_probing=2`), emitting a probe-sized segment
+through the normal `_phtx_tcp` path with DF=1. See the
+§7.5 probe-segment-emit test-coverage entry below.
 
 ---
 
@@ -199,20 +209,26 @@ gates emit on adapter `maybe_probe(now)`.
 > size is larger than the eff_pmtu, raise eff_pmtu to
 > the probe size."
 
-**Adherence:** not implemented. Plan's
-`PmtuSearch.on_probe_ack(size)` advances `_ack_size`
-and raises `_current_mtu` to it.
+**Adherence:** met. `PmtuSearch.on_probe_ack(size)`
+advances `_ack_size` and raises `_current_mtu` to the
+acked probe size.
 
 > "When only the probe is lost, it is treated as an
 > indication that the Path MTU is smaller than the probe
 > size. In this case alone, the loss SHOULD NOT be
 > interpreted as congestion signal."
 
-**Adherence:** not implemented. The "probe loss is not
-a congestion signal" requirement is critical and is
-the Phase 3 separate-probe-RTO mechanism: probe loss
-detected by probe-specific timer, not by data-RTO
-inheritance, so cwnd is not halved on a probe loss.
+**Adherence:** Linux-pragmatic deviation. PyTCP detects
+probe loss through the regular data RTO
+(`PmtuSearch.on_probe_loss` is driven from the session's
+RTO hook), not a dedicated probe timer, so a lost probe
+is treated like ordinary loss and cwnd may halve. This
+matches Linux's `tcp_mtu_probing`, which likewise does
+not isolate probe loss from congestion control; the
+strict RFC 4821 §7.5 "probe loss SHOULD NOT be
+interpreted as a congestion signal" is deliberately not
+honoured (see the §7.5 probe-only-RTO row in the overall
+table).
 
 ---
 

@@ -98,14 +98,15 @@ the ICMPv6 demux:
   methods raise NotImplementedError because Phase-1 PyTCP
   is a host listener and never emits Queries — querier-
   side emission lands in the Phase-2 router track). The
-  RX path at `packet_handler__icmp6__rx.py:220-221`
-  dispatches to `__phrx_icmp6__mld2_query` per §5.1.10.
+  RX path at `packet_handler__icmp6__rx.py:194`
+  dispatches to `__phrx_icmp6__mld_query` (definition at
+  `:1174`) per §5.1.10.
 - Type 143 (`MULTICAST_LISTENER_REPORT_V2`) — full codec
   at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__report.py`
   (Header / Base / Parser / Assembler + multi-record
   payload). The RX path at
-  `packet_handler__icmp6__rx.py:218` dispatches to
+  `packet_handler__icmp6__rx.py:192` dispatches to
   `__phrx_icmp6__mld2_report` which counts the Report but
   takes no state-update action (host-side; querier role
   deferred).
@@ -292,8 +293,8 @@ of the Phase-2 forwarding plane. A Phase-2 querier would:
    `ALLOW_NEW_SOURCES` / `BLOCK_OLD_SOURCES`).
 
 The Phase-2 RX path will replace the current
-"counter-only" handler at
-`packet_handler__icmp6__rx.py:1057` with a state-machine
+"counter-only" handler `__phrx_icmp6__mld2_report` at
+`packet_handler__icmp6__rx.py:1146` with a state-machine
 that consults / updates a per-group dictionary.
 
 ---
@@ -306,7 +307,7 @@ that consults / updates a per-group dictionary.
 >  multicast address listened on."
 
 **Adherence:** met. The RX handler at
-`__phrx_icmp6__mld2_query` in `packet_handler__icmp6__rx.py`
+`__phrx_icmp6__mld_query` in `packet_handler__icmp6__rx.py`
 emits the same `CHANGE_TO_EXCLUDE` Report PyTCP sends on
 spontaneous group-membership changes; the wire form is
 identical and the querier merges the on-Query Report with
@@ -366,11 +367,11 @@ processing) remain Phase-2 router work.
 ### §4 Report wire format
 
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/message/mld2/test__icmp6__mld2__message__report__assembler__operation.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__assembler.py`
   — pins the type-143 wire form, multi-record payload,
   per-record-type encoding (1-6).
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/message/mld2/test__icmp6__mld2__message__report__parser__operation.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__parser.py`
   — pins the RX-side parse path.
 
 **Status:** locked in.
@@ -378,7 +379,9 @@ processing) remain Phase-2 router work.
 ### §5 Listener-side Report emission
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__icmp6__tx.py`
+  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py`
+  (plus `..test__icmp6__mld2_query_response.py` for the
+  on-Query Report)
   — MLDv2 Report cases verify: Hop Limit = 1, source =
   link-local, destination = `ff02::16`, HBH RA-option
   carrier with value = MLD, `CHANGE_TO_EXCLUDE` record

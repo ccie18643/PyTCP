@@ -45,18 +45,20 @@ Timestamps; each branch has 2-4 sub-cases.
 > (creating a connection in the SYN-RECEIVED state)."
 
 **Adherence:** met. The TIME-WAIT FSM handler at
-`packages/pytcp/pytcp/protocols/tcp/tcp__fsm__time_wait.py:106-135`
-implements exactly this branch:
+`packages/pytcp/pytcp/protocols/tcp/fsm/tcp__fsm__time_wait.py:120-141`
+implements this branch as the TSval-evidence arm of a
+single Linux-style OR'd predicate covering A.1, A.2,
+A.3, B.1, and B.2 at once:
 
 ```python
 if (
-    packet_rx_md
-    and packet_rx_md.tcp__flag_syn
+    packet_rx_md.tcp__flag_syn
     and not packet_rx_md.tcp__flag_ack
     and not packet_rx_md.tcp__flag_rst
-    and session._send_ts
-    and packet_rx_md.tcp__tsval is not None
-    and gt32(packet_rx_md.tcp__tsval, ts_recent_at_entry)
+    and (
+        gt32(packet_rx_md.tcp__seq, session._rcv_seq.nxt)
+        or (packet_rx_md.tcp__tsval is not None and gt32(packet_rx_md.tcp__tsval, ts_recent_at_entry))
+    )
 ):
     session._reinit_for_rfc6191_reuse(packet_rx_md)
     session._change_state(FsmState.SYN_RCVD)
@@ -67,24 +69,28 @@ if (
 The check requires:
 - The inbound segment is a pure SYN (not SYN+ACK, not
   RST).
-- The previous incarnation had bilateral Timestamps
-  (`session._send_ts`).
-- The new SYN brings a TSval (`tcp__tsval is not
-  None`).
-- The new TSval is strictly greater than
-  `_ts_recent` (modular comparison via `gt32`).
+- Either the seq is strictly greater than RCV.NXT
+  (seq-evidence axis), or the new SYN brings a TSval
+  strictly greater than `_ts_recent` (TSval-evidence
+  axis; modular comparison via `gt32`).
 
-When all conditions hold, `_reinit_for_rfc6191_reuse`
+Sub-case A.1 (both incarnations TSopt-enabled, fresh
+TSval > last) is the TSval-evidence arm: it fires
+whenever `tcp__tsval > _ts_recent`. There is no
+`session._send_ts` gate — the previous incarnation's
+TSopt history is not consulted, matching Linux's
+`tcp_timewait_state_process`.
+
+When the predicate holds, `_reinit_for_rfc6191_reuse`
 (`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:1866-1925+`)
 resets the session to a fresh state, transitions to
 SYN_RCVD, and emits the SYN+ACK. This is the canonical
 RFC 6191 §2 sub-case A.1 acceptance branch.
 
-The inline comment cites "RFC 6191 §3" but the
-algorithm is in §2; §3 is "Interaction with Various
-Timestamp Generation Algorithms" (advisory commentary).
-This is a documentation-citation polish item, not a
-behavioural defect.
+The operative inline comment correctly cites "RFC 6191
+§2" (the algorithm's home section). §3 is "Interaction
+with Various Timestamp Generation Algorithms" (advisory
+commentary).
 
 #### Sub-case A.2 — TSopt enabled AND TSval == last AND seq > last_seq
 
@@ -191,18 +197,22 @@ challenge-ACK rather than silent drop.
 | Sub-case | Trigger                                              | PyTCP behaviour                                |
 |----------|------------------------------------------------------|------------------------------------------------|
 | A.1      | prev-TSopt + new-TSopt + TSval > _ts_recent          | met (accepts via `_reinit_for_rfc6191_reuse`)  |
-| A.2      | prev-TSopt + new-TSopt + TSval == _ts_recent + seq > | not implemented (falls to challenge-ACK)       |
-| A.3      | prev-TSopt + no-new-TSopt + seq > last_seq           | not implemented (falls to challenge-ACK)       |
+| A.2      | prev-TSopt + new-TSopt + TSval == _ts_recent + seq > | met (accepts via seq-evidence path)            |
+| A.3      | prev-TSopt + no-new-TSopt + seq > last_seq           | met (accepts via seq-evidence path)            |
 | A.4      | otherwise (prev-TSopt branch)                        | challenge-ACK (vs RFC's silent drop)           |
-| B.1      | prev-no-TSopt + new-TSopt                            | not implemented (falls to challenge-ACK)       |
-| B.2      | prev-no-TSopt + no-new-TSopt + seq > last_seq        | not implemented (falls to challenge-ACK)       |
+| B.1      | prev-no-TSopt + new-TSopt                            | met (accepts via TSval-evidence path)          |
+| B.2      | prev-no-TSopt + no-new-TSopt + seq > last_seq        | met (accepts via seq-evidence path)            |
 | B.3      | otherwise (prev-no-TSopt branch)                     | challenge-ACK (vs RFC's silent drop)           |
 
-**Overall §2 status:** PyTCP implements the most
-common sub-case (A.1 — both incarnations TSopt-
-enabled, fresh TSval) and falls back conservatively
-to challenge-ACK for every other case. The SHOULD
-strength of §2 permits this conservative subset.
+**Overall §2 status:** PyTCP implements every §2
+acceptance sub-case (A.1, A.2, A.3, B.1, B.2) via
+Linux's OR'd predicate — reuse is honored on either
+the TSval-evidence axis or the seq-evidence axis. The
+no-evidence default cases (A.4, B.3) elicit a
+challenge-ACK rather than the RFC's silent drop; the
+SHOULD strength of §2 permits this stricter response
+(the previous incarnation stays in TIME-WAIT either
+way).
 
 ---
 
@@ -220,17 +230,6 @@ strength of §2 permits this conservative subset.
   - A SYN+ACK is emitted in response.
 
 **Status:** locked in.
-
-### §2 sub-case A.2 — TSval == last + seq >
-
-- **Integration (negative coverage):**
-  `TestTcpClose__TimeWaitRfc6191::test__rfc6191__equal_tsval_syn_falls_back_to_challenge_ack`
-  drives a SYN with TSval == `_ts_recent` and asserts
-  the response is a challenge-ACK rather than
-  acceptance (the conservative behaviour).
-
-**Status:** locked in (negative coverage; positive
-case not implemented).
 
 ### §2 sub-case A.2 — TSval == last + seq evidence
 

@@ -96,8 +96,8 @@ reader.
 **Adherence:** met vacuously. PyTCP has no application-level
 "copy this datagram and resend" code path. The only path that
 emits a non-atomic datagram is the fragmenter
-(`packet_handler__ip4__tx.py:179-220`), which calls
-`self._ip4_id += 1` (line 193) **before** building any of the
+(`packet_handler__ip4__tx.py:288-323`), which calls
+`_next_ip4_id()` (line 286) **before** building any of the
 fragments for a given source datagram, then assigns that
 fresh ID to every fragment. Resending the source datagram
 (e.g. TCP retransmit at the upper layer) re-enters the TX
@@ -121,10 +121,11 @@ audited under RFC 815.
 
 **Adherence:** met. PyTCP uses a single monotonic counter
 shared across all outbound flows
-(`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:184`,
-`self._ip4_id: int = 0`, bumped at
-`packet_handler__ip4__tx.py:193`). The counter rolls over
-modulo 2¹⁶ implicitly via the `Ip4Header.id` 16-bit field.
+(`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:557`,
+`self._ip4_id: int = 0`, bumped via `_next_ip4_id()` at
+`packet_handler__ip4__tx.py:96`). The counter rolls over
+modulo 2¹⁶ explicitly via the `& 0xFFFF` mask, matching the
+`Ip4Header.id` 16-bit field.
 
 A single shared counter trivially satisfies the per-tuple
 uniqueness requirement at typical host emission rates: a wrap
@@ -142,8 +143,8 @@ it generates a fresh ID, and the shared counter would no
 longer suffice at scale. The fix when forwarding lands: hash
 (src, dst, proto) into a small per-tuple counter array, or
 adopt Linux's `secure_ipv4_id` SipHash-based scheme. Mark in
-`packet_handler__ip4__tx.py:193` so the upgrade path is
-greppable.
+`packet_handler__ip4__tx.py:286` (the `_next_ip4_id()` call
+site) so the upgrade path is greppable.
 
 > "IPv4 datagrams whose DF=1 MUST NOT be fragmented."
 
@@ -181,7 +182,7 @@ new ID (not the original).
 ### §4.1 Atomic datagram ID=0 on send
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc6864AtomicId::test__phtx_ip4__atomic_datagram__ip4_id_is_zero`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc6864AtomicId::test__ip4__tx__atomic_datagram__ip4_id_is_zero`
   Dedicated assertion: drive `_phtx_ip4` with a unicast
   destination and a one-byte RAW payload; parse byte offsets
   18-19 of the captured Ethernet frame (= IPv4 header bytes

@@ -117,7 +117,7 @@ SACK info is present.
 ### §2 Core algorithm — first dup-ACK
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__data_transfer__retransmit_dupack.py::TestTcpRetransmitDupack::test__dupack__limited_transmit_sends_new_segment_on_first_dup_ack`
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__data_transfer__retransmit_dupack.py::TestTcpDataTransfer__RetransmitDupack::test__dupack__limited_transmit_sends_new_segment_on_first_dup_ack`
   drives a session that has unsent data, injects a
   single dup-ACK, and asserts a new (not retransmitted)
   segment is emitted on the next tick.

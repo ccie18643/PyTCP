@@ -174,11 +174,11 @@ rate_limit_timer = f"{self}-challenge_ack"
 if not stack.timer.is_expired(rate_limit_timer):
     return  # suppressed
 self._transmit_packet(flag_ack=True)
-stack.timer.register_timer(name=rate_limit_timer, timeout=tcp__constants.CHALLENGE_ACK_RATE_LIMIT_MS)
+stack.timer.register_timer(name=rate_limit_timer, timeout=tcp__constants.TCP__CHALLENGE_ACK__RATE_LIMIT_MS)
 ```
 
-with `CHALLENGE_ACK_RATE_LIMIT_MS = 1000`
-(`packages/pytcp/pytcp/protocols/tcp/tcp__constants.py:52`) — at
+with `TCP__CHALLENGE_ACK__RATE_LIMIT_MS = 1000`
+(`packages/pytcp/pytcp/protocols/tcp/tcp__constants.py:74`) — at
 most one challenge ACK per second per session. This
 is more conservative than RFC 5961 §7's example of
 "10 challenge ACKs in any 5 second window"; the §7
@@ -201,36 +201,49 @@ combined into a single boolean predicate).
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__close__rst.py`
   contains comprehensive tests covering the three-case
   algorithm:
-  - `test__close_rst__rst_at_rcv_nxt_resets_connection` —
-    case 1 exact match.
+  - `test__close_rst__rst_in_established_drops_to_closed_and_wakes_blocked_recv`
+    (and the bare-RST variant
+    `test__close_rst__bare_rst_in_established_must_drop_to_closed`,
+    plus per-state `..._in_fin_wait_1_drops_to_closed` /
+    `..._in_fin_wait_2_drops_to_closed` /
+    `..._in_last_ack_drops_to_closed`) — case 1 exact
+    match at RCV.NXT.
   - `test__close_rst__in_window_rst_not_at_rcv_nxt_must_elicit_challenge_ack`
     and the per-state variants
     (`test__close_rst__in_window_rst_in_fin_wait_1_must_elicit_challenge_ack`,
     similar for FIN_WAIT_2, CLOSE_WAIT, LAST_ACK) —
     case 3 in-window mismatch.
-  - `test__close_rst__out_of_window_rst_silently_dropped`
-    — case 2 (out-of-window).
+  - Case 2 (out-of-window RST silent drop) is exercised
+    implicitly by the acceptability helper but has no
+    dedicated named test.
 
-**Status:** locked in across all synchronized states.
+**Status:** locked in across all synchronized states
+(cases 1 and 3; case 2 not separately pinned).
 
 ### §4.2 SYN mitigation
 
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__robustness__blind_attacks.py`
-  pins the SYN-in-synchronized challenge-ACK across
-  every synchronized state:
-  - `test__robustness__syn_in_established_must_elicit_challenge_ack`
+  pins the SYN-in-synchronized challenge-ACK across the
+  synchronized states:
   - `test__robustness__syn_in_fin_wait_1_must_elicit_challenge_ack`
   - `test__robustness__syn_in_fin_wait_2_must_elicit_challenge_ack`
-  - and similar for CLOSE_WAIT, CLOSING, LAST_ACK,
-    SYN_RCVD.
+  - and similar for CLOSE_WAIT, CLOSING, LAST_ACK, plus
+    `test__robustness__no_evidence_syn_in_time_wait_must_elicit_challenge_ack`.
+
+  The ESTABLISHED and SYN_RCVD variants live in the
+  handshake tests:
+  `test__tcp__session__handshake__passive.py::test__passive_open__syn_to_established_child_emits_challenge_ack`,
+  `test__tcp__session__handshake__active.py::test__active_open__retransmitted_syn_ack_in_established_emits_challenge_ack`,
+  and
+  `test__tcp__session__handshake__passive.py::test__passive_open__retransmitted_syn_in_syn_rcvd_emits_challenge_ack`.
 
 **Status:** locked in.
 
 ### §5.2 ACK acceptability
 
 - **Integration:**
-  `test__tcp__session__robustness__blind_attacks.py::test__blind_attack__ack_below_snd_una_minus_max_window_elicits_challenge_ack`
+  `test__tcp__session__robustness__blind_attacks.py::test__ack__below_snd_una_minus_max_window_emits_challenge_ack`
   drives an ACK with a value below `_snd_una -
   _max_window` and asserts a challenge ACK is
   emitted.
@@ -255,7 +268,7 @@ combined into a single boolean predicate).
 | Aspect                                          | Coverage                                       |
 |-------------------------------------------------|------------------------------------------------|
 | §3.2 RST case 1 (exact match)                   | locked in                                      |
-| §3.2 RST case 2 (out-of-window drop)            | locked in                                      |
+| §3.2 RST case 2 (out-of-window drop)            | helper-covered; no dedicated test              |
 | §3.2 RST case 3 (in-window mismatch challenge)  | locked in across all synchronized states       |
 | §4.2 SYN-in-synchronized challenge ACK          | locked in across all synchronized states       |
 | §5.2 ACK below SND.UNA - MAX.SND.WND            | locked in                                      |

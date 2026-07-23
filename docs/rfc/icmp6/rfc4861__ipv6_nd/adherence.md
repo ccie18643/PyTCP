@@ -95,7 +95,7 @@ interface has not yet completed DAD.
 **Adherence:** met (RX). Codec at
 `packages/net_proto/net_proto/protocols/icmp6/message/nd/icmp6__nd__message__router_advertisement.py:87`;
 RX handler at
-`packet_handler__icmp6__rx.py:741` consumes Cur Hop Limit
+`packet_handler__icmp6__rx.py:805` consumes Cur Hop Limit
 (§6.3.4), M/O flags, Router Lifetime, Reachable Time,
 Retrans Timer, and walks all carried options.
 
@@ -132,7 +132,7 @@ reference).
 
 **Adherence:** met (RX). Codec at
 `packages/net_proto/net_proto/protocols/icmp6/message/nd/icmp6__nd__message__redirect.py:96`.
-RX handler at `packet_handler__icmp6__rx.py:998` consumes
+RX handler at `packet_handler__icmp6__rx.py:1082` consumes
 Redirects and updates the ND cache. TX (router-side
 Redirect emission) is **deferred to Phase-2 router work**.
 
@@ -142,16 +142,18 @@ Redirect emission) is **deferred to Phase-2 router work**.
 >  layer Address (1, 2), Prefix Information (3), Redirected
 >  Header (4), MTU (5)."
 
-**Adherence:** met for SLLA / TLLA / PI / MTU; **partial**
-for Redirected Header.
+**Adherence:** met for SLLA / TLLA / PI / MTU; the
+Redirected Header **codec is also met** — it is parsed and
+assembled — but has no consumer (Redirect TX is the only
+emitter, deferred to the Phase-2 router track).
 
-| Option              | Type | Codec file                                                              |
-|---------------------|------|-------------------------------------------------------------------------|
-| Source Link Layer   | 1    | `..nd/option/icmp6__nd__option__slla.py:62`                              |
-| Target Link Layer   | 2    | `..nd/option/icmp6__nd__option__tlla.py:62`                              |
-| Prefix Information  | 3    | `..nd/option/icmp6__nd__option__pi.py:75`                                |
-| Redirected Header   | 4    | not implemented (Phase-2 router; Redirect TX is the only emitter)        |
-| MTU                 | 5    | `..nd/option/icmp6__nd__option__mtu.py:63`                               |
+| Option             | Type | Codec file                                               |
+|--------------------|------|----------------------------------------------------------|
+| Source Link Layer  | 1    | `..nd/option/icmp6__nd__option__slla.py:62`              |
+| Target Link Layer  | 2    | `..nd/option/icmp6__nd__option__tlla.py:62`              |
+| Prefix Information | 3    | `..nd/option/icmp6__nd__option__pi.py:75`                |
+| Redirected Header  | 4    | `..nd/option/icmp6__nd__option__redirected_header.py:64` |
+| MTU                | 5    | `..nd/option/icmp6__nd__option__mtu.py:63`               |
 
 Additional options shipped beyond RFC 4861's defined set:
 RA Flags Extension (RFC 5175 — stub), DNS Search List
@@ -168,8 +170,8 @@ Nonce (RFC 7527 Enhanced DAD — met), Route Information
 >  pending packet queue."
 
 **Adherence:** met. The Neighbor Cache lives at
-`packages/pytcp/pytcp/lib/neighbor.py:191` (`find_entry`) /
-`packages/pytcp/pytcp/lib/neighbor.py:236` (`add_entry`). The ND-flavour
+`packages/pytcp/pytcp/lib/neighbor.py:201` (`_find_entry`) /
+`packages/pytcp/pytcp/lib/neighbor.py:246` (`_add_entry`). The ND-flavour
 adapter at `packages/pytcp/pytcp/protocols/icmp6/nd/nd__cache.py:51`
 specializes the generic NUD framework for IPv6 +
 `MacAddress` keys.
@@ -271,7 +273,7 @@ NS for address resolution at
 >  SLLA, and emits an NA in response."
 
 **Adherence:** met. RX handler at
-`packet_handler__icmp6__rx.py:849` applies:
+`packet_handler__icmp6__rx.py:934` applies:
 
 - DAD-target check (signals our own DAD slot if the NS
   targets a tentative candidate).
@@ -301,7 +303,7 @@ when `include_tlla=True`.
 >  Override / Solicited / Router flag matrix in §7.2.5."
 
 **Adherence:** met. RX handler at
-`packet_handler__icmp6__rx.py:957` walks the §7.2.5
+`packet_handler__icmp6__rx.py:1040` walks the §7.2.5
 update matrix. Notable behaviours:
 
 - `S=1, O=1` → mark REACHABLE, update TLLA.
@@ -327,9 +329,9 @@ via `send_icmp6_neighbor_advertisement_gratuitous` at
 >  REACHABLE, STALE, DELAY, PROBE."
 
 **Adherence:** met. `NudState` enum at
-`packages/pytcp/pytcp/lib/neighbor.py:71` declares the five states; the
+`packages/pytcp/pytcp/lib/neighbor.py:73` declares the five states; the
 state machine runs in the `NeighborCache` subsystem loop
-at `packages/pytcp/pytcp/lib/neighbor.py:125`. State transitions:
+`_subsystem_loop` at `packages/pytcp/pytcp/lib/neighbor.py:406`. State transitions:
 
 - New entry → INCOMPLETE; multicast NS to resolve.
 - NS resolved → REACHABLE; lifetime = `REACHABLE_TIME`.
@@ -357,7 +359,7 @@ are thin specialisations).
 
 **Adherence:** met. Parse-time gates at
 `..nd/icmp6__nd__message__redirect.py:195`; runtime gates
-in the RX handler at `packet_handler__icmp6__rx.py:998`
+in the RX handler at `packet_handler__icmp6__rx.py:1082`
 enforce `accept_redirects` sysctl and the §8.1 validity
 matrix.
 
@@ -368,7 +370,7 @@ matrix.
 >  Neighbor Cache TLLA if the Target is on-link)."
 
 **Adherence:** met. RX handler at
-`packet_handler__icmp6__rx.py:998` updates the ND cache
+`packet_handler__icmp6__rx.py:1082` updates the ND cache
 when the Target is on-link and the TLLA option carries
 the target's link-layer address. The
 `icmp6.accept_redirects` sysctl gates acceptance (default
@@ -465,7 +467,7 @@ the §-clauses above:
 | §7.2.1 init   | `test__icmp6__nd__slaac_runtime_claim.py`                        |
 | §7.2.3 NS RX  | `test__icmp6__nd__simultaneous_probe.py` + DAD slot tests        |
 | §7.2.5 NA RX  | `test__icmp6__nd__optimistic_dad.py` (Override flag handling)    |
-| §7.2.6 grat   | `test__icmp6__nd__gratuitous_na.py` (RFC 9131)                   |
+| §7.2.6 grat   | `test__icmp6__nd__accept_dad.py` + `..ra_parameter_consumers.py` (post-DAD gratuitous NA; RFC 9131) |
 | §7.3 NUD      | `test__lib__neighbor.py` (state machine)                         |
 | §8.2 RD RX    | `test__icmp6__nd__redirect.py`                                   |
 | §10 constants | covered indirectly via the per-feature integration cases       |
@@ -491,7 +493,7 @@ the §-clauses above:
 |-------------------------------------------------------|--------|
 | §4.1-§4.5 message wire formats (RS / RA / NS / NA / RD) | met  |
 | §4.6 ND options (SLLA / TLLA / PI / MTU)              | met    |
-| §4.6 Redirected Header option                         | n/a (no Redirect TX consumer; Phase-2 router) |
+| §4.6 Redirected Header option                         | met (codec parsed + assembled; no Redirect TX consumer — Phase-2 router) |
 | §5 Conceptual host model (ND cache / router list / prefix list) | met |
 | §5.2 Next-hop determination (FIB longest-prefix; RA router → `::/0` default route) | met |
 | §6 Router specification                               | deferred (Phase-2 router) |

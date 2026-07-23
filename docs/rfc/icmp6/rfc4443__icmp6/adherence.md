@@ -27,7 +27,7 @@ host-requirements work:
 | 128     | Echo Request            | met (replies unconditionally per §4.2)   |
 | 129     | Echo Reply              | met (RX dispatch + RAW socket delivery)  |
 | 133-136 | ND (RS / RA / NS / NA)  | met (RFC 4861 implementation)            |
-| 137     | Redirect                | not implemented                          |
+| 137     | Redirect                | partial (RX→ND cache; TX Phase-2)        |
 | 143     | MLDv2 Report            | met (RFC 3810 implementation)            |
 
 §3.4 — Parameter Problem outbound generation — met. The IPv6

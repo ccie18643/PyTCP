@@ -62,8 +62,8 @@ explicitly:
    "must not reply if the physical networks of the source
    and target of an ARP request are the same" — PyTCP today
    simply doesn't reply for any TPA that isn't one of its
-   own IPs (`packet_handler__arp__rx.py:207-213` `tpa not
-   in self._ip4_unicast` → drop). The RFC 1027 conditional
+   own IPs (`packet_handler__arp__rx.py:170-176` `tpa not
+   in self._if._ip4_unicast` → drop). The RFC 1027 conditional
    is satisfied trivially: PyTCP is never in the position
    to reply for someone else's IP. When forwarding lands,
    the §2.4 gate becomes live and must be added.
@@ -106,7 +106,7 @@ method's preconditions are all unsatisfied.
 requirement). PyTCP's host-side ARP cache will dutifully
 cache whatever a proxy-ARP gateway tells it, since the
 cache learn at
-`packet_handler__arp__rx.py:120-152` doesn't distinguish
+`packet_handler__arp__rx.py:91-129` doesn't distinguish
 "this MAC really is at this IP" from "a gateway claims
 this MAC for this IP". This is the intended behaviour
 both for RFC 826 and for the existence of proxy-ARP
@@ -164,11 +164,12 @@ restricted-subset proxy ARP that is widely deployed.
 > receives, even if more than one gateway supplies one."
 
 **Adherence:** **met (host-side, by accident of cache
-overwrite)**. PyTCP's `ArpCache.add_entry` always
-overwrites an existing entry
-(`packages/pytcp/pytcp/stack/arp_cache.py:144-159`). The first reply
+overwrite)**. PyTCP's `ArpCache.add_entry` updates the
+stored MAC on every inbound Reply
+(`packages/pytcp/pytcp/protocols/arp/arp__cache.py:113-125` →
+`packages/pytcp/pytcp/lib/neighbor.py:246-293`). The first reply
 populates the cache; subsequent replies from other gateways
-overwrite it. This is the §2.3 "first reply wins" semantic
+overwrite the mapping. This is the §2.3 "first reply wins" semantic
 in practice: the host commits to whichever gateway answered
 first (the cache is updated by both, but the *first*
 response is what enables the IP-layer transmission that
@@ -192,8 +193,8 @@ responding gateway, even more cleanly satisfying §2.3.
 
 **Adherence:** **deliberate non-implementation (Phase 2)**.
 PyTCP's current Reply gate at
-`packet_handler__arp__rx.py:215-242` only replies when
-`tpa in self._ip4_unicast` (we are the target). The §2.4
+`packet_handler__arp__rx.py:170-242` only replies when
+`tpa in self._if._ip4_unicast` (we are the target). The §2.4
 "different-IP-networks" check is not implemented because
 the precondition (acting as a proxy at all) is not
 implemented.
@@ -211,12 +212,12 @@ awareness which PyTCP doesn't have today.
 > networks involved."
 
 **Adherence:** **met (vacuous host-side)**. PyTCP only
-replies to Requests whose `tpa` matches one of `self._ip4_unicast`
-(`packet_handler__arp__rx.py:207-213,235-242`); a broadcast
+replies to Requests whose `tpa` matches one of `self._if._ip4_unicast`
+(`packet_handler__arp__rx.py:170-176,232-242`); a broadcast
 address (e.g. `255.255.255.255` or a directed broadcast
-like `192.168.1.255`) is not in `self._ip4_unicast` (PyTCP
+like `192.168.1.255`) is not in `self._if._ip4_unicast` (PyTCP
 treats limited-broadcast as a sanity error on RX:
-`packages/net_proto/net_proto/protocols/arp/arp__parser.py:135-138`). When
+`packages/net_proto/net_proto/protocols/arp/arp__parser.py:152-155,163-166`). When
 Phase 2 router-side proxy ARP lands, this rule must be
 preserved at the proxy-reply gate explicitly.
 

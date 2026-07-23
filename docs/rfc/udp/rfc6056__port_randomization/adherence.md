@@ -12,9 +12,9 @@
 RFC 6056 applies to **both TCP and UDP** ephemeral
 source-port selection. In PyTCP the implementation is
 shared: a single helper `pick_local_port` at
-`packages/pytcp/pytcp/socket/socket__bind_helpers.py:140-152` services both
-`packages/pytcp/pytcp/socket/udp__socket.py` and
-`packages/pytcp/pytcp/socket/tcp__socket.py`. This audit lives under
+`packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:122-145` services both
+`packages/pytcp/pytcp/runtime/socket/udp__socket.py` and
+`packages/pytcp/pytcp/runtime/socket/tcp__socket.py`. This audit lives under
 `docs/rfc/udp/` because the UDP audit campaign surfaced
 the gap, but the findings apply equally to TCP — see
 cross-references at the bottom.
@@ -56,12 +56,12 @@ Ephemeral Ports — background, §5 Security boilerplate,
 >  attacked."
 
 **Adherence:** met. `pick_local_port` at
-`packages/pytcp/pytcp/socket/socket__bind_helpers.py:140-163`:
+`packages/pytcp/pytcp/runtime/socket/socket__bind_helpers.py:122-145`:
 
 ```python
 def pick_local_port() -> int:
     used = {socket.local_port for socket in stack.sockets.values()}
-    available = [port for port in stack.EPHEMERAL_PORT_RANGE if port not in used]
+    available = [port for port in _ephemeral_port_pool() if port not in used]
     if not available:
         raise OSError("[Errno 98] Address already in use - ...")
     return secrets.choice(available)
@@ -88,9 +88,10 @@ pool. The §3.1 obfuscation SHOULD is satisfied.
 >  chances of an off-path attacker of guessing the
 >  selected port numbers."
 
-**Adherence:** met. `stack.EPHEMERAL_PORT_RANGE` at
-`packages/pytcp/pytcp/stack/__init__.py:174-183` is now
-`range(32768, 61000)` — a 28,232-port pool matching the
+**Adherence:** met. `STACK__EPHEMERAL_PORT_RANGE__LOW` /
+`STACK__EPHEMERAL_PORT_RANGE__HIGH` at
+`packages/pytcp/pytcp/stack/__init__.py:258-259` are now
+`32768` / `61000` — a 28,232-port pool matching the
 Linux `net.ipv4.ip_local_port_range = 32768 60999`
 default. Step=1, so every port in the window is a valid
 candidate; the historical step=2 even-only restriction
@@ -215,12 +216,13 @@ scenarios that may not warrant the additional complexity
 of Algorithms 3 and 4," which includes most UDP
 applications.
 
-**Adherence:** **PyTCP is closest to Algorithm 1 with a
-non-cryptographic randomness source.** A Phase-1 fix
-would move to Algorithm 1 properly (use `secrets.choice`
-on the unused-port set, or
-`secrets.randbelow(len(pool))` on a sorted list). A
-Phase-2 hardening could move TCP to Algorithm 3.
+**Adherence:** met. PyTCP's UDP picker implements
+Algorithm 1 with a cryptographic randomness source
+(`secrets.choice` over the unused-port set — §3.1 / §3.3.1
+above), which is the §3.5-recommended choice for UDP-style
+traffic. The stronger per-destination Algorithm 3 that
+RFC 6056 §3.5 recommends for TCP is tracked in the
+[TCP-side audit](../../tcp/rfc6056__port_randomization/adherence.md).
 
 ---
 
@@ -265,7 +267,7 @@ RFC 6056 §3.5 recommends for TCP.
 ### §3.1 Obfuscation of port selection
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__bind_helpers.py::TestPickLocalPort::test__ip_helper__pick_local_port__uses_secrets_choice_for_entropy`
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__bind_helpers.py::TestPickLocalPort::test__ip_helper__pick_local_port__uses_secrets_choice_for_entropy`
   — patches `secrets.choice` and asserts the picker
   delegates final selection to it, invoking it with the
   full unused-port pool from `EPHEMERAL_PORT_RANGE`.

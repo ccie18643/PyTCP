@@ -113,7 +113,7 @@ forward. When forwarding lands the natural fix points are:
 ### Router Alert option wire codec
 
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/ip4/options/test__ip4__option__router_alert.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/ip4/test__ip4__option__router_alert.py`
   Round-trip identity matrix on the 4-byte option (type 148,
   length 4, value field).
 

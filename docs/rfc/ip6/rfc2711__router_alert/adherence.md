@@ -89,7 +89,7 @@ met. Router-side interception is Phase-2 (forwarding plane).
 `Ip6HbhAssembler` carrying `Ip6HbhOptionRouterAlert(value=…MLD)` plus a
 `PadN(0)` for 8-octet alignment
 (`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py`,
-`_send_icmp6_multicast_listener_report`, ~`:257-270`). The report is
+`_send_icmp6_multicast_listener_report`, ~`:606-614`). The report is
 sent with Hop Limit 1 (RFC 3810 §5.2.13) to `ff02::16`, with the
 ICMPv6 pseudo-header checksum pre-computed because the immediate IPv6
 payload is the HBH header rather than the ICMPv6 message. MLD Query

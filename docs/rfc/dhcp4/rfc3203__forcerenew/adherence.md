@@ -26,11 +26,18 @@ at any level:
   `packages/net_proto/net_proto/protocols/dhcp4/dhcp4__enums.py:58-95`
   declares DISCOVER through INFORM (codes 1–8) but
   not FORCERENEW (code 9).
-- The PyTCP client has no BOUND state to be reconfigured
-  from (see [`rfc2131__dhcp`](../rfc2131__dhcp/adherence.md)
-  §4.4).
-- The client is one-shot: after `fetch()` returns, no
-  socket is listening for inbound DHCP messages.
+- The PyTCP client runs a full BOUND/RENEWING/REBINDING
+  FSM (`_do_bound` :599, `_do_renewing` :629,
+  `_do_rebinding` :652 in
+  `packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py`),
+  but its state transitions are timer-driven (T1/T2);
+  there is no receive path for a server-initiated
+  FORCERENEW.
+- The client receives DHCP messages only synchronously,
+  as replies to its own DISCOVER/REQUEST (via
+  `_recv_within_window`); it runs no passive listener
+  for unsolicited server-initiated messages, so an
+  inbound FORCERENEW arrives at no consumer.
 
 Sections without normative content (§1 Introduction,
 §2.1 Motivation, §2.3 Example usage, §2.4 Rationale,
@@ -47,8 +54,10 @@ Sections without normative content (§1 Introduction,
 >  It will broadcast a DHCP REQUEST in order to extend
 >  the existing lease."
 
-**Adherence:** not met. No BOUND state, no FORCERENEW
-handler, no renew state.
+**Adherence:** not met. The BOUND and RENEWING states
+exist and a REQUEST is broadcast on T1, but that
+transition is timer-driven — there is no FORCERENEW
+handler to trigger the move on server command.
 
 > "If the DHCP server does not want to extend the lease
 >  or has not yet noticed the original lease, but wants
@@ -57,15 +66,20 @@ handler, no renew state.
 >  client will then go back to the init state and
 >  broadcast a DHCP DISCOVER message."
 
-**Adherence:** not met. No NAK handler in client; the
-re-discover-on-NAK path is absent.
+**Adherence:** not met (for the FORCERENEW trigger). The
+client does handle DHCPNAK generally — a NAK returns the
+`_NAK_RESTART` sentinel (:189) and the FSM falls back to
+INIT to re-discover (`_recv_within_window` :1644) — but
+there is no FORCERENEW message path to drive the
+renew-then-NAK sequence this paragraph describes.
 
 > "Receipt of a multicast FORCERENEW message by the
 >  client should be silently discarded."
 
-**Adherence:** vacuously met. PyTCP never listens for
-inbound DHCP messages outside the `fetch()` socket
-flow, so multicast FORCERENEW arrives at no consumer.
+**Adherence:** vacuously met. PyTCP runs no passive
+listener for unsolicited server-initiated DHCP messages
+— it only receives replies to its own DISCOVER/REQUEST
+— so a multicast FORCERENEW arrives at no consumer.
 
 > "It can be that a client has obtained a network
 >  address through some other means (e.g., manual
@@ -82,9 +96,11 @@ RFC 2131 §3.4 audit).
 
 ## §3 Extended DHCP state diagram
 
-**Adherence:** N/A. PyTCP does not implement the
-RFC 2131 base state diagram, so the RFC 3203 extension
-has no scaffolding.
+**Adherence:** not met. PyTCP implements the RFC 2131
+base state diagram (INIT / SELECTING / REQUESTING /
+BOUND / RENEWING / REBINDING), but not the RFC 3203
+extension edge — the server-commanded BOUND → RENEW
+transition on FORCERENEW.
 
 ---
 

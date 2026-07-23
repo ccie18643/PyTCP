@@ -43,23 +43,26 @@ negotiated, RACK is disabled. The scoreboard is
 > whose granularity is finer than 1/4 of the minimum
 > RTT of the connection."
 
-**Adherence:** met. The `_rack_segments: dict[Seq32,
-RackSegment]` field at `tcp__session.py:447`
-stores per-segment `xmit_ts` (ms-resolution from
+**Adherence:** met. The `_rack_tlp.rack_segments:
+dict[Seq32, RackSegment]` field — part of the
+`RackTlpState` object at
+`packages/pytcp/pytcp/protocols/tcp/state/tcp__state__rack_tlp.py`
+— stores per-segment `xmit_ts` (ms-resolution from
 `stack.timer.now_ms`). PyTCP's 1 ms granularity
 satisfies "finer than 1/4 minimum RTT" for any
 realistic min RTT > 4 ms. The
-`_rack_segments` dict is populated on every
-outbound data segment at `_transmit_packet`.
+`_rack_tlp.rack_segments` dict is populated on every
+outbound data segment via `_rack_tlp.record_segment`
+in the TX path (`session/tcp__session__tx.py:1082`).
 
 ### Requirement 3: DSACK-based reo_wnd adaptation (RECOMMENDED)
 
 **Adherence:** met. PyTCP implements DSACK
 detection (see RFC 2883 audit) and feeds the DSACK
 events into `rack_compute_reo_wnd` via the
-`_rack_dsack_round` field (line 537). The
-`_rack_reo_wnd_mult` (line 533) and
-`_rack_reo_wnd_persist` (line 534) state implement
+`_rack_tlp.rack_dsack_round` field. The
+`_rack_tlp.rack_reo_wnd_mult` and
+`_rack_tlp.rack_reo_wnd_persist` state implement
 the §3.3.2 Reordering Window Adaptation.
 
 ### Requirement 4: TLP requires RACK
@@ -95,22 +98,22 @@ segments per the §5.2 specification.
 
 ### §5.3 Per-Connection Variables
 
-| §5.3 variable                                | PyTCP field                                       |
-|----------------------------------------------|---------------------------------------------------|
-| RACK.xmit_ts                                 | `_rack_xmit_ts` (line ~470)                       |
-| RACK.end_seq                                 | `_rack_end_seq`                                   |
-| RACK.segs_sacked                             | derived from `_sack_scoreboard.blocks()`          |
-| RACK.fack                                    | `_rack_fack`                                      |
-| RACK.min_RTT                                 | `_rack_min_rtt_ms`                                |
-| RACK.rtt                                     | `_rack_rtt_ms`                                    |
-| RACK.reordering_seen                         | `_rack_reordering_seen`                           |
-| RACK.reo_wnd                                 | `_rack_reo_wnd_ms` (computed via `rack_compute_reo_wnd`) |
-| RACK.dsack_round                             | `_rack_dsack_round`                               |
-| RACK.reo_wnd_mult                            | `_rack_reo_wnd_mult`                              |
-| RACK.reo_wnd_persist                         | `_rack_reo_wnd_persist`                           |
-| TLP.is_retrans                               | `_tlp_is_retrans`                                 |
-| TLP.end_seq                                  | `_tlp_end_seq`                                    |
-| TLP.max_ack_delay                            | `_tlp_max_ack_delay_ms`                           |
+| §5.3 variable        | PyTCP field                              |
+|----------------------|------------------------------------------|
+| RACK.xmit_ts         | `_rack_tlp.rack_xmit_ts`                 |
+| RACK.end_seq         | `_rack_tlp.rack_end_seq`                 |
+| RACK.segs_sacked     | derived from `_sack_scoreboard.blocks()` |
+| RACK.fack            | `_rack_tlp.rack_fack`                    |
+| RACK.min_RTT         | `_rack_tlp.rack_min_rtt_ms`              |
+| RACK.rtt             | `_rack_tlp.rack_rtt_ms`                  |
+| RACK.reordering_seen | `_rack_tlp.rack_reordering_seen`         |
+| RACK.reo_wnd         | computed (`rack_compute_reo_wnd`)        |
+| RACK.dsack_round     | `_rack_tlp.rack_dsack_round`             |
+| RACK.reo_wnd_mult    | `_rack_tlp.rack_reo_wnd_mult`            |
+| RACK.reo_wnd_persist | `_rack_tlp.rack_reo_wnd_persist`         |
+| TLP.is_retrans       | `_rack_tlp.tlp_is_retrans`               |
+| TLP.end_seq          | `_rack_tlp.tlp_end_seq`                  |
+| TLP.max_ack_delay    | `_rack_tlp.tlp_max_ack_delay_ms`         |
 
 **Adherence:** met. All RFC 8985 §5.3 variables
 have PyTCP counterparts.
@@ -140,11 +143,13 @@ session.
 > and set Segment.lost to FALSE. Upon retransmitting
 > a segment, set Segment.retransmitted to TRUE."
 
-**Adherence:** met. The
-`_transmit_packet` path inserts a `RackSegment` for
-every outbound segment (`tcp__session.py:1534-1540`),
-keyed by SND.NXT. On retransmit, the existing entry
-is overwritten with `retransmitted=True`.
+**Adherence:** met. The TX path records a
+`RackSegment` for every outbound segment via
+`_rack_tlp.record_segment`
+(`session/tcp__session__tx.py:1082`), keyed by SND.NXT.
+On retransmit (same SND.NXT re-entered after a
+walkback) the existing entry is overwritten with
+`retransmitted=True`.
 
 ### §6.2 Upon Receiving an ACK
 
@@ -165,8 +170,8 @@ RFC 6298 RTT estimator's smoothed RTT as the basis.
 > RACK.end_seq."
 
 **Adherence:** met. `rack_update` walks newly-acked
-segments and updates `_rack_xmit_ts` /
-`_rack_end_seq` to the latest delivered segment
+segments and updates `_rack_tlp.rack_xmit_ts` /
+`_rack_tlp.rack_end_seq` to the latest delivered segment
 (per the lexicographic `rack_sent_after` rule at
 `tcp__rack.py:112`). The spurious-retransmit
 filtering (TSecr check + min_rtt heuristic) is also
@@ -175,11 +180,11 @@ applied.
 #### Step 3: Detect data-segment reordering
 
 **Adherence:** met. PyTCP tracks
-`_rack_reordering_seen` and updates it when an OOO
-delivery is observed (the FACK comparison detects
-out-of-sequence delivery). Implementation at
-`tcp__session.py:_rack_process_ack` (around the
-SACK-ingest path).
+`_rack_tlp.rack_reordering_seen` and updates it when an
+OOO delivery is observed (the FACK comparison detects
+out-of-sequence delivery). Implementation in the
+`_rack_process_ack` SACK-ingest path (session hook at
+`session/tcp__session__ack.py:588`).
 
 #### Step 4: Update reo_wnd
 
@@ -213,9 +218,9 @@ in-flight segment.
 
 ### §7.1 Initializing State
 
-**Adherence:** met. `_tlp_is_retrans = False`,
-`_tlp_end_seq = None` initialised on session
-construction.
+**Adherence:** met. `_rack_tlp.tlp_is_retrans = False`,
+`_rack_tlp.tlp_end_seq = None` are the `RackTlpState`
+defaults, set on session construction.
 
 ### §7.2 Scheduling a Loss Probe
 
@@ -237,8 +242,9 @@ RACK timer is pending, and SRTT is non-zero.
 **Adherence:** met. The TLP probe emission path
 sends one segment from the queue (preferring new
 data; falling back to retransmit of the highest-
-seq segment), sets `_tlp_is_retrans` and
-`_tlp_end_seq`, and re-arms the RTO timer per §7.3.
+seq segment), sets `_rack_tlp.tlp_is_retrans` and
+`_rack_tlp.tlp_end_seq`, and re-arms the RTO timer
+per §7.3.
 
 ### §7.4 Detecting Losses Using the ACK of the Loss Probe
 
@@ -289,7 +295,7 @@ simultaneously fire.
 
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rack.py`
-  pins the `_rack_segments` populate-on-tx flow.
+  pins the `_rack_tlp.rack_segments` populate-on-tx flow.
 
 **Status:** locked in.
 
@@ -339,9 +345,9 @@ simultaneously fire.
   `TestTlpProcessAck` cover the PTO formula and
   ACK-processing logic.
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__tlp.py`
-  pins the TLP probe emission, single-loss-repair
-  CC response, and timer arbitration.
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rack.py`
+  (`TestTcpTlpPhase6/7/8`) pins the TLP probe emission,
+  single-loss-repair CC response, and timer arbitration.
 
 **Status:** locked in.
 

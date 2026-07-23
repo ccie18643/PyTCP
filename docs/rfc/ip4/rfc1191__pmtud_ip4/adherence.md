@@ -91,7 +91,7 @@ TCP.
 
 **Adherence:** **shipped**.
 `TcpSession._apply_pmtu_update` (in
-`packages/pytcp/pytcp/protocols/tcp/tcp__session.py`) detects the
+`packages/pytcp/pytcp/protocols/tcp/session/tcp__session.py:1508`) detects the
 case where the inbound Frag-Needed shrinks `snd_mss`
 AND in-flight RACK segments exceed the new MSS. When
 both conditions hold, it marks every in-flight RACK

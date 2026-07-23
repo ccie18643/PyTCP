@@ -104,7 +104,7 @@ group); the MLDv2 Report goes to `ff02::16`.
   `CHANGE_TO_INCLUDE` State Change Report in MLDv2 mode, or — while the
   interface is in MLDv1 Host Compatibility Mode — an MLDv1 Done
   (type 132) to all-routers (ff02::2). `remove_ip6_multicast` calls
-  `_send_icmp6_mld_leave`, and `send_mld_leave_all` does the graceful
+  `_send_mld_state_change`, and `send_mld_leave_all` does the graceful
   leave-all on stack shutdown. (This was the previously-deferred SHOULD;
   it landed once the MLDv2 leave path gave it a counterpart.)
 - **RFC 2710 §4 Report suppression** — deferred. A host that hears
