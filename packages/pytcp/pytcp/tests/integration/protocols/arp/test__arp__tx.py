@@ -34,12 +34,10 @@ for reference; this file is the canonical migration target.
 
 pytcp/tests/integration/protocols/arp/test__arp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import Any, override
 
 from net_addr import Ip4Address
 from net_proto import ArpOperation
@@ -54,6 +52,7 @@ from pytcp.tests.lib.arp_testcase import (
     STACK__MAC_ADDRESS,
     ArpTestCase,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -214,6 +213,7 @@ class TestArpTxNoIp4Support(ArpTestCase):
     The Packet Handler ARP TX no-IPv4-support short-circuit tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv4 protocol

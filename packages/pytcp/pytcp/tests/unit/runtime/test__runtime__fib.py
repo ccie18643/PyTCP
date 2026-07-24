@@ -27,15 +27,13 @@ This module contains tests for the host-mode routing table (FIB).
 
 pytcp/tests/unit/runtime/test__runtime__fib.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import dataclasses
 import threading
 from typing import override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.runtime.fib import (
@@ -44,6 +42,7 @@ from pytcp.runtime.fib import (
     RouteScope,
     RouteTable,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # IPv4 fixture topology used by the lookup matrix:
 #   default 0.0.0.0/0      via 10.0.1.1   (protocol BOOT)

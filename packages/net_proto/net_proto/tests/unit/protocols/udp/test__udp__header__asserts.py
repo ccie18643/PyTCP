@@ -27,10 +27,10 @@ This module contains tests for the UDP header fields asserts.
 
 net_proto/tests/unit/protocols/udp/test__udp__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import UDP__HEADER__LEN, UINT_16__MAX, UINT_16__MIN, UdpHeader
@@ -41,6 +41,7 @@ class TestUdpHeaderAsserts(TestCase):
     The UDP header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the UDP header constructor

@@ -28,10 +28,10 @@ Module contains tests for the ICMPv6 MLDv2 Report message assembler
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -51,6 +51,7 @@ class TestIcmp6Mld2MessageReportAsserts(TestCase):
     The ICMPv6 MLDv2 Report message constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline used as the starting point for every

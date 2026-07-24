@@ -37,9 +37,10 @@ Reference RFCs:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__iss.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
@@ -534,4 +535,95 @@ class TestTcpIssSecret(TestCase):
             msg=(
                 "RFC 6528 §3: the ISS secret MUST be opaque keying " f"material. Got: {type(TCP__ISS_SECRET).__name__}."
             ),
+        )
+
+
+class TestComputeIssMutationGoldens(TestCase):
+    """
+    Deterministic exact-output goldens for compute_iss with a fixed
+    4-tuple / secret / clock, closing the hash and M-component
+    arithmetic mutation survivors. Any change to the port encoding,
+    digest truncation, clock rate, or the M+F combination moves the
+    output away from the literal.
+    """
+
+    _LOCAL = Ip4Address("10.0.0.1")
+    _REMOTE = Ip4Address("10.0.0.2")
+    _SECRET = bytes(16)
+
+    def test__tcp__iss__exact_value_at_clock_zero(self) -> None:
+        """
+        Ensure compute_iss with clock_us=0 returns the exact SHA-256
+        F component, pinning the secret / address / port hashing.
+
+        Reference: RFC 6528 §3 (ISN = M + F, F = hash of the 4-tuple + secret).
+        """
+
+        self.assertEqual(
+            compute_iss(self._LOCAL, 12345, self._REMOTE, 80, self._SECRET, clock_us=0),
+            1878479098,
+            msg="compute_iss at clock_us=0 must equal the exact F = 1878479098.",
+        )
+
+    def test__tcp__iss__clock_advances_m_at_4us_per_tick(self) -> None:
+        """
+        Ensure the M component is clock_us // 4 added to F: clock_us=40
+        adds 10 and clock_us=400000 adds 100000, pinning the clock
+        rate and the M+F combination.
+
+        Reference: RFC 6528 §3 (M = clock / 4 us, ISN = M + F).
+        """
+
+        self.assertEqual(
+            compute_iss(self._LOCAL, 12345, self._REMOTE, 80, self._SECRET, clock_us=40),
+            1878479108,
+            msg="clock_us=40 must add M=10 to F (1878479108).",
+        )
+        self.assertEqual(
+            compute_iss(self._LOCAL, 12345, self._REMOTE, 80, self._SECRET, clock_us=400000),
+            1878579098,
+            msg="clock_us=400000 must add M=100000 to F (1878579098).",
+        )
+
+    def test__tcp__iss__port_change_changes_output(self) -> None:
+        """
+        Ensure the local port participates in the hash via its exact
+        2-byte big-endian encoding: a one-unit port change yields a
+        wholly different ISN.
+
+        Reference: RFC 6528 §3 (F depends on every 4-tuple field).
+        """
+
+        self.assertEqual(
+            compute_iss(self._LOCAL, 12346, self._REMOTE, 80, self._SECRET, clock_us=0),
+            3565056387,
+            msg="local port 12346 must yield the exact ISN 3565056387.",
+        )
+
+    def test__tcp__iss__clock_us_is_keyword_only(self) -> None:
+        """
+        Ensure clock_us is a keyword-only parameter so a caller cannot
+        pass it positionally (kills the '*'→'/' separator mutation).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(compute_iss).parameters["clock_us"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="clock_us must be keyword-only.",
+        )
+
+    def test__tcp__iss__clock_rate_constant_is_four(self) -> None:
+        """
+        Ensure the RFC 6528 M clock rate is exactly 4 microseconds per
+        tick.
+
+        Reference: RFC 6528 §3 (M increments once every 4 us).
+        """
+
+        self.assertEqual(
+            ISS_CLOCK_RATE_US,
+            4,
+            msg="ISS_CLOCK_RATE_US must be 4 us per tick.",
         )

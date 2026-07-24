@@ -5,12 +5,16 @@ the [PyTCP](https://github.com/ccie18643/PyTCP) TCP/IP stack —
 extracted as its own distribution and usable on its own.
 
 ```python
-from net_proto import IpProto
-from net_proto.protocols.udp.udp__parser import UdpParser
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
+from net_proto.protocols.udp.udp__parser import UdpParser
 
+# Assemble (TX): serialise header + payload into a list of buffers.
 datagram = UdpAssembler(udp__sport=12345, udp__dport=53, udp__payload=b"query")
-parsed = UdpParser(packet_rx)          # raises UdpIntegrityError / UdpSanityError on bad wire input
+buffers: list[bytes] = []
+datagram.assemble(buffers)
+
+# Parse (RX): raises UdpIntegrityError / UdpSanityError on bad wire input.
+parsed = UdpParser(packet_rx)
 ```
 
 ## Why
@@ -43,6 +47,7 @@ dataclass, with integrity + sanity validation and typed wire enums.
 | UDP | RFC 768 |
 | DHCPv4 (+ options) | RFC 2131 / 2132 |
 | DHCPv6 (+ options) | RFC 8415 |
+| DNS (A / AAAA query + response, name compression) | RFC 1035 |
 
 ## The six-file pattern
 
@@ -112,9 +117,9 @@ library) — no other runtime dependencies. Fully typed (ships
 Python **3.14+** (PEP 695 generics on the assembler stacking,
 modern typing throughout).
 
-## Current state (3.0.7)
+## Current state (3.0.8)
 
-- ~260 source modules; **5770 unit tests**, ~99% source coverage
+- ~270 source modules; **6024 unit tests**, ~99% source coverage
   (the remaining lines are protocol dunders, `from_buffer`
   unpacking, and a few integrity-rejection branches with no
   dedicated rejection test — test-completeness, not defects).
@@ -124,6 +129,10 @@ modern typing throughout).
   parser RFC-adherence pass and the assembler audit pass are both
   CLOSED; follow-up audits A–L are complete (see
   `docs/refactor/net_proto_remaining_audits.md`).
+
+## Changelog
+
+See [`CHANGELOG.md`](https://github.com/ccie18643/PyTCP/blob/master/packages/net_proto/CHANGELOG.md).
 
 ## License
 

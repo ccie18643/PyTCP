@@ -32,14 +32,14 @@ per RFC 9293 §3.9.1 + POSIX shutdown semantics.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__shutdown_api.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
 from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.protocols.tcp.tcp__errors import TcpSessionError
-from pytcp.socket import SHUT_RD, SHUT_RDWR, SHUT_WR, AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import SHUT_RD, SHUT_RDWR, SHUT_WR, AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,

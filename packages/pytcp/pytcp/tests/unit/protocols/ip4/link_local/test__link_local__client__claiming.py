@@ -31,7 +31,7 @@ RATE_LIMIT_INTERVAL.
 
 pytcp/tests/unit/protocols/ip4/link_local/test__link_local__client__claiming.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast, override

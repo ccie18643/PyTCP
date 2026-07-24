@@ -47,7 +47,7 @@ surface ('UDP_NO_CHECK6_TX' / 'UDP_NO_CHECK6_RX' at level
 
 pytcp/tests/integration/protocols/udp/test__udp__no_check6.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import MacAddress
@@ -56,7 +56,7 @@ from net_proto import (
     Ip6Assembler,
     UdpAssembler,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     SOL_UDP,
     UDP_NO_CHECK6_RX,
     UDP_NO_CHECK6_TX,

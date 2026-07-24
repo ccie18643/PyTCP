@@ -29,9 +29,10 @@ state container in
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__keepalive.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__keepalive import KeepaliveState
@@ -209,4 +210,53 @@ class TestKeepaliveState__Methods(TestCase):
             state.max_probes(default=9),
             3,
             msg="Override must take precedence over the default.",
+        )
+
+
+class TestKeepaliveState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for KeepaliveState.
+    """
+
+    def test__tcp_state__keepalive__is_slotted(self) -> None:
+        """
+        Ensure KeepaliveState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(KeepaliveState(), "__dict__"),
+            msg="KeepaliveState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestKeepaliveState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the KeepaliveState mutator signatures.
+    """
+
+    def test__tcp_state__keepalive__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the KeepaliveState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(KeepaliveState.idle_timeout).parameters["default"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="KeepaliveState.idle_timeout 'default' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(KeepaliveState.interval_timeout).parameters["default"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="KeepaliveState.interval_timeout 'default' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(KeepaliveState.max_probes).parameters["default"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="KeepaliveState.max_probes 'default' must be keyword-only.",
         )

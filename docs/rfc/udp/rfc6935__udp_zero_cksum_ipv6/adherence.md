@@ -171,12 +171,13 @@ is application-side responsibility.
 ## RFC 6936 §4 — Implementation Constraints
 
 RFC 6936 §4 enumerates ten requirements on IPv6 nodes
-that **support** zero-cksum mode. Since PyTCP does **not
-yet support** zero-cksum mode (no per-port opt-in
-mechanism), this section reads as a punch list of what
-the eventual implementation would need to satisfy. The
-"not implemented" status below is the natural state when
-the feature isn't yet built.
+that **support** zero-cksum mode. PyTCP supports it — the
+per-port opt-in landed via `UDP_NO_CHECK6_TX` /
+`UDP_NO_CHECK6_RX` at level `SOL_UDP` (see the Phase-2 fix
+history below) — so this section is a per-constraint audit
+of the shipped implementation. Constraints 3, 4, 5, 6 are
+met; only constraint 8 (the SHOULD-log discipline on the
+discard path) remains unimplemented.
 
 | #   | Requirement                                                                                              | PyTCP status |
 |-----|----------------------------------------------------------------------------------------------------------|--------------|
@@ -339,12 +340,13 @@ in May 2026:
 | RFC 6936 §4 #10: ICMPv6 consistency check             | met (general ICMP demux validates embedded datagram) |
 | RFC 6936 §5: transported-protocol usage constraints   | N/A (no consumer) |
 
-PyTCP **fully meets every constraint that applies to a
-default-mode IPv6 UDP stack**. The remaining "not
-implemented" rows (3, 4, 6, 8) are the per-port opt-in
-machinery for tunnel encapsulations — Phase-3 work that
-becomes a MUST only IF PyTCP eventually adds a tunnel
-protocol consumer (LISP, MPLS-in-UDP, GUE, etc.).
+PyTCP **meets every constraint that applies to an IPv6
+UDP stack, in both default and alternative modes**. The
+per-port opt-in machinery for tunnel encapsulations
+(constraints 3, 4, 6) is shipped via `UDP_NO_CHECK6_TX` /
+`UDP_NO_CHECK6_RX`. The only remaining "not implemented"
+row is constraint 8 (the SHOULD-log discipline on the
+zero-cksum discard path).
 
 **Why this was greppable:** the IPv6 zero-cksum default
 gap was referenced from four audits — RFC 768, RFC 1122

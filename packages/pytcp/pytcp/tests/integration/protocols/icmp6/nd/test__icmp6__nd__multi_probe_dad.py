@@ -35,10 +35,11 @@ inter-probe wait, mirroring Linux's
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__multi_probe_dad.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
+from typing import override
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -88,6 +89,7 @@ class TestIcmp6Nd__MultiProbeDad__Default(NdTestCase):
     behaviour.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -127,6 +129,7 @@ class TestIcmp6Nd__MultiProbeDad__TransmitsTwo(NdTestCase):
     'icmp6.retrans_timer_ms'.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -167,6 +170,7 @@ class TestIcmp6Nd__MultiProbeDad__ConflictAbortsLoop(NdTestCase):
     detected (RFC 4862 §5.4.5).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

@@ -28,13 +28,11 @@ properties, and integrity checks).
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, Ip4Mask, Ip4Network
 from net_proto import (
@@ -57,6 +55,7 @@ from net_proto import (
     Dhcp4OptionUnknown,
 )
 from net_proto.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -176,6 +175,7 @@ class TestDhcp4OptionsAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the 'Dhcp4Options' class object with testcase arguments.
@@ -806,6 +806,7 @@ class TestDhcp4OptionsBehavior(TestCase):
     The 'Dhcp4Options' collection and equality behavior tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Initialize a representative Dhcp4Options object for the behavior tests.

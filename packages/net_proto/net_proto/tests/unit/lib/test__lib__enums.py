@@ -27,14 +27,12 @@ This module contains tests for the NetProto EtherType and IpProto enums.
 
 net_proto/tests/unit/lib/test__lib__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import MagicMock
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.enums import EtherType, IpProto
 from net_proto.lib.proto import Proto
@@ -48,6 +46,7 @@ from net_proto.protocols.ip6_frag.ip6_frag__base import Ip6Frag
 from net_proto.protocols.raw.raw__base import Raw
 from net_proto.protocols.tcp.tcp__base import Tcp
 from net_proto.protocols.udp.udp__base import Udp
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -252,15 +251,19 @@ class TestNetProtoLibEnumsEtherTypeFromProtoRaw(TestCase):
         """
 
         class ForeignProto(Proto):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 
@@ -627,15 +630,19 @@ class TestNetProtoLibEnumsIpProtoFromProtoSpecialCases(TestCase):
         """
 
         class ForeignProto(Proto):
+            @override
             def __len__(self) -> int:
                 return 0
 
+            @override
             def __str__(self) -> str:
                 return ""
 
+            @override
             def __repr__(self) -> str:
                 return ""
 
+            @override
             def __buffer__(self, _: int) -> memoryview:
                 return memoryview(b"")
 

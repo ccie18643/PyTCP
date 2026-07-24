@@ -31,7 +31,7 @@ API reads and writes them, and the mocks have no real entry store.
 
 pytcp/tests/integration/ipc/test__ipc__control__neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -41,7 +41,7 @@ from pytcp import stack
 from pytcp.lib.neighbor import NudState
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.neighbor import NeighborSnapshot
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 

@@ -55,11 +55,11 @@ track per CLAUDE.md Project North Star.
 
 **Adherence:** met.
 `send_icmp6_neighbor_advertisement_gratuitous` at
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:480-512`
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:810-842`
 emits the gratuitous NA:
 
 ```python
-for _ in range(nd__constants.ICMP6__GRATUITOUS_NA_COUNT):
+for _ in range(sysctl_iface.get_for_iface("icmp6.gratuitous_na_count", self._if._interface_name)):
     self.send_icmp6_neighbor_advertisement(
         ip6__src=ip6_unicast,
         ip6__dst=Ip6Address("ff02::1"),
@@ -71,7 +71,7 @@ for _ in range(nd__constants.ICMP6__GRATUITOUS_NA_COUNT):
 ```
 
 The DAD-success caller at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1580-1585`
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3695-3700`
 invokes the helper immediately after the DAD slot
 declares the address VALID:
 
@@ -153,32 +153,48 @@ gratuitous NAs equally.
 
 ## Test coverage audit
 
-### §3 Host-side gratuitous NA on DAD success
+### §3 Host-side gratuitous NA wire shape
 
-- **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__gratuitous_na.py`
-  — drives an address claim through DAD success, asserts
-  the gratuitous NA(s) appear on the wire with the
-  correct wire shape (target = address, dst = ff02::1,
-  flag_o = True, flag_s = False, TLLA option present).
+- **Unit:**
+  `packages/pytcp/pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp6__tx.py::TestPacketHandlerIcmp6TxGratuitousNa::test__stack__packet_handler__icmp6__tx__gratuitous_na__default_count_emits_one`
+  — invokes the helper and asserts the gratuitous NA
+  appears with the correct wire shape (target = address,
+  dst = ff02::1, flag_o = True, flag_s = False, TLLA
+  option present).
 
-**Status:** locked in.
+**Status:** locked in (helper).
 
-### §3 Sysctl on/off
+### §3 Emit-count sysctl (multi-emit + on/off)
 
-- **Integration:**
-  `..test__icmp6__nd__gratuitous_na.py` exercises the
-  `icmp6.gratuitous_na_count = 0` kill-switch path.
+- **Unit:** the same
+  `TestPacketHandlerIcmp6TxGratuitousNa` class covers the
+  count knob:
+  `..._gratuitous_na__sysctl_override_emits_three`
+  (`icmp6.gratuitous_na_count = 3` emits three) and
+  `..._gratuitous_na__sysctl_count_zero_emits_none`
+  (`= 0` kill-switch suppresses emission).
 
-**Status:** locked in.
+**Status:** locked in (helper).
+
+### §3 DAD-success trigger wiring
+
+The DAD-success caller
+(`packet_handler/__init__.py:3700`) that invokes the helper
+after an address is declared VALID has **no dedicated
+integration test** asserting a gratuitous NA appears on the
+wire at the end of a full DAD run; the trigger wiring is
+covered only indirectly.
+
+**Status:** gap (trigger not directly pinned).
 
 ### Test coverage summary
 
 | Aspect                                              | Coverage |
 |-----------------------------------------------------|----------|
-| Gratuitous NA emission on DAD success               | locked in |
+| Gratuitous NA emission (helper)                     | locked in |
 | Wire shape (target / dst / flags / TLLA)            | locked in |
 | Emit-count sysctl (0 = disable; N = emit N times)   | locked in |
+| DAD-success trigger fires the helper                | gap (not directly pinned) |
 
 ---
 
@@ -208,7 +224,7 @@ lands.
   path that triggers the gratuitous NA emit.
 - IPv4 parallel: `docs/rfc/arp/rfc5227__ipv4_acd/adherence.md`
   §2.3 (gratuitous ARP Announcement after DAD).
-- Source: `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:480-512`
+- Source: `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:810-842`
   (`send_icmp6_neighbor_advertisement_gratuitous`),
-  `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1580-1585`
+  `packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3695-3700`
   (DAD-success trigger).

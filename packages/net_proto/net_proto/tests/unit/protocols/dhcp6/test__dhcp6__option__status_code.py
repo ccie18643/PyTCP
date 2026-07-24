@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 Status Code option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__status_code.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -90,6 +91,7 @@ class TestDhcp6OptionStatusCodeAssembler(TestCase):
     The DHCPv6 Status Code option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Status Code option with a message.
@@ -238,6 +240,19 @@ class TestDhcp6OptionStatusCodeParserErrors(TestCase):
             f"Got: {Dhcp6OptionType.ORO!r}",
             msg="Unexpected wrong-type assert message.",
         )
+
+    def test__dhcp6__option__status_code__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_STATUS_CODE, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 8415 §21.13 (Status Code option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionStatusCode.from_buffer(b"\xff\xff\x00\x02\x00\x17")
 
     def test__dhcp6__option__status_code__missing_status_field(self) -> None:
         """

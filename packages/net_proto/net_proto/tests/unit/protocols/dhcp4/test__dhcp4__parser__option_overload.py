@@ -31,7 +31,7 @@ unified view exposed by 'Dhcp4Parser.options'.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__parser__option_overload.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

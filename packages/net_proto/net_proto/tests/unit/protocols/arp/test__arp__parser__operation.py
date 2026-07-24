@@ -27,13 +27,11 @@ This module contains tests for the ARP packet parser operation.
 
 net_proto/tests/unit/protocols/arp/test__arp__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, MacAddress
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
     EtherType,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -163,6 +162,7 @@ class TestArpParserOperation(TestCase):
     _trailing: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the raw frame in a PacketRx and parse it.

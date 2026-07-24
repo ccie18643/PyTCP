@@ -46,9 +46,10 @@ Exercises:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__plpmtud_adapter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip6Address
@@ -59,7 +60,7 @@ from pytcp.lib.plpmtud import (
     PROBE_TIMER__SEC,
     PmtuState,
 )
-from pytcp.protocols.tcp.tcp__plpmtud_adapter import TcpPlpmtudAdapter
+from pytcp.protocols.tcp.tcp__plpmtud_adapter import TcpPlpmtudAdapter, _seq_le
 
 _IP4_DST = Ip4Address("10.0.1.91")
 _IP6_DST = Ip6Address("2001:db8::91")
@@ -353,4 +354,107 @@ class TestTcpPlpmtudAdapter__ClassicalPmtuPassthrough(TestCase):
             adapter.state,
             PmtuState.BASE,
             msg="confirm_current MUST NOT transition state on its own.",
+        )
+
+
+class TestTcpPlpmtudAdapter__MutationGoldens(TestCase):
+    """
+    Address-family dispatch, keyword-only signatures, property
+    accessors, and the modular sequence comparison closing the
+    remaining adapter mutation survivors.
+    """
+
+    def test__tcp__plpmtud_adapter__family_dispatch_selects_floor(self) -> None:
+        """
+        Ensure the constructor's isinstance dispatch picks the IPv6
+        engine for an IPv6 peer (candidate floor 1280) and the IPv4
+        engine for an IPv4 peer (candidate floor 1200), so a negated
+        isinstance would cross the floors.
+
+        Reference: RFC 8899 §5.1.1 (BASE_PMTU per address family).
+        """
+
+        self.assertEqual(
+            TcpPlpmtudAdapter(remote_ip_address=_IP6_DST, interface_mtu=1500).candidate_mtu,
+            1280,
+            msg="IPv6 peer must select the 1280-byte candidate floor.",
+        )
+        self.assertEqual(
+            TcpPlpmtudAdapter(remote_ip_address=_IP4_DST, interface_mtu=1500).candidate_mtu,
+            1200,
+            msg="IPv4 peer must select the 1200-byte candidate floor.",
+        )
+
+    def test__tcp__plpmtud_adapter__public_methods_keyword_only(self) -> None:
+        """
+        Ensure the adapter's public methods keep their keyword-only
+        parameters (kills the '*'→'/' separator mutation on each).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "__init__": {"remote_ip_address", "interface_mtu"},
+            "record_emitted_probe": {"seq", "size"},
+            "on_snd_una_advance": {"new_snd_una", "now"},
+            "on_rto_timeout": {"now"},
+            "on_classical_pmtu": {"now"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(TcpPlpmtudAdapter, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"{method} must keep keyword-only parameters {names}.",
+            )
+
+    def test__tcp__plpmtud_adapter__engine_and_candidate_are_properties(self) -> None:
+        """
+        Ensure 'engine' and 'candidate_mtu' are properties returning
+        values, not bound methods, so a removed @property decorator is
+        caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        adapter = TcpPlpmtudAdapter(remote_ip_address=_IP4_DST, interface_mtu=1500)
+        self.assertNotIn(
+            adapter.candidate_mtu,
+            (None,),
+            msg="candidate_mtu must be a value, not a bound method.",
+        )
+        self.assertIsInstance(
+            adapter.candidate_mtu,
+            int,
+            msg="candidate_mtu property must return an int.",
+        )
+        self.assertFalse(
+            callable(adapter.engine),
+            msg="engine property must return the engine instance, not a bound method.",
+        )
+
+    def test__tcp__plpmtud_adapter__seq_le_modular_comparison(self) -> None:
+        """
+        Ensure the modular '<=' comparison treats a forward distance
+        below 2^31 as ordered, the exact 2^31 boundary as not ordered,
+        and handles 32-bit wraparound.
+
+        Reference: RFC 9293 §3.4 (modular sequence comparison).
+        """
+
+        self.assertTrue(_seq_le(100, 100), msg="equal seqs are '<='.")
+        self.assertTrue(_seq_le(100, 200), msg="forward distance is '<='.")
+        self.assertFalse(_seq_le(200, 100), msg="backward distance is not '<='.")
+        self.assertTrue(
+            _seq_le(0, 0x7FFFFFFF),
+            msg="distance 2^31 - 1 must be '<='.",
+        )
+        self.assertFalse(
+            _seq_le(0, 0x80000000),
+            msg="distance exactly 2^31 must NOT be '<=' (pins the 0x80000000 threshold).",
+        )
+        self.assertTrue(
+            _seq_le(0xFFFFFFFF, 0),
+            msg="0xFFFFFFFF <= 0 under wraparound (distance 1).",
         )

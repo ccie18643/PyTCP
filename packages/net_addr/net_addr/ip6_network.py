@@ -27,7 +27,7 @@ This module contains IPv6 network support class.
 
 net_addr/ip6_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Iterator
@@ -92,7 +92,15 @@ class Ip6Network(IpNetwork[Ip6Address, Ip6Mask]):
             if len(network) != 2:
                 raise Ip6NetworkFormatError(network)
             tuple_address, tuple_mask = network
-            if not (isinstance(tuple_address, Ip6Address) and isinstance(tuple_mask, Ip6Mask)):
+            # Defensive runtime guard: the parameter is typed
+            # 'tuple[Ip6Address, Ip6Mask]', so mypy proves the first
+            # 'isinstance' operand statically true, but the check is
+            # load-bearing — a mistyped tuple must raise the net_addr
+            # error here rather than blowing up later on 'int(...)'.
+            if not (
+                isinstance(tuple_address, Ip6Address)  # type: ignore[redundant-expr]
+                and isinstance(tuple_mask, Ip6Mask)
+            ):
                 raise Ip6NetworkFormatError(network)
             # A prefix has no RFC 4007 zone; reject a scoped
             # address rather than silently dropping the zone.

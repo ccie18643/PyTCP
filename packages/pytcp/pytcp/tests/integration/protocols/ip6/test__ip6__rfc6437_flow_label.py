@@ -39,14 +39,13 @@ methods.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc6437_flow_label.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_addr import Ip6Address
+from net_addr import Buffer, Ip6Address
 from net_proto import Icmp6Assembler, Icmp6MessageEchoRequest
-from net_proto.lib.buffer import Buffer
 from pytcp.protocols.ip6 import ip6__constants as ip6__constants_module
 from pytcp.protocols.ip6.ip6__flow_label import compute_ip6_flow_label
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase

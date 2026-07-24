@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for inbound the IPv6 fragment extension header.
 
 pytcp/runtime/packet_handler/packet_handler__ip6_frag__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

@@ -39,13 +39,17 @@ and is dropped silently rather than aborting DAD.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__enhanced_dad.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6NdMessageNeighborSolicitation
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.nd_testcase import NdTestCase
 
@@ -65,7 +69,7 @@ def _join_candidate_multicast(handler: Any) -> None:
     if snm_mac not in handler._mac_multicast:
         handler._mac_multicast.append(snm_mac)
     if snm_ip not in handler._ip6_multicast:
-        handler._ip6_multicast.append(snm_ip)
+        handler._ip6_multicast_filters[snm_ip] = Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
 
 
 class TestIcmp6Nd__EnhancedDad__LoopHairpinDropped(NdTestCase):
@@ -75,6 +79,7 @@ class TestIcmp6Nd__EnhancedDad__LoopHairpinDropped(NdTestCase):
     probe, not a peer's conflict.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -130,6 +135,7 @@ class TestIcmp6Nd__EnhancedDad__NonMatchingNonceTreatedAsConflict(NdTestCase):
     peer-DAD conflict — the host aborts its claim.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -186,6 +192,7 @@ class TestIcmp6Nd__EnhancedDad__DadProbeIncludesNonce(NdTestCase):
     is registered with the per-address DAD slot.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -240,6 +247,7 @@ class TestIcmp6Nd__EnhancedDad__SysctlDisable(NdTestCase):
     semantics — probes carry no Nonce option.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

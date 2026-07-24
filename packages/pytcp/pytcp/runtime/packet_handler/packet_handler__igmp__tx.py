@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains the outbound IGMP packet handler for one
@@ -28,7 +30,7 @@ interface.
 
 pytcp/runtime/packet_handler/packet_handler__igmp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import random

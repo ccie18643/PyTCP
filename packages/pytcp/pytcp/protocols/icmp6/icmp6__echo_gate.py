@@ -33,7 +33,7 @@ selection rules).
 
 pytcp/protocols/icmp6/icmp6__echo_gate.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 

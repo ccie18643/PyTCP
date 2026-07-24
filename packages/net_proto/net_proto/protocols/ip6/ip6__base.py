@@ -27,13 +27,13 @@ This module contains the IPv6 protocol base class.
 
 net_proto/protocols/ip6/ip6__base.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto import Proto
 from net_proto.protocols.icmp6.icmp6__assembler import Icmp6Assembler
 from net_proto.protocols.ip6.ip6__header import Ip6Header, Ip6HeaderProperties

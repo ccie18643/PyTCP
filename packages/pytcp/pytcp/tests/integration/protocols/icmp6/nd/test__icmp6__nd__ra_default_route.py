@@ -29,13 +29,13 @@ host-mode FIB default route (Phase 3b-RA).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_default_route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip6Address, Ip6Network, MacAddress
 from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.nd_testcase import NdTestCase
 from pytcp.tests.lib.network_testcase import STACK__IP6_HOST, STACK__MAC_ADDRESS
 
@@ -59,6 +59,9 @@ class TestIcmp6Nd__RaDefaultRoute(NdTestCase):
         Ensure an RA with a non-zero router lifetime installs a
         protocol=RA ::/0 default route via the RA source
         link-local, replacing the harness fixture BOOT default.
+        The auto-synthesized on-link connected routes (protocol
+        KERNEL) are filtered out so the assertion stays focused
+        on the RA-installed default.
 
         Reference: RFC 4861 §6.3.4 (RA processing — default router).
         """
@@ -74,22 +77,29 @@ class TestIcmp6Nd__RaDefaultRoute(NdTestCase):
         )
 
         self.assertEqual(
-            stack.route.list_routes(family=AddressFamily.INET6),
+            tuple(
+                route
+                for route in stack.route.list_routes(family=AddressFamily.INET6)
+                if route.protocol is not RouteProtocol.KERNEL
+            ),
             (
                 Route(
                     destination=Ip6Network("::/0"),
                     gateway=ROUTER__LINK_LOCAL,
                     protocol=RouteProtocol.RA,
+                    oif=self._packet_handler._ifindex,
                 ),
             ),
-            msg="A non-zero-lifetime RA must install one protocol=RA default route.",
+            msg="A non-zero-lifetime RA must install one protocol=RA default route via the RA-receiving interface.",
         )
 
     def test__icmp6__nd__ra_zero_lifetime_withdraws_default_route(self) -> None:
         """
         Ensure an RA with router lifetime 0 from a router that
         previously advertised one withdraws the FIB default
-        route.
+        route. The auto-synthesized on-link connected routes
+        (protocol KERNEL) are filtered out so the assertion
+        observes only the withdrawn FIB default.
 
         Reference: RFC 4861 §6.3.4 (RA processing — zero lifetime removes the router).
         """
@@ -114,7 +124,11 @@ class TestIcmp6Nd__RaDefaultRoute(NdTestCase):
         )
 
         self.assertEqual(
-            stack.route.list_routes(family=AddressFamily.INET6),
+            tuple(
+                route
+                for route in stack.route.list_routes(family=AddressFamily.INET6)
+                if route.protocol is not RouteProtocol.KERNEL
+            ),
             (),
             msg="A zero-lifetime RA must withdraw the FIB default route.",
         )

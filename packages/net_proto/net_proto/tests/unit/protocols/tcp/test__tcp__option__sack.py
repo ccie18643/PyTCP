@@ -27,13 +27,11 @@ Module contains tests for the TCP Sack (Selective ACK) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__sack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__SACK__MAX_BLOCK_NUM,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpSackBlock,
 )
 from net_proto.protocols.tcp.options.tcp__option import TCP__OPTION__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionSackAsserts(TestCase):
@@ -264,6 +263,7 @@ class TestTcpOptionSackAssembler(TestCase):
     _blocks: list[TcpSackBlock]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Sack option from the parametrized block list.
@@ -463,6 +463,16 @@ class TestTcpOptionSackParser(TestCase):
             },
         },
         {
+            "_description": "TCP Sack option, buffer 'type' byte is below TcpOptionType.SACK.",
+            "_args": [b"\x04\x02"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Sack option type must be {TcpOptionType.SACK!r}. " f"Got: {TcpOptionType.from_int(4)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Sack option, declared 'len' exceeds provided buffer size.",
             "_args": [b"\x05\x0a\xff\xff\xff\xff\xff\xff\xff"],
             "_results": {
@@ -480,6 +490,20 @@ class TestTcpOptionSackParser(TestCase):
                 "error": TcpIntegrityError,
                 "error_message": (
                     "[INTEGRITY ERROR][TCP] The TCP Sack option blocks length value " "must be a multiple of 8. Got: 9"
+                ),
+            },
+        },
+        {
+            # len=4 makes the block-data region (len - 2) = 2 bytes, which
+            # is not a multiple of 8. The 'Got: 2' value pins the
+            # 'buffer[1] - TCP__OPTION__LEN' subtraction: a '^' (xor)
+            # corruption would compute 4 ^ 2 = 6 and report 'Got: 6'.
+            "_description": "TCP Sack option, (len - 2) = 2 is not a multiple of 8 (subtraction-pinning frame).",
+            "_args": [b"\x05\x04\xff\xff"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sack option blocks length value " "must be a multiple of 8. Got: 2"
                 ),
             },
         },

@@ -27,12 +27,12 @@ This module contains unit tests for the 'Ip4TxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip4__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec
 
@@ -126,7 +126,13 @@ class _StubInterface:
         self.ethernet_tx_status: TxStatus = TxStatus.PASSED__ETHERNET__TO_TX_RING
         self.marshal_tx_async_calls = 0
 
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         # 'send_ip4_packet' fire-and-forget marshals '_phtx_ip4' through
         # '_marshal_tx_async'; with no TX worker under test, run inline.
         self.marshal_tx_async_calls += 1
@@ -201,6 +207,7 @@ class TestPacketHandlerIp4TxSrcValidation(TestCase):
     The source-address validation branches.
     """
 
+    @override
     def setUp(self) -> None:
         self._handler, self._if = _make_ip4_tx()
 

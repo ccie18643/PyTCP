@@ -35,7 +35,7 @@ misconfigured layer-2 device reflects the probe back.
 | §3      | Background — DAD loopback failure mode             | n/a (motivation)               |
 | §4.1    | Nonce option emit on DAD NS                        | met                            |
 | §4.2    | Nonce match on inbound NS = loop-hairpin drop      | met                            |
-| §4.3    | Operator-tunable behaviour                         | met (sysctl `icmp6.use_enhanced_dad`) |
+| §4.3    | Operator-tunable behaviour                         | met (sysctl `icmp6.enhanced_dad`) |
 
 ---
 
@@ -45,7 +45,7 @@ misconfigured layer-2 device reflects the probe back.
 >  the host MUST include a Nonce option."
 
 **Adherence:** met. `_send_icmp6_nd_dad_message` at
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:170-194`
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:196-238`
 accepts an `nonce: bytes | None` parameter; when supplied
 (every Phase-1 caller passes a fresh random nonce), the
 probe carries an `Icmp6NdOptionNonce(nonce=nonce)` in the
@@ -83,7 +83,7 @@ land without re-spec.
 >  conflict."
 
 **Adherence:** met. The NS RX dispatcher at
-`packet_handler__icmp6__rx.py:874-892` calls
+`packet_handler__icmp6__rx.py:960-978` calls
 `DadSlotRegistry.try_signal_conflict` with the inbound
 nonce; the registry compares against the locally-emitted
 nonce for that candidate:
@@ -107,7 +107,7 @@ RX-receive-nonce-check.
 > "Implementations SHOULD provide an operator-tunable
 >  knob to enable / disable Enhanced DAD."
 
-**Adherence:** met. The `icmp6.use_enhanced_dad` sysctl
+**Adherence:** met. The `icmp6.enhanced_dad` sysctl
 (declared in
 `packages/pytcp/pytcp/protocols/icmp6/nd/nd__constants.py`, default 1)
 controls whether the nonce is generated and emitted. With
@@ -135,7 +135,7 @@ case never fires.
 - **Integration / unit:**
   `packages/pytcp/pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__enhanced_dad.py`
   exercises the on/off paths via
-  `sysctl_module.override("icmp6.use_enhanced_dad", ...)`.
+  `sysctl_module.override("icmp6.enhanced_dad", ...)`.
 
 **Status:** locked in.
 
@@ -157,7 +157,7 @@ case never fires.
 | §4.1 Nonce option emit on every DAD NS                | met    |
 | §4.2 Inbound Nonce-match → loop-hairpin drop          | met    |
 | §4.2 Inbound Nonce-mismatch → genuine conflict        | met    |
-| §4.3 Operator-tunable enable / disable knob           | met (`icmp6.use_enhanced_dad`) |
+| §4.3 Operator-tunable enable / disable knob           | met (`icmp6.enhanced_dad`) |
 
 PyTCP fully ships RFC 7527. The DadSlotRegistry's atomic
 compare-and-signal makes the nonce check race-free between
@@ -169,8 +169,8 @@ the TX-emit and the RX-receive threads.
   — parent classification (SHOULD).
 - `docs/rfc/icmp6/rfc4862__ipv6_slaac/adherence.md` —
   parent SLAAC / DAD record.
-- Source: `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:170-194`
+- Source: `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__tx.py:196-238`
   (`_send_icmp6_nd_dad_message`),
-  `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__rx.py:874-892`
+  `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__rx.py:960-978`
   (NS RX Nonce-check), `packages/pytcp/pytcp/lib/dad_slot_registry.py`
   (atomic registry).

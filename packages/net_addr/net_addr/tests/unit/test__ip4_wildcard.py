@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package IPv4 wildcard support class.
 
 net_addr/tests/unit/test__ip4_wildcard.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4Address,
@@ -43,6 +41,7 @@ from net_addr import (
     Ip6Wildcard,
     IpVersion,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -135,6 +134,7 @@ class TestNetAddrIp4Wildcard(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 wildcard object from the testcase argument.
@@ -238,9 +238,16 @@ class TestNetAddrIp4Wildcard(TestCase):
             "_results": {"error_message": "The IPv4 wildcard format is invalid: -1"},
         },
         {
-            "_description": "IPv4 wildcard: wrong-length bytes",
+            "_description": "IPv4 wildcard: wrong-length bytes (too short)",
             "_args": [b"\x00\x00\xff"],
             "_results": {"error_message": "The IPv4 wildcard format is invalid: b'\\x00\\x00\\xff'"},
+        },
+        {
+            # Too-LONG bytes must be rejected too — pins the bytes-length
+            # guard against accepting any length >= 4.
+            "_description": "IPv4 wildcard: wrong-length bytes (too long)",
+            "_args": [b"\x00\x00\x00\x00\x00"],
+            "_results": {"error_message": "The IPv4 wildcard format is invalid: b'\\x00\\x00\\x00\\x00\\x00'"},
         },
         {
             "_description": "IPv4 wildcard: invalid string",
@@ -305,6 +312,14 @@ class TestNetAddrIp4WildcardSemantics(TestCase):
         self.assertEqual(wildcard, wildcard, msg="A wildcard must equal itself.")
         self.assertEqual(wildcard, Ip4Wildcard(255), msg="Wildcards with the same value must be equal.")
         self.assertNotEqual(wildcard, Ip4Wildcard("0.0.255.255"), msg="Different wildcards must not be equal.")
+        # The reverse direction (larger wildcard on the left) pins the
+        # value comparison against an order-relaxed '>=' that would call
+        # a strictly-greater wildcard equal.
+        self.assertNotEqual(
+            Ip4Wildcard("0.0.255.255"),
+            wildcard,
+            msg="Inequality must hold with the larger wildcard on the left.",
+        )
         self.assertNotEqual(wildcard, "0.0.0.255", msg="A wildcard must not equal a foreign type.")
         self.assertNotEqual(
             wildcard,

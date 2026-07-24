@@ -27,9 +27,10 @@ Unit tests for PersistState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__persist.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__persist import PersistState
@@ -71,4 +72,43 @@ class TestPersistState(TestCase):
             s.timeout,
             1000,
             msg="deactivate must reset timeout to the initial value.",
+        )
+
+
+class TestPersistState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for PersistState.
+    """
+
+    def test__tcp_state__persist__is_slotted(self) -> None:
+        """
+        Ensure PersistState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(PersistState(), "__dict__"),
+            msg="PersistState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestPersistState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the PersistState mutator signatures.
+    """
+
+    def test__tcp_state__persist__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the PersistState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(PersistState.deactivate).parameters["initial_timeout"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="PersistState.deactivate 'initial_timeout' must be keyword-only.",
         )

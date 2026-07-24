@@ -50,8 +50,10 @@ consumers.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_parameters.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import Ip6Address, MacAddress
 from pytcp.stack import sysctl as sysctl_module
@@ -107,6 +109,7 @@ class TestIcmp6Nd__RaParameters__CurHopLimit(NdTestCase):
     'accept_ra_min_hop_limit' sysctl are silently dropped.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -246,6 +249,7 @@ class TestIcmp6Nd__RaParameters__ReachableTime(NdTestCase):
     overwrite the stored mirror; zero means "unspecified".
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

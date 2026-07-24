@@ -28,14 +28,12 @@ integrity checks.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_request__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip6(frame: bytes, *, ip6__dlen: int | None = None) -> PacketRx:
@@ -168,6 +167,7 @@ class TestIcmp6MessageEchoRequestParserIntegrityChecks(TestCase):
     _ip6__dlen: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv6 payload length.
@@ -222,3 +222,20 @@ class TestIcmp6MessageEchoRequestParserIntegrityBoundary(TestCase):
         )
 
         Icmp6Parser(_packet_rx_with_ip6(frame))
+
+    def test__icmp6__message__echo_request__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip6__dlen' (the ICMPv6
+        message is followed by lower-layer padding) still parses: the
+        integrity bound is 'ip6__dlen <= len(frame)', so trailing bytes
+        beyond the declared IPv6 payload are tolerated, not rejected.
+
+        Reference: RFC 4443 §4.1 (Echo Request type 128).
+        """
+
+        # Minimum 8-byte Echo Request (valid checksum over the 8 octets)
+        # followed by 4 octets of lower-layer padding. ip6__dlen=8 is
+        # strictly less than len(frame)=12.
+        frame = b"\x80\x00\x7f\xff\x00\x00\x00\x00" + b"\x00\x00\x00\x00"
+
+        Icmp6Parser(_packet_rx_with_ip6(frame, ip6__dlen=ICMP6__ECHO_REQUEST__LEN))

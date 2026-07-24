@@ -127,7 +127,8 @@ hostnames into IPs, then feed numeric IPs into PyTCP's
 
 ## Examples in the repo
 
-- `examples/stack.py` — TCP and UDP service registration.
+- `examples/tcp_echo_server__async.py` / `examples/udp_echo_server__async.py`
+  — daemon-backed TCP / UDP echo servers over the drop-in.
 - `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__*.py`
   — end-to-end TCP session scenarios.
 - `packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py` — UDP socket

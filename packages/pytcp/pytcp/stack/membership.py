@@ -33,7 +33,7 @@ state this API maintains.
 
 pytcp/stack/membership.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING
@@ -71,8 +71,8 @@ class MembershipApi:
 
     Consumer code — the BSD socket facade's membership options, the
     example apps, future operator-config tools — uses ONLY this
-    surface. It never reaches into 'packet_handler._ip4_multicast'
-    directly; that is the Phase-3 architectural seam.
+    surface. It never reaches into the packet handler's multicast
+    reception state directly; that is the Phase-3 architectural seam.
 
     Two contributor kinds drive a group's interface reception state: the
     operator hold ('join' / 'leave', a set-once any-source EXCLUDE{}
@@ -113,7 +113,7 @@ class MembershipApi:
             "The bare membership tool has no default device; select one via " "'stack.membership.interface(ifindex)'."
         )
 
-    def interface(self, ifindex: int, /) -> "MembershipApi":
+    def interface(self, ifindex: int, /) -> MembershipApi:
         """
         Return a 'MembershipApi' bound to the interface registered under
         'ifindex' — the device selector. Raises 'KeyError' when no
@@ -138,10 +138,10 @@ class MembershipApi:
         on every call. Raises 'MembershipLimitError' over the cap.
         """
 
-        if handler._mc_is_joined(group):
+        if handler.mc_is_joined(group):
             return
 
-        joined = sum(1 for member in handler._ip4_multicast if member != IP4__MULTICAST__ALL_SYSTEMS)
+        joined = sum(1 for member in handler.ip4_multicast if member != IP4__MULTICAST__ALL_SYSTEMS)
         if joined >= igmp__constants.IGMP__MAX_MEMBERSHIPS:
             raise MembershipLimitError(
                 f"The multicast-membership limit ({igmp__constants.IGMP__MAX_MEMBERSHIPS}) is reached "
@@ -164,7 +164,7 @@ class MembershipApi:
 
         handler = self._resolve_handler()
         self._enforce_membership_cap(handler, group)
-        handler._mc_ref_acquire(group)
+        handler.mc_ref_acquire(group)
         __debug__ and log("stack", f"<lg>Membership API</>: joined IPv4 group {group} (operator)")
 
     def leave(self, *, group: Ip4Address) -> None:
@@ -186,7 +186,7 @@ class MembershipApi:
             raise ValueError("The all-systems group 224.0.0.1 is joined permanently and cannot be left (RFC 1112 §4).")
 
         handler = self._resolve_handler()
-        handler._mc_ref_release(group)
+        handler.mc_ref_release(group)
         __debug__ and log("stack", f"<lg>Membership API</>: left IPv4 group {group} (operator)")
 
     def set_socket_filter(self, *, group: Ip4Address, token: int, source_filter: Ip4MulticastFilter) -> None:
@@ -204,7 +204,7 @@ class MembershipApi:
 
         handler = self._resolve_handler()
         self._enforce_membership_cap(handler, group)
-        handler._mc_set_socket_filter(group, token=token, source_filter=source_filter)
+        handler.mc_set_socket_filter(group, token=token, source_filter=source_filter)
 
     def clear_socket_filter(self, *, group: Ip4Address, token: int) -> None:
         """
@@ -217,7 +217,7 @@ class MembershipApi:
         """
 
         handler = self._resolve_handler()
-        handler._mc_clear_socket_filter(group, token=token)
+        handler.mc_clear_socket_filter(group, token=token)
 
     def list_memberships(self) -> tuple[Ip4Address, ...]:
         """
@@ -229,4 +229,4 @@ class MembershipApi:
 
         handler = self._resolve_handler()
 
-        return tuple(handler._ip4_multicast)
+        return tuple(handler.ip4_multicast)

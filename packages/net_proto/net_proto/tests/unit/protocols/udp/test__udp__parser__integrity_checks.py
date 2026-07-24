@@ -27,17 +27,17 @@ Module contains tests for the UDP packet integrity checks.
 
 net_proto/tests/unit/protocols/udp/test__udp__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
+from typing import override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import IpVersion
 from net_proto import PacketRx, UdpIntegrityError, UdpParser
 from net_proto.protocols.udp.udp__errors import UdpZeroCksumIp6Error
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # A valid 8-byte UDP frame used as the baseline for parser-integrity
 # fixtures. Callers perturb exactly one aspect (payload_len, plen,
@@ -110,6 +110,24 @@ _BASELINE_FRAME = b"\x30\x39\xd4\x31\x00\x08\xfb\x8c"
             ),
         },
         {
+            "_description": "The header 'plen' field is higher than 'ip__payload_len'.",
+            # UDP wire frame (10 bytes, header + 2-byte filler):
+            #   Bytes 0-1 : 0x3039 -> sport=12345
+            #   Bytes 2-3 : 0xd431 -> dport=54321
+            #   Bytes 4-5 : 0x000a -> plen=10 (claims more than payload_len=8)
+            #   Bytes 6-7 : 0x0000 -> cksum=0 (validation skipped; bound check
+            #                        fires first regardless)
+            #   Bytes 8-9 : 0x0000 -> filler so len(frame)=10 >= plen
+            "_frame_rx": b"\x30\x39\xd4\x31\x00\x0a\x00\x00\x00\x00",
+            "_ip__payload_len": 8,
+            "_ip__pshdr_sum": 0,
+            "_error_message": (
+                "The condition 'UDP__HEADER__LEN <= plen == self._ip__payload_len "
+                "<= len(self._frame)' must be met. Got: UDP__HEADER__LEN=8, plen=10, "
+                "self._ip__payload_len=8, len(self._frame)=10"
+            ),
+        },
+        {
             "_description": "Packet has non-zero but incorrect checksum.",
             # UDP wire frame (24 bytes = 8-byte header + 16-byte payload):
             #   Bytes 0-1  : 0x3039       -> sport=12345
@@ -143,6 +161,7 @@ class TestUdpParserIntegrityChecks(TestCase):
     _ip__pshdr_sum: int
     _error_message: str
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx and stub the IP layer
@@ -222,6 +241,49 @@ class TestUdpParserIntegrityBoundary(TestCase):
             msg="Baseline-frame parser must report plen=8.",
         )
 
+    def test__udp__parser__integrity__trailing_bytes_past_payload_len_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip__payload_len' (the
+        UDP datagram is followed by lower-layer padding) still parses:
+        the integrity bound is 'ip__payload_len <= len(frame)', so
+        trailing bytes beyond the declared length are tolerated, not
+        rejected.
+
+        Reference: RFC 768 (Length is the UDP datagram length; lower
+        layers MAY append padding the receiver ignores).
+        """
+
+        # UDP wire frame (12 bytes = 8-byte header + 4 trailing padding
+        # bytes). plen == ip__payload_len == 8, but len(frame) == 12, so
+        # the parser must accept (8 <= 8 == 8 <= 12) and expose an empty
+        # payload (frame[8:plen=8]).
+        #   Bytes 0-1  : 0x3039 -> sport=12345
+        #   Bytes 2-3  : 0xd431 -> dport=54321
+        #   Bytes 4-5  : 0x0008 -> plen=8
+        #   Bytes 6-7  : 0x0000 -> cksum=0 (validation skipped on IPv4)
+        #   Bytes 8-11 : 0x00000000 -> lower-layer padding past the datagram
+        frame = b"\x30\x39\xd4\x31\x00\x08\x00\x00\x00\x00\x00\x00"
+
+        packet_rx = PacketRx(frame)
+        packet_rx.ip = SimpleNamespace(  # type: ignore[assignment]
+            payload_len=8,
+            pshdr_sum=0,
+            ver=IpVersion.IP4,
+        )
+
+        parser = UdpParser(packet_rx)
+
+        self.assertEqual(
+            parser.plen,
+            8,
+            msg="Trailing-padding frame must parse with plen=8.",
+        )
+        self.assertEqual(
+            bytes(parser.payload),
+            b"",
+            msg="Payload must end at plen, excluding the lower-layer padding.",
+        )
+
     def test__udp__parser__integrity__zero_cksum_skips_validation_ipv4(self) -> None:
         """
         Ensure a frame with cksum=0 bypasses checksum validation
@@ -254,6 +316,36 @@ class TestUdpParserIntegrityBoundary(TestCase):
             0,
             msg="Zero-cksum IPv4 frame must pass integrity with cksum=0 preserved on the header.",
         )
+
+    def test__udp__parser__integrity__nonzero_cksum_low_byte_zero_validated(self) -> None:
+        """
+        Ensure a frame whose checksum has a zero low byte but a non-zero
+        high byte is NOT mistaken for the cksum=0 sentinel: the parser
+        must read the full 16-bit checksum word and run validation,
+        rejecting a wrong checksum rather than skipping it.
+
+        Reference: RFC 768 (cksum=0 sentinel is the whole 16-bit field, not its low byte).
+        """
+
+        # UDP wire frame (8 bytes, header-only) with a deliberately wrong
+        # checksum 0xab00 — high byte set, low byte zero. A parser that
+        # read only the low byte would see 0x00 and wrongly skip
+        # validation; reading the full word sees 0xab00 != 0 and rejects.
+        #   Bytes 0-1 : 0x3039 -> sport=12345
+        #   Bytes 2-3 : 0xd431 -> dport=54321
+        #   Bytes 4-5 : 0x0008 -> plen=8
+        #   Bytes 6-7 : 0xab00 -> cksum (intentionally wrong, low byte zero)
+        frame = b"\x30\x39\xd4\x31\x00\x08\xab\x00"
+
+        packet_rx = PacketRx(frame)
+        packet_rx.ip = SimpleNamespace(  # type: ignore[assignment]
+            payload_len=len(frame),
+            pshdr_sum=0,
+            ver=IpVersion.IP4,
+        )
+
+        with self.assertRaises(UdpIntegrityError):
+            UdpParser(packet_rx)
 
 
 class TestUdpParserIntegrityZeroCksumIp6(TestCase):

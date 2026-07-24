@@ -45,7 +45,7 @@ These integration tests pin only the handler-level wiring:
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__dad_slot_lock.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

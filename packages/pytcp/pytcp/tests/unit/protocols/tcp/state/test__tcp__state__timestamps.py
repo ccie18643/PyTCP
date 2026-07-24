@@ -27,9 +27,10 @@ Unit tests for TimestampsState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__timestamps.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__timestamps import TimestampsState
@@ -75,4 +76,43 @@ class TestTimestampsState__Update(TestCase):
             s.ts_recent_updated_at_ms,
             67890,
             msg="update must set ts_recent_updated_at_ms.",
+        )
+
+
+class TestTimestampsState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for TimestampsState.
+    """
+
+    def test__tcp_state__timestamps__is_slotted(self) -> None:
+        """
+        Ensure TimestampsState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(TimestampsState(), "__dict__"),
+            msg="TimestampsState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestTimestampsState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the TimestampsState mutator signatures.
+    """
+
+    def test__tcp_state__timestamps__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the TimestampsState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(TimestampsState.update).parameters["tsval"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="TimestampsState.update 'tsval' must be keyword-only.",
         )

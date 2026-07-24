@@ -38,15 +38,14 @@ its 6 wire bytes, so the link-layer address survives as typed values.
 
 pytcp/ipc/ipc__packet_frame.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from net_addr import MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, MacAddress
 from net_proto.lib.enums import EtherType
 from pytcp.ipc.ipc__errors import IpcFrameError
-from pytcp.socket import PacketType
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import PacketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 IPC__PACKET__IFINDEX_LEN: int = 4
 IPC__PACKET__ETHERTYPE_LEN: int = 2

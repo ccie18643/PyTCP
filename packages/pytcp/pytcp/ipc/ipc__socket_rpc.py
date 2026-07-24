@@ -40,7 +40,7 @@ boundary translation but keeps a distinct request shape.
 
 pytcp/ipc/ipc__socket_rpc.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json
@@ -48,13 +48,14 @@ import os
 from dataclasses import dataclass
 from typing import Any, NoReturn
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
-from pytcp.ipc.ipc__errors import IpcConnectionError, IpcRemoteError
+from pytcp.ipc.ipc__errors import IpcConnectionError
+from pytcp.ipc.ipc__remote_error import raise_remote_error
 from pytcp.ipc.ipc__values import decode_value, encode_value
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -111,12 +112,53 @@ def encode_socket_ok(value: Any, /) -> bytes:
     return json.dumps({"value": encode_value(value)}).encode()
 
 
-def encode_socket_error(*, error_type: str, message: str) -> bytes:
+def encode_socket_error(
+    *,
+    error_type: str,
+    message: str,
+    module: str | None = None,
+    errno: int | None = None,
+    args: tuple[Any, ...] = (),
+    strerror: str | None = None,
+) -> bytes:
     """
     Encode a socket-syscall failure into a JSON body.
+
+    Carries the errno / module / args / strerror needed to faithfully
+    reconstruct the exception client-side; the 'error' and 'message' keys
+    are always present so an older client (or a minimal call) degrades to
+    the generic 'IpcRemoteError' boundary.
     """
 
-    return json.dumps({"error": error_type, "message": message}).encode()
+    return json.dumps(
+        {
+            "error": error_type,
+            "message": message,
+            "module": module,
+            "errno": errno,
+            "args": [encode_value(item) for item in args],
+            "strerror": strerror,
+        }
+    ).encode()
+
+
+def encode_exception(error: BaseException, /) -> bytes:
+    """
+    Encode a caught exception into a socket-syscall error body.
+
+    Captures the errno / module / args / strerror that
+    'raise_remote_error' uses to rebuild the exception faithfully on the
+    client.
+    """
+
+    return encode_socket_error(
+        error_type=type(error).__name__,
+        message=str(error),
+        module=type(error).__module__,
+        errno=error.errno if isinstance(error, OSError) else None,
+        args=error.args,
+        strerror=error.strerror if isinstance(error, OSError) else None,
+    )
 
 
 def decode_socket_value(body: Buffer, /) -> Any:
@@ -129,15 +171,12 @@ def decode_socket_value(body: Buffer, /) -> Any:
 
 def raise_socket_error(body: Buffer, /) -> NoReturn:
     """
-    Raise an 'IpcRemoteError' from a socket-syscall error body.
+    Reconstruct and raise the remote exception from a socket-syscall
+    error body — a faithful 'OSError' subclass / 'socket.gaierror' /
+    builtin where possible, else the generic 'IpcRemoteError' boundary.
     """
 
-    document = json.loads(bytes(body))
-
-    raise IpcRemoteError(
-        error_type=document["error"],
-        message=document["message"],
-    )
+    raise_remote_error(json.loads(bytes(body)))
 
 
 def socket_call(
@@ -245,4 +284,69 @@ def accept_socket(client: IpcClient, /, *, handle: int) -> tuple[int, tuple[str,
 
     raise IpcConnectionError(
         f"Daemon returned an unexpected response kind {response.kind!r} to an accept call.",
+    )
+
+
+def listen_socket(client: IpcClient, /, *, handle: int, backlog: int) -> int:
+    """
+    Issue the fd-bearing 'listen' call and return the accept-readiness
+    descriptor — the listener's eventfd, select-readable while the accept
+    queue is non-empty — which the client owns and polls for non-blocking
+    accept.
+
+    Raises 'IpcRemoteError' on a remote failure (the fd-less error path)
+    and closes any stray passed descriptor before raising.
+    """
+
+    response, fd = client.request_with_fd(
+        IpcOp.SOCKET_CALL,
+        body=encode_socket_request(method="listen", handle=handle, args={"backlog": backlog}),
+    )
+
+    if response.kind is IpcMessageKind.RESPONSE_OK:
+        if fd is None:
+            raise IpcConnectionError("Daemon marked a socket listening but passed no accept-readiness descriptor.")
+        return fd
+
+    if fd is not None:
+        os.close(fd)
+
+    if response.kind is IpcMessageKind.RESPONSE_ERROR:
+        raise_socket_error(response.body)
+
+    raise IpcConnectionError(
+        f"Daemon returned an unexpected response kind {response.kind!r} to a listen call.",
+    )
+
+
+def accept_take_socket(client: IpcClient, /, *, handle: int) -> tuple[int, tuple[str, int], int]:
+    """
+    Issue the non-blocking fd-bearing 'accept_take' call and return
+    '(child_handle, peer_address, data_fd)' for a queued child, or raise
+    'BlockingIOError(EAGAIN)' (via the remote error path) when the accept
+    queue is empty.
+
+    Closes any stray passed descriptor before raising.
+    """
+
+    response, fd = client.request_with_fd(
+        IpcOp.SOCKET_CALL,
+        body=encode_socket_request(method="accept_take", handle=handle, args={}),
+    )
+
+    if response.kind is IpcMessageKind.RESPONSE_OK:
+        if fd is None:
+            raise IpcConnectionError("Daemon accepted a connection but passed no data-channel descriptor.")
+        value = decode_socket_value(response.body)
+        peer = value["peer"]
+        return int(value["handle"]), (peer[0], peer[1]), fd
+
+    if fd is not None:
+        os.close(fd)
+
+    if response.kind is IpcMessageKind.RESPONSE_ERROR:
+        raise_socket_error(response.body)
+
+    raise IpcConnectionError(
+        f"Daemon returned an unexpected response kind {response.kind!r} to an accept_take call.",
     )

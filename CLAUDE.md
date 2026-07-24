@@ -65,18 +65,19 @@ Feature triage uses this north star:
 
 ```bash
 # Setup
-make venv                 # create virtual environment (Python 3.14+)
+make                      # build everything (default goal = 'make all': venv + editable installs)
 source venv/bin/activate
 
 # Development
-make lint                 # codespell + isort + black + flake8 + mypy + pylint
+make lint                 # codespell + isort + black + flake8 + mypy + pylint + pyright
 make test                 # run all three test suites via unittest
 make validate             # lint + test together
 
-# Run the stack (requires TAP interface and sudo for bridge/tap/tun setup)
-make tap7                 # create tap7 interface (sudo)
-make bridge               # set up bridge (sudo)
-make run                  # run stack on tap7
+# Run the stack (daemon + CLI; requires sudo for bridge/tap/tun setup)
+sudo make bridge && sudo make tap7        # one-time: create a TAP on br0 (sudo)
+sudo venv/bin/pytcp stack start -i tap7   # start the stack daemon
+sudo venv/bin/pytcp ss                    # drive it (like 'ss'); see 'pytcp --help'
+sudo venv/bin/pytcp stack stop            # stop the daemon
 
 # Clean
 make clean                # remove venv, caches, build artifacts
@@ -170,7 +171,7 @@ PyTCP has ten canonical rule files in `.claude/rules/`. They are auto-loaded int
 
 ### Pre-commit checklist (MANDATORY)
 
-1. `make lint` clean (codespell + isort + black + flake8 + mypy strict + pylint).
+1. `make lint` clean (codespell + isort + black + flake8 + mypy strict + pylint + pyright). `make lint` runs pyright reading `[tool.pyright]` in `pyproject.toml`, so the CLI gate matches what VS Code's Pylance shows; mypy strict stays the type authority and the inference rules pyright diverges on are silenced there.
 2. `make test` clean.
 3. **§7.2 docstring audit** clean on any test file you wrote or modified (see [`unit_testing.md`](.claude/rules/unit_testing.md) §7.2).
 4. **Modernise legacy typing / Python forms on touch** — fix them in the same commit, not as a separate sweep. Forbidden forms catalogued in [`python_features.md`](.claude/rules/python_features.md) §22 and [`typing.md`](.claude/rules/typing.md) §23.
@@ -183,3 +184,4 @@ Every behavioural change opens with one or more **failing tests** that pin the s
 
 - [`rfc_adherence_audit`](.claude/skills/rfc_adherence_audit/SKILL.md) — add or refresh a per-RFC adherence record.
 - [`sysctl_knob`](.claude/skills/sysctl_knob/SKILL.md) — add a runtime-tunable sysctl-backed constant.
+- [`mutation_testing`](.claude/skills/mutation_testing/SKILL.md) — run a cosmic-ray mutation-testing audit of a package, triage survivors (equivalent vs real gap), and close real gaps with kill-proven unit tests.

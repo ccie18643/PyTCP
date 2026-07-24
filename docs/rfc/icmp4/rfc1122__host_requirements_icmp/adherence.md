@@ -64,7 +64,7 @@ which is the full original IP header + at least 8 octets of payload
 up to the 576-byte MIN_MTU cap mandated by RFC 1812 §4.3.2.3. The
 UDP closed-port emitter passes `packet_rx.ip.packet_bytes`
 verbatim, so the bytes are unchanged
-(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:201`).
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:310`).
 
 > "In those cases where the Internet layer is required to pass an
 > ICMP error message to the transport layer, the IP protocol number
@@ -74,7 +74,7 @@ verbatim, so the bytes are unchanged
 **Adherence:** **met** for all three carrier message types
 (Destination Unreachable, Time Exceeded, Parameter Problem) on
 both v4 and v6. The shared embedded-L4 demux at
-`packages/pytcp/pytcp/runtime/packet_handler/_icmp_error_demux.py::parse_embedded_l4`
+`packages/pytcp/pytcp/protocols/icmp/icmp__error_demux.py::parse_embedded_l4`
 extracts the L4 protocol from the embedded IP header and routes
 UDP to `UdpSocket.notify_*` and TCP via
 `TcpSession.tcp_fsm(icmp=IcmpMetadata(...))`, which dispatches
@@ -109,7 +109,7 @@ extracts the IP-layer state (limited-broadcast destination,
 multicast destination, loopback/multicast/Class-E source, non-
 initial fragment) into an `IcmpErrorContext`. The UDP closed-port
 Port-Unreachable emitter routes through the gate at
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:179-194`.
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:264`.
 The "datagram sent as a link-layer broadcast" sub-rule is not
 explicitly modeled — the closest proxy is `is_limited_broadcast` on
 the IP destination, since the test harness and the production stack
@@ -153,14 +153,14 @@ The IPv6 mirror is RFC 4443 §3.4 Parameter Problem code 1
 ("Unrecognized Next Header type"), not Destination Unreachable —
 the v6 wire format expresses the same semantic via Param Problem.
 Wired symmetrically at
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__rx.py::__phrx_ip6__emit_unrecognized_next_header`
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__rx.py::__phrx_ip6__emit_parameter_problem_unrecognized_next_header`
 per RFC 8200 §4.
 
 > "A host SHOULD generate Destination Unreachable messages with
 > code: 3 (Port Unreachable), when the designated transport
 > protocol (e.g., UDP) is unable to demultiplex the datagram"
 
-**Adherence:** **met**. `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:194-204`
+**Adherence:** **met**. `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:306-310`
 emits `Icmp4DestinationUnreachableCode.PORT` when no UDP socket
 matches, subject to the §3.2.2 gates above.
 
@@ -260,7 +260,7 @@ gap.
 through `Icmp4MessageTimeExceeded` parsing
 (`packages/net_proto/net_proto/protocols/icmp4/message/icmp4__message__time_exceeded.py`),
 and the `__phrx_icmp4__time_exceeded` packet-handler arm
-(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:315`)
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:346`)
 runs `parse_embedded_l4` on the carried original-datagram bytes
 and dispatches to either
 `TcpSession.tcp_fsm(icmp=IcmpMetadata(category=TIME_EXCEEDED, ...))`
@@ -332,7 +332,7 @@ packet_stats counter and log line.
 
 **Adherence:** **met**.
 `__phrx_icmp4__echo_request`
-(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:548-588`)
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:621`)
 emits an `Icmp4MessageEchoReply` for every accepted Echo Request.
 
 > "An ICMP Echo Request destined to an IP broadcast or IP multicast
@@ -368,7 +368,7 @@ so this remains conformant.
 
 **Adherence:** **met**. The Reply construction copies
 `packet_rx.icmp4.message.data` verbatim
-(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:582-586`).
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py:657`).
 
 > "However, if sending the Echo Reply requires intentional
 > fragmentation that is not implemented, the datagram MUST be
@@ -424,7 +424,7 @@ otherwise widen. Counter:
 **Adherence:** **deliberate non-implementation**. PyTCP does not
 implement Information Request/Reply (ICMPv4 types 15/16). Inbound
 messages route to `Icmp4MessageUnknown` and are silently dropped.
-Both types were also formally deprecated en bloc by RFC 6918
+Both types were also formally deprecated en block by RFC 6918
 §2.2/§2.3 — see
 [`../rfc6918__deprecate_icmp_types/adherence.md`](../rfc6918__deprecate_icmp_types/adherence.md).
 

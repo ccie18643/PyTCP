@@ -27,14 +27,14 @@ This module contains the ICMPv4 Echo Request message support class.
 
 net_proto/protocols/icmp4/message/icmp4__message__echo_request.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.int_checks import is_uint16
 from net_proto.protocols.icmp4.icmp4__errors import Icmp4IntegrityError, Icmp4SanityError
 from net_proto.protocols.icmp4.message.icmp4__message import (

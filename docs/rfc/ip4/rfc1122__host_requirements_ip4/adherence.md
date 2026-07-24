@@ -21,8 +21,9 @@ Scope:
 - **§3.2.1 (Internet Protocol — IP)** is audited in full here.
 - **§3.2.2 (ICMP)** is cross-referenced to
   `docs/rfc/icmp4/rfc1122__host_requirements_icmp/adherence.md`.
-- **§3.2.3 (IGMP)** is not implemented (deferred — multicast
-  group management beyond reception scope).
+- **§3.2.3 (IGMP)** is implemented — IGMPv3 host support ships
+  (see the RFC 3376 / RFC 2236 / RFC 1112 records); group
+  management is audited there, not repeated here.
 - **§3.3 (Specific Issues — routing, reassembly, fragmentation,
   multihoming, source-route, broadcasts, multicasting, error
   reporting)** is audited here for the IP-layer-relevant portions.
@@ -64,7 +65,7 @@ forwarding (§3.3.5) is Phase 2.
 | §3.3.4   | Local multihoming                           | partial — L3 routing destination-keyed (multihoming-correct); single physical interface |
 | §3.3.5   | Source-route forwarding                     | not implemented (Phase 2) |
 | §3.3.6   | Broadcasts                                  | met    |
-| §3.3.7   | IP multicasting                             | partial — reception met (§3.3.7), IGMP group management deferred |
+| §3.3.7   | IP multicasting                             | met — reception + IGMPv3 group management (see RFC 3376 record) |
 | §3.3.8   | Error reporting (link-layer errors to upper layers) | partial — Phase 1 logs but does not propagate |
 
 ---
@@ -463,13 +464,17 @@ broadcasts. RX handler checks against this set
 > if the host has the option 'broadcasts permitted' [link]
 > turned off."
 
-**Adherence:** partial. PyTCP does not gate broadcast TX on a
-configurable flag — it forwards any caller-requested broadcast
-to the link layer unconditionally. A future
-`ip4.allow_broadcast` sysctl would close this; not currently a
-gap in practice because PyTCP has no public socket API for
-applications to send broadcasts unless they explicitly use a
-RAW socket.
+**Adherence:** met. Broadcast TX is gated on the
+per-interface `ip4.allow_broadcast` sysctl (default 0 —
+"broadcasts permitted" off, registered in
+`packages/pytcp/pytcp/protocols/ip4/ip4__constants.py:114`). The TX handler
+(`packet_handler__ip4__tx.py:162-180`) reads it via
+`sysctl_iface.get_for_iface` and silently drops any datagram
+to the limited-broadcast address or a configured subnet
+broadcast when the flag is off, bumping
+`ip4__dst_broadcast_disallowed__drop`. The DHCP-client
+pre-bind path (src=0.0.0.0, UDP sport=68/dport=67) is the sole
+exemption, matching Linux.
 
 ## §3.3.7 IP Multicasting
 
@@ -485,10 +490,13 @@ in this set. The Ethernet MAC mapping is implemented in
 
 > "Hosts SHOULD implement IGMPv1 ..."
 
-**Adherence:** not implemented (deferred — Phase 2 alongside the
-IGMP package). Cross-reference: pending RFC 2236 / RFC 3376
-audits if PyTCP ever picks up multicast group management beyond
-all-hosts reception.
+**Adherence:** met (exceeds the SHOULD). PyTCP ships an IGMPv3
+host implementation (RFC 3376) with RFC 2236 (IGMPv2) and
+RFC 1112 (IGMPv1) querier-version fallback. The group-
+management state machine, Report / Leave emission, query
+response, and version-compatibility handling are audited in the
+`docs/rfc/ip4/rfc3376__igmp_v3`, `rfc2236__igmp_v2`, and
+`rfc1112__ip4_multicasting` records.
 
 ## §3.3.8 Error Reporting (link-layer → IP layer)
 
@@ -578,7 +586,7 @@ transient network condition.
   `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__rx.py`
   Verifies ICMP Parameter Problem emission with `pointer=8`.
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc1122DefaultTtlSysctl`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc1122DefaultTtlSysctl`
   Drives the sysctl override and verifies the wire TTL of an
   outbound unicast datagram reflects the live value; verifies
   multicast destinations stay at TTL=1 regardless of the
@@ -685,7 +693,7 @@ default route, and static-route paths. The learned/aged route
 | §3.3.4 Multihoming (L3 destination-keyed routing)     | locked in; multi-physical-interface n/a (Phase 2) |
 | §3.3.5 Source-route forwarding                        | n/a (Phase 2) |
 | §3.3.6 Broadcast send / receive                       | locked in |
-| §3.3.7 Multicast reception (no IGMP)                  | locked in |
+| §3.3.7 Multicast reception + IGMPv3 group management  | locked in (IGMP audited in RFC 3376 record) |
 | §3.3.8 Link-layer error propagation                   | partial (logged, not propagated) |
 
 ---
@@ -705,7 +713,7 @@ default route, and static-route paths. The learned/aged route
 | §3.3.4 Multihoming — L3 routing destination-keyed   | met; multi-physical-interface not met (Phase 2) |
 | §3.3.5 Source-route forwarding                      | not met (Phase 2) |
 | §3.3.6 Broadcast handling                           | met    |
-| §3.3.7 Multicast reception (no IGMP)                | partial — reception met, group management deferred |
+| §3.3.7 Multicast reception + IGMPv3 group management | met (IGMP audited in RFC 3376 record) |
 | §3.3.8 Link-layer error propagation                 | partial |
 
 The principal Phase-1 gaps are:

@@ -29,7 +29,7 @@ ICMPv4 / ICMPv6 RX path into the TCP FSM dispatch.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__icmp_metadata.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
@@ -205,4 +205,49 @@ class TestIcmpMetadata(TestCase):
             TypeError,
             msg="IcmpMetadata must reject positional arguments (kw_only=True).",
         ):
-            IcmpMetadata(IcmpCategory.DEST_UNREACHABLE, 3, 3, ip_version=4)  # type: ignore[misc]
+            IcmpMetadata(IcmpCategory.DEST_UNREACHABLE, 3, 3, ip_version=4)  # type: ignore[call-arg]
+
+
+class TestIcmpMetadataMutationGoldens(TestCase):
+    """
+    Exact enum-value and slotted-dataclass goldens closing the
+    IcmpCategory codepoint and IcmpMetadata slots mutation survivors.
+    """
+
+    def test__tcp__icmp_metadata__category_codepoints_are_exact(self) -> None:
+        """
+        Ensure the four IcmpCategory codepoints hold their exact
+        values so a NumberReplacer edit is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            (
+                IcmpCategory.DEST_UNREACHABLE,
+                IcmpCategory.TIME_EXCEEDED,
+                IcmpCategory.PARAM_PROBLEM,
+                IcmpCategory.PMTU,
+            ),
+            (1, 2, 3, 4),
+            msg="IcmpCategory codepoints must be (1, 2, 3, 4).",
+        )
+
+    def test__tcp__icmp_metadata__is_slotted(self) -> None:
+        """
+        Ensure IcmpMetadata is a slotted dataclass (no __dict__) so
+        the slots= flag cannot be flipped unnoticed.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        metadata = IcmpMetadata(
+            category=IcmpCategory.DEST_UNREACHABLE,
+            icmp_type=3,
+            icmp_code=3,
+            ip_version=4,
+        )
+        self.assertFalse(
+            hasattr(metadata, "__dict__"),
+            msg="IcmpMetadata must be slotted (no __dict__).",
+        )

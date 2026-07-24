@@ -28,13 +28,12 @@ payload (the IpProto.IGMP wire integration).
 
 net_proto/tests/unit/protocols/igmp/test__igmp__ip4_payload.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_addr import Ip4Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address
 from net_proto.protocols.igmp.igmp__assembler import IgmpAssembler
 from net_proto.protocols.igmp.message.igmp__message__v3_report import (
     IgmpMessageV3Report,

@@ -27,10 +27,10 @@ This module contains unit tests for the 'EthernetTxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
@@ -167,6 +167,7 @@ class _EthernetTxTestBase(TestCase):
     Common setUp/tearDown for the Ethernet TX unit tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the stub handler, inject mock TX ring / neighbor caches,
@@ -224,6 +225,7 @@ class _EthernetTxTestBase(TestCase):
         self._arp_cache.find_entry.return_value = None
         self._nd_cache.find_entry.return_value = None
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the patched FIB singletons.

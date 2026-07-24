@@ -27,16 +27,15 @@ This module contains the classes used in the IPv4/IPv6 packet fragmentation and 
 
 pytcp/protocols/ip/ip_frag.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 
-from net_addr import Ip4Address, Ip6Address
+from net_addr import Buffer, Ip4Address, Ip6Address
 from net_proto import IpProto
-from net_proto.lib.buffer import Buffer
 
 # RFC 791 §3.1 / RFC 8200 §4.5: Fragment Offset is measured in
 # 8-octet units, so every non-final fragment payload MUST be a

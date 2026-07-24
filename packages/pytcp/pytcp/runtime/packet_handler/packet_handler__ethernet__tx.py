@@ -21,18 +21,20 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the outbound Ethernet II packets.
 
 pytcp/runtime/packet_handler/packet_handler__ethernet__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING
 
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import (
     EthernetAssembler,
     EthernetPayload,
@@ -41,10 +43,12 @@ from net_proto import (
     Ip6Assembler,
     RawAssembler,
 )
-from net_proto.lib.buffer import Buffer
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
+from pytcp.runtime.socket import PacketType
+from pytcp.runtime.socket.packet__metadata import PacketMetadata
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2
@@ -346,8 +350,56 @@ class EthernetTxHandler:
 
     def __send_out_packet(self, ethernet_packet_tx: EthernetAssembler) -> None:
         __debug__ and log("ether", f"{ethernet_packet_tx.tracker} - {ethernet_packet_tx}")
+        # AF_PACKET egress tap — fan a copy of the outbound frame to every
+        # bound packet socket whose filter matches, tagged PACKET_OUTGOING
+        # (Linux 'dev_queue_xmit_nit'). The tap is parallel to transmission
+        # (a packet socket observes egress; it does not intercept it).
+        self.deliver_tx_to_packet_sockets(ethernet_packet_tx)
         assert self._if._tx_ring is not None, "PacketHandler must have an injected TX ring to send."
         self._if._tx_ring.enqueue(ethernet_packet_tx)
+
+    def deliver_tx_to_packet_sockets(self, ethernet_packet_tx: EthernetAssembler, /) -> None:
+        """
+        Fan a copy of an outbound assembled frame to every AF_PACKET socket
+        whose '(ifindex, ethertype)' filter matches, tagged PACKET_OUTGOING.
+        Mirrors the RX-side '_deliver_to_packet_sockets'; a cheap
+        empty-registry check keeps the no-packet-socket send path free. Each
+        socket gets a detached 'bytes' copy of the complete link-layer frame
+        exactly as serialized for the wire (same 'assemble' path the TX ring
+        uses, so checksums match).
+
+        Public because the ARP / ND caches call it on the queued-packet
+        flush path (a packet queued pending neighbor resolution is sent by
+        the cache's flush callback straight to the TX ring, bypassing
+        '__send_out_packet'; the cache re-invokes this tap so a
+        queued-then-flushed frame — e.g. a TCP SYN-ACK to an unresolved
+        peer — is still observed on egress, matching Linux
+        'dev_queue_xmit_nit').
+        """
+
+        if not stack.packet_sockets:
+            return
+
+        matches = stack.packet_sockets.matching(
+            ifindex=self._if._ifindex,
+            ethertype=ethernet_packet_tx.type,
+        )
+        if not matches:
+            return
+
+        buffers: list[Buffer] = []
+        ethernet_packet_tx.assemble(buffers)
+        frame = b"".join(bytes(buffer) for buffer in buffers)
+
+        sockaddr_ll = SockAddrLl(
+            ifindex=self._if._ifindex,
+            ethertype=ethernet_packet_tx.type,
+            pkttype=PacketType.PACKET_OUTGOING,
+            mac=ethernet_packet_tx.src,
+        )
+        packet_tx_md = PacketMetadata(frame=frame, sockaddr_ll=sockaddr_ll)
+        for sock in matches:
+            sock.process_packet(packet_tx_md)
 
     def send_link_frame(self, frame: Buffer, /) -> None:
         """

@@ -33,7 +33,7 @@ the higher-level 'ClientTcpSocket' (which lands separately).
 
 pytcp/tests/integration/ipc/test__ipc__socket_session.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket
@@ -42,7 +42,7 @@ from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__socket_rpc import decode_socket_value, encode_socket_request
-from pytcp.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
+from pytcp.runtime.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

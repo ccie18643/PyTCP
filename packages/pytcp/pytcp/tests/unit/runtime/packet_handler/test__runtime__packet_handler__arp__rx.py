@@ -27,11 +27,11 @@ This module contains unit tests for the 'ArpRxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__arp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
@@ -177,6 +177,7 @@ class _ArpRxTestBase(TestCase):
     Common setUp for ARP RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the ARP RX sub-handler over a stub interface and inject
@@ -603,6 +604,7 @@ class TestPacketHandlerArpRxPolicySysctls(_ArpRxTestBase):
     2 semantics).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so a per-test override does not

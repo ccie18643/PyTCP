@@ -48,7 +48,7 @@ socket-API surface. Exercises:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__ip_recverr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno as errno_mod
@@ -75,7 +75,7 @@ from net_proto.lib.packet_rx import PacketRx
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_RECVERR,
     IPPROTO_IP,
     IPPROTO_IPV6,
@@ -83,8 +83,8 @@ from pytcp.socket import (
     MSG_ERRQUEUE,
     AddressFamily,
 )
-from pytcp.socket.error_queue import ERROR_QUEUE__MAX_LEN, SoEeOrigin
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.error_queue import ERROR_QUEUE__MAX_LEN, SoEeOrigin
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,
@@ -315,7 +315,7 @@ def _make_syn_sent_session(
     session.tcp_fsm(syscall=SysCall.CONNECT)
     test._advance(ms=1)
     assert session.state is FsmState.SYN_SENT
-    return sock, session
+    return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
 
 # ---------------------------------------------------------------------------

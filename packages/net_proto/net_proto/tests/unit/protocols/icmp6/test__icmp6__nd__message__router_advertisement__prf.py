@@ -32,24 +32,23 @@ flag bits.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_advertisement__prf.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp6Assembler,
     Icmp6NdMessageRouterAdvertisement,
     Icmp6NdOptions,
     Icmp6NdRoutePreference,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.icmp6.message.nd.icmp6__nd__message__router_advertisement import (
     Icmp6NdMessageRouterAdvertisement as Msg,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -191,6 +190,7 @@ class TestIcmp6NdRouterAdvertisementPrfAsserts(TestCase):
     Constructor argument validation for the Prf field.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the default constructor kwargs.

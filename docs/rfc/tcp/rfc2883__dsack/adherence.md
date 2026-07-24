@@ -96,15 +96,20 @@ remaining blocks (`tcp__session.py:1701-1704`). The
 OOO segment that contains the duplicate is one of
 those blocks.
 
-A subtle deviation: §4 rule 4 says the SECOND SACK
-block "should specify that (possibly larger) block of
-data" — i.e., the OOO block containing the duplicate
-should immediately follow the DSACK marker. PyTCP
-emits OOO blocks in dict-insertion order, so if there
-are multiple OOO blocks, the one containing the
-duplicate is not necessarily second. This is a SHOULD
-deviation that compounds the §4 first-block-ordering
-gap noted in the RFC 2018 audit.
+§4 rule 4 says the SECOND SACK block "should specify
+that (possibly larger) block of data" — i.e., the OOO
+block containing the duplicate should immediately
+follow the DSACK marker. PyTCP emits OOO blocks in
+newest-first order via
+`reversed(session._ooo_packet_queue.items())`
+(`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__tx.py:675`),
+so the most-recent OOO arrival is the first block after
+the DSACK marker. In the OOO-overlap case the duplicate
+is carried by the triggering packet's OOO segment, so
+that block immediately follows the DSACK marker,
+satisfying rule 4's second-block placement. This aligns
+with the RFC 2018 §4 first-block ordering, which is now
+met (newest-first), not a deviation.
 
 ### Rule (5) — Additional SACK blocks per RFC 2018
 
@@ -291,10 +296,11 @@ already addresses the spurious-retransmit accounting
 that DSACK was meant to provide.
 
 The §4 rule 4 SHOULD ("second block specifies the
-larger block of data") inherits the RFC 2018 §4
-first-block ordering issue: the OOO queue is iterated
-in dict-insertion order rather than triggering-
-segment-first order. In the typical case (single OOO
-block + duplicate) the second block is correctly the
-OOO range; in the multi-OOO case the ordering may
-deviate from the strict §4 rule 4 reading.
+larger block of data") is satisfied for the OOO case:
+the OOO queue is iterated newest-first (reversed) via
+`reversed(session._ooo_packet_queue.items())`, matching
+the RFC 2018 §4 first-block ordering (now met). The
+DSACK marker is emitted first, then the newest OOO
+block — the one carrying the triggering duplicate —
+follows immediately, so the "second block" reflects the
+containing OOO range in the tested single-OOO scenario.

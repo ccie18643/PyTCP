@@ -2,8 +2,8 @@
 
 | Field           | Value                                                                                                |
 |-----------------|------------------------------------------------------------------------------------------------------|
-| Status          | partial — interface counters via Link API; route table / neighbor cache / socket list deferred       |
-| Module paths    | `pytcp.stack.link.stats` (shipped); `pytcp.stack.{route,neighbor}` (TBD); `pytcp.stack.sockets` (raw dict today) |
+| Status          | partial — counters, routes, neighbors, and sockets all readable as frozen snapshots; not yet unified behind one `stack.introspect` namespace |
+| Module paths    | In-process `stack.link.stats` / `stack.route.list_routes()` / `stack.neighbor.list_neighbors()`; out-of-process `client.ss` / `client.route` / `client.neighbor` and the `pytcp ss` / `route` / `neighbor` CLI |
 | Linux analogue  | `/proc/net/route`, `/proc/net/arp`, `ss`, `/proc/net/dev`, `ip -s link show`                        |
 
 ## Purpose
@@ -22,14 +22,16 @@ the caller could mutate. The Linux equivalent is
 
 ## Current state (Phase 1 — partial)
 
-Three categories of introspection:
+Four categories of introspection, all reading as frozen
+copy-by-value snapshots; what is not yet done is unifying
+them behind a single `stack.introspect` namespace.
 
-| Category              | Status                                                         |
-|-----------------------|----------------------------------------------------------------|
-| Per-interface counters| **shipped** — `pytcp.stack.link.stats` returns a frozen `LinkStats` snapshot |
-| Route table           | not yet (Route API not yet shipped)                            |
-| Neighbor cache        | not yet (Neighbor API not yet shipped)                         |
-| Socket list           | partial — `pytcp.stack.sockets` is a live dict (Phase-3 violation; will be wrapped) |
+| Category               | Status                                                         |
+|------------------------|----------------------------------------------------------------|
+| Per-interface counters | **shipped** — `stack.link.stats` returns a frozen `LinkStats` snapshot |
+| Route table            | **shipped** — `stack.route.list_routes()` (in-process) / `client.route` / `pytcp route`, returning frozen `Route` snapshots |
+| Neighbor cache         | **shipped** — `stack.neighbor.list_neighbors()` (in-process) / `client.neighbor` / `pytcp neighbor`, returning frozen snapshots |
+| Socket list            | **shipped** — `client.ss.list_sockets()` / `pytcp ss` return frozen `SocketSnapshot`s; `stack.sockets` is a `SocketTable` (a read-only in-process wrapper is still pending) |
 
 ### Shipped: `LinkApi.stats`
 
@@ -47,48 +49,43 @@ s = link.stats
 
 Full documentation at [`link_api.md`](link_api.md) §LinkStats.
 
-### Partial: socket list
+### Shipped: socket list
 
-`pytcp.stack.sockets` is a `dict[SocketId, socket]`
-populated by every `bind()` / connect path. Today it is
-a live dict — consumers can iterate it, but mutating it
-would corrupt stack state. The intended Phase-3
-introspection wrap:
+`client.ss.list_sockets()` (and the `pytcp ss` CLI) return
+a `tuple[SocketSnapshot, ...]` — a frozen dataclass exposing
+address family, socket type, local / remote address, local /
+remote port, state, and queue depths, mirroring Linux's
+`ss -tan` columns. The snapshots are built by
+`pytcp.stack.socket_introspect`.
 
-```python
-# Anticipated when introspection-API consolidation lands.
-stack.introspect.list_sockets()    # → tuple[SocketSnapshot, ...]
-```
+In-process, `stack.sockets` is a `SocketTable` populated by
+every `bind()` / connect path. A read-only snapshot wrapper
+over it for in-process callers (matching the out-of-process
+`client.ss` surface) is the one remaining piece.
 
-where `SocketSnapshot` is a frozen dataclass exposing
-`local_address`, `remote_address`, `local_port`,
-`remote_port`, `state`, `family`, `type`, `proto`,
-counters — Linux's `ss -tan` columns.
+## What ships today vs. the unified namespace
 
-## Anticipated full surface (when complete)
-
-The Introspection API is likely to consolidate into a
-single namespace once the Route / Neighbor APIs land:
+The per-category reads all ship; the remaining work is
+consolidating them behind one `stack.introspect` namespace.
 
 ```python
 # Per-interface
-stack.link.stats                        # shipped
-stack.link.name                         # shipped
+stack.link.stats                          # shipped
+stack.link.name                           # shipped
 
 # Per-route (Route API)
-stack.route.list_ip4_routes()           # not yet
-stack.route.list_ip6_routes()           # not yet
+stack.route.list_routes(family=...)       # shipped
 
 # Per-neighbor (Neighbor API)
-stack.neighbor.list_ip4_entries()       # not yet
-stack.neighbor.list_ip6_entries()       # not yet
+stack.neighbor.list_neighbors(family=...) # shipped
 
-# Per-socket (consolidated)
-stack.introspect.list_sockets()         # not yet (today: stack.sockets raw dict)
+# Per-socket
+client.ss.list_sockets()                  # shipped (out-of-process); frozen SocketSnapshots
 
-# Process-wide
-stack.introspect.is_running             # → bool (today: stack.link.is_running)
-stack.introspect.startup_time           # → float | None
+# Consolidated namespace
+stack.introspect.list_sockets()           # not yet (single unified namespace)
+stack.introspect.is_running               # not yet (today: stack.link.is_running)
+stack.introspect.startup_time             # not yet
 ```
 
 Each accessor returns a frozen, copy-by-value snapshot.
@@ -104,10 +101,13 @@ The introspection contract per CLAUDE.md is verbatim:
 > equivalent is `/proc/net/*` text — readable, never
 > writable by reading.
 
-`LinkApi.stats` already meets this; the socket dict
-violates it (live reference). The other two surfaces
-(route / neighbor) don't exist yet so the violation
-doesn't apply.
+`LinkApi.stats`, `stack.route.list_routes()`,
+`stack.neighbor.list_neighbors()`, and the out-of-process
+`client.ss` / `client.route` / `client.neighbor` surfaces
+all meet this — each returns a frozen snapshot. The one
+remaining gap is a read-only in-process wrapper over the
+`stack.sockets` `SocketTable`, so an in-process caller can
+still reach a live reference there.
 
 ## Deferred / out of scope
 

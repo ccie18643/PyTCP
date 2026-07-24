@@ -31,12 +31,10 @@ This module contains integration tests for the IPv6 TX packet-handler path.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import Any, override
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -59,6 +57,7 @@ from pytcp.tests.lib.network_testcase import (
     IP6__UNSPECIFIED,
     STACK__IP6_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -462,6 +461,7 @@ class TestIp6TxNoIp6Support(Ip6TestCase):
     disabled — '_phtx_ip6' must short-circuit before assembly.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv6 protocol
@@ -567,6 +567,7 @@ class TestIp6TxRfc4291LinkLocalScopeGate(Ip6TestCase):
 
     _LINK_LOCAL_SRC = Ip6Address("fe80::7")
 
+    @override
     def setUp(self) -> None:
         """
         Add a link-local host to '_ip6_ifaddr' / '_ip6_unicast' so
@@ -699,4 +700,93 @@ class TestIp6TxRfc4291LinkLocalScopeGate(Ip6TestCase):
             tx_status,
             TxStatus.DROPPED__IP6__SRC_SCOPE_MISMATCH,
             msg="Global src + global dst must NOT drop on scope mismatch.",
+        )
+
+
+# IPv6 header lives at Ethernet offset 14; byte 7 within the IPv6
+# header is the Hop Limit.
+_IP6__HOP_LIMIT_OFFSET = 14 + 7
+
+
+class TestIp6TxMulticastHopLimit(Ip6TestCase):
+    """
+    The IPv6 outbound multicast Hop-Limit default tests.
+
+    Outbound IPv6 datagrams with a multicast destination default
+    to Hop-Limit=1 (Linux 'IPV6_DEFAULT_MCASTHOPS') so multicast
+    traffic does not leak past the local link unless the caller
+    explicitly raises it — mirroring the IPv4 TTL=1 default.
+    """
+
+    def test__ip6__tx__multicast_dst_no_caller_hop__defaults_to_1(self) -> None:
+        """
+        Ensure outbound IPv6 datagrams with a multicast
+        destination ship with Hop-Limit=1 when the caller does
+        not specify 'ip6__hop' — multicast is local-link by
+        default and only escapes when the sender explicitly opts
+        in.
+
+        Reference: Linux net/ipv6/af_inet6.c inet6_create
+        (np->mcast_hops = IPV6_DEFAULT_MCASTHOPS = 1).
+        """
+
+        self._packet_handler._phtx_ip6(
+            ip6__src=STACK__IP6_HOST.address,
+            ip6__dst=IP6__MULTICAST__ALL_NODES,
+        )
+
+        self.assertEqual(
+            len(self._frames_tx),
+            1,
+            msg="Multicast outbound must emit exactly one frame.",
+        )
+        self.assertEqual(
+            self._frames_tx[0][_IP6__HOP_LIMIT_OFFSET],
+            1,
+            msg="Multicast outbound datagrams must default to Hop-Limit=1.",
+        )
+
+    def test__ip6__tx__multicast_dst_caller_overrides_hop__preserved(self) -> None:
+        """
+        Ensure a caller-supplied 'ip6__hop' overrides the
+        multicast-default of 1 — the sender can choose to
+        multicast beyond the local link by raising the
+        Hop-Limit.
+
+        Reference: Linux net/ipv6/ip6_output.c ip6_sk_dst_hoplimit
+        (explicit IPV6_MULTICAST_HOPS overrides the default).
+        """
+
+        self._packet_handler._phtx_ip6(
+            ip6__src=STACK__IP6_HOST.address,
+            ip6__dst=IP6__MULTICAST__ALL_NODES,
+            ip6__hop=64,
+        )
+
+        self.assertEqual(
+            self._frames_tx[0][_IP6__HOP_LIMIT_OFFSET],
+            64,
+            msg="Caller-supplied multicast Hop-Limit must be preserved verbatim.",
+        )
+
+    def test__ip6__tx__unicast_dst_no_caller_hop__defaults_to_64(self) -> None:
+        """
+        Ensure outbound IPv6 datagrams with a unicast
+        destination retain the IP6__DEFAULT_HOP_LIMIT=64 default
+        — regression net for the multicast carve-out so the
+        unicast common path keeps working.
+
+        Reference: PyTCP test infrastructure (regression net for
+        the multicast Hop-Limit carve-out).
+        """
+
+        self._packet_handler._phtx_ip6(
+            ip6__src=STACK__IP6_HOST.address,
+            ip6__dst=HOST_A__IP6_ADDRESS,
+        )
+
+        self.assertEqual(
+            self._frames_tx[0][_IP6__HOP_LIMIT_OFFSET],
+            64,
+            msg="Unicast outbound datagrams must keep the IP6__DEFAULT_HOP_LIMIT=64 default.",
         )

@@ -34,7 +34,7 @@ Plan: docs/refactor/sysctl_per_interface.md.
 
 pytcp/stack/sysctl_iface.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import sys

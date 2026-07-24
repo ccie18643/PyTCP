@@ -36,7 +36,7 @@ installed) via 'trigger', and the client's worker debounces.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_dhcp6_trigger.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest.mock import create_autospec

@@ -54,15 +54,15 @@ Reference RFCs:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__timestamps.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -1019,7 +1019,7 @@ class TestTcpTimestampsPhase1PassiveCrossRfc(TcpTestCase):
         sock._tcp_session = session
         stack.sockets[sock.socket_id] = sock
         session.tcp_fsm(syscall=_SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__ts__passive_open_with_peer_tsopt_emits_syn_ack_with_tsopt(self) -> None:
         """

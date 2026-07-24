@@ -34,7 +34,7 @@ RA RX path immediately after the stable
 
 - New prefix → generate via `Ip6IfAddr.from_rfc8981_temp`,
   spawn an async DAD claim via the §20.1
-  `_claim_ip6_address_async` helper (which runs DAD on a
+  `claim_ip6_address_async` helper (which runs DAD on a
   daemon worker thread without blocking the RX path),
   append `Icmp6TempAddress(address, prefix,
   preferred_until, valid_until, created_at,
@@ -109,7 +109,7 @@ adds additional unlinkability for outbound flows once
 - Two consecutive calls yield different IIDs.
 - /64 mask required.
 - Reserved-IID values regenerated to non-reserved.
-- Retry exhaustion raises RuntimeError.
+- Retry exhaustion raises `Ip6IfAddrSanityError`.
 
 `packages/pytcp/pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__rfc8981_temp.py`
 (§18b wire-state + RX-driven claim — this commit):

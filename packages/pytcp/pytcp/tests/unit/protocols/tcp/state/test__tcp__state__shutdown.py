@@ -27,7 +27,7 @@ Unit tests for ShutdownState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__shutdown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -51,3 +51,22 @@ class TestShutdownState(TestCase):
         s = ShutdownState()
         self.assertFalse(s.rd, msg="rd must default to False.")
         self.assertFalse(s.wr, msg="wr must default to False.")
+
+
+class TestShutdownState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for ShutdownState.
+    """
+
+    def test__tcp_state__shutdown__is_slotted(self) -> None:
+        """
+        Ensure ShutdownState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(ShutdownState(), "__dict__"),
+            msg="ShutdownState must be declared with slots=True (no per-instance __dict__).",
+        )

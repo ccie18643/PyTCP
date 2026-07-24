@@ -29,13 +29,11 @@ and the wrap-aware add/sub/in-range utilities.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__seq.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.int_checks import UINT_32__MAX
 from pytcp.protocols.tcp.tcp__seq import (
@@ -48,6 +46,7 @@ from pytcp.protocols.tcp.tcp__seq import (
     lt32,
     sub32,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -443,6 +442,19 @@ class TestTcpSeq__AddSub(TestCase):
             "_lo": 0x0000_0000,
             "_hi": UINT_32__MAX,
             "_result": True,
+        },
+        {
+            # Far-wrap boundary: 'x' sits at the maximum forward distance
+            # (2**32-1 ahead of 'lo', i.e. one step *before* it), so it is
+            # outside a small forward window. This pins the 32-bit mask
+            # '(x - lo) & UINT_32__MAX' against an off-by-wrap error in the
+            # distance computation, where the masked distance (2**32-1)
+            # would otherwise collapse to 0 and wrongly report 'x' in range.
+            "_description": "'x' at maximum forward distance (2**32-1 ahead of 'lo') is outside a small range.",
+            "_x": UINT_32__MAX,
+            "_lo": 0x0000_0000,
+            "_hi": 0x0000_0010,
+            "_result": False,
         },
     ]
 )

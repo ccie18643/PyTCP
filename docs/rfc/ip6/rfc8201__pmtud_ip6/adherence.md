@@ -24,13 +24,22 @@ PyTCP **partially implements** RFC 8201:
   `notify_pmtu`.
 - The 1280-byte IPv6 minimum MTU floor is enforced
   in `TcpSession._apply_pmtu_update`.
+- TCP performs the RFC 1191 §6.5 retransmit walkback
+  on an MSS shrink: when an in-flight segment exceeds
+  the new MSS, all in-flight segments are marked lost
+  and `snd_nxt` is rewound to `snd_una` so the next
+  timer tick re-emits from `snd_una` at the smaller
+  MSS (without halving cwnd / ssthresh — the path
+  narrowed but did not congest).
 
 What still **does not happen**:
 
-- Per-destination MTU aging — entries never expire.
-- Active retransmit-walkback when an in-flight TCP
-  segment exceeds the new MSS (deferred alongside
-  RFC 8899 DPLPMTUD probing).
+- Per-destination MTU aging — classical
+  `stack.pmtu_cache` entries never expire. Active
+  re-probing to *raise* the PMTU is available through
+  the shipped RFC 8899 DPLPMTUD engine (opt-in via
+  `tcp.mtu_probing`), but the classical cache itself
+  has no timer-driven expiry.
 
 ---
 
@@ -81,9 +90,12 @@ guard so MSS only shrinks on a Packet Too Big.
 > 'Aging the Path MTU'."
 
 **Adherence:** not implemented. `stack.pmtu_cache`
-is process-lifetime; entries do not expire. Periodic
-re-discovery is left for the RFC 4821 / 8899 PLPMTUD
-follow-up.
+is process-lifetime; classical entries do not expire.
+The RFC 4821 / 8899 PLPMTUD engine that performs
+active re-probing (including raising the PMTU) is now
+shipped and operator-reachable via `tcp.mtu_probing`;
+what remains absent is timer-driven expiry of the
+classical `stack.pmtu_cache` entries themselves.
 
 ---
 
@@ -95,6 +107,7 @@ follow-up.
 | §4 ICMPv6 Packet Too Big MTU update for TCP         | shipped (substrate) — TCP path goes through the same `TcpSession._apply_pmtu_update` covered by `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__icmp__pmtu.py` (the v4 Frag-Needed test exercises the shared callback) |
 | §4 1280-byte minimum MTU floor                      | shipped — `TcpSession._apply_pmtu_update` floor logic |
 | §4 PMTU only shrinks                                | shipped — `test__tcp__session__icmp__pmtu.py::test__icmp4__frag_needed__never_grows_snd_mss` |
+| RFC 1191 §6.5 retransmit walkback on MSS shrink     | shipped — `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__pmtu_walkback.py` |
 | §4 Path MTU Aging                                   | n/a (gap) |
 
 ---
@@ -110,6 +123,9 @@ follow-up.
 
 The substrate (`stack.pmtu_cache`, embedded-header
 demux, ICMPv6 PacketTooBig message class, TCP/UDP
-_apply_pmtu_update callbacks) makes the remaining aging gap
-addressable as a focused feature commit alongside
-RFC 8899 DPLPMTUD probing.
+_apply_pmtu_update callbacks, and the RFC 1191 §6.5
+retransmit walkback) is shipped; active MTU re-probing
+lands through the RFC 8899 DPLPMTUD engine
+(`tcp.mtu_probing`). The remaining gap is timer-driven
+expiry of classical `stack.pmtu_cache` entries — a
+focused follow-up commit.

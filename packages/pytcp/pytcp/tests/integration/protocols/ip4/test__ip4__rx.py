@@ -31,10 +31,10 @@ This module contains integration tests for the IPv4 RX packet-handler path.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from net_proto import (
@@ -54,6 +54,7 @@ from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -1464,6 +1465,7 @@ class TestIp4RxDhcpClientNoUnicast(Ip4TestCase):
     OFFER exchange can complete before address assignment.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then clear '_ip4_ifaddr' so the
@@ -1529,6 +1531,7 @@ class TestIp4RxMulticast(Ip4TestCase):
 
     _ALL_NODES__IP4__MULTICAST_MAC = MacAddress("01:00:5e:00:00:01")
 
+    @override
     def setUp(self) -> None:
         """
         Join the IPv4 all-nodes multicast Ethernet MAC so the inbound

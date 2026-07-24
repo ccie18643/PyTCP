@@ -35,7 +35,7 @@ Workflow for adding a knob: .claude/skills/sysctl_knob/SKILL.md
 
 pytcp/stack/sysctl.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import sys
@@ -133,6 +133,26 @@ def _resolve(key: str) -> _Knob:
     return knob
 
 
+def _split_iface_key(key: str) -> tuple[str, str] | None:
+    """
+    Split an interface-scope operator key '<ns...>.<ifname>.<field>'
+    into '(base '<ns...>.<field>', ifname)' when its base maps to a
+    registered interface-scope knob; otherwise 'None'. The '<ifname>'
+    segment always sits just before the field — Linux's per-iface
+    sysctls put the device name immediately before the leaf field name
+    (e.g. 'net.ipv4.conf.<iface>.arp_ignore').
+    """
+
+    parts = key.split(".")
+    if len(parts) < 3:
+        return None
+    base = ".".join(parts[:-2] + parts[-1:])
+    candidate = _registry.get(base)
+    if candidate is not None and candidate.interface_scope:
+        return base, parts[-2]
+    return None
+
+
 def _resolve_with_iface(key: str) -> tuple[_Knob, str | None]:
     """
     Resolve a sysctl key against the registry, splitting
@@ -157,20 +177,29 @@ def _resolve_with_iface(key: str) -> tuple[_Knob, str | None]:
             )
         return knob, None
 
-    # The operator key may be the expanded form
-    # '<ns...>.<ifname>.<field>' for an interface-scope knob
-    # whose registered base is '<ns...>.<field>'. The
-    # '<ifname>' segment always sits just before the field —
-    # Linux's per-iface sysctls put the device name
-    # immediately before the leaf field name (e.g.
-    # 'net.ipv4.conf.<iface>.arp_ignore').
-    parts = key.split(".")
-    if len(parts) >= 3:
-        base = ".".join(parts[:-2] + parts[-1:])
-        candidate = _registry.get(base)
-        if candidate is not None and candidate.interface_scope:
-            return candidate, parts[-2]
+    split = _split_iface_key(key)
+    if split is not None:
+        base, ifname = split
+        return _registry[base], ifname
 
+    raise KeyError(f"unknown sysctl: {key!r}")
+
+
+def _resolve_knob(key: str) -> _Knob:
+    """
+    Resolve a key to its knob for knob-level metadata access (e.g.
+    'describe'), tolerant of how the knob is addressed: a flat key, an
+    interface-scope base key '<ns>.<field>', or an interface-scope
+    operator key '<ns>.<ifname>.<field>' all resolve to the same knob.
+    Raises 'KeyError' when no knob matches.
+    """
+
+    knob = _registry.get(key)
+    if knob is not None:
+        return knob
+    split = _split_iface_key(key)
+    if split is not None:
+        return _registry[split[0]]
     raise KeyError(f"unknown sysctl: {key!r}")
 
 
@@ -234,9 +263,14 @@ def describe(key: str) -> str:
     """
     Return the human-readable description string registered
     with the knob. Empty string when no description was given.
+
+    Tolerant of interface-scope addressing — a flat key, an
+    interface-scope base key '<ns>.<field>', or a slot-qualified
+    '<ns>.<ifname>.<field>' operator key all resolve to the same
+    knob-level description.
     """
 
-    return _resolve(key).description
+    return _resolve_knob(key).description
 
 
 def snapshot() -> dict[str, Any]:

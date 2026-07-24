@@ -40,7 +40,7 @@ introspection (Phase 3), and mutation via 'set_mtu' /
 
 pytcp/stack/link.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass, fields
@@ -66,9 +66,8 @@ class LinkFlag(Enum):
                     (Ethernet on TAP).
     - MULTICAST   — interface carries multicast traffic
                     (Ethernet on TAP; IPv6 ND requires it).
-    - LOOPBACK    — loopback interface (no consumer today;
-                    listed for forward-compat with a future
-                    loopback adapter).
+    - LOOPBACK    — loopback interface (the 'lo' device;
+                    internal delivery only, never on the wire).
     - POINTOPOINT — point-to-point link (TUN; no L2 broadcast
                     domain).
 
@@ -86,6 +85,7 @@ class LinkFlag(Enum):
 _FLAGS_BY_LAYER: dict[InterfaceLayer, frozenset[LinkFlag]] = {
     InterfaceLayer.L2: frozenset({LinkFlag.BROADCAST, LinkFlag.MULTICAST}),
     InterfaceLayer.L3: frozenset({LinkFlag.POINTOPOINT}),
+    InterfaceLayer.LOOPBACK: frozenset({LinkFlag.LOOPBACK}),
 }
 
 
@@ -259,7 +259,7 @@ class LinkApi:
             "'stack.link.interface(ifindex)' (Linux 'ip link ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "LinkApi":
+    def interface(self, ifindex: int, /) -> LinkApi:
         """
         Return a 'LinkApi' bound to the interface registered under
         'ifindex' — the device selector, Linux 'ip link … dev <ifX>'
@@ -291,12 +291,11 @@ class LinkApi:
 
         Returns None on L3 (TUN) interfaces, which have no
         Ethernet layer and therefore no MAC. The packet
-        handler stores '_mac_unicast' only on the L2
-        subclass; the 'getattr' fallback handles the L3
-        case without an isinstance check.
+        handler's 'mac_unicast' read surface returns None on
+        L3 without an isinstance check here.
         """
 
-        return getattr(self._resolve_handler(), "_mac_unicast", None)
+        return self._resolve_handler().mac_unicast
 
     @property
     def mtu(self) -> int:
@@ -305,7 +304,7 @@ class LinkApi:
         'ip link show eth0 | grep mtu' equivalent.
         """
 
-        return self._resolve_handler()._interface_mtu
+        return self._resolve_handler().interface_mtu
 
     @property
     def name(self) -> str | None:
@@ -320,7 +319,7 @@ class LinkApi:
         the name plumbing.
         """
 
-        return self._resolve_handler()._interface_name
+        return self._resolve_handler().interface_name
 
     @property
     def interface_layer(self) -> InterfaceLayer:
@@ -329,7 +328,7 @@ class LinkApi:
         Linux 'ip link show eth0 | grep link/' equivalent.
         """
 
-        return self._resolve_handler()._interface_layer
+        return self._resolve_handler().interface_layer
 
     @property
     def is_running(self) -> bool:
@@ -372,10 +371,10 @@ class LinkApi:
         """
 
         handler = self._resolve_handler()
-        rx = handler._packet_stats_rx
-        tx = handler._packet_stats_tx
-        link = handler._link_stats
-        layer = handler._interface_layer
+        rx = handler.packet_stats_rx
+        tx = handler.packet_stats_tx
+        link = handler.link_stats
+        layer = handler.interface_layer
 
         if layer is InterfaceLayer.L2:
             rx_packets = rx.ethernet__pre_parse + rx.ethernet_802_3__pre_parse
@@ -428,34 +427,16 @@ class LinkApi:
 
         handler = self._resolve_handler()
 
-        # Canonical source of truth — the packet handler's
-        # '_interface_mtu' is what the TX paths read for MSS
-        # / fragmentation decisions. TCP MSS / UDP & socket Path-MTU
-        # consumers reach it per-destination via
-        # 'stack.egress_interface_mtu(dst)' (no global denormalization).
-        handler._interface_mtu = mtu
-
-        # TX/RX rings cache the MTU as the writev / read size bound.
-        # Resize the BOUND interface's own rings (not the global
-        # 'stack.{tx,rx}_ring' shims) so 'interface(ifindex).set_mtu'
-        # resizes the named device's rings, not the boot interface's.
-        # Suppressed 'AttributeError' handles two cases without bespoke
-        # harness wiring: (a) 'mock__init' fixtures that skip ring
-        # construction (the attribute is None → skipped), and
-        # (b) 'create_autospec(TxRing, spec_set=True)' mocks the
-        # NetworkTestCase harness installs (spec_set blocks unknown-
-        # attribute writes — '_mtu' is declared on TxRing but the
-        # autospec proxy does not expose it).
-        for ring in (
-            getattr(handler, "_tx_ring", None),
-            getattr(handler, "_rx_ring", None),
-        ):
-            if ring is None:
-                continue
-            try:
-                ring._mtu = mtu
-            except AttributeError:
-                pass
+        # The packet handler's 'set_interface_mtu' mutator is the
+        # canonical write point — it updates '_interface_mtu' (what the
+        # TX paths read for MSS / fragmentation decisions; TCP MSS / UDP &
+        # socket Path-MTU consumers reach it per-destination via
+        # 'stack.egress_interface_mtu(dst)') and resizes the BOUND
+        # interface's own RX / TX rings (their read / writev size bound),
+        # not the global 'stack.{tx,rx}_ring' shims. So
+        # 'interface(ifindex).set_mtu' resizes the named device's state,
+        # not the boot interface's.
+        handler.set_interface_mtu(mtu)
 
     def set_mac_address(self, *, mac_address: MacAddress) -> None:
         """
@@ -496,7 +477,7 @@ class LinkApi:
         if stack.stack_running:
             raise RuntimeError("Cannot set MAC address while the stack is running. " "Call 'stack.stop()' first.")
 
-        if handler._interface_layer is not InterfaceLayer.L2:
+        if handler.interface_layer is not InterfaceLayer.L2:
             raise RuntimeError("Cannot set MAC address on L3 (TUN) interface — no Ethernet layer.")
 
         if not mac_address.is_unicast:
@@ -505,7 +486,7 @@ class LinkApi:
                 "(multicast bit must be clear and value must be non-zero)."
             )
 
-        handler._mac_unicast = mac_address
+        handler.set_mac_address(mac_address)
 
     @property
     def flags(self) -> frozenset[LinkFlag]:
@@ -516,14 +497,13 @@ class LinkApi:
 
         Phase-1 derives the set from 'interface_layer':
         L2 (TAP) carries BROADCAST + MULTICAST; L3 (TUN)
-        carries POINTOPOINT. A future commit may add
-        runtime-configurable flags (e.g. LOOPBACK when a
-        loopback adapter lands, NOARP / DEBUG / PROMISC
-        when consumers materialise).
+        carries POINTOPOINT; LOOPBACK (lo) carries LOOPBACK.
+        A future commit may add runtime-configurable flags
+        (NOARP / DEBUG / PROMISC) when consumers materialise.
 
         Returns a 'frozenset' (immutable, copy-by-value)
         so the caller cannot mutate stack-internal state
         through the returned reference.
         """
 
-        return _FLAGS_BY_LAYER[self._resolve_handler()._interface_layer]
+        return _FLAGS_BY_LAYER[self._resolve_handler().interface_layer]

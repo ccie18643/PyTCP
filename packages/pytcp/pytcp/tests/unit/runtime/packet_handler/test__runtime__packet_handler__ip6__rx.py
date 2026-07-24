@@ -27,13 +27,13 @@ This module contains unit tests for the 'Ip6RxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest.mock import create_autospec, patch
 
 from net_addr import Ip6Address
 from net_proto import Ip6Assembler, Ip6Parser, IpProto, RawAssembler
@@ -45,6 +45,7 @@ from pytcp.runtime.packet_handler.dispatch import DispatchRegistry
 from pytcp.runtime.packet_handler.packet_handler__ip6__rx import (
     Ip6RxHandler,
 )
+from pytcp.runtime.socket.raw__socket import RawSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
@@ -120,6 +121,15 @@ class _StubInterface:
     def _ip6_unicast(self) -> list[Ip6Address]:
         return self._ip6_unicast_list
 
+    def _accepts_local_dst_ip6(self, dst: Ip6Address, /) -> bool:
+        """
+        Mirror the base 'PacketHandler._accepts_local_dst_ip6' host-deliver
+        membership test the refactored '_forward_or_deliver_ip6' delegates
+        to.
+        """
+
+        return dst in {*self._ip6_unicast, *self._ip6_multicast}
+
     def _phrx_ip6_frag(self, packet_rx: PacketRx, /) -> None:
         self.dispatched.append("ip6_frag")
 
@@ -181,6 +191,7 @@ class _Ip6RxTestBase(TestCase):
     Common setUp for the IPv6 RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the stub handler and isolate the stack sockets dict.
@@ -190,6 +201,7 @@ class _Ip6RxTestBase(TestCase):
         self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
         self._sockets_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack sockets dict.
@@ -401,17 +413,23 @@ class TestPacketHandlerIp6RxRawSocketMatch(_Ip6RxTestBase):
     The RAW-socket fastpath tests.
     """
 
-    def test__stack__packet_handler__ip6__rx__raw_socket_match_short_circuits(self) -> None:
+    def test__stack__packet_handler__ip6__rx__raw_socket_match_copies_without_consuming(self) -> None:
         """
-        Ensure a matching RAW socket consumes the packet and prevents
-        upper-layer dispatch.
+        Ensure a matching RAW socket receives a copy of the datagram and
+        increments 'raw__socket_match', while the packet still continues
+        to the extension-header chain walker / transport handler — Linux
+        'raw_local_deliver' raw delivery is a non-consuming copy.
 
-        Reference: RFC 8200 §3 (IPv6 RX dispatch).
+        Reference: RFC 8200 §3 (IPv6 RX dispatch — RAW non-consuming copy).
         """
 
-        fake_socket = MagicMock()
+        # The RX fastpath gates on 'isinstance(socket, RawSocket)', so the
+        # stub must be a RawSocket-spec'd autospec (its '__class__' passes
+        # isinstance) — a bare MagicMock is skipped and never matches.
+        fake_socket = create_autospec(RawSocket, spec_set=True, instance=True)
 
         class _MatchAllDict(dict[object, object]):
+            @override
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 
@@ -427,4 +445,8 @@ class TestPacketHandlerIp6RxRawSocketMatch(_Ip6RxTestBase):
             msg="A matched RAW socket must increment raw__socket_match.",
         )
         fake_socket.process_raw_packet.assert_called_once()
-        self.assertEqual(self._if.dispatched, [])
+        self.assertEqual(
+            self._if.dispatched,
+            ["udp"],
+            msg="A matched RAW socket receives a copy but does not consume; the transport handler still dispatches.",
+        )

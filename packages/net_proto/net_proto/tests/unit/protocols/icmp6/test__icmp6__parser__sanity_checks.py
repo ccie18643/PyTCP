@@ -27,18 +27,17 @@ This module contains tests for the ICMPv6 packet parser sanity checks.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__parser__sanity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import Icmp6Parser, Icmp6SanityError, Ip6Parser, PacketRx
 from net_proto.lib.inet_cksum import inet_cksum
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _with_cksum(frame_no_cksum: bytes) -> bytes:
@@ -174,6 +173,7 @@ class TestIcmp6ParserSanityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx with an IPv6 stub.

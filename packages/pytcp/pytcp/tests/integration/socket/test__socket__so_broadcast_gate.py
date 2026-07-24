@@ -42,24 +42,54 @@ acquisition path.
 
 pytcp/tests/integration/socket/test__socket__so_broadcast_gate.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno
 
 from net_addr import Ip4Address
-from pytcp.socket import (
+from net_proto import Icmp4MessageEchoRequest, IpProto
+from pytcp import stack
+from pytcp.runtime.socket import (
     SO_BROADCAST,
     SOL_SOCKET,
     AddressFamily,
+    SocketType,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.ping__socket import PingSocket
+from pytcp.runtime.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
     NetworkTestCase,
 )
 
 STACK__IP: Ip4Address = STACK__IP4_HOST.address
+# Subnet-directed broadcast of the stack's attached 10.0.1.0/24 network.
+STACK__DIRECTED_BROADCAST: Ip4Address = STACK__IP4_HOST.network.broadcast
+
+# Silence the SOCKET log channel for the whole module: RAW sockets log
+# 'Closed socket' from 'addCleanup(close)' callbacks that fire AFTER the
+# harness tearDown restores LOG__CHANNEL, leaking into the runner output.
+# Module-level silencing spans every per-test cleanup (unit_testing.md
+# §10a.4 / §11).
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class TestSocketSoBroadcastGate(NetworkTestCase):
@@ -153,4 +183,296 @@ class TestSocketSoBroadcastGate(NetworkTestCase):
             ctx.exception.errno,
             errno.EACCES,
             msg="send on a broadcast-connected socket without SO_BROADCAST must raise EACCES.",
+        )
+
+
+class TestSocketSoBroadcastGateDirected(NetworkTestCase):
+    """
+    UDP 'sendto' / 'send' to a subnet-directed broadcast
+    destination (the all-ones host of a directly-attached
+    network, e.g. 10.0.1.255) must also have 'SO_BROADCAST'
+    enabled first or fail with EACCES — Linux gates the
+    directed broadcast exactly like the limited broadcast.
+    """
+
+    def test__udp_sendto_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure 'sendto' to a subnet-directed broadcast
+        (10.0.1.255, the broadcast of the attached
+        10.0.1.0/24 network) on a socket with
+        'SO_BROADCAST = 0' raises 'OSError(EACCES)' — Linux
+        marks the directed-broadcast route 'RTN_BROADCAST'
+        and 'udp_sendmsg' requires the flag for it.
+
+        Reference: Linux net/ipv4/udp.c udp_sendmsg (broadcast gate).
+        Reference: Linux net/ipv4/route.c ip_route_output (RTN_BROADCAST).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 9999))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="sendto to a subnet-directed broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__udp_sendto_directed_broadcast_with_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure 'sendto' to a subnet-directed broadcast on a
+        socket with 'SO_BROADCAST = 1' succeeds — the gate
+        only applies when the flag is unset.
+
+        Reference: RFC 1122 §3.3.6 (directed broadcast send).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+        sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+        sent = sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 9999))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="sendto to a directed broadcast with SO_BROADCAST=1 must return the sent byte count.",
+        )
+
+    def test__udp_connected_send_to_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure 'send' on a socket connected to a subnet-directed
+        broadcast peer with 'SO_BROADCAST = 0' raises
+        'OSError(EACCES)' — the gate applies on the connected
+        send path too.
+
+        Reference: Linux net/ipv4/udp.c udp_sendmsg (broadcast gate).
+        """
+
+        sock = UdpSocket(family=AddressFamily.INET4)
+        sock.bind((str(STACK__IP), 0))
+        sock.connect((str(STACK__DIRECTED_BROADCAST), 9999))
+
+        with self.assertRaises(OSError) as ctx:
+            sock.send(b"x")
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="send on a directed-broadcast-connected socket without SO_BROADCAST must raise EACCES.",
+        )
+
+
+class TestSocketSoBroadcastGateRaw(NetworkTestCase):
+    """
+    RAW-socket 'sendto' / 'send' to an IPv4 broadcast destination
+    must have 'SO_BROADCAST' enabled first or fail with EACCES —
+    Linux gates raw broadcast in 'raw_sendmsg' exactly like UDP.
+    """
+
+    def _raw_socket(self) -> RawSocket:
+        """
+        Build an IPv4 RAW socket on an arbitrary experimental IANA
+        protocol number (253, RFC 3692) so the send path exercises
+        the broadcast gate without protocol-specific handling.
+        """
+
+        sock = RawSocket(family=AddressFamily.INET4, type=SocketType.RAW, protocol=IpProto.from_int(253))
+        self.addCleanup(sock.close)
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
+
+    def test__raw_sendto_limited_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure RAW 'sendto' to '255.255.255.255' on a socket with
+        'SO_BROADCAST = 0' (the default) raises 'OSError(EACCES)'
+        — the raw send path enforces the same broadcast gate as
+        UDP.
+
+        Reference: Linux net/ipv4/raw.c raw_sendmsg (broadcast gate).
+        """
+
+        sock = self._raw_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", ("255.255.255.255", 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="RAW sendto to limited broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__raw_sendto_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure RAW 'sendto' to a subnet-directed broadcast
+        (10.0.1.255) on a socket with 'SO_BROADCAST = 0' raises
+        'OSError(EACCES)' — the directed-broadcast gate covers
+        raw sends too.
+
+        Reference: Linux net/ipv4/raw.c raw_sendmsg (broadcast gate).
+        Reference: Linux net/ipv4/route.c ip_route_output (RTN_BROADCAST).
+        """
+
+        sock = self._raw_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="RAW sendto to a directed broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__raw_sendto_broadcast_with_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure RAW 'sendto' to a broadcast destination on a socket
+        with 'SO_BROADCAST = 1' succeeds — the gate only applies
+        when the flag is unset.
+
+        Reference: RFC 1122 §3.3.6 (directed broadcast send).
+        """
+
+        sock = self._raw_socket()
+        sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+        sent = sock.sendto(b"x", (str(STACK__DIRECTED_BROADCAST), 0))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="RAW sendto to a broadcast with SO_BROADCAST=1 must return the sent byte count.",
+        )
+
+    def test__raw_sendto_unicast_without_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure RAW 'sendto' to a unicast destination on a socket
+        with 'SO_BROADCAST = 0' (default) is unaffected by the
+        gate — regression pin so the raw broadcast check does NOT
+        spuriously gate unicast traffic.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = self._raw_socket()
+
+        sent = sock.sendto(b"x", ("10.0.1.91", 0))
+
+        self.assertEqual(
+            sent,
+            1,
+            msg="RAW sendto to a unicast peer must not be affected by SO_BROADCAST.",
+        )
+
+
+class TestSocketSoBroadcastGatePing(NetworkTestCase):
+    """
+    ICMP-Echo (ping) 'sendto' / 'send' to an IPv4 broadcast
+    destination must have 'SO_BROADCAST' enabled first or fail
+    with EACCES — a broadcast Echo Request is the classic
+    amplification ('smurf') vector the flag exists to gate.
+    """
+
+    def _ping_socket(self) -> PingSocket:
+        """
+        Open an IPv4 ICMP Echo datagram socket and register its
+        cleanup.
+        """
+
+        sock = PingSocket(AddressFamily.INET4, SocketType.DGRAM, IpProto.ICMP4)
+        self.addCleanup(sock.close)
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
+
+    @staticmethod
+    def _echo_request() -> bytes:
+        """
+        Build a valid ICMPv4 Echo Request datagram so the send path
+        reaches the broadcast gate (a ping socket rejects anything
+        that is not an Echo Request before the gate).
+        """
+
+        return bytes(Icmp4MessageEchoRequest(id=0x1234, seq=1, data=b"ping"))
+
+    def test__ping_sendto_limited_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure ping 'sendto' to '255.255.255.255' on a socket with
+        'SO_BROADCAST = 0' (the default) raises 'OSError(EACCES)'
+        — the ping send path enforces the same broadcast gate as
+        UDP and RAW.
+
+        Reference: Linux ping(8) -b (broadcast Echo requires SO_BROADCAST).
+        """
+
+        sock = self._ping_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(self._echo_request(), ("255.255.255.255", 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="ping sendto to limited broadcast without SO_BROADCAST must raise EACCES.",
+        )
+        self.assertIn(
+            "SO_BROADCAST",
+            str(ctx.exception),
+            msg="the EACCES must come from the broadcast gate, not the Echo-only restriction.",
+        )
+
+    def test__ping_sendto_directed_broadcast_without_so_broadcast_raises_eaccess(self) -> None:
+        """
+        Ensure ping 'sendto' to a subnet-directed broadcast
+        (10.0.1.255) on a socket with 'SO_BROADCAST = 0' raises
+        'OSError(EACCES)' — the directed-broadcast gate covers
+        ping sends too.
+
+        Reference: Linux ping(8) -b (broadcast Echo requires SO_BROADCAST).
+        Reference: Linux net/ipv4/route.c ip_route_output (RTN_BROADCAST).
+        """
+
+        sock = self._ping_socket()
+
+        with self.assertRaises(OSError) as ctx:
+            sock.sendto(self._echo_request(), (str(STACK__DIRECTED_BROADCAST), 0))
+        self.assertEqual(
+            ctx.exception.errno,
+            errno.EACCES,
+            msg="ping sendto to a directed broadcast without SO_BROADCAST must raise EACCES.",
+        )
+
+    def test__ping_sendto_broadcast_with_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure ping 'sendto' to a broadcast destination on a
+        socket with 'SO_BROADCAST = 1' succeeds — the gate only
+        applies when the flag is unset.
+
+        Reference: RFC 1122 §3.2.2.6 (Echo to a broadcast address).
+        """
+
+        sock = self._ping_socket()
+        sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
+
+        sent = sock.sendto(self._echo_request(), (str(STACK__DIRECTED_BROADCAST), 0))
+
+        self.assertEqual(
+            sent,
+            len(self._echo_request()),
+            msg="ping sendto to a broadcast with SO_BROADCAST=1 must return the sent byte count.",
+        )
+
+    def test__ping_sendto_unicast_without_so_broadcast_succeeds(self) -> None:
+        """
+        Ensure ping 'sendto' to a unicast destination on a socket
+        with 'SO_BROADCAST = 0' (default) is unaffected by the
+        gate — regression pin so the broadcast check does NOT
+        spuriously gate unicast Echo Requests.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = self._ping_socket()
+
+        sent = sock.sendto(self._echo_request(), ("10.0.1.91", 0))
+
+        self.assertEqual(
+            sent,
+            len(self._echo_request()),
+            msg="ping sendto to a unicast peer must not be affected by SO_BROADCAST.",
         )

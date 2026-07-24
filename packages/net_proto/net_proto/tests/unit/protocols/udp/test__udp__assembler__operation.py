@@ -27,17 +27,16 @@ This module contains tests for the UDP protocol packet assembling functionality.
 
 net_proto/tests/unit/protocols/udp/test__udp__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 from unittest.mock import patch
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import UDP__HEADER__LEN, Tracker, UdpAssembler, UdpHeader
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -154,6 +153,7 @@ class TestUdpAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the UDP packet assembler from the parametrized kwargs.
@@ -509,4 +509,44 @@ class TestUdpAssemblerMisc(TestCase):
             len(assembler),
             UDP__HEADER__LEN,
             msg="Default-constructed assembler must serialize to 8 bytes (header only).",
+        )
+
+
+class TestUdpAssemblerNoCksum(TestCase):
+    """
+    The UDP assembler RFC 6935 no-checksum (alternative-mode) tests.
+    """
+
+    def test__udp__assembler__no_cksum_emits_zero(self) -> None:
+        """
+        Ensure constructing the assembler with udp__no_cksum=True emits
+        the literal wire checksum 0x0000 (the alternative zero-checksum
+        mode), bypassing the standard one's-complement computation.
+
+        Reference: RFC 6935 §5 (zero-checksum mode emits literal 0x0000).
+        """
+
+        assembler = UdpAssembler(udp__sport=1000, udp__dport=2000, udp__payload=b"hello", udp__no_cksum=True)
+
+        self.assertEqual(
+            bytes(assembler)[6:8],
+            b"\x00\x00",
+            msg="udp__no_cksum=True must emit a literal 0x0000 checksum.",
+        )
+
+    def test__udp__assembler__default_computes_nonzero_cksum(self) -> None:
+        """
+        Ensure the default (udp__no_cksum=False) computes a real
+        non-zero checksum for the same datagram, contrasting with the
+        zero-checksum mode.
+
+        Reference: RFC 768 (the default UDP checksum is computed over the datagram).
+        """
+
+        assembler = UdpAssembler(udp__sport=1000, udp__dport=2000, udp__payload=b"hello")
+
+        self.assertNotEqual(
+            bytes(assembler)[6:8],
+            b"\x00\x00",
+            msg="The default assembler must compute a non-zero checksum for this datagram.",
         )

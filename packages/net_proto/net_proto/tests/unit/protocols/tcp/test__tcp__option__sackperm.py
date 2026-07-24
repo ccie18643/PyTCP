@@ -27,13 +27,11 @@ Module contains tests for the TCP Sackperm (SACK Permitted) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__sackperm.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__SACKPERM__LEN,
@@ -41,6 +39,7 @@ from net_proto import (
     TcpOptionSackperm,
     TcpOptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionSackpermAssembler(TestCase):
@@ -48,6 +47,7 @@ class TestTcpOptionSackpermAssembler(TestCase):
     The TCP Sackperm option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Sackperm option; the option takes no constructor args.
@@ -217,12 +217,33 @@ class TestTcpOptionSackpermParser(TestCase):
             },
         },
         {
+            "_description": "TCP Sackperm option, buffer 'type' byte is below TcpOptionType.SACKPERM.",
+            "_args": [b"\x03\x02"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Sackperm option type must be {TcpOptionType.SACKPERM!r}. "
+                    f"Got: {TcpOptionType.from_int(3)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Sackperm option, declared 'len' byte differs from TCP__OPTION__SACKPERM__LEN.",
             "_args": [b"\x04\x01"],
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
                     "[INTEGRITY ERROR][TCP] The TCP Sackperm option length value must be 2 bytes. Got: 1"
+                ),
+            },
+        },
+        {
+            "_description": "TCP Sackperm option, declared 'len' over TCP__OPTION__SACKPERM__LEN (buffer present).",
+            "_args": [b"\x04\x03\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Sackperm option length value must be 2 bytes. Got: 3"
                 ),
             },
         },

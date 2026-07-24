@@ -27,13 +27,36 @@ This module contains the methods supporting the stack logging.
 
 pytcp/lib/logger.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import inspect
+import threading
 import time
 
 LOG__START_TIME = time.time()
+
+# Per-thread interface tag. Each per-interface subsystem thread (RX / TX
+# ring, packet handler, neighbor caches, DHCP clients) binds its
+# interface name here at thread start via 'set_log_interface', so every
+# message it emits while processing that NIC's traffic is tagged with the
+# interface. Shared threads (timer, IPC server, the boot thread) leave it
+# unset and their messages render with a blank interface column.
+_log_context = threading.local()
+
+# Width of the interface column. Sized to the common 'tapN' / 'tunN' /
+# short-bridge names; a longer name overflows the column rather than
+# being truncated (correctness over alignment).
+_LOG__INTERFACE_WIDTH = 6
+
+
+def set_log_interface(name: str | None, /) -> None:
+    """
+    Bind (or, with None, clear) the interface name tagged onto every log
+    message emitted from the current thread.
+    """
+
+    _log_context.interface = name
 
 
 def _apply_styles(s: str, /) -> str:
@@ -83,7 +106,12 @@ def log(
     if channel not in LOG__CHANNEL:
         return False
 
-    prefix = f" <g>{(time.time() - LOG__START_TIME):07.02f}</> | <b>{channel.upper():7}</>"
+    interface = getattr(_log_context, "interface", None) or ""
+    prefix = (
+        f" <g>{(time.time() - LOG__START_TIME):07.02f}</>"
+        f" | <lc>{interface:{_LOG__INTERFACE_WIDTH}}</>"
+        f" | <b>{channel.upper():7}</>"
+    )
 
     if LOG__DEBUG:
         frame_info = inspect.stack()[inspect_depth]

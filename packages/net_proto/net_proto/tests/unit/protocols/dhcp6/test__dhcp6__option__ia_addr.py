@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 IA Address option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__ia_addr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -141,6 +142,7 @@ class TestDhcp6OptionIaAddrAssembler(TestCase):
     The DHCPv6 IA Address option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 IA Address option (no sub-options).
@@ -291,6 +293,19 @@ class TestDhcp6OptionIaAddrParserErrors(TestCase):
             f"Got: {Dhcp6OptionType.IA_NA!r}",
             msg="Unexpected wrong-type assert message.",
         )
+
+    def test__dhcp6__option__ia_addr__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_IAADDR, pinning the code-equality assert against a '>='
+        relaxation (the existing wrong-type case only exercises a code
+        below it).
+
+        Reference: RFC 8415 §21.6 (IA Address option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionIaAddr.from_buffer(b"\xff\xff\x00\x18" + b"\x00" * 24)
 
     def test__dhcp6__option__ia_addr__data_too_short(self) -> None:
         """

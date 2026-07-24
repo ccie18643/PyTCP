@@ -35,7 +35,7 @@ gate, and Pipe's in-flight-minus-sacked accounting.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__loss_recovery.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -363,3 +363,125 @@ class TestPipe(TestCase):
         scoreboard = SackScoreboard()
         with self.assertRaises(AssertionError):
             pipe(scoreboard=scoreboard, snd_una=-1, snd_max=4000)
+
+
+class TestLossRecoveryMutationGoldens(TestCase):
+    """
+    Branch-boundary and argument-guard goldens closing the remaining
+    is_lost / next_seg / pipe mutation survivors.
+    """
+
+    def test__is_lost__block_count_at_exact_dup_thresh(self) -> None:
+        """
+        Ensure IsLost rule 1 fires at exactly dup_thresh discontiguous
+        SACK blocks (a '>='→'>' edit would require one more block).
+
+        Reference: RFC 6675 §3 (IsLost: >= dup_thresh blocks above seq).
+        """
+
+        scoreboard = SackScoreboard()
+        for left in (2000, 2200, 2400):
+            scoreboard.add_block(left, left + 100)
+        self.assertTrue(
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=3),
+            msg="exactly 3 blocks above seq with dup_thresh=3 must be lost.",
+        )
+
+    def test__is_lost__byte_rule_uses_dup_thresh_minus_one(self) -> None:
+        """
+        Ensure IsLost rule 2 threshold is (dup_thresh - 1) * mss: with
+        dup_thresh=4 a single SACK block of 3*mss+1 bytes exceeds
+        3*mss and is lost, where a '-'→'^' edit (4^1=5) would raise
+        the bar to 5*mss.
+
+        Reference: RFC 6675 §3 (IsLost: > (dup_thresh-1)*mss bytes above seq).
+        """
+
+        scoreboard = SackScoreboard()
+        scoreboard.add_block(2000, 2000 + 3 * 1460 + 1)
+        self.assertTrue(
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=4),
+            msg="3*mss+1 SACKed bytes with dup_thresh=4 must be lost (kills '-'→'^').",
+        )
+
+    def test__is_lost__argument_guards(self) -> None:
+        """
+        Ensure the mss and dup_thresh guards accept their exact lower
+        bound of 1 and reject 0.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        scoreboard = SackScoreboard()
+        is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1, dup_thresh=1)
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=0, dup_thresh=1)
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=0)
+
+    def test__next_seg_none_when_gap_not_below_snd_max(self) -> None:
+        """
+        Ensure next_seg short-circuits to None when the gap is not
+        strictly below SND.MAX, even when that gap would itself be
+        'lost' — pinning the 'or' against an 'and' edit that would
+        fall through to is_lost and return the gap.
+
+        Reference: RFC 6675 §3 (NextSeg: gap must be below SND.MAX).
+        """
+
+        scoreboard = SackScoreboard()
+        for left in (2000, 2200, 2400):
+            scoreboard.add_block(left, left + 100)
+        self.assertIsNone(
+            next_seg(scoreboard=scoreboard, snd_una=1000, snd_max=1000, mss=1460),
+            msg="gap == snd_max must yield None (kills 'or'→'and').",
+        )
+
+    def test__pipe_continues_past_out_of_window_block(self) -> None:
+        """
+        Ensure pipe continues scanning after skipping an out-of-window
+        block: a leading out-of-window block must not break the loop
+        and drop a later in-window block from the SACKed total.
+
+        Reference: RFC 6675 §4 (Pipe sums all in-window SACKed bytes).
+        """
+
+        scoreboard = SackScoreboard()
+        scoreboard.add_block(500, 600)
+        scoreboard.add_block(2000, 2100)
+        self.assertEqual(
+            pipe(scoreboard=scoreboard, snd_una=1000, snd_max=3000),
+            1900,
+            msg="out-of-window block must be skipped (continue), not break: pipe=1900.",
+        )
+
+    def test__is_lost__block_count_above_dup_thresh_still_lost(self) -> None:
+        """
+        Ensure IsLost rule 1 fires when MORE than dup_thresh blocks lie
+        above seq (4 blocks, dup_thresh=3), pinning the '>=' against an
+        '==' edit that would only fire at exactly dup_thresh.
+
+        Reference: RFC 6675 §3 (IsLost: >= dup_thresh blocks above seq).
+        """
+
+        scoreboard = SackScoreboard()
+        for left in (2000, 2200, 2400, 2600):
+            scoreboard.add_block(left, left + 50)
+        self.assertTrue(
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=3),
+            msg="4 blocks above seq with dup_thresh=3 must be lost (kills '>='→'==').",
+        )
+
+    def test__is_lost__guards_reject_negative(self) -> None:
+        """
+        Ensure the mss and dup_thresh guards reject negative values
+        (kills '> 0'→'!= 0').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        scoreboard = SackScoreboard()
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=-1, dup_thresh=3)
+        with self.assertRaises(AssertionError):
+            is_lost(1000, scoreboard=scoreboard, snd_una=1000, mss=1460, dup_thresh=-1)

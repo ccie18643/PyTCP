@@ -27,15 +27,15 @@ This module contains tests for the IPv6 packet sanity checks.
 
 net_proto/tests/unit/protocols/ip6/test__ip6__parser__sanity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Ip6Address
 from net_proto import Ip6Parser, Ip6SanityError, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -154,6 +154,7 @@ class TestIp6ParserSanityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx so it can be fed to
@@ -199,4 +200,50 @@ class TestIp6ParserSanityChecks(TestCase):
             error.exception.pointer,
             self._results["pointer"],
             msg=f"Unexpected sanity-error pointer for case: {self._description}",
+        )
+
+
+class TestIp6ParserLoopbackBypass(TestCase):
+    """
+    The IPv6 parser 'from_loopback' bypass of the loopback-source
+    martian check.
+    """
+
+    # 40-byte IPv6 header: src=::1 (loopback), dst=a00a:...:0b0b,
+    # next=255, hop=64. On the wire this is an RFC 4291 §2.5.3 martian.
+    _LOOPBACK_SRC_FRAME = (
+        b"\x60\x00\x00\x00\x00\x00\xff\x40\x00\x00\x00\x00\x00\x00\x00\x00"
+        b"\x00\x00\x00\x00\x00\x00\x00\x01\xa0\x0a\xb0\x0b\xc0\x0c\xd0\x0d"
+        b"\xe0\x0e\xf0\x0f\x0a\x0a\x0b\x0b"
+    )
+
+    def test__ip6__parser__loopback_src_rejected_on_the_wire(self) -> None:
+        """
+        Ensure a ::1 source address is rejected on an ordinary (wire)
+        inbound packet, where 'from_loopback' defaults False.
+
+        Reference: RFC 4291 §2.5.3 (loopback source must not appear outside a node).
+        """
+
+        with self.assertRaises(Ip6SanityError):
+            Ip6Parser(PacketRx(self._LOOPBACK_SRC_FRAME))
+
+    def test__ip6__parser__loopback_src_accepted_when_from_loopback(self) -> None:
+        """
+        Ensure a ::1 source address is accepted when the packet is
+        marked 'from_loopback', so the loopback interface's internal
+        delivery is not martian-filtered.
+
+        Reference: RFC 4291 §2.5.3 (loopback filter is a wire-ingress policy).
+        """
+
+        packet_rx = PacketRx(self._LOOPBACK_SRC_FRAME)
+        packet_rx.from_loopback = True
+
+        parser = Ip6Parser(packet_rx)
+
+        self.assertEqual(
+            parser.src,
+            Ip6Address("::1"),
+            msg="A from_loopback packet must parse with its ::1 source intact.",
         )

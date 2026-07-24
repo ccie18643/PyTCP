@@ -99,17 +99,23 @@ if packet_rx.was_fragmented and packet_rx.icmp6.message.type in {
     Icmp6Type.ND__ROUTER_ADVERTISEMENT,
     Icmp6Type.ND__NEIGHBOR_SOLICITATION,
     Icmp6Type.ND__NEIGHBOR_ADVERTISEMENT,
+    Icmp6Type.ND__REDIRECT,
 }:
-    self._packet_stats_rx.icmp6__nd_message__fragmented__drop += 1
+    self._if._packet_stats_rx.icmp6__nd_message__fragmented__drop += 1
     return
 ```
 
-PyTCP does not yet implement Redirect (Icmp6Type
-`ND__REDIRECT` is not defined; inbound Redirects fall into
-the `__phrx_icmp6__unknown` silent-counting handler).
-SEcure Neighbor Discovery's Certification Path Solicitation
-is also out of scope per the North Star (SEND is a
-deliberately-skipped crypto extension — see RFC 8504 §5.5).
+PyTCP implements Redirect: `Icmp6Type.ND__REDIRECT` (137) is
+defined (`icmp6__message.py:68`), the parser materialises an
+`Icmp6NdMessageRedirect`, a dedicated
+`__phrx_icmp6__nd_redirect` handler
+(`packet_handler__icmp6__rx.py:1082`) consumes it into the ND
+cache, and — as shown above — the fragmentation gate covers
+`ND__REDIRECT` so fragmented Redirects are silently dropped
+alongside the other four ND types. SEcure Neighbor
+Discovery's Certification Path Solicitation is out of scope
+per the North Star (SEND is a deliberately-skipped crypto
+extension — see RFC 8504 §5.5).
 
 The gate's scope is intentionally limited to ND types;
 fragmented Echo Requests / Replies and other ICMPv6
@@ -130,7 +136,7 @@ evasion and reassembly-DoS vectors §3 describes.
 
 | Clause | Test file / class |
 |--------|-------------------|
-| Fragmented NS silent-drop + counter | `packages/pytcp/pytcp/tests/unit/stack/packet_handler/test__stack__packet_handler__icmp6__rx.py::TestPacketHandlerIcmp6RxNd::test__stack__packet_handler__icmp6__rx__fragmented_neighbor_solicitation_dropped` |
+| Fragmented NS silent-drop + counter | `packages/pytcp/pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp6__rx.py::TestPacketHandlerIcmp6RxNd::test__stack__packet_handler__icmp6__rx__fragmented_neighbor_solicitation_dropped` |
 | Gate scope is ND-only (Echo Request still passes) | Same class :: `test__stack__packet_handler__icmp6__rx__fragmented_echo_request_passes_through` |
 | `PacketRx.was_fragmented` defaults to False | Implicit — every existing icmp6 / ip6 / tcp / udp test constructs a `PacketRx` from a wire frame and runs to completion (none of which would happen if the new attribute were True by default) |
 | `was_fragmented` set on reassembled PacketRx | Implicit — the gate's positive test only triggers because the IPv6 frag-RX handler sets the flag on its forwarded reassembled packet (commit's frag-rx edit) |

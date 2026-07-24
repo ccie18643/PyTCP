@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 Option Request option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__oro.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -105,6 +106,7 @@ class TestDhcp6OptionOroAssembler(TestCase):
     The DHCPv6 Option Request option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Option Request option (DNS + domain list).
@@ -312,3 +314,33 @@ class TestDhcp6OptionOroBehavior(TestCase):
 
         with self.assertRaises(FrozenInstanceError):
             option.requested_options = []  # type: ignore[misc]
+
+
+class TestDhcp6OptionOroWrongType(TestCase):
+    """
+    The DHCPv6 Option Request option wrong-code-word parser tests.
+    """
+
+    def test__dhcp6__option__oro__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code word equals
+        Dhcp6OptionType.ORO and rejects a code below it, pinning the
+        equality check against a '<=' relaxation.
+
+        Reference: RFC 8415 §21.7 (Option Request option code 6).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionOro.from_buffer(b"\x00\x00\x00\x04\x00\x17\x00\x07")
+
+    def test__dhcp6__option__oro__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code word above
+        Dhcp6OptionType.ORO, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 8415 §21.7 (Option Request option code 6).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionOro.from_buffer(b"\xff\xff\x00\x04\x00\x17\x00\x07")

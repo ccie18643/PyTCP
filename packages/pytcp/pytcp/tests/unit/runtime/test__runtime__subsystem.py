@@ -27,7 +27,7 @@ This module contains tests for the 'Subsystem' base class.
 
 pytcp/tests/unit/runtime/test__runtime__subsystem.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import io
@@ -36,7 +36,31 @@ from typing import override
 from unittest import TestCase
 from unittest.mock import patch
 
+from pytcp import stack
 from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
+
+# Silence the STACK log channel for the whole module: 'Subsystem.stop()'
+# logs 'Stopping <info>' on the 'stack' channel, which leaks from the few
+# lifecycle tests that exercise a real start/stop without patching
+# 'subsystem.log' (unit_testing.md §10a.4). The mock-log tests replace
+# 'log' outright, so they are unaffected by the empty channel set.
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class _TestSubsystem(Subsystem):
@@ -251,6 +275,7 @@ class TestSubsystemLifecycle(TestCase):
     The 'Subsystem.start()' / 'Subsystem.stop()' full-lifecycle tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Redirect 'pytcp.stack.LOG__OUTPUT' to an in-memory buffer so the
@@ -261,6 +286,7 @@ class TestSubsystemLifecycle(TestCase):
         self._log_patch = patch("pytcp.stack.LOG__OUTPUT", io.StringIO())
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Join any subsystem-spawned worker threads before restoring the
@@ -299,6 +325,33 @@ class TestSubsystemLifecycle(TestCase):
             self.assertTrue(
                 subsystem.start_hook_called,
                 msg="Subsystem.start() must invoke the '_start' hook after spawning the thread.",
+            )
+        finally:
+            subsystem.stop()
+
+    def test__subsystem__worker_thread_is_daemon(self) -> None:
+        """
+        Ensure 'start()' spawns the worker as a daemon thread so a
+        subsystem blocked in a syscall (e.g. a DHCPv4 client mid-recv)
+        can never wedge interpreter exit after the bounded join in
+        'stop()' times out and leaves it dangling.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        subsystem = _TestSubsystem()
+
+        try:
+            subsystem.start()
+
+            self.assertTrue(
+                subsystem._loop_event.wait(timeout=2.0),
+                msg="Precondition: the worker thread must be running.",
+            )
+            assert subsystem._thread is not None
+            self.assertTrue(
+                subsystem._thread.daemon,
+                msg="Subsystem.start() must spawn the worker as a daemon thread.",
             )
         finally:
             subsystem.stop()

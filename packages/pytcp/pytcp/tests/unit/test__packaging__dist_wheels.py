@@ -33,7 +33,7 @@ glob.
 
 pytcp/tests/unit/test__packaging__dist_wheels.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import shutil
@@ -245,7 +245,7 @@ class TestPackagingPytcpWheel(TestCase):
             "pytcp/runtime/packet_handler/",
             "pytcp/protocols/tcp/",
             "pytcp/protocols/ip6/",
-            "pytcp/socket/",
+            "pytcp/runtime/socket/",
             "pytcp/stack/",
             "pytcp/lib/",
         ):

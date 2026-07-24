@@ -27,7 +27,7 @@ This module contains Click type classes related to network addresses.
 
 net_addr/click_types.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import NoReturn, override

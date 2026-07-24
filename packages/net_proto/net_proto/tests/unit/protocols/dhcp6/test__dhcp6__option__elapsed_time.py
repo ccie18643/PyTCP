@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 Elapsed Time option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__elapsed_time.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -91,6 +92,7 @@ class TestDhcp6OptionElapsedTimeAssembler(TestCase):
     The DHCPv6 Elapsed Time option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Elapsed Time option (1234 hundredths).
@@ -210,6 +212,19 @@ class TestDhcp6OptionElapsedTimeParserErrors(TestCase):
             f"Got: {Dhcp6OptionType.ORO!r}",
             msg="Unexpected wrong-type assert message.",
         )
+
+    def test__dhcp6__option__elapsed_time__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_ELAPSED_TIME, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 8415 §21.9 (Elapsed Time option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionElapsedTime.from_buffer(b"\xff\xff\x00\x02\x00\x01")
 
     def test__dhcp6__option__elapsed_time__wrong_length(self) -> None:
         """

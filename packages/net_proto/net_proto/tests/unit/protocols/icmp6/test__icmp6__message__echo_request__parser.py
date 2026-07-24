@@ -27,14 +27,12 @@ Module contains tests for the ICMPv6 Echo Request message parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_request__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -43,6 +41,7 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip6(frame: bytes) -> PacketRx:
@@ -144,6 +143,7 @@ class TestIcmp6MessageEchoRequestParser(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx for the parametrized frame.

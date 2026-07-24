@@ -34,10 +34,8 @@ for reference; this file is the canonical migration target.
 
 pytcp/tests/integration/protocols/arp/test__arp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, MacAddress
 from net_proto import ArpOperation
@@ -55,6 +53,7 @@ from pytcp.tests.lib.arp_testcase import (
     STACK__MAC_ADDRESS,
     ArpTestCase,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # Shorter aliases used inside the parametrized fixtures.
 _STACK_MAC = STACK__MAC_ADDRESS

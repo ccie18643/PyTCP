@@ -27,15 +27,14 @@ This module contains the IPv4 Lsrr (Loose Source and Record Route) option suppor
 
 net_proto/protocols/ip4/options/ip4__option__lsrr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address
 from net_proto.lib.int_checks import is_uint8
 from net_proto.protocols.ip4.ip4__errors import Ip4IntegrityError
 from net_proto.protocols.ip4.options.ip4__option import Ip4Option, Ip4OptionType

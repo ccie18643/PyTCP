@@ -53,7 +53,7 @@ the artificial-shrink setup.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__plpmtud_probe_emit.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
@@ -61,8 +61,8 @@ from pytcp import stack
 from pytcp.lib.plpmtud import PmtuState
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -159,6 +159,41 @@ class TestTcpPlpmtudProbeEmit(TcpTestCase):
             len(first_frame),
             14 + 1200,
             msg="First emitted frame must be Ethernet(14) + IPv4 packet at BASE_PLPMTU__IP4 (1200).",
+        )
+
+    def test__tcp__plpmtud__probe_emit__sets_df_bit(self) -> None:
+        """
+        Ensure the emitted IPv4 probe segment carries the
+        Don't-Fragment (DF) bit set, so a path that cannot
+        carry the probe-sized packet drops it (black-hole) or
+        returns ICMP Frag-Needed rather than fragmenting it —
+        which would falsely confirm the larger MTU.
+
+        Reference: RFC 8899 §3 (probe MUST set IPv4 DF).
+        Reference: RFC 4821 §7.5 (probe must not be fragmented).
+        """
+
+        session = self._make_established_session()
+        session._plpmtud_probing_enabled = True
+        session._win.snd_mss = 500
+        session._cc.snd_ewn = 5000
+        session._tx.buffer.extend(b"A" * 5000)
+
+        frames_before = len(self._frames_tx)
+        session._transmit_data()
+        first_frame = self._frames_tx[frames_before:][0]
+
+        # IPv4 flags sit in the top 3 bits of byte 6 of the IPv4
+        # header; the frame is Ethernet(14) + IPv4, so the flags
+        # byte is at frame offset 14 + 6 = 20. DF is bit 6 (0x40).
+        ipv4_flags_byte = first_frame[20]
+        self.assertTrue(
+            ipv4_flags_byte & 0x40,
+            msg=f"The emitted IPv4 probe segment must set the DF bit. Got flags byte: {ipv4_flags_byte:#04x}.",
+        )
+        self.assertFalse(
+            ipv4_flags_byte & 0x20,
+            msg=f"The emitted IPv4 probe segment must not set the MF bit. Got flags byte: {ipv4_flags_byte:#04x}.",
         )
 
     def test__tcp__plpmtud__probe_emit__records_in_flight(self) -> None:

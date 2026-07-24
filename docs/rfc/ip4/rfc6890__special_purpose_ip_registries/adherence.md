@@ -73,7 +73,7 @@ zero-address case (the address is 0.0.0.0 by construction
 when no argument is supplied to the constructor — see
 `packages/net_addr/net_addr/ip4_address.py:_address = 0` branch). The
 non-zero 0.0.0.0/8 range is classified via
-`Ip4Address.is_invalid` (`packages/net_addr/net_addr/ip4_address.py:203-210`):
+`Ip4Address.is_invalid` (`packages/net_addr/net_addr/ip4_address.py:244-251`):
 
 ```python
 return (
@@ -86,7 +86,7 @@ covers the full RFC 6890 entry. RFC 1122 §3.2.1.3 allows
 0.0.0.0 as source during host initialisation (DHCPv4
 DISCOVER carrying src=0.0.0.0); PyTCP exempts this case in the
 TX path
-(`packet_handler__ip4__tx.py:322-338`).
+(`packet_handler__ip4__tx.py:432-443`).
 
 ### 127.0.0.0/8 — Loopback
 
@@ -94,9 +94,11 @@ TX path
 > Forwardable: False. Globally Reachable: False."
 
 **Adherence:** met. `Ip4Address.is_loopback` recognises 127/8.
-The RX sanity check at `ip4__parser.py:148-152` rejects
-loopback sources via the `is_reserved` cover (loopback is
-classified reserved in PyTCP's classification chain).
+The RX sanity check at `ip4__parser.py:187-191` rejects
+loopback sources via a dedicated `is_loopback` branch (skipped
+when the RX consumer marked the packet `from_loopback`, so an
+internally looped datagram legitimately carrying a loopback
+source is not rejected).
 
 ### 169.254.0.0/16 — Link-Local
 
@@ -115,7 +117,7 @@ behaviour.
 
 **Adherence:** met. `Ip4Address.is_multicast` recognises
 224/4. The RX sanity check rejects multicast sources
-(`ip4__parser.py:142-146`).
+(`ip4__parser.py:196-200`).
 
 ### 240.0.0.0/4 — Reserved for Future Use
 
@@ -124,9 +126,9 @@ behaviour.
 > False."
 
 **Adherence:** met. `Ip4Address.is_reserved` recognises
-240.0.0.0 - 255.255.255.254 (`packages/net_addr/net_addr/ip4_address.py:185-192`).
+240.0.0.0 - 255.255.255.254 (`packages/net_addr/net_addr/ip4_address.py:226-233`).
 The RX sanity check rejects reserved sources
-(`ip4__parser.py:148-152`).
+(`ip4__parser.py:205-209`).
 
 ### 255.255.255.255/32 — Limited Broadcast
 

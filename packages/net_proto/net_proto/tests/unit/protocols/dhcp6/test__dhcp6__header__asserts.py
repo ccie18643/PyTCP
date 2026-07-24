@@ -27,11 +27,11 @@ This module contains tests for the DHCPv6 header fields and asserts.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -48,6 +48,7 @@ class TestDhcp6HeaderAsserts(TestCase):
     The DHCPv6 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the DHCPv6 header constructor.
@@ -329,7 +330,7 @@ class TestDhcp6HeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp6Header(  # type: ignore[misc]
+            Dhcp6Header(  # type: ignore[call-arg]
                 Dhcp6MessageType.SOLICIT,
                 0xAABBCC,
             )

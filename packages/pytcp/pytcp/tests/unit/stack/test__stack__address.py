@@ -28,9 +28,10 @@ This module contains tests for the address-control API
 
 pytcp/tests/unit/stack/test__stack__address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, override
@@ -40,7 +41,7 @@ from unittest.mock import MagicMock, patch
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp import stack
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.address import (
     AddressApi,
 )
@@ -51,20 +52,21 @@ if TYPE_CHECKING:
 
 class _FakePacketHandler:
     """
-    Minimal packet-handler stand-in for 'AddressApi' tests —
-    exposes the '_ip4_ifaddr' / '_ip6_ifaddr' lists the API mutates
-    plus the IPv6 solicited-node-multicast join/leave hooks. Using a
-    hand-rolled class avoids the autospec ceremony for a 50-attribute
-    production class.
+    Minimal packet-handler stand-in for 'AddressApi' tests — exposes the
+    public 'assign_*_ifaddr' / 'remove_*_ifaddr' mutators (lock + COW
+    internalized, the no-GIL N1 guard) and 'ip4_ifaddr' / 'ip6_ifaddr'
+    read snapshots the API consumes, plus the IPv6 solicited-node-
+    multicast join/leave hooks. Using a hand-rolled class avoids the
+    autospec ceremony for a 50-attribute production class.
     """
 
     def __init__(self) -> None:
         self._ip4_ifaddr: list[Ip4IfAddr] = []
         self._ip6_ifaddr: list[Ip6IfAddr] = []
-        # The Address API serializes its copy-on-write rebinds of the
-        # ifaddr lists under the interface address-config lock (the
-        # no-GIL N1 guard); the stand-in supplies a real reentrant lock
-        # so the context-managed mutation runs.
+        # The mutators rebind the ifaddr lists copy-on-write under the
+        # interface address-config lock (the no-GIL N1 guard); the
+        # stand-in supplies a real reentrant lock so the context-managed
+        # mutation runs.
         self._lock__addr_config = threading.RLock()
         # Record the solicited-node-multicast groups the API joins /
         # leaves so the v6 tests can assert on SNM management.
@@ -74,13 +76,41 @@ class _FakePacketHandler:
         # 'dad_conflict_callback' delegation can be asserted.
         self.dad_claims: list[tuple[Ip6IfAddr, Callable[[Ip6Address], None] | None]] = []
 
-    def _assign_ip6_multicast(self, ip6_multicast: Ip6Address, /) -> None:
-        self.joined_snm.append(ip6_multicast)
+    @property
+    def ip4_ifaddr(self) -> tuple[Ip4IfAddr, ...]:
+        return tuple(self._ip4_ifaddr)
 
-    def _remove_ip6_multicast(self, ip6_multicast: Ip6Address, /) -> None:
-        self.left_snm.append(ip6_multicast)
+    @property
+    def ip6_ifaddr(self) -> tuple[Ip6IfAddr, ...]:
+        return tuple(self._ip6_ifaddr)
 
-    def _claim_ip6_address_async(
+    def assign_ip4_ifaddr(self, ifaddr: Ip4IfAddr, /) -> None:
+        with self._lock__addr_config:
+            self._ip4_ifaddr = [*self._ip4_ifaddr, ifaddr]
+
+    def remove_ip4_ifaddr(self, address: Ip4Address, /) -> int:
+        with self._lock__addr_config:
+            before = len(self._ip4_ifaddr)
+            self._ip4_ifaddr = [host for host in self._ip4_ifaddr if host.address != address]
+            return before - len(self._ip4_ifaddr)
+
+    def assign_ip6_ifaddr(self, ifaddr: Ip6IfAddr, /) -> None:
+        with self._lock__addr_config:
+            self._ip6_ifaddr = [*self._ip6_ifaddr, ifaddr]
+        self.joined_snm.append(ifaddr.address.solicited_node_multicast)
+
+    def remove_ip6_ifaddr(self, address: Ip6Address, /) -> list[Ip6IfAddr]:
+        with self._lock__addr_config:
+            removed_hosts = [host for host in self._ip6_ifaddr if host.address == address]
+            self._ip6_ifaddr = [host for host in self._ip6_ifaddr if host.address != address]
+        for host in removed_hosts:
+            self.left_snm.append(host.address.solicited_node_multicast)
+        return removed_hosts
+
+    def set_ifindex(self, ifindex: int, /) -> None:
+        self._ifindex = ifindex
+
+    def claim_ip6_address_async(
         self,
         *,
         ip6_host: Ip6IfAddr,
@@ -426,33 +456,33 @@ class TestAddressApiIp6(TestCase):
         self._packet_handler = _FakePacketHandler()
         self._api = AddressApi(packet_handler=cast("PacketHandlerL2", self._packet_handler))
 
-    def test__address_api__add_ip6_appends_and_joins_solicited_node_multicast(self) -> None:
+    def test__address_api__add_ip6_with_dad_false_appends_and_joins_solicited_node_multicast(self) -> None:
         """
-        Ensure 'add' with an Ip6IfAddr installs it on '_ip6_ifaddr'
-        and joins the address's solicited-node multicast group,
-        leaving '_ip4_ifaddr' untouched.
+        Ensure 'add(dad=False)' with an Ip6IfAddr installs it directly on
+        '_ip6_ifaddr' and joins the address's solicited-node multicast
+        group, leaving '_ip4_ifaddr' untouched and running no DAD.
 
         Reference: RFC 4291 §2.7.1 (solicited-node multicast address).
         """
 
         host = Ip6IfAddr("2001:db8::5/64")
 
-        self._api.add(ifaddr=host)
+        self._api.add(ifaddr=host, dad=False)
 
         self.assertEqual(
             self._packet_handler._ip6_ifaddr,
             [host],
-            msg="add(Ip6IfAddr) must append the host to '_ip6_ifaddr'.",
+            msg="add(Ip6IfAddr, dad=False) must append the host to '_ip6_ifaddr'.",
         )
         self.assertEqual(
             self._packet_handler.dad_claims,
             [],
-            msg="add(Ip6IfAddr) without a callback must not run DAD.",
+            msg="add(Ip6IfAddr, dad=False) must not run DAD.",
         )
         self.assertEqual(
             self._packet_handler.joined_snm,
             [host.address.solicited_node_multicast],
-            msg="add(Ip6IfAddr) must join the host's solicited-node multicast group.",
+            msg="add(Ip6IfAddr, dad=False) must join the host's solicited-node multicast group.",
         )
         self.assertEqual(
             self._packet_handler._ip4_ifaddr,
@@ -487,10 +517,56 @@ class TestAddressApiIp6(TestCase):
             msg="A DAD-checked add must not install the address directly (the claim worker does on success).",
         )
 
-    def test__address_api__add_ip6_atomically_rebinds_list(self) -> None:
+    def test__address_api__add_ip6_defaults_to_dad(self) -> None:
         """
-        Ensure 'add' with an Ip6IfAddr rebinds '_ip6_ifaddr' to a
-        fresh list object rather than mutating in place, so the TX
+        Ensure a bare IPv6 'add' (no flag) runs DAD by default via the
+        claim engine with a default conflict handler, instead of
+        installing the address directly — DAD is mandatory for every IPv6
+        unicast address.
+
+        Reference: RFC 4862 §5.4 (Duplicate Address Detection — mandatory on all unicast addresses).
+        """
+
+        host = Ip6IfAddr("2001:db8::5/128")
+
+        self._api.add(ifaddr=host)
+
+        self.assertEqual(
+            len(self._packet_handler.dad_claims), 1, msg="A bare IPv6 add must delegate to the claim engine (DAD)."
+        )
+        claimed_host, on_conflict = self._packet_handler.dad_claims[0]
+        self.assertEqual(claimed_host, host, msg="The claimed host must be the supplied address.")
+        self.assertIsNotNone(on_conflict, msg="A default IPv6 add must supply a default DAD-conflict handler.")
+        self.assertEqual(
+            self._packet_handler._ip6_ifaddr,
+            [],
+            msg="A DAD-checked add must not install the address directly.",
+        )
+
+    def test__address_api__add_ip4_ignores_dad_default(self) -> None:
+        """
+        Ensure a bare IPv4 'add' installs directly — IPv4 has no DAD (the
+        dad default never applies; RFC 5227 ACD is the per-protocol
+        engine's concern).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        host = Ip4IfAddr("10.0.0.5/24")
+
+        self._api.add(ifaddr=host)
+
+        self.assertEqual(
+            self._packet_handler._ip4_ifaddr,
+            [host],
+            msg="An IPv4 add must install directly regardless of the dad default.",
+        )
+        self.assertEqual(self._packet_handler.dad_claims, [], msg="An IPv4 add must not run DAD.")
+
+    def test__address_api__add_ip6_with_dad_false_atomically_rebinds_list(self) -> None:
+        """
+        Ensure a direct ('dad=False') IPv6 'add' rebinds '_ip6_ifaddr' to
+        a fresh list object rather than mutating in place, so the TX
         worker reading the list on another thread always sees a
         consistent snapshot.
 
@@ -499,7 +575,7 @@ class TestAddressApiIp6(TestCase):
 
         original_list = self._packet_handler._ip6_ifaddr
 
-        self._api.add(ifaddr=Ip6IfAddr("2001:db8::5/64"))
+        self._api.add(ifaddr=Ip6IfAddr("2001:db8::5/64"), dad=False)
 
         self.assertIsNot(
             self._packet_handler._ip6_ifaddr,
@@ -689,6 +765,7 @@ class TestAddressApiInterfaceSelector(TestCase):
     The 'AddressApi.interface(ifindex)' device-selector tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Register two fake interfaces in a fresh 'stack.interfaces'
@@ -874,3 +951,33 @@ class TestAddressApiUnboundTool(TestCase):
             (host,),
             msg="interface(2) on the unbound tool must read interface 2's address list.",
         )
+
+
+class TestAddressApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every AddressApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__address__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each AddressApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add": {"ifaddr", "dad_conflict_callback", "dad"},
+            "list_ifaddrs": {"family"},
+            "remove": {"address", "abort_bound_sessions"},
+            "replace": {"old_address", "new_ifaddr", "abort_bound_sessions"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(AddressApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"AddressApi.{method} must keep keyword-only parameters {names}.",
+            )

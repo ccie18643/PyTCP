@@ -27,17 +27,16 @@ Module contains tests for the unknown ICMPv4 message parser integrity checks.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__unknown__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import Icmp4IntegrityError, Icmp4Parser, Icmp4SanityError, Ip4Parser, PacketRx
 from net_proto.protocols.icmp4.message.icmp4__message import ICMP4__HEADER__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes, *, ip4__payload_len: int | None = None) -> PacketRx:
@@ -128,6 +127,7 @@ class TestIcmp4MessageUnknownParserIntegrityChecks(TestCase):
     _ip4__payload_len: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv4 payload length.

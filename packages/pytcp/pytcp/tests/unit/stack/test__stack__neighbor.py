@@ -29,9 +29,10 @@ ARP / ND caches.
 
 pytcp/tests/unit/stack/test__stack__neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from types import SimpleNamespace
 from typing import cast, override
 from unittest import TestCase
@@ -44,7 +45,7 @@ from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.runtime.interface_table import InterfaceTable
 from pytcp.runtime.packet_handler import PacketHandlerL2
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.neighbor import NeighborApi, NeighborSnapshot
 
 _ARP_IP = Ip4Address("10.0.1.50")
@@ -72,7 +73,7 @@ class TestStackNeighborApi(TestCase):
         self._nd_cache = NdCache()
         self._handler = cast(
             PacketHandlerL2,
-            SimpleNamespace(_arp_cache=self._arp_cache, _nd_cache=self._nd_cache),
+            SimpleNamespace(arp_cache=self._arp_cache, nd_cache=self._nd_cache),
         )
         self._api = NeighborApi(packet_handler=self._handler)
 
@@ -127,6 +128,44 @@ class TestStackNeighborApi(TestCase):
             len(before),
             1,
             msg="A snapshot returned before a second add must not observe the later entry.",
+        )
+
+    def test__neighbor__list_on_l3_interface_returns_empty(self) -> None:
+        """
+        Ensure 'list_neighbors' on an L3 interface (no ARP / ND cache, e.g.
+        a TUN device) returns an empty snapshot rather than asserting.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(arp_cache=None, nd_cache=None))
+        l3_api = NeighborApi(packet_handler=l3_handler)
+
+        self.assertEqual(
+            l3_api.list_neighbors(),
+            (),
+            msg="An L3 interface has no neighbour caches, so 'list_neighbors' must be empty, not raise.",
+        )
+
+    def test__neighbor__flush_on_l3_interface_is_noop(self) -> None:
+        """
+        Ensure 'flush' on an L3 interface (no ARP / ND cache, e.g. a TUN
+        device) is a no-op rather than asserting — there is nothing to
+        flush.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        l3_handler = cast(PacketHandlerL2, SimpleNamespace(arp_cache=None, nd_cache=None))
+        l3_api = NeighborApi(packet_handler=l3_handler)
+
+        l3_api.flush(family=AddressFamily.INET4)
+        l3_api.flush(family=AddressFamily.INET6)
+
+        self.assertEqual(
+            l3_api.list_neighbors(),
+            (),
+            msg="Flushing an L3 interface must not raise and leaves it with no neighbours.",
         )
 
     def test__neighbor__remove_arp(self) -> None:
@@ -255,3 +294,33 @@ class TestStackNeighborApi(TestCase):
             (),
             msg="A bare mutation on the unbound tool must not touch any interface's cache.",
         )
+
+
+class TestNeighborApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every NeighborApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__neighbor__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each NeighborApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add": {"ip", "mac"},
+            "flush": {"family"},
+            "list_neighbors": {"family"},
+            "remove": {"ip"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(NeighborApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"NeighborApi.{method} must keep keyword-only parameters {names}.",
+            )

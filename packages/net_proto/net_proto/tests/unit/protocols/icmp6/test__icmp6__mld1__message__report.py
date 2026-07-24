@@ -28,12 +28,12 @@ Report message (type 131) support class.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld1__message__report.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_addr import Ip6Address
+from net_addr import Buffer, Ip6Address
 from net_proto.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from net_proto.protocols.icmp6.message.icmp6__message import Icmp6Type
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (
@@ -118,7 +118,7 @@ class TestIcmp6Mld1MessageReportAssembler(TestCase):
         Reference: RFC 2710 §3 (Multicast Listener Report format).
         """
 
-        buffers: list[bytes | bytearray | memoryview] = []
+        buffers: list[Buffer] = []
         Icmp6Mld1MessageReport(multicast_address=_GROUP).assemble(buffers)
         self.assertEqual(
             b"".join(bytes(b) for b in buffers),

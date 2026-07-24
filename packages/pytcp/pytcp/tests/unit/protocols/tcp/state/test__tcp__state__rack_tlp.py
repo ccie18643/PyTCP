@@ -28,9 +28,11 @@ state container in 'pytcp/protocols/tcp/state/tcp__state__rack_tlp.py'.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__rack_tlp.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__rack_tlp import (
@@ -48,6 +50,7 @@ class TestRackTlpState__Defaults(TestCase):
     of 'RackTlpState'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.
@@ -520,4 +523,53 @@ class TestRackTlpState__CancelTlp(TestCase):
             state.tlp_max_ack_delay_ms,
             50,
             msg="cancel_tlp must NOT touch tlp_max_ack_delay_ms.",
+        )
+
+
+class TestRackTlpState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for RackTlpState.
+    """
+
+    def test__tcp_state__rack_tlp__is_slotted(self) -> None:
+        """
+        Ensure RackTlpState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(RackTlpState(), "__dict__"),
+            msg="RackTlpState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestRackTlpState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the RackTlpState mutator signatures.
+    """
+
+    def test__tcp_state__rack_tlp__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the RackTlpState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(RackTlpState.record_segment).parameters["seq"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RackTlpState.record_segment 'seq' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(RackTlpState.prune_segments).parameters["snd_una"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RackTlpState.prune_segments 'snd_una' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(RackTlpState.maybe_close_dsack_round).parameters["snd_una"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RackTlpState.maybe_close_dsack_round 'snd_una' must be keyword-only.",
         )

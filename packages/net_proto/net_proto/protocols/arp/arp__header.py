@@ -27,7 +27,7 @@ This module contains the ARP packet header class.
 
 net_proto/protocols/arp/arp__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,8 +35,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto.lib.enums import EtherType
 from net_proto.lib.proto_struct import ProtoStruct
 from net_proto.protocols.arp.arp__enums import (

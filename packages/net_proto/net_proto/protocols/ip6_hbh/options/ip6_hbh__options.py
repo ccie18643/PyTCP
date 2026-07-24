@@ -27,13 +27,13 @@ This module contains the IPv6 Hop-by-Hop Options packet options class.
 
 net_proto/protocols/ip6_hbh/options/ip6_hbh__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.ip6_hbh.ip6_hbh__errors import (
     Ip6HbhIntegrityError,

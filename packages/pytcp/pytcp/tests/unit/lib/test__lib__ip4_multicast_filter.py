@@ -28,18 +28,17 @@ value type and the RFC 3376 §3.2 per-interface state merge.
 
 pytcp/tests/unit/lib/test__lib__ip4_multicast_filter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 _A = Ip4Address("10.0.0.1")
 _B = Ip4Address("10.0.0.2")
@@ -128,6 +127,26 @@ class TestIp4MulticastFilterMerge(TestCase):
             Ip4MulticastFilter.merge(self._filters),
             self._expected,
             msg=f"Unexpected merged interface filter for case: {self._description}",
+        )
+
+    def test__ip4_multicast_filter__merge_exclude_intersection_is_symmetric(self) -> None:
+        """
+        Ensure merging two EXCLUDE filters with no INCLUDE contributor
+        yields the exact intersection of their blocked-source lists — a
+        source is filtered out only when EVERY EXCLUDE socket blocks it.
+        Uses asymmetric lists with no INCLUDE subtraction so the result
+        distinguishes the head list from the tail (pins the
+        'exclude_lists[0].intersection(*exclude_lists[1:])' indexing).
+
+        Reference: RFC 3376 §3.2 (EXCLUDE state is the source intersection).
+        """
+
+        merged = Ip4MulticastFilter.merge([_exclude(_A, _B, _C), _exclude(_B, _C, _D)])
+
+        self.assertEqual(
+            merged,
+            _exclude(_B, _C),
+            msg="Two EXCLUDE{A,B,C} and EXCLUDE{B,C,D} must merge to EXCLUDE{B,C} (their intersection).",
         )
 
 

@@ -27,11 +27,11 @@ This module contains unit tests for the 'Ip6TxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec
 
@@ -126,7 +126,13 @@ class _StubInterface:
         self.frag_tx_status: TxStatus = TxStatus.PASSED__IP6__TO_TX_RING
         self.marshal_tx_async_calls = 0
 
-    def _marshal_tx_async(self, run: Callable[[], TxStatus], /) -> None:
+    def _marshal_tx_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         # 'send_ip6_packet' fire-and-forget marshals '_phtx_ip6' through
         # '_marshal_tx_async'; with no TX worker under test, run inline.
         self.marshal_tx_async_calls += 1
@@ -205,6 +211,7 @@ class TestPacketHandlerIp6TxValidation(TestCase):
     The source- and destination-address validation branches.
     """
 
+    @override
     def setUp(self) -> None:
         self._handler, self._if = _make_ip6_tx()
 
@@ -286,6 +293,34 @@ class TestPacketHandlerIp6TxValidation(TestCase):
         )
 
         self.assertEqual(self._if._packet_stats_tx.ip6__src_network_unspecified__replace_external, 1)
+
+    def test__stack__packet_handler__ip6__tx__src_unspec_multicast_dst_replaced(self) -> None:
+        """
+        Ensure an unspecified src to a multicast destination is filled in
+        via RFC 6724 source selection — a DHCPv6 SOLICIT to ff02::1:2 takes
+        the link-local source — rather than being dropped as malformed.
+
+        Reference: RFC 6724 §4 (source selection applies to multicast destinations).
+        """
+
+        handler, iface = _make_ip6_tx(ip6_hosts=[Ip6IfAddr("fe80::7/64")])
+
+        status = handler._phtx_ip6(
+            ip6__src=Ip6Address(),
+            ip6__dst=Ip6Address("ff02::1:2"),
+            ip6__payload=RawAssembler(),
+        )
+
+        self.assertNotEqual(
+            status,
+            TxStatus.DROPPED__IP6__SRC_UNSPECIFIED,
+            msg="A multicast destination with an unspecified source must not be dropped.",
+        )
+        self.assertEqual(
+            iface._packet_stats_tx.ip6__src_unspecified__replace_multicast,
+            1,
+            msg="The link-local source must be selected for a link-local multicast destination.",
+        )
 
     def test__stack__packet_handler__ip6__tx__src_unspec_no_replacement_drops(self) -> None:
         """

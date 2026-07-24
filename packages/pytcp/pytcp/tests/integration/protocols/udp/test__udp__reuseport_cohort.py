@@ -36,14 +36,14 @@ file pins the end-to-end behaviour through the real RX handler.
 
 pytcp/tests/integration/protocols/udp/test__udp__reuseport_cohort.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
 from net_proto import EthernetAssembler, Ip4Assembler, UdpAssembler
 from pytcp import stack
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,

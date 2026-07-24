@@ -27,21 +27,20 @@ Module contains tests for the ICMPv4 Destination Unreachable message assembler.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachable__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp4Assembler,
     Icmp4DestinationUnreachableCode,
     Icmp4MessageDestinationUnreachable,
     Icmp4Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -480,6 +479,7 @@ class TestIcmp4MessageDestinationUnreachableAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized Destination Unreachable
@@ -651,4 +651,34 @@ class TestIcmp4MessageDestinationUnreachableAssembler__FragmentationNeededMtu(Te
                 "the assembler. Got "
                 f"{cast(Icmp4MessageDestinationUnreachable, assembler.message).mtu!r}."
             ),
+        )
+
+
+class TestIcmp4MessageDestinationUnreachableWithData(TestCase):
+    """
+    The ICMPv4 Destination Unreachable with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__destination_unreachable__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Destination Unreachable message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Destination Unreachable message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageDestinationUnreachable(code=Icmp4DestinationUnreachableCode.PORT, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Destination Unreachable length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Destination Unreachable assembled wire length must be 8 + the embedded data length.",
         )

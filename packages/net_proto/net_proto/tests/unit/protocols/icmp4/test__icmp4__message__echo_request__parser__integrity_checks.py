@@ -27,19 +27,18 @@ Module contains tests for the ICMPv4 Echo Request message parser integrity check
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__echo_request__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import Icmp4IntegrityError, Icmp4Parser, Ip4Parser, PacketRx
 from net_proto.protocols.icmp4.message.icmp4__message__echo_request import (
     ICMP4__ECHO_REQUEST__LEN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes, *, ip4__payload_len: int | None = None) -> PacketRx:
@@ -153,6 +152,7 @@ class TestIcmp4MessageEchoRequestParserIntegrityChecks(TestCase):
     _ip4__payload_len: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv4 payload length.
@@ -202,3 +202,21 @@ class TestIcmp4MessageEchoRequestParserIntegrityBoundary(TestCase):
         self.assertEqual(len(frame), ICMP4__ECHO_REQUEST__LEN, msg="Fixture must match ICMP4__ECHO_REQUEST__LEN.")
 
         Icmp4Parser(_packet_rx_with_ip4(frame))
+
+    def test__icmp4__message__echo_request__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip4__payload_len' (the
+        ICMPv4 message is followed by lower-layer padding) still parses:
+        the integrity bound is 'ip4__payload_len <= len(frame)', so
+        trailing bytes beyond the declared payload are tolerated, not
+        rejected.
+
+        Reference: RFC 792 (ICMPv4 Echo Request type 8 integrity).
+        """
+
+        # Minimum 8-byte Echo Request (valid checksum over the 8 octets)
+        # followed by 4 octets of lower-layer padding. ip4__payload_len=8
+        # is strictly less than len(frame)=12.
+        frame = b"\x08\x00\xf3\x94\x30\x39\xd4\x31" + b"\x00\x00\x00\x00"
+
+        Icmp4Parser(_packet_rx_with_ip4(frame, ip4__payload_len=ICMP4__ECHO_REQUEST__LEN))

@@ -28,20 +28,19 @@ checks.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import Icmp6IntegrityError, Icmp6Parser, Ip6Parser, PacketRx
 from net_proto.protocols.icmp6.message.icmp6__message__echo_reply import (
     ICMP6__ECHO_REPLY__LEN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip6(frame: bytes, *, ip6__dlen: int | None = None) -> PacketRx:
@@ -162,6 +161,7 @@ class TestIcmp6MessageEchoReplyParserIntegrityChecks(TestCase):
     _ip6__dlen: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv6 payload length.
@@ -211,3 +211,20 @@ class TestIcmp6MessageEchoReplyParserIntegrityBoundary(TestCase):
         self.assertEqual(len(frame), ICMP6__ECHO_REPLY__LEN, msg="Fixture must match ICMP6__ECHO_REPLY__LEN.")
 
         Icmp6Parser(_packet_rx_with_ip6(frame))
+
+    def test__icmp6__message__echo_reply__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip6__dlen' (the ICMPv6
+        message is followed by lower-layer padding) still parses: the
+        integrity bound is 'ip6__dlen <= len(frame)', so trailing bytes
+        beyond the declared IPv6 payload are tolerated, not rejected.
+
+        Reference: RFC 4443 §4.2 (Echo Reply type 129).
+        """
+
+        # Minimum 8-byte Echo Reply (valid checksum over the 8 octets)
+        # followed by 4 octets of lower-layer padding. ip6__dlen=8 is
+        # strictly less than len(frame)=12.
+        frame = b"\x81\x00\x7a\x94\x30\x39\xd4\x31" + b"\x00\x00\x00\x00"
+
+        Icmp6Parser(_packet_rx_with_ip6(frame, ip6__dlen=ICMP6__ECHO_REPLY__LEN))

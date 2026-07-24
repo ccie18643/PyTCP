@@ -11,7 +11,7 @@
 This document records, paragraph by paragraph, how the
 current PyTCP codebase relates to each normative statement
 in RFC 6437. The audit was performed by reading the RFC
-text fresh and inspecting `packages/pytcp/pytcp/lib/ip6_flow_label.py`
+text fresh and inspecting `packages/pytcp/pytcp/protocols/ip6/ip6__flow_label.py`
 plus `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__tx.py`
 directly.
 
@@ -80,7 +80,7 @@ trivially met (PyTCP does not forward in Phase 1). The
 met by the TX-path auto-wire:
 
 - The **generator algorithm** is shipped at
-  `packages/pytcp/pytcp/lib/ip6_flow_label.py::compute_ip6_flow_label`:
+  `packages/pytcp/pytcp/protocols/ip6/ip6__flow_label.py::compute_ip6_flow_label`:
   BLAKE2s-keyed hash of `(src, dst)` with the stack-wide
   16-byte `IP6__FLOW_SECRET`, folded to 20 bits.
 - The **TX path auto-wire** is shipped at
@@ -148,7 +148,7 @@ Pinned by
 **Adherence:** met. PyTCP does not forward in Phase 1.
 When the Phase-2 forwarding plane lands, the immutability
 guarantee will be enforced by design — the forwarder
-re-uses the inbound `Ip6Header` value when it constructs
+reuses the inbound `Ip6Header` value when it constructs
 the outbound packet.
 
 ---
@@ -171,7 +171,7 @@ operator concerns; a host stack's responsibility ends at
 ### §3 Generator algorithm
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/lib/test__lib__ip6_flow_label.py::TestIp6FlowLabel`
+  `packages/pytcp/pytcp/tests/unit/protocols/ip6/test__ip6__flow_label.py::TestIp6FlowLabel`
   — 5 tests: fits-in-20-bits, same-flow-same-label,
   different-flows-different-labels, different-secret-
   different-label, different-source-different-label.

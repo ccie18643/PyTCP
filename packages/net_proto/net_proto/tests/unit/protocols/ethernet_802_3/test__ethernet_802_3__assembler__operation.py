@@ -32,15 +32,13 @@ payload length at construction time.
 
 net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import (
     ETHERNET_802_3__HEADER__LEN,
     ETHERNET_802_3__PACKET__MAX_LEN,
@@ -51,7 +49,7 @@ from net_proto import (
     PacketRx,
     RawAssembler,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -178,6 +176,7 @@ class TestEthernet8023AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the Ethernet 802.3 packet assembler with the testcase arguments.

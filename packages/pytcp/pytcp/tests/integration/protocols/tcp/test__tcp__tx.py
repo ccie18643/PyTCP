@@ -31,12 +31,10 @@ This module contains integration tests for the TCP TX packet-handler path.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
@@ -46,6 +44,7 @@ from pytcp.tests.lib.network_testcase import (
     STACK__IP4_HOST,
     STACK__IP6_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 from pytcp.tests.lib.tcp_testcase import TcpTestCase
 
 

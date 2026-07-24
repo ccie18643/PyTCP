@@ -28,13 +28,13 @@ fragmentation over IPv4.
 
 pytcp/tests/integration/protocols/udp/test__udp__fragmentation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
 from net_addr import Ip4Address
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TOS,
     IPPROTO_IP,
     IPPROTO_IPV6,

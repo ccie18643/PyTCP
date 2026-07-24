@@ -27,13 +27,13 @@ This module contains the IPv4 protocol base class.
 
 net_proto/protocols/ip4/ip4__base.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.proto import Proto
 from net_proto.protocols.icmp4.icmp4__assembler import Icmp4Assembler

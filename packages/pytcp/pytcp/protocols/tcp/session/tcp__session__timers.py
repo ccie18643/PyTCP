@@ -46,7 +46,7 @@ so no ordering edge ever runs '_lock__timer' -> '_lock__fsm'.
 
 packages/pytcp/pytcp/protocols/tcp/session/tcp__session__timers.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

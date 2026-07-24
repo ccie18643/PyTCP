@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package IPv4 address support class.
 
 net_addr/tests/unit/test__ip4_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4Address,
@@ -43,6 +41,7 @@ from net_addr import (
     IpVersion,
     MacAddress,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -1164,6 +1163,7 @@ class TestNetAddrIp4Address(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv4 address object with testcase arguments.
@@ -1730,6 +1730,7 @@ class TestNetAddrIp4AddressMulticastMac(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv4 address object with testcase arguments.
@@ -2085,6 +2086,17 @@ class TestNetAddrIp4AddressOrdering(TestCase):
             (a, "<", a, False),
             (c, ">", a, True),
             (a, ">=", a, True),
+            # Both directions / reflexivity for every operator, so a
+            # weakened '<=' (-> '=='), '>' (-> '>='), or '>=' (-> '>')
+            # is caught (the cases above leave each half untested).
+            (a, "<=", b, True),
+            (b, "<=", a, False),
+            (a, ">", a, False),
+            (b, ">", a, True),
+            (a, ">", b, False),
+            (b, ">=", a, True),
+            (a, ">=", b, False),
+            (b, ">=", b, True),
         ]:
             with self.subTest(case=f"{left} {op} {right}"):
                 got = {
@@ -2126,6 +2138,20 @@ class TestNetAddrIp4AddressArithmetic(TestCase):
         self.assertEqual(a + 0, a, msg="address + 0 must be unchanged.")
         self.assertEqual(a + 256, Ip4Address("10.0.1.10"), msg="address + 256 must carry across octets.")
         self.assertIsInstance(a + 1, Ip4Address, msg="Arithmetic must return an Ip4Address.")
+        # Results landing EXACTLY on the range endpoints (0 and the
+        # all-ones max) are in range and must not raise — pins the
+        # inclusive '<=' bounds (and the '- 1' max constant) against an
+        # off-by-one that would reject the boundary.
+        self.assertEqual(
+            Ip4Address("0.0.0.5") - 5,
+            Ip4Address("0.0.0.0"),
+            msg="A result landing exactly on 0.0.0.0 must be valid.",
+        )
+        self.assertEqual(
+            Ip4Address("255.255.255.250") + 5,
+            Ip4Address("255.255.255.255"),
+            msg="A result landing exactly on 255.255.255.255 must be valid.",
+        )
 
     def test__net_addr__ip4_address__arithmetic__overflow_raises(self) -> None:
         """
@@ -2288,6 +2314,18 @@ class TestNetAddrIp4AddressFormat(TestCase):
             ValueError,
             msg="The unknown-code SanityError must chain the stdlib ValueError as __cause__.",
         )
+
+        # Bad flags on an otherwise-valid presentation code must also
+        # raise: a non-#/_ flag on a radix code (b/x/X), or any flag on
+        # the bare decimal codes (d/n). Pins the per-code flag validation
+        # against an 'and'->'or' relaxation that would accept them.
+        for spec in ("zx", "qb", "#d", ".5d"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip4AddressSanityError,
+                    msg=f"format spec {spec!r} (bad flag for its code) must raise.",
+                ):
+                    format(Ip4Address("1.2.3.4"), spec)
 
     def test__net_addr__ip4_address__format__string_specs_delegate_to_str(self) -> None:
         """

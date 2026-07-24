@@ -28,7 +28,7 @@ state container in 'pytcp/protocols/tcp/tcp__stack.py'.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__stack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import TracebackType
@@ -145,6 +145,7 @@ class TestTcpStack__Accessors(TestCase):
     The lock-guarded Fast-Open accessor surface tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.
@@ -339,6 +340,7 @@ class TestTcpStack__Defaults(TestCase):
     of 'TcpStack'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.

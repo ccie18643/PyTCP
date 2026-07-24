@@ -37,7 +37,7 @@ running.
 
 pytcp/ipc/ipc__packet_bridge.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket
@@ -46,7 +46,7 @@ from typing import Protocol
 
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__packet_frame import decode_packet, encode_packet
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 IPC__PACKET_BRIDGE__POLL_TIMEOUT__SEC: float = 0.2
 IPC__PACKET_BRIDGE__CHUNK_SIZE: int = 65600
@@ -64,11 +64,15 @@ class LinkSocket(Protocol):
         'timeout' seconds.
         """
 
+        ...
+
     def sendto(self, data: bytes, address: SockAddrLl) -> int:
         """
         Send 'data' as a link-layer frame to the interface named by
         'address'.
         """
+
+        ...
 
 
 class PacketBridge:

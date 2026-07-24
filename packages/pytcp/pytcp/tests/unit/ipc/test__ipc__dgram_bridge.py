@@ -33,15 +33,17 @@ and inspects the stub's outbound list to exercise the TX direction.
 
 pytcp/tests/unit/ipc/test__ipc__dgram_bridge.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import queue
 import socket
 import time
+from collections.abc import Iterable
 from typing import override
 from unittest import TestCase
 
+from net_addr import Buffer
 from pytcp.ipc.ipc__dgram_bridge import DatagramBridge
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 
@@ -56,6 +58,7 @@ class _DatagramSocketStub:
     def __init__(self) -> None:
         self._inbound: queue.Queue[tuple[bytes, list[tuple[int, int, bytes]], tuple[str, int]]] = queue.Queue()
         self.outbound: list[tuple[bytes, tuple[str, int] | None]] = []
+        self.sendmsg_calls: list[tuple[bytes, list[tuple[int, int, bytes]], tuple[str, int] | None]] = []
 
     def inject(
         self,
@@ -86,6 +89,17 @@ class _DatagramSocketStub:
     def send(self, data: bytes) -> int:
         self.outbound.append((data, None))
         return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]],
+        flags: int,
+        address: tuple[str, int] | None,
+    ) -> int:
+        payload = b"".join(bytes(buffer) for buffer in buffers)
+        self.sendmsg_calls.append((payload, [(level, ctype, bytes(cdata)) for level, ctype, cdata in ancdata], address))
+        return len(payload)
 
 
 class TestIpcDatagramBridge(TestCase):
@@ -184,4 +198,122 @@ class TestIpcDatagramBridge(TestCase):
             self._wait_for_outbound(),
             (b"conn", None),
             msg="The TX pump must replay an address-less datagram as a connected send.",
+        )
+
+    def test__ipc__dgram_bridge__tx_with_cmsg_routes_to_sendmsg(self) -> None:
+        """
+        Ensure a datagram the client writes WITH ancillary control
+        messages is replayed into the stack as a 'sendmsg' carrying the
+        cmsg (so the stack can honour an IP_TOS / IPV6_TCLASS byte),
+        rather than the cmsg-less sendto path.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        cmsg = [(0, 1, b"\x28")]  # IPPROTO_IP / IP_TOS -> TOS 0x28.
+        self._client_end.send(encode_dgram(("10.0.1.7", 80), b"marked", cmsg))
+
+        deadline = time.monotonic() + _DEADLINE__SEC
+        while time.monotonic() < deadline and not self._stack.sendmsg_calls:
+            time.sleep(0.01)
+
+        self.assertEqual(
+            self._stack.sendmsg_calls[0] if self._stack.sendmsg_calls else None,
+            (b"marked", cmsg, ("10.0.1.7", 80)),
+            msg="The TX pump must route a datagram with cmsg through sendmsg with the cmsg intact.",
+        )
+        self.assertEqual(
+            self._stack.outbound,
+            [],
+            msg="A datagram with cmsg must not also take the cmsg-less sendto path.",
+        )
+
+
+class _ScriptedDatagramSocket:
+    """
+    A datagram stack-socket stub whose recvmsg plays a scripted
+    sequence: a 'TimeoutError' / 'OSError' sentinel raises (a poll
+    timeout / transient receive error) and a tuple is delivered as a
+    datagram. After the script it idles by raising 'TimeoutError'.
+    """
+
+    def __init__(self, script: list[object], /) -> None:
+        self._script = script
+        self._index = 0
+
+    def recvmsg(
+        self,
+        bufsize: int | None,
+        ancbufsize: int,
+        flags: int,
+        timeout: float | None,
+    ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int]]:
+        """Play the next scripted recvmsg result (or idle-then-timeout)."""
+
+        if self._index < len(self._script):
+            item = self._script[self._index]
+            self._index += 1
+            if item is TimeoutError:
+                raise TimeoutError
+            if item is OSError:
+                raise OSError
+            assert isinstance(item, tuple)
+            data, ancdata, address = item
+            return data, ancdata, 0, address
+        time.sleep(0.02)
+        raise TimeoutError
+
+    def sendto(self, data: bytes, address: tuple[str, int]) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return len(data)
+
+    def send(self, data: bytes) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]],
+        flags: int,
+        address: tuple[str, int] | None,
+    ) -> int:
+        """Discard sent bytes (TX is not under test here)."""
+
+        return sum(len(bytes(buffer)) for buffer in buffers)
+
+
+class TestIpcDatagramBridge__FaultInjection(TestCase):
+    """
+    Fault-injected RX-pump behaviour: the pump must treat a poll
+    TimeoutError AND a transient OSError as retries (continue), not a
+    teardown, and still deliver the datagram that follows them.
+    """
+
+    def test__dgram_bridge__rx_pump_survives_timeout_and_oserror(self) -> None:
+        """
+        Ensure the RX pump continues past both a poll TimeoutError and a
+        transient OSError, then frames and delivers the following
+        datagram — pinning both 'except ...: continue' branches against
+        a teardown edit.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self.addCleanup(data_end.close)
+        self.addCleanup(client_end.close)
+        client_end.settimeout(_DEADLINE__SEC)
+
+        stub = _ScriptedDatagramSocket([TimeoutError, OSError, (b"payload", [], ("10.0.0.1", 80))])
+        bridge = DatagramBridge(stub, data_end)
+        bridge.start()
+        self.addCleanup(bridge.stop)
+
+        self.assertEqual(
+            decode_dgram(client_end.recv(4096)),
+            (("10.0.0.1", 80), [], b"payload"),
+            msg="a datagram after a timeout + OSError must still be framed and delivered (the pump must continue).",
         )

@@ -28,19 +28,22 @@ policy-table helpers.
 
 pytcp/tests/unit/protocols/ip6/test__ip6__policy_table.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import Ip6Address
+from net_addr import Ip6Address, Ip6Network
 from pytcp.protocols.ip6.ip6__policy_table import (
     DEFAULT_POLICY_TABLE,
     PolicyEntry,
+    get_policy_table,
     lookup,
+    reset_policy_table,
+    set_policy_table,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -197,4 +200,105 @@ class TestIp6PolicyTableShape(TestCase):
             (catch_all[0].precedence, catch_all[0].label),
             (40, 1),
             msg="The ::/0 catch-all must have precedence 40 and label 1.",
+        )
+
+
+class TestIp6PolicyTableOverride(TestCase):
+    """
+    The RFC 6724 §10.3 operator policy-table override tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Restore the default policy table after every test so an
+        override cannot leak into a sibling test.
+        """
+
+        self.addCleanup(reset_policy_table)
+
+    def test__set_policy_table_overrides_lookup(self) -> None:
+        """
+        Ensure installing a custom policy table makes 'lookup' resolve a
+        destination's (precedence, label) from the custom table — an
+        operator override the source-selection rule-6 consumer reads live.
+
+        Reference: RFC 6724 §2.1 (Policy table is administrator-configurable).
+        """
+
+        set_policy_table(
+            (
+                PolicyEntry(network=Ip6Network("2001:db8::/32"), precedence=99, label=7),
+                PolicyEntry(network=Ip6Network("::/0"), precedence=40, label=1),
+            )
+        )
+
+        self.assertEqual(
+            lookup(Ip6Address("2001:db8::1")),
+            (99, 7),
+            msg="After an override, 'lookup' must resolve from the custom policy table.",
+        )
+
+    def test__reset_policy_table_restores_default(self) -> None:
+        """
+        Ensure 'reset_policy_table' restores the RFC §10.3 default table
+        after an operator override.
+
+        Reference: RFC 6724 §10.3 (Default policy table).
+        """
+
+        set_policy_table(
+            (
+                PolicyEntry(network=Ip6Network("2001:db8::/32"), precedence=99, label=7),
+                PolicyEntry(network=Ip6Network("::/0"), precedence=40, label=1),
+            )
+        )
+        reset_policy_table()
+
+        self.assertEqual(
+            lookup(Ip6Address("2001:db8::1")),
+            (40, 1),
+            msg="After reset, 'lookup' must resolve from the RFC default table again.",
+        )
+
+    def test__set_policy_table_rejects_missing_catch_all(self) -> None:
+        """
+        Ensure 'set_policy_table' rejects a table with no ::/0 catch-all
+        entry, since 'lookup' must stay total (every address must yield a
+        (precedence, label) pair without raising).
+
+        Reference: RFC 6724 §10.3 (::/0 default catch-all keeps lookup total).
+        """
+
+        with self.assertRaises(ValueError) as ctx:
+            set_policy_table((PolicyEntry(network=Ip6Network("2001:db8::/32"), precedence=99, label=7),))
+
+        self.assertIn(
+            "::/0",
+            str(ctx.exception),
+            msg="The rejection message must name the missing ::/0 catch-all requirement.",
+        )
+
+    def test__get_policy_table_returns_active_table(self) -> None:
+        """
+        Ensure 'get_policy_table' returns the currently-active table — the
+        default before any override, and the custom table after one.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            get_policy_table(),
+            DEFAULT_POLICY_TABLE,
+            msg="Before any override 'get_policy_table' must return the default table.",
+        )
+        custom = (
+            PolicyEntry(network=Ip6Network("2001:db8::/32"), precedence=99, label=7),
+            PolicyEntry(network=Ip6Network("::/0"), precedence=40, label=1),
+        )
+        set_policy_table(custom)
+        self.assertEqual(
+            get_policy_table(),
+            custom,
+            msg="After an override 'get_policy_table' must return the custom table.",
         )

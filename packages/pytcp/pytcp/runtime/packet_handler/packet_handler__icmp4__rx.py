@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the inbound ICMPv4 packets.
 
 pytcp/runtime/packet_handler/packet_handler__icmp4__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, cast
@@ -54,14 +56,13 @@ from pytcp.protocols.icmp4.icmp4__echo_gate import should_emit_echo_reply
 from pytcp.protocols.icmp4.icmp4__echo_options import echo_reply_options
 from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.error_queue import SoEeOrigin
-from pytcp.socket.raw__metadata import RawMetadata
-from pytcp.socket.raw__socket import RawSocket
-from pytcp.socket.socket_id import SocketId
-from pytcp.socket.tcp__socket import TcpSocket
-from pytcp.socket.udp__metadata import UdpMetadata
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.error_queue import SoEeOrigin
+from pytcp.runtime.socket.ping__metadata import PingMetadata
+from pytcp.runtime.socket.socket_id import SocketId
+from pytcp.runtime.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
@@ -128,28 +129,26 @@ class Icmp4RxHandler:
         )
         self._if._packet_stats_rx.icmp4__echo_reply += 1
 
-        # Create RawMetadata object and try to find matching RAW socket.
-        # The serialized ICMP message bytes are what 'RawSocket' consumes
-        # via its 'raw__data: bytes' field.
-        packet_rx_md = RawMetadata(
-            ip__ver=packet_rx.ip.ver,
-            ip__local_address=packet_rx.ip.dst,
-            ip__remote_address=packet_rx.ip.src,
-            ip__proto=IpProto.ICMP4,
-            raw__data=bytes(packet_rx.icmp4.message),
-        )
-
-        for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self._if._packet_stats_rx.raw__socket_match += 1
-                __debug__ and log(
-                    "raw",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+        # Demux to a ping socket (Linux 'SOCK_DGRAM' / 'IPPROTO_ICMP') by
+        # the Echo Reply's ICMP id. The owning socket receives the ICMP
+        # message bytes (no IP header) plus the reply's TTL for an
+        # 'IP_TTL' cmsg.
+        message = packet_rx.icmp4.message
+        ping_socket = stack.icmp_echo_sockets.get((AddressFamily.INET4, message.id))
+        if ping_socket is not None and ping_socket.accepts_reply_to(packet_rx.ip4.dst):
+            ping_socket.process_echo_reply(
+                PingMetadata(
+                    ip__ver=packet_rx.ip.ver,
+                    ip__remote_address=packet_rx.ip4.src,
+                    ip__ttl=packet_rx.ip4.ttl,
+                    icmp__data=bytes(message),
                 )
-                socket.process_raw_packet(packet_rx_md)
-                return
+            )
 
-        return
+        # An inbound Echo Reply is also delivered to matching RAW sockets
+        # by the IPv4 RX path ('packet_handler__ip4__rx'), which clones the
+        # full IPv4 packet to every matching raw socket (Linux
+        # 'raw_local_deliver').
 
     def __phrx_icmp4__destination_unreachable(self, packet_rx: PacketRx) -> None:
         """
@@ -220,7 +219,8 @@ class Icmp4RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp4",
                     f"{packet_rx.tracker} - <INFO>Found matching "
@@ -283,7 +283,7 @@ class Icmp4RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -406,7 +406,8 @@ class Icmp4RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp4",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -450,7 +451,7 @@ class Icmp4RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -542,7 +543,8 @@ class Icmp4RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp4",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -586,7 +588,7 @@ class Icmp4RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 

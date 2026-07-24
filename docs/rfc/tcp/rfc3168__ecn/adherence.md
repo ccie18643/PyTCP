@@ -278,7 +278,7 @@ relaxation), receiver-side ECE feedback on CE, and
 the §6.1.4 no-ECT-on-non-data rule. The opt-out
 flag `_advertise_ecn` addresses the §6.1.1.1
 middlebox-interop concern. Plus PyTCP supports
-RFC 9341 AccECN as an extension, audited under that
+RFC 9768 AccECN as an extension, audited under that
 RFC's record.
 
 The previously-open §6.1.5 gap is closed: PyTCP's

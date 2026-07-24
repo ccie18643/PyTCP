@@ -29,7 +29,7 @@ the daemon mutates at runtime as interfaces are added / removed.
 
 pytcp/tests/unit/runtime/test__runtime__interface_table.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
@@ -46,9 +46,13 @@ def _make_handler() -> PacketHandlerL2:
     Build a spec'd stand-in packet handler for table-storage tests.
     """
 
-    handler = cast(PacketHandlerL2, MagicMock(spec=PacketHandlerL2))
-    handler._ifindex = 0
-    return handler
+    mock_handler = MagicMock(spec=PacketHandlerL2)
+    mock_handler._ifindex = 0
+    # 'InterfaceTable.add' stamps the allocated index via the public
+    # 'set_ifindex' mutator; mirror its effect on the spec'd mock so the
+    # '_ifindex' side effect the storage tests assert on is observable.
+    mock_handler.set_ifindex.side_effect = lambda ifindex: setattr(mock_handler, "_ifindex", ifindex)
+    return cast(PacketHandlerL2, mock_handler)
 
 
 class TestInterfaceTableAllocation(TestCase):

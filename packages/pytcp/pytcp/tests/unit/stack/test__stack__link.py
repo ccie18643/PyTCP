@@ -32,9 +32,10 @@ DHCPv4 and RFC 3927 link-local construction call sites.
 
 pytcp/tests/unit/stack/test__stack__link.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from typing import TYPE_CHECKING, cast
 from unittest import TestCase
 from unittest.mock import patch
@@ -52,11 +53,14 @@ if TYPE_CHECKING:
 
 class _FakeRing:
     """
-    Minimal ring stand-in exposing only the '_mtu' attribute
-    'LinkApi.set_mtu' resizes.
+    Minimal ring stand-in exposing the 'set_mtu' mutator that the packet
+    handler's 'set_interface_mtu' calls to resize the ring.
     """
 
     def __init__(self, *, mtu: int) -> None:
+        self._mtu = mtu
+
+    def set_mtu(self, mtu: int, /) -> None:
         self._mtu = mtu
 
 
@@ -95,6 +99,45 @@ class _FakePacketHandlerL2:
         self._tx_ring: _FakeRing = _FakeRing(mtu=interface_mtu)
         self._rx_ring: _FakeRing = _FakeRing(mtu=interface_mtu)
 
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        return self._mac_unicast
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        return self._packet_stats_tx
+
+    @property
+    def link_stats(self) -> LinkStatsCounters:
+        return self._link_stats
+
+    def set_interface_mtu(self, mtu: int, /) -> None:
+        self._interface_mtu = mtu
+        self._tx_ring.set_mtu(mtu)
+        self._rx_ring.set_mtu(mtu)
+
+    def set_mac_address(self, mac_address: MacAddress, /) -> None:
+        self._mac_unicast = mac_address
+
+    def set_ifindex(self, ifindex: int, /) -> None:
+        self._ifindex = ifindex
+
 
 class _FakePacketHandlerL3:
     """
@@ -120,6 +163,69 @@ class _FakePacketHandlerL3:
         self._packet_stats_rx = packet_stats_rx if packet_stats_rx is not None else PacketStatsRx()
         self._packet_stats_tx = packet_stats_tx if packet_stats_tx is not None else PacketStatsTx()
         self._link_stats = link_stats if link_stats is not None else LinkStatsCounters()
+
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        # L3 (TUN) has no Ethernet layer and therefore no MAC,
+        # mirroring 'PacketHandler.mac_unicast' returning None.
+        return None
+
+    @property
+    def packet_stats_rx(self) -> PacketStatsRx:
+        return self._packet_stats_rx
+
+    @property
+    def packet_stats_tx(self) -> PacketStatsTx:
+        return self._packet_stats_tx
+
+    @property
+    def link_stats(self) -> LinkStatsCounters:
+        return self._link_stats
+
+    def set_interface_mtu(self, mtu: int, /) -> None:
+        # L3 (TUN) has no rings to resize in this stand-in.
+        self._interface_mtu = mtu
+
+
+class _FakePacketHandlerLoopback:
+    """
+    Minimal loopback packet-handler stand-in for 'LinkApi' tests —
+    layer LOOPBACK, no MAC (the 'lo' device has no Ethernet layer).
+    """
+
+    _interface_layer: InterfaceLayer = InterfaceLayer.LOOPBACK
+
+    def __init__(self, *, interface_mtu: int = 65535, interface_name: str | None = "lo") -> None:
+        self._interface_mtu = interface_mtu
+        self._interface_name = interface_name
+
+    @property
+    def interface_layer(self) -> InterfaceLayer:
+        return self._interface_layer
+
+    @property
+    def interface_mtu(self) -> int:
+        return self._interface_mtu
+
+    @property
+    def interface_name(self) -> str | None:
+        return self._interface_name
+
+    @property
+    def mac_unicast(self) -> MacAddress | None:
+        return None
 
 
 class TestLinkApiMacAddress(TestCase):
@@ -424,6 +530,24 @@ class TestLinkApiFlags(TestCase):
             api.flags,
             frozenset({LinkFlag.POINTOPOINT}),
             msg="L3 LinkApi.flags must equal {POINTOPOINT}.",
+        )
+
+    def test__link_api__flags__loopback(self) -> None:
+        """
+        Ensure 'flags' for a LOOPBACK (lo) handler equals {LOOPBACK} —
+        the loopback device carries neither broadcast/multicast nor
+        point-to-point semantics.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        handler = _FakePacketHandlerLoopback()
+        api = LinkApi(packet_handler=cast("PacketHandlerL3", handler))
+
+        self.assertEqual(
+            api.flags,
+            frozenset({LinkFlag.LOOPBACK}),
+            msg="LOOPBACK LinkApi.flags must equal {LOOPBACK}.",
         )
 
     def test__link_api__flags__returns_frozenset(self) -> None:
@@ -1191,4 +1315,98 @@ class TestLinkApiUnboundTool(TestCase):
             tool.interface(2).mtu,
             ifaces[1]._interface_mtu,
             msg="interface(2) on the unbound tool must read interface 2's MTU.",
+        )
+
+
+class TestLinkApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on the LinkApi mutator methods so
+    the '*'→'/' separator mutation is caught.
+    """
+
+    def test__link__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure the LinkApi mutators keep their parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "set_mac_address": {"mac_address"},
+            "set_mtu": {"mtu"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(LinkApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"LinkApi.{method} must keep keyword-only parameters {names}.",
+            )
+
+
+class TestLinkApiStats__SumGoldens(TestCase):
+    """
+    Additive-aggregation goldens for the packet-count sums. The
+    existing per-counter tests leave the second addend at 0, where
+    '+' is indistinguishable from '|' / '^'; these set BOTH addends to
+    bit-overlapping values (3 + 5 = 8, while 3 | 5 = 7 and 3 ^ 5 = 6)
+    so an operator edit on the sum is caught.
+    """
+
+    def test__link_api__stats__l2_packet_sums_are_additive(self) -> None:
+        """
+        Ensure the L2 rx_packets / tx_packets aggregate the Ethernet and
+        802.3 counters by addition (3 + 5 = 8), not bit-OR / XOR.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        rx = PacketStatsRx()
+        rx.ethernet__pre_parse = 3
+        rx.ethernet_802_3__pre_parse = 5
+        tx = PacketStatsTx()
+        tx.ethernet__pre_assemble = 3
+        tx.ethernet_802_3__pre_assemble = 5
+        handler = _FakePacketHandlerL2(
+            mac_unicast=MacAddress("02:00:00:00:00:07"),
+            interface_mtu=1500,
+            packet_stats_rx=rx,
+            packet_stats_tx=tx,
+        )
+        api = LinkApi(packet_handler=cast("PacketHandlerL2", handler))
+
+        stats = api.stats
+        self.assertEqual(
+            (stats.rx_packets, stats.tx_packets),
+            (8, 8),
+            msg="L2 rx/tx packet sums must be additive: 3 + 5 = 8.",
+        )
+
+    def test__link_api__stats__l3_packet_sums_are_additive(self) -> None:
+        """
+        Ensure the L3 rx_packets / tx_packets aggregate the IPv4 and
+        IPv6 counters by addition (3 + 5 = 8), not bit-OR / XOR.
+
+        Reference: PyTCP test infrastructure (Phase-3 Link API surface).
+        """
+
+        rx = PacketStatsRx()
+        rx.ip4__pre_parse = 3
+        rx.ip6__pre_parse = 5
+        tx = PacketStatsTx()
+        tx.ip4__pre_assemble = 3
+        tx.ip6__pre_assemble = 5
+        handler = _FakePacketHandlerL3(
+            interface_mtu=1500,
+            packet_stats_rx=rx,
+            packet_stats_tx=tx,
+        )
+        api = LinkApi(packet_handler=cast("PacketHandlerL3", handler))
+
+        stats = api.stats
+        self.assertEqual(
+            (stats.rx_packets, stats.tx_packets),
+            (8, 8),
+            msg="L3 rx/tx packet sums must be additive: 3 + 5 = 8.",
         )

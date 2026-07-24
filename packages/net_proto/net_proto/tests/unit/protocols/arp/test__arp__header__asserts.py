@@ -27,11 +27,11 @@ This module contains tests for the ARP packet header fields and asserts.
 
 net_proto/tests/unit/protocols/arp/test__arp__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import Ip4Address, MacAddress
@@ -53,6 +53,7 @@ class TestArpHeaderAsserts(TestCase):
     The ARP header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the ARP header constructor.
@@ -167,6 +168,7 @@ class TestArpHeaderDefaults(TestCase):
     The ARP header immutable default-field tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a minimal valid ARP header for inspection.
@@ -470,7 +472,7 @@ class TestArpHeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            ArpHeader(  # type: ignore[misc]
+            ArpHeader(  # type: ignore[call-arg]
                 ArpOperation.REQUEST,
                 MacAddress(),
                 Ip4Address(),

@@ -28,7 +28,7 @@ and validation helpers for the server-side TFO path.
 
 pytcp/protocols/tcp/tcp__fastopen.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import hmac

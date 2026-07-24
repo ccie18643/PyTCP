@@ -23,17 +23,18 @@
 
 
 """
-Integration tests for the '_claim_ip6_address_async' 'on_conflict'
+Integration tests for the 'claim_ip6_address_async' 'on_conflict'
 callback — the DAD-failure hook the DHCPv6 client (via the Address
 API's DAD-checked 'add') registers to learn that a leased address is
 a duplicate and must be DECLINEd (RFC 8415 §18.2.8).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__dad_conflict_callback.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr
 from pytcp.stack import sysctl as sysctl_module
@@ -45,11 +46,12 @@ _CANDIDATE_HOST = Ip6IfAddr("2001:db8:0:1::5/64")
 
 class TestIcmp6Nd__DadConflictCallback(NdTestCase):
     """
-    The '_claim_ip6_address_async' 'on_conflict' callback fires with
+    The 'claim_ip6_address_async' 'on_conflict' callback fires with
     the conflicting address on DAD failure, and stays silent on DAD
     success.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -81,7 +83,7 @@ class TestIcmp6Nd__DadConflictCallback(NdTestCase):
         with sysctl_module.override("icmp6.default.max_rtr_solicitation_delay_ms", 0):
             with sysctl_module.override("icmp6.default.retrans_timer_ms", 200):
                 threading.Timer(0.005, _trigger_conflict).start()
-                thread = self._packet_handler._claim_ip6_address_async(
+                thread = self._packet_handler.claim_ip6_address_async(
                     ip6_host=_CANDIDATE_HOST,
                     on_conflict=_on_conflict,
                 )
@@ -108,7 +110,7 @@ class TestIcmp6Nd__DadConflictCallback(NdTestCase):
 
         with sysctl_module.override("icmp6.default.max_rtr_solicitation_delay_ms", 0):
             with sysctl_module.override("icmp6.default.retrans_timer_ms", 10):
-                thread = self._packet_handler._claim_ip6_address_async(
+                thread = self._packet_handler.claim_ip6_address_async(
                     ip6_host=_CANDIDATE_HOST,
                     on_conflict=_on_conflict,
                 )

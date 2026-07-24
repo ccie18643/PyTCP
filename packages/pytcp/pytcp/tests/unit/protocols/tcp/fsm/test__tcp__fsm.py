@@ -29,11 +29,11 @@ top-level 'tcp_fsm' dispatch.
 
 pytcp/tests/unit/protocols/tcp/fsm/test__tcp__fsm.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -41,8 +41,8 @@ from net_addr import Ip4Address, IpVersion
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket.socket_table import SocketTable
-from pytcp.socket.tcp__metadata import TcpMetadata
+from pytcp.runtime.socket.socket_table import SocketTable
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 _ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
 
@@ -66,6 +66,7 @@ class _TcpSessionFsmFixture(TestCase):
     without a running stack.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install per-test stack patches and expose the timer mock on
@@ -100,6 +101,7 @@ class _TcpSessionFsmFixture(TestCase):
         self._log_patch = patch("pytcp.protocols.tcp.session.tcp__session.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Remove the stack patches.
@@ -117,6 +119,9 @@ class _TcpSessionFsmFixture(TestCase):
 
         mock_socket = MagicMock()
         mock_socket.socket_id = object()  # unique sentinel for dict keys
+        # rcv_wnd_max derives from the socket's SO_RCVBUF at session
+        # construction; give the mock an int so window arithmetic works.
+        mock_socket._effective_rcvbuf.return_value = 65535
         self._sockets[mock_socket.socket_id] = mock_socket
 
         return TcpSession(

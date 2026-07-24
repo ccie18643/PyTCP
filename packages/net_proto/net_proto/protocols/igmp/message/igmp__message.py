@@ -27,14 +27,14 @@ This module contains the IGMP message base class.
 
 net_proto/protocols/igmp/message/igmp__message.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_struct import ProtoStruct
 

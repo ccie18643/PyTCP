@@ -27,11 +27,11 @@ This module contains unit tests for the 'PacketHandlerIcmp4Rx' mixin.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp4__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -127,12 +127,14 @@ class _Icmp4RxTestBase(TestCase):
     Common setUp for the ICMPv4 RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._icmp4_rx = Icmp4RxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))
         self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
         self._sockets_patch.start()
 
+    @override
     def tearDown(self) -> None:
         self._sockets_patch.stop()
 
@@ -321,6 +323,7 @@ class TestPacketHandlerIcmp4RxDestinationUnreachable(_Icmp4RxTestBase):
         fake_socket = MagicMock()
 
         class _MatchAllDict(dict[object, object]):
+            @override
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 

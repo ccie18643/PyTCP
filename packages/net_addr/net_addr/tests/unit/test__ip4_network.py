@@ -27,14 +27,12 @@ This module contains tests for the NetAddr package IPv4 network support class.
 
 net_addr/tests/unit/test__ip4_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4Address,
@@ -53,6 +51,7 @@ from net_addr import (
     IpNetworkSanityError,
     IpVersion,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -249,6 +248,7 @@ class TestNetAddrIp4Network(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv4 network object with testcase arguments.
@@ -447,6 +447,18 @@ class TestNetAddrIp4Network(TestCase):
             "_network": "192.168.1.0/24",
             "_object": Ip4IfAddr("192.168.2.50/24"),
             "_result": False,
+        },
+        {
+            "_description": "Ip4IfAddr at network address (lower boundary)",
+            "_network": "192.168.1.0/24",
+            "_object": Ip4IfAddr("192.168.1.0/24"),
+            "_result": True,
+        },
+        {
+            "_description": "Ip4IfAddr at broadcast address (upper boundary)",
+            "_network": "192.168.1.0/24",
+            "_object": Ip4IfAddr("192.168.1.255/24"),
+            "_result": True,
         },
         {
             "_description": "Unsupported type returns False",
@@ -896,6 +908,7 @@ class TestNetAddrIp4NetworkEnumeration(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -1002,6 +1015,13 @@ class TestNetAddrIp4NetworkRelations(TestCase):
             ("inner supernet_of outer", inner.supernet_of(outer), False),
             ("cross-version overlaps", outer.overlaps(Ip6Network("::/0")), False),
             ("cross-version subnet_of", outer.subnet_of(Ip6Network("::/0")), False),
+            # Single-address overlap exactly at a block edge: the /32
+            # sits on the last address of the /30. Pins both
+            # 'self.address <= other.last' and 'other.address <=
+            # self.last' at the boundary (a strict '<' would miss it).
+            ("edge /32 overlaps /30", Ip4Network("10.0.0.3/32").overlaps(Ip4Network("10.0.0.0/30")), True),
+            ("edge /30 overlaps /32", Ip4Network("10.0.0.0/30").overlaps(Ip4Network("10.0.0.3/32")), True),
+            ("adjacent /32 disjoint /30", Ip4Network("10.0.0.4/32").overlaps(Ip4Network("10.0.0.0/30")), False),
         ]:
             with self.subTest(relation=label):
                 self.assertEqual(
@@ -1028,6 +1048,14 @@ class TestNetAddrIp4NetworkSubnettingArgs(TestCase):
             [str(s) for s in Ip4Network("192.0.2.0/24").subnets(new_prefix=26)],
             ["192.0.2.0/26", "192.0.2.64/26", "192.0.2.128/26", "192.0.2.192/26"],
             msg="subnets(new_prefix=26) must tile a /24 into four /26 blocks.",
+        )
+        # A multi-bit prefixlen_diff (not just the default 1) must tile
+        # by that many bits — pins the 'prefixlen_diff < 1' guard
+        # against accepting only the exact value 1.
+        self.assertEqual(
+            [str(s) for s in Ip4Network("192.0.2.0/24").subnets(prefixlen_diff=2)],
+            ["192.0.2.0/26", "192.0.2.64/26", "192.0.2.128/26", "192.0.2.192/26"],
+            msg="subnets(prefixlen_diff=2) must tile a /24 into four /26 blocks.",
         )
 
     def test__net_addr__ip4_network__supernet__new_prefix_and_diff(self) -> None:
@@ -1117,10 +1145,17 @@ class TestNetAddrIp4NetworkSubnettingArgs(TestCase):
         """
 
         cases: list[tuple[str, Callable[[], object]]] = [
-            ("subnets new_prefix <= prefixlen", lambda: list(Ip4Network("10.0.0.0/8").subnets(new_prefix=4))),
+            ("subnets new_prefix < prefixlen", lambda: list(Ip4Network("10.0.0.0/8").subnets(new_prefix=4))),
+            # Boundary: new_prefix exactly equal to the current prefix
+            # must still raise (a subnet must be strictly longer).
+            ("subnets new_prefix == prefixlen", lambda: list(Ip4Network("10.0.0.0/8").subnets(new_prefix=8))),
             ("subnets prefixlen_diff < 1", lambda: list(Ip4Network("10.0.0.0/8").subnets(prefixlen_diff=0))),
             ("subnets past /32", lambda: list(Ip4Network("10.0.0.0/8").subnets(new_prefix=33))),
-            ("supernet new_prefix >= prefixlen", lambda: Ip4Network("10.0.0.0/8").supernet(new_prefix=8)),
+            ("supernet new_prefix == prefixlen", lambda: Ip4Network("10.0.0.0/8").supernet(new_prefix=8)),
+            # Boundary: new_prefix strictly LONGER than the current
+            # prefix must raise (a supernet must be shorter) — distinct
+            # from the equal case above.
+            ("supernet new_prefix > prefixlen", lambda: Ip4Network("10.0.0.0/8").supernet(new_prefix=26)),
             ("supernet below /0", lambda: Ip4Network("10.0.0.0/8").supernet(prefixlen_diff=9)),
             ("supernet negative prefixlen_diff", lambda: Ip4Network("10.0.0.0/24").supernet(prefixlen_diff=-2)),
             ("supernet zero prefixlen_diff", lambda: Ip4Network("10.0.0.0/24").supernet(prefixlen_diff=0)),
@@ -1157,6 +1192,42 @@ class TestNetAddrIp4NetworkOrdering(TestCase):
         self.assertTrue(a < b, msg="Same network, longer prefix must sort after.")
         self.assertTrue(b < c, msg="Lower network address must sort before.")
         self.assertEqual(min(c, b, a), a, msg="min() must return the lowest Ip4Network.")
+
+    def test__net_addr__ip4_network__ordering__total_order_relations(self) -> None:
+        """
+        Ensure every ordering operator is pinned in both directions
+        and reflexively, including the prefix-length tiebreak between
+        two networks that share a network address — so a flipped or
+        weakened comparison in any of '<', '<=', '>', '>=' is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Same network address, different prefix length: the shorter
+        # prefix (/8) sorts before the longer (/24) via the mask
+        # tiebreak.
+        a = Ip4Network("10.0.0.0/8")
+        b = Ip4Network("10.0.0.0/24")
+
+        # '<' — true direction, false direction, irreflexive.
+        self.assertLess(a, b, msg="Same network, shorter prefix must be strictly less.")
+        self.assertFalse(b < a, msg="'<' must be False in the reverse direction.")
+        self.assertFalse(a < a, msg="'<' must be irreflexive.")
+
+        # '<=' — true direction, false direction, reflexive.
+        self.assertLessEqual(a, b, msg="'<=' must hold in the forward direction.")
+        self.assertFalse(b <= a, msg="'<=' must be False in the reverse direction.")
+        self.assertLessEqual(a, a, msg="'<=' must be reflexive.")
+
+        # '>' — true direction, false direction, irreflexive.
+        self.assertGreater(b, a, msg="Same network, longer prefix must be strictly greater.")
+        self.assertFalse(a > b, msg="'>' must be False in the reverse direction.")
+        self.assertFalse(a > a, msg="'>' must be irreflexive.")
+
+        # '>=' — true direction, false direction, reflexive.
+        self.assertGreaterEqual(b, a, msg="'>=' must hold in the forward direction.")
+        self.assertFalse(a >= b, msg="'>=' must be False in the reverse direction.")
+        self.assertGreaterEqual(a, a, msg="'>=' must be reflexive.")
 
     def test__net_addr__ip4_network__ordering__cross_version_raises(self) -> None:
         """
@@ -1223,6 +1294,7 @@ class TestNetAddrIp4NetworkWithForms(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -1272,8 +1344,30 @@ class TestNetAddrIp4NetworkWithForms(TestCase):
             msg=f"Default format must equal the prefixlen form for: {self._description}",
         )
 
-        with self.assertRaises(Ip4NetworkSanityError, msg="An unknown format spec must raise Ip4NetworkSanityError."):
-            format(self._net, "zz")
+        # A spec ending in 's' routes through Python's str formatting
+        # for width / alignment, applied to the default (prefixlen)
+        # rendering. A multi-character width spec also pins that only
+        # the final character selects this branch (not the whole spec
+        # or a wrong slice position).
+        for spec in ("s", ">20s", "<20s", "^18s"):
+            with self.subTest(spec=spec):
+                self.assertEqual(
+                    format(self._net, spec),
+                    format(self._results["with_prefixlen"], spec),
+                    msg=f"Width/alignment spec {spec!r} must format the prefixlen string for: {self._description}",
+                )
+
+        # Unknown specs must raise the sanity error — including ones
+        # whose final character sorts at or below 's' (e.g. 'zq'), which
+        # a '<='-relaxation of the width-branch test ('[-1:] == "s"')
+        # would mis-route to str formatting (leaking a ValueError).
+        for spec in ("zz", "zq", "qa"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip4NetworkSanityError,
+                    msg=f"Unknown format spec {spec!r} must raise Ip4NetworkSanityError.",
+                ):
+                    format(self._net, spec)
 
 
 class TestNetAddrIp4NetworkPrefixlen(TestCase):
@@ -1321,7 +1415,10 @@ class TestNetAddrIp4NetworkGetitem(TestCase):
             with self.subTest(index=index):
                 self.assertEqual(net[index], expected, msg=f"net[{index}] must be {expected}.")
 
-        for bad in (256, -257):
+        # 256 == count (the first invalid index); 257 is strictly past
+        # the end so a '<'-vs-'!='/'is not' weakening of the upper bound
+        # is caught (256 alone collides with the small-int cache).
+        for bad in (256, 257, 1000, -257):
             with self.subTest(index=bad):
                 with self.assertRaises(Ip4NetworkSanityError, msg=f"net[{bad}] must raise Ip4NetworkSanityError."):
                     _ = net[bad]
@@ -1334,6 +1431,28 @@ class TestNetAddrIp4NetworkGetitem(TestCase):
 
         with self.assertRaises(TypeError, msg="Slicing must not be supported."):
             _ = net[0:2]  # type: ignore[index]
+
+
+class TestNetAddrIp4NetworkNumAddressesEdge(TestCase):
+    """
+    The NetAddr IPv4 network num_addresses default-route edge test.
+    """
+
+    def test__net_addr__ip4_network__num_addresses__default_route(self) -> None:
+        """
+        Ensure 'num_addresses' counts the whole IPv4 space for the
+        /0 default route, where the network address is 0 — pinning
+        the subtraction form against a modulo (which would divide by
+        the zero network address).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            Ip4Network("0.0.0.0/0").num_addresses,
+            2**32,
+            msg="num_addresses of 0.0.0.0/0 must be the full 2**32 address space.",
+        )
 
 
 class TestNetAddrIp4NetworkAddressExclude(TestCase):
@@ -1442,6 +1561,54 @@ class TestNetAddrIp4NetworkSummarize(TestCase):
                     Ip4Address("10.0.0.7"),
                 ],
                 ["10.0.0.0/29"],
+            ),
+            # Greedy multi-CIDR descent: a non-aligned, non-power-of-two
+            # range forces _summarize_ints to emit decreasing-size
+            # blocks, exercising both the align-limited and span-limited
+            # min() branches.
+            (
+                [Ip4Address(f"10.0.0.{octet}") for octet in range(1, 7)],
+                ["10.0.0.1/32", "10.0.0.2/31", "10.0.0.4/31", "10.0.0.6/32"],
+            ),
+            # A range starting at 0.0.0.0 exercises the 'lo == 0'
+            # alignment branch (align := bits).
+            (
+                [Ip4Address(f"0.0.0.{octet}") for octet in range(0, 7)],
+                ["0.0.0.0/30", "0.0.0.4/31", "0.0.0.6/32"],
+            ),
+            # A one-address GAP (.1 missing) must NOT merge — pins the
+            # '+ 1' adjacency tolerance in _merge_spans against widening.
+            (
+                [Ip4Address("10.0.0.0"), Ip4Address("10.0.0.2")],
+                ["10.0.0.0/32", "10.0.0.2/32"],
+            ),
+            # A block contained in the MIDDLE of a wider one (a /26 not
+            # at the /24's start) must keep the wider span — pins the
+            # 'max(prev_hi, hi)' merge against collapsing to the
+            # narrower contained endpoint (a contained-at-start block
+            # would let 'hi' dominate and hide the bug).
+            (
+                [Ip4Network("10.0.0.0/24"), Ip4Network("10.0.0.64/26")],
+                ["10.0.0.0/24"],
+            ),
+            # A separate block, a gap, then two adjacent-and-alignable
+            # blocks that merge into a wider aggregate (/23). With the
+            # earlier block already in the merged list, this pins the
+            # merge against the LAST span ('merged[-1]') rather than the
+            # first — and the /23 only forms if the merge happens at all.
+            (
+                [Ip4Network("10.0.0.0/24"), Ip4Network("10.0.2.0/24"), Ip4Network("10.0.3.0/24")],
+                ["10.0.0.0/24", "10.0.2.0/23"],
+            ),
+            # A separate block, a gap, then a WIDE block plus a sub-block
+            # contained in its UPPER half (so the contained span's hi is
+            # strictly below the wide span's hi). With 'merged' already
+            # holding the earlier block, this pins 'max(merged[-1][1],
+            # hi)' against keeping the wrong endpoint ('merged[-1][0]' /
+            # the narrower 'hi') — the wide /22 must survive intact.
+            (
+                [Ip4Network("10.0.0.0/24"), Ip4Network("10.0.4.0/22"), Ip4Network("10.0.5.0/24")],
+                ["10.0.0.0/24", "10.0.4.0/22"],
             ),
             ([], []),
         ]

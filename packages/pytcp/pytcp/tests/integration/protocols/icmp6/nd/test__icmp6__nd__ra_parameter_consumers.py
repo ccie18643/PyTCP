@@ -42,11 +42,11 @@ observed an RA carrying the corresponding non-zero value.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_parameter_consumers.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest.mock import patch
 
 from net_addr import Ip6Address, MacAddress
@@ -75,6 +75,7 @@ class TestIcmp6Nd__RaConsumer__TxHopLimit(NdTestCase):
     'ip6__hop=255' explicitly).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -196,6 +197,7 @@ class TestIcmp6Nd__RaConsumer__DadRetransTimer(NdTestCase):
     'icmp6.retrans_timer_ms' sysctl default.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -260,6 +262,7 @@ class TestIcmp6Nd__RaConsumer__NudReachableTime(NdTestCase):
     on its sysctl default).
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

@@ -27,21 +27,20 @@ Module contains tests for the ICMPv6 Time Exceeded message assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__time_exceeded__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp6Assembler,
     Icmp6MessageTimeExceeded,
     Icmp6TimeExceededCode,
     Icmp6Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -81,6 +80,7 @@ class TestIcmp6MessageTimeExceededAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized Time Exceeded
@@ -148,3 +148,33 @@ class TestIcmp6MessageTimeExceededAssembler(TestCase):
 
         self.assertEqual(wire[0], 3, msg="First wire byte must be type=3 (TIME_EXCEEDED).")
         self.assertEqual(wire[1], int(self._results["code"]), msg="Second wire byte must be the code value.")
+
+
+class TestIcmp6MessageTimeExceededWithData(TestCase):
+    """
+    The ICMPv6 Time Exceeded with-embedded-data length tests.
+    """
+
+    def test__icmp6__message__time_exceeded__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Time Exceeded message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 4443 (Time Exceeded message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp6MessageTimeExceeded(code=Icmp6TimeExceededCode.HOP_LIMIT_EXCEEDED_IN_TRANSIT, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Time Exceeded length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp6Assembler(icmp6__message=message))),
+            8 + len(data),
+            msg="Time Exceeded assembled wire length must be 8 + the embedded data length.",
+        )

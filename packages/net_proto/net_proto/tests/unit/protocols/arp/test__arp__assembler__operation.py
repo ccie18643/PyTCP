@@ -27,15 +27,13 @@ This module contains tests for the ARP protocol packet assembling functionality.
 
 net_proto/tests/unit/protocols/arp/test__arp__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import (
     ARP__HARDWARE_LEN__ETHERNET,
     ARP__HEADER__LEN,
@@ -47,7 +45,7 @@ from net_proto import (
     EtherType,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -213,6 +211,7 @@ class TestArpAssemblerPackets(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the ARP packet assembler object with testcase arguments.
@@ -485,7 +484,7 @@ class TestArpAssemblerDefaults(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            ArpAssembler(ArpOperation.REQUEST)  # type: ignore[misc]
+            ArpAssembler(ArpOperation.REQUEST)  # type: ignore[call-arg]
 
 
 class TestArpAssemblerTracker(TestCase):

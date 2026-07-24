@@ -31,7 +31,7 @@ interface forever.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__socket_gc_release.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import gc
@@ -39,13 +39,13 @@ from typing import override
 
 from net_addr import Ip4Address
 from net_proto import IpProto
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_ADD_SOURCE_MEMBERSHIP,
     IPPROTO_IP,
     AddressFamily,
     SocketType,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.udp_testcase import UdpTestCase
 
 _GROUP = Ip4Address("239.1.1.1")

@@ -61,15 +61,15 @@ non-empty-cookie (Length = 6..18, response/use form).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__fastopen.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, Ip6Address
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,
@@ -148,7 +148,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         sock._tcp_session = session
         stack.sockets[sock.socket_id] = sock
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__fastopen__server_issues_cookie_on_tfo_request_syn(self) -> None:
         """
@@ -396,13 +396,13 @@ class TestTcpSession__FastOpen(TcpTestCase):
             ),
         )
 
-    def _make_active_session(  # type: ignore[override]
+    def _make_tfo_active_session(
         self,
         *,
         iss: int,
     ) -> TcpSession:
         """
-        TFO addressing override — uses PEER__PORT_FOR_FASTOPEN as the
+        TFO addressing helper — uses PEER__PORT_FOR_FASTOPEN as the
         local client port and LISTEN__PORT as the remote server port
         instead of the canonical 12345 / 80 defaults.
         """
@@ -433,7 +433,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         # it via the cache scenario below.
         stack.tcp_stack.fastopen_cookies.pop(PEER__IP, None)
 
-        session = self._make_active_session(iss=LOCAL__ISS)
+        session = self._make_tfo_active_session(iss=LOCAL__ISS)
         session.tcp_fsm(syscall=SysCall.CONNECT)
 
         syn_tx = self._advance(ms=1)
@@ -483,7 +483,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
 
         # First connection: empty cookie request. Drive the
         # SYN+ACK with the server-supplied cookie.
-        first_session = self._make_active_session(iss=LOCAL__ISS)
+        first_session = self._make_tfo_active_session(iss=LOCAL__ISS)
         first_session.tcp_fsm(syscall=SysCall.CONNECT)
         self._advance(ms=1)
 
@@ -588,7 +588,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         cached_cookie = b"\x12\x34\x56\x78\x9a\xbc\xde\xf0"
         stack.tcp_stack.fastopen_cookies[PEER__IP] = cached_cookie
 
-        session = self._make_active_session(iss=LOCAL__ISS)
+        session = self._make_tfo_active_session(iss=LOCAL__ISS)
         # Pre-load the TX buffer with application data the
         # caller wants to attach to the SYN. Mirrors the
         # BSD-style 'sendto(MSG_FASTOPEN, data, server)'
@@ -650,7 +650,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         cached_cookie = b"\xab\xcd\xef\x01\x23\x45\x67\x89"
         stack.tcp_stack.fastopen_cookies[PEER__IP] = cached_cookie
 
-        session = self._make_active_session(iss=LOCAL__ISS)
+        session = self._make_tfo_active_session(iss=LOCAL__ISS)
         early_data = b"hello-tfo"
         session._tx.buffer.extend(early_data)
         session.tcp_fsm(syscall=SysCall.CONNECT)
@@ -803,7 +803,7 @@ class TestTcpSession__FastOpen(TcpTestCase):
         cached_cookie = b"\x10\x20\x30\x40\x50\x60\x70\x80"
         stack.tcp_stack.fastopen_cookies[PEER__IP] = cached_cookie
 
-        session = self._make_active_session(iss=LOCAL__ISS)
+        session = self._make_tfo_active_session(iss=LOCAL__ISS)
         early_data = b"reject-me"
         session._tx.buffer.extend(early_data)
         session.tcp_fsm(syscall=SysCall.CONNECT)

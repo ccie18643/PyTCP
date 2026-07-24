@@ -31,12 +31,10 @@ This module contains integration tests for IPv6 fragmentation on the TX path.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__fragmentation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import Icmp6Assembler, Icmp6MessageEchoRequest, TcpAssembler
 from net_proto.protocols.raw.raw__assembler import RawAssembler
@@ -47,6 +45,7 @@ from pytcp.tests.lib.network_testcase import (
     HOST_A__IP6_ADDRESS,
     STACK__IP6_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

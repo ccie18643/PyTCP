@@ -27,13 +27,11 @@ Module contains tests for the ICMPv6 ND options container.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Network, MacAddress
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
     Icmp6NdOptionType,
     Icmp6NdOptionUnknown,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -150,6 +149,7 @@ class TestIcmp6NdOptionsAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Icmp6NdOptions container from the parametrized args.
@@ -374,6 +374,7 @@ class TestIcmp6NdOptionsSequenceProtocol(TestCase):
     contains/eq).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a three-option container used by every sequence-protocol test.

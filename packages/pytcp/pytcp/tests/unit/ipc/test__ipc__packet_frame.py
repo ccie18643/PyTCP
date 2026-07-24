@@ -27,7 +27,7 @@ Tests for the IPC AF_PACKET data-channel frame codec.
 
 pytcp/tests/unit/ipc/test__ipc__packet_frame.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -36,8 +36,8 @@ from net_addr import MacAddress
 from net_proto.lib.enums import EtherType
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__packet_frame import decode_packet, encode_packet
-from pytcp.socket import PacketType
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import PacketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 
 class TestIpcPacketFrame(TestCase):

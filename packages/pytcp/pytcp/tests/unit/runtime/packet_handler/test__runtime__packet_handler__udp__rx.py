@@ -27,11 +27,11 @@ This module contains unit tests for the 'UdpRxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__udp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -50,6 +50,7 @@ from pytcp import stack
 from pytcp.lib.packet_stats import PacketStatsRx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.packet_handler.packet_handler__udp__rx import UdpRxHandler
+from pytcp.runtime.socket.socket_table import SocketTable
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
@@ -110,6 +111,7 @@ class _StubInterface:
 
     def __init__(self) -> None:
         self._packet_stats_rx = PacketStatsRx()
+        self._ifindex = 1
         self.udp_tx_calls: list[dict[str, object]] = []
         self.icmp4_tx_calls: list[dict[str, object]] = []
         self.icmp6_tx_calls: list[dict[str, object]] = []
@@ -170,12 +172,14 @@ class _UdpRxTestBase(TestCase):
     Common setUp for the UDP RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._udp_rx = UdpRxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))
-        self._sockets_patch = patch.object(stack, "sockets", dict[object, object]())
+        self._sockets_patch = patch.object(stack, "sockets", SocketTable())
         self._sockets_patch.start()
 
+    @override
     def tearDown(self) -> None:
         self._sockets_patch.stop()
 
@@ -236,11 +240,16 @@ class TestPacketHandlerUdpRxDispatch(_UdpRxTestBase):
         fake_socket = MagicMock()
 
         class _MatchAllDict(dict[object, object]):
+            @override
             def get(self, key: object, default: object = None) -> object:
                 return fake_socket
 
+            def get_for_ingress(self, key: object, *, ifindex: int, default: object = None) -> object:
+                del ifindex
+                return fake_socket
+
         self._sockets_patch.stop()
-        self._sockets_patch = patch.object(stack, "sockets", _MatchAllDict())
+        self._sockets_patch = patch.object(stack, "sockets", cast(SocketTable, _MatchAllDict()))
         self._sockets_patch.start()
 
         packet_rx = _packet_rx_from_ip4_udp(payload=b"hello")
@@ -324,11 +333,13 @@ class TestPacketHandlerUdpRxEcho(_UdpRxTestBase):
     The UDP Echo (port 7) native-reply tests.
     """
 
+    @override
     def setUp(self) -> None:
         super().setUp()
         self._echo_patch = patch.object(stack, "UDP__ECHO_NATIVE", True)
         self._echo_patch.start()
 
+    @override
     def tearDown(self) -> None:
         self._echo_patch.stop()
         super().tearDown()

@@ -27,15 +27,14 @@ Module contains tests for the TCP Nop (No Operation) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__nop.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import TCP__OPTION__NOP__LEN, TcpOptionNop, TcpOptionType
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionNopAssembler(TestCase):
@@ -43,6 +42,7 @@ class TestTcpOptionNopAssembler(TestCase):
     The TCP Nop option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Nop option; the option takes no constructor args.

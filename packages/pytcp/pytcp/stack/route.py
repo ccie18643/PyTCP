@@ -34,15 +34,15 @@ message). The Linux equivalents are 'ip route' and RTNETLINK.
 
 pytcp/stack/route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
 
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.lib.logger import log
-from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
-from pytcp.socket import AddressFamily
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
+from pytcp.runtime.socket import AddressFamily
 
 # The IPv4 / IPv6 default-route destinations (Linux 'default'
 # in 'ip route'). Protocol-invariant — these are the
@@ -145,9 +145,57 @@ class RouteApi:
         routes: list[Route[Ip4Address, Ip4Network] | Route[Ip6Address, Ip6Network]] = []
         if family in (None, AddressFamily.INET4):
             routes.extend(self._ip4_fib.snapshot())
+            routes.extend(self._connected_routes_ip4())
         if family in (None, AddressFamily.INET6):
             routes.extend(self._ip6_fib.snapshot())
+            routes.extend(self._connected_routes_ip6())
         return tuple(routes)
+
+    @staticmethod
+    def _connected_routes_ip4() -> list[Route[Ip4Address, Ip4Network]]:
+        """
+        Synthesize the on-link IPv4 connected routes from each interface's
+        assigned addresses — the 'proto kernel scope link' routes Linux
+        auto-installs per address (one per (address, interface)), so the
+        introspected table shows the on-link subnets the lookup path
+        derives from the address list rather than from the FIB.
+        """
+
+        import pytcp.stack as _stack
+
+        return [
+            Route[Ip4Address, Ip4Network](
+                destination=ifaddr.network,
+                prefsrc=ifaddr.address,
+                scope=RouteScope.LINK,
+                protocol=RouteProtocol.KERNEL,
+                oif=ifindex,
+            )
+            for ifindex, handler in _stack.interfaces.items()
+            for ifaddr in handler.ip4_ifaddr
+        ]
+
+    @staticmethod
+    def _connected_routes_ip6() -> list[Route[Ip6Address, Ip6Network]]:
+        """
+        Synthesize the on-link IPv6 connected routes from each interface's
+        assigned addresses (link-local and global) — the IPv6 counterpart
+        of '_connected_routes_ip4'.
+        """
+
+        import pytcp.stack as _stack
+
+        return [
+            Route[Ip6Address, Ip6Network](
+                destination=ifaddr.network,
+                prefsrc=ifaddr.address,
+                scope=RouteScope.LINK,
+                protocol=RouteProtocol.KERNEL,
+                oif=ifindex,
+            )
+            for ifindex, handler in _stack.interfaces.items()
+            for ifaddr in handler.ip6_ifaddr
+        ]
 
     def add_route(
         self,
@@ -186,12 +234,23 @@ class RouteApi:
             return self._ip6_fib.remove(destination=destination, gateway=cast("Ip6Address | None", gateway))
         return self._ip4_fib.remove(destination=destination, gateway=cast("Ip4Address | None", gateway))
 
-    def replace_default(self, *, gateway: Ip4Address | Ip6Address, protocol: RouteProtocol) -> None:
+    def replace_default(
+        self,
+        *,
+        gateway: Ip4Address | Ip6Address,
+        protocol: RouteProtocol,
+        oif: int | None = None,
+    ) -> None:
         """
         Atomically replace the default route for the gateway's
         family: remove any existing default, then install a single
         new one via 'gateway' with the given 'protocol'. Linux 'ip
-        route replace default via ...' equivalent.
+        route replace default via ...' equivalent. 'oif' is the
+        egress interface index the gateway is reachable on (the
+        DHCP-leasing / RA-receiving interface); it is stamped onto
+        the installed route so 'ip route'-style introspection can
+        render the default's 'dev'. 'None' leaves it unset (the
+        external-consumer / unknown-interface case).
 
         Remove-then-add (not the add-before-remove ordering of
         'AddressApi.replace'): two same-prefix default routes would
@@ -208,6 +267,7 @@ class RouteApi:
                     destination=DEFAULT_IP6_NETWORK,
                     gateway=gateway,
                     protocol=protocol,
+                    oif=oif,
                 )
             )
             __debug__ and log("stack", f"<lg>Route API</>: IPv6 default via {gateway} ({protocol!r})")
@@ -218,6 +278,7 @@ class RouteApi:
                 destination=DEFAULT_IP4_NETWORK,
                 gateway=gateway,
                 protocol=protocol,
+                oif=oif,
             )
         )
         __debug__ and log("stack", f"<lg>Route API</>: IPv4 default via {gateway} ({protocol!r})")

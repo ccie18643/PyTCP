@@ -45,7 +45,7 @@ Reference RFCs:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__rack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -858,3 +858,592 @@ class TestTlpProcessAck(TestCase):
         )
         self.assertEqual(new_tlp_end, 1000, msg="Indeterminate ACK MUST preserve state.")
         self.assertFalse(cc, msg="Indeterminate ACK MUST NOT invoke CC.")
+
+
+class TestRackMutationGoldens(TestCase):
+    """
+    Exact-value, branch-boundary, and argument-guard goldens closing
+    the remaining killable RACK / TLP mutation survivors across the
+    five helpers.
+    """
+
+    def test__rack__sent_after_strict_ordering(self) -> None:
+        """
+        Ensure RACK_sent_after compares (xmit_ts, end_seq)
+        lexicographically with a strict '>' on the timestamp and the
+        modular '>' on end_seq for ties.
+
+        Reference: RFC 8985 §6.2 step 2 (RACK_sent_after).
+        """
+
+        self.assertTrue(
+            rack_sent_after(200, 5, 100, 5),
+            msg="later xmit_ts must be 'sent after'.",
+        )
+        self.assertFalse(
+            rack_sent_after(100, 5, 200, 5),
+            msg="earlier xmit_ts must NOT be 'sent after' (kills '>'→'!=').",
+        )
+        self.assertTrue(
+            rack_sent_after(100, 10, 100, 5),
+            msg="equal xmit_ts must break the tie on end_seq (kills '!='→'==').",
+        )
+        self.assertFalse(
+            rack_sent_after(100, 5, 100, 10),
+            msg="equal xmit_ts, lower end_seq must NOT be 'sent after'.",
+        )
+
+    def test__rack__update_normal_sample(self) -> None:
+        """
+        Ensure a single non-retransmitted acked segment seeds min_RTT
+        and RACK.rtt with rtt = now - xmit_ts and advances RACK.xmit_ts
+        / end_seq.
+
+        Reference: RFC 8985 §6.2 step 2 (RACK update).
+        """
+
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[RackSegment(100, 500, False, False)],
+                now_ms=1000,
+                ts_recent_echo_ms=None,
+                prior_min_rtt_ms=0,
+                prior_rack_rtt_ms=0,
+                prior_rack_xmit_ts=0,
+                prior_rack_end_seq=0,
+            ),
+            (500, 500, 500, 100),
+            msg="normal sample must yield (min_rtt, rack_rtt, xmit_ts, end_seq) = (500,500,500,100).",
+        )
+
+    def test__rack__update_skips_infinite_ts_segment(self) -> None:
+        """
+        Ensure a lost segment (xmit_ts == INFINITE_TS) is skipped
+        entirely, leaving the prior RACK scalars unchanged.
+
+        Reference: RFC 8985 §5.2 (lost segments carry INFINITE_TS).
+        """
+
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[RackSegment(100, INFINITE_TS, False, False)],
+                now_ms=1000,
+                ts_recent_echo_ms=None,
+                prior_min_rtt_ms=7,
+                prior_rack_rtt_ms=8,
+                prior_rack_xmit_ts=9,
+                prior_rack_end_seq=10,
+            ),
+            (7, 8, 9, 10),
+            msg="INFINITE_TS segment must be skipped, leaving priors unchanged.",
+        )
+
+    def test__rack__update_retransmit_skip_conditions(self) -> None:
+        """
+        Ensure a retransmitted segment is skipped when the peer's
+        TSecr predates its xmit_ts, and when its rtt is below the
+        established min_RTT.
+
+        Reference: RFC 8985 §6.2 step 2 (retransmit skip conditions).
+        """
+
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[RackSegment(100, 500, True, False)],
+                now_ms=1000,
+                ts_recent_echo_ms=400,
+                prior_min_rtt_ms=0,
+                prior_rack_rtt_ms=0,
+                prior_rack_xmit_ts=0,
+                prior_rack_end_seq=0,
+            ),
+            (0, 0, 0, 0),
+            msg="retransmit with TSecr < xmit_ts must be skipped.",
+        )
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[RackSegment(100, 900, True, False)],
+                now_ms=1000,
+                ts_recent_echo_ms=None,
+                prior_min_rtt_ms=600,
+                prior_rack_rtt_ms=600,
+                prior_rack_xmit_ts=50,
+                prior_rack_end_seq=20,
+            ),
+            (600, 600, 50, 20),
+            msg="retransmit with rtt < min_RTT must be skipped.",
+        )
+
+    def test__rack__detect_loss_marks_lost_past_reo_window(self) -> None:
+        """
+        Ensure a segment RACK was sent after is marked lost (xmit_ts
+        replaced with INFINITE_TS) once now - xmit_ts exceeds the
+        reordering window.
+
+        Reference: RFC 8985 §6.2 step 5 (time-based loss detection).
+        """
+
+        new_segs, timeout = rack_detect_loss(
+            segments={10: RackSegment(100, 500, False, False)},
+            rack_xmit_ts=700,
+            rack_end_seq=300,
+            reo_wnd_ms=100,
+            now_ms=700,
+        )
+        self.assertTrue(new_segs[10].lost, msg="segment past reo-window must be lost.")
+        self.assertEqual(
+            new_segs[10].xmit_ts,
+            INFINITE_TS,
+            msg="lost segment must carry INFINITE_TS.",
+        )
+        self.assertEqual(timeout, 0, msg="no pending candidate → no reorder timer.")
+
+    def test__rack__detect_loss_pending_at_reo_boundary(self) -> None:
+        """
+        Ensure a segment exactly at the reordering-window boundary
+        (now - xmit_ts == reo_wnd) is NOT marked lost (strict '>'),
+        so a '>'→'>=' edit is caught.
+
+        Reference: RFC 8985 §6.2 step 5 (strict reordering tolerance).
+        """
+
+        new_segs, _ = rack_detect_loss(
+            segments={10: RackSegment(100, 500, False, False)},
+            rack_xmit_ts=700,
+            rack_end_seq=300,
+            reo_wnd_ms=100,
+            now_ms=600,
+        )
+        self.assertFalse(
+            new_segs[10].lost,
+            msg="segment exactly at the reo-window boundary must NOT be lost.",
+        )
+
+    def test__rack__detect_loss_earliest_pending_timer(self) -> None:
+        """
+        Ensure the returned reorder timer is the minimum
+        'xmit_ts + reo_wnd - now' across all pending candidates.
+
+        Reference: RFC 8985 §6.2 step 5 (earliest reorder timer).
+        """
+
+        _, timeout = rack_detect_loss(
+            segments={
+                10: RackSegment(100, 520, False, False),
+                20: RackSegment(200, 550, False, False),
+            },
+            rack_xmit_ts=700,
+            rack_end_seq=300,
+            reo_wnd_ms=100,
+            now_ms=600,
+        )
+        self.assertEqual(
+            timeout,
+            20,
+            msg="reorder timer must be the minimum pending timeout (20), not 50.",
+        )
+
+    def test__rack__detect_loss_not_sent_after_preserved(self) -> None:
+        """
+        Ensure a segment RACK was NOT sent after is preserved
+        unchanged (not a loss candidate).
+
+        Reference: RFC 8985 §6.2 step 5 (only sent-after segments are candidates).
+        """
+
+        new_segs, timeout = rack_detect_loss(
+            segments={10: RackSegment(100, 500, False, False)},
+            rack_xmit_ts=400,
+            rack_end_seq=50,
+            reo_wnd_ms=100,
+            now_ms=700,
+        )
+        self.assertFalse(new_segs[10].lost, msg="non-sent-after segment must be preserved.")
+        self.assertEqual(timeout, 0, msg="non-candidate must not arm a timer.")
+
+    def test__rack__compute_reo_wnd_exact_values(self) -> None:
+        """
+        Ensure the reordering window is min_RTT * mult // 4 when
+        reordering has been seen, 0 when it has not, and 0 when
+        min_RTT is uninitialized; the floor division is integer (odd
+        min_RTT does not yield a float).
+
+        Reference: RFC 8985 §6.2 step 4 (reordering window).
+        """
+
+        self.assertEqual(
+            rack_compute_reo_wnd(reordering_seen=True, reo_wnd_mult=2, min_rtt_ms=100),
+            50,
+            msg="reo_wnd = 100 * 2 // 4 = 50.",
+        )
+        self.assertEqual(
+            rack_compute_reo_wnd(reordering_seen=False, reo_wnd_mult=2, min_rtt_ms=100),
+            0,
+            msg="no reordering seen must yield 0.",
+        )
+        self.assertEqual(
+            rack_compute_reo_wnd(reordering_seen=True, reo_wnd_mult=2, min_rtt_ms=0),
+            0,
+            msg="uninitialized min_RTT must yield 0.",
+        )
+        self.assertEqual(
+            rack_compute_reo_wnd(reordering_seen=True, reo_wnd_mult=1, min_rtt_ms=101),
+            25,
+            msg="odd min_RTT 101 must floor to 25 (kills '//'→'/').",
+        )
+
+    def test__rack__compute_reo_wnd_guards(self) -> None:
+        """
+        Ensure rack_compute_reo_wnd accepts its argument boundaries
+        (mult=1, min_rtt=0) and rejects below them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            rack_compute_reo_wnd(reordering_seen=False, reo_wnd_mult=1, min_rtt_ms=0),
+            0,
+            msg="boundary mult=1, min_rtt=0 must be accepted.",
+        )
+        with self.assertRaises(AssertionError):
+            rack_compute_reo_wnd(reordering_seen=True, reo_wnd_mult=0, min_rtt_ms=100)
+        with self.assertRaises(AssertionError):
+            rack_compute_reo_wnd(reordering_seen=True, reo_wnd_mult=1, min_rtt_ms=-1)
+
+    def test__tlp__calc_pto_exact_values(self) -> None:
+        """
+        Ensure the TLP PTO is 2*SRTT, inflated by max_ack_delay only
+        when FlightSize is a single segment, falls back to 1000 ms
+        without an SRTT sample, and is capped to strictly below the
+        RTO remaining.
+
+        Reference: RFC 8985 §7.2 (TLP PTO computation).
+        """
+
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=None,
+                now_ms=0,
+            ),
+            200,
+            msg="multi-segment flight: PTO = 2*SRTT = 200.",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=1460,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=None,
+                now_ms=0,
+            ),
+            225,
+            msg="single-segment flight: PTO = 2*SRTT + max_ack_delay = 225.",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=None,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=None,
+                now_ms=0,
+            ),
+            1000,
+            msg="no SRTT sample: PTO = 1000 ms.",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=150,
+                now_ms=0,
+            ),
+            149,
+            msg="PTO must be capped to RTO_remaining - 1 = 149.",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=200,
+                now_ms=0,
+            ),
+            199,
+            msg="PTO == RTO_remaining must be pulled back to 199 (strict '>=').",
+        )
+
+    def test__tlp__calc_pto_guards(self) -> None:
+        """
+        Ensure tlp_calc_pto accepts its argument boundaries
+        (flight_size=0, smss=1, max_ack_delay=0) and rejects below
+        them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        tlp_calc_pto(
+            srtt_ms=100,
+            flight_size=0,
+            smss=1,
+            max_ack_delay_ms=0,
+            rto_expiration_ms=None,
+            now_ms=0,
+        )
+        with self.assertRaises(AssertionError):
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=-1,
+                smss=1,
+                max_ack_delay_ms=0,
+                rto_expiration_ms=None,
+                now_ms=0,
+            )
+        with self.assertRaises(AssertionError):
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=0,
+                smss=0,
+                max_ack_delay_ms=0,
+                rto_expiration_ms=None,
+                now_ms=0,
+            )
+        with self.assertRaises(AssertionError):
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=0,
+                smss=1,
+                max_ack_delay_ms=-1,
+                rto_expiration_ms=None,
+                now_ms=0,
+            )
+
+    def test__tlp__process_ack_case2_requires_no_sack(self) -> None:
+        """
+        Ensure the Case-2 bare-dup-ACK clear requires both ack ==
+        tlp_end_seq AND no SACK blocks: with SACK blocks present the
+        outcome is indeterminate and the probe state is preserved.
+
+        Reference: RFC 8985 §7.4 (Case 2: bare dup-ACK with no SACK).
+        """
+
+        self.assertEqual(
+            tlp_process_ack(
+                tlp_end_seq=100,
+                tlp_is_retrans=True,
+                ack_seq=100,
+                has_dsack_for_probe=False,
+                has_sack_blocks=False,
+            ),
+            (None, False),
+            msg="bare dup-ACK with no SACK must clear state (Case 2).",
+        )
+        self.assertEqual(
+            tlp_process_ack(
+                tlp_end_seq=100,
+                tlp_is_retrans=True,
+                ack_seq=100,
+                has_dsack_for_probe=False,
+                has_sack_blocks=True,
+            ),
+            (100, False),
+            msg="dup-ACK WITH SACK blocks must preserve state (kills 'and not sack').",
+        )
+
+
+class TestRackMutationGoldens2(TestCase):
+    """
+    Multi-segment continue/break, RTT-skip boundary, and TLP PTO
+    boundary goldens closing the second-pass RACK survivors.
+    """
+
+    def test__rack__update_multi_segment_skip_then_process(self) -> None:
+        """
+        Ensure the update loop continues past a skipped segment to
+        process a later one: an INFINITE_TS segment and a
+        TSecr-disqualified retransmit each precede a valid segment that
+        must still be folded (kills 'continue'→'break').
+
+        Reference: RFC 8985 §6.2 step 2 (per-segment update loop).
+        """
+
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[
+                    RackSegment(50, INFINITE_TS, False, False),
+                    RackSegment(100, 500, False, False),
+                ],
+                now_ms=1000,
+                ts_recent_echo_ms=None,
+                prior_min_rtt_ms=0,
+                prior_rack_rtt_ms=0,
+                prior_rack_xmit_ts=0,
+                prior_rack_end_seq=0,
+            ),
+            (500, 500, 500, 100),
+            msg="INFINITE_TS segment must be skipped, the next still processed.",
+        )
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[
+                    RackSegment(50, 500, True, False),
+                    RackSegment(100, 600, False, False),
+                ],
+                now_ms=1000,
+                ts_recent_echo_ms=400,
+                prior_min_rtt_ms=0,
+                prior_rack_rtt_ms=0,
+                prior_rack_xmit_ts=0,
+                prior_rack_end_seq=0,
+            ),
+            (400, 400, 600, 100),
+            msg="TSecr-skipped retransmit must not break the loop; next still processed.",
+        )
+
+    def test__rack__update_tsecr_skip_boundary_is_strict(self) -> None:
+        """
+        Ensure the TSecr retransmit skip uses a strict '<': a TSecr
+        exactly equal to the segment's xmit_ts does NOT skip (kills
+        '<'→'<=').
+
+        Reference: RFC 8985 §6.2 step 2 (TSecr < xmit_ts disambiguation).
+        """
+
+        self.assertEqual(
+            rack_update(
+                newly_acked_segments=[RackSegment(100, 500, True, False)],
+                now_ms=1000,
+                ts_recent_echo_ms=500,
+                prior_min_rtt_ms=0,
+                prior_rack_rtt_ms=0,
+                prior_rack_xmit_ts=0,
+                prior_rack_end_seq=0,
+            ),
+            (500, 500, 500, 100),
+            msg="TSecr == xmit_ts must NOT skip the segment (strict '<').",
+        )
+
+    def test__rack__detect_loss_multi_segment_skip_then_mark(self) -> None:
+        """
+        Ensure detect_loss continues past an already-lost segment and
+        past a not-sent-after segment to still mark a later loss
+        candidate (kills 'continue'→'break').
+
+        Reference: RFC 8985 §6.2 step 5 (per-segment loss walk).
+        """
+
+        already_lost, _ = rack_detect_loss(
+            segments={
+                10: RackSegment(100, INFINITE_TS, False, True),
+                20: RackSegment(200, 500, False, False),
+            },
+            rack_xmit_ts=700,
+            rack_end_seq=300,
+            reo_wnd_ms=100,
+            now_ms=700,
+        )
+        self.assertTrue(
+            already_lost[20].lost,
+            msg="candidate after an already-lost segment must still be marked.",
+        )
+        not_after, _ = rack_detect_loss(
+            segments={
+                10: RackSegment(100, 900, False, False),
+                20: RackSegment(200, 500, False, False),
+            },
+            rack_xmit_ts=700,
+            rack_end_seq=300,
+            reo_wnd_ms=100,
+            now_ms=700,
+        )
+        self.assertFalse(not_after[10].lost, msg="not-sent-after segment preserved.")
+        self.assertTrue(
+            not_after[20].lost,
+            msg="candidate after a not-sent-after segment must still be marked.",
+        )
+
+    def test__tlp__calc_pto_branch_boundaries(self) -> None:
+        """
+        Ensure the TLP PTO branches at their exact boundaries: a zero
+        SRTT falls through to the 1000 ms default (strict '> 0'), a
+        FlightSize strictly below one segment still inflates by
+        max_ack_delay (kills '<='→'=='), the RTO-remaining uses
+        subtraction with a non-zero now, and a non-positive RTO
+        remaining applies no cap.
+
+        Reference: RFC 8985 §7.2 (TLP PTO branches).
+        """
+
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=0,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=None,
+                now_ms=0,
+            ),
+            1000,
+            msg="SRTT == 0 must fall through to the 1000 ms default (strict '> 0').",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=700,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=None,
+                now_ms=0,
+            ),
+            225,
+            msg="FlightSize below one segment must inflate by max_ack_delay (kills '<='→'==').",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=250,
+                now_ms=100,
+            ),
+            149,
+            msg="RTO remaining = 250 - 100 = 150; PTO capped to 149 (kills '-'→'+').",
+        )
+        self.assertEqual(
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=2920,
+                smss=1460,
+                max_ack_delay_ms=25,
+                rto_expiration_ms=50,
+                now_ms=100,
+            ),
+            200,
+            msg="non-positive RTO remaining must not cap (kills '> 0'→'!= 0').",
+        )
+
+    def test__tlp__calc_pto_smss_guard_rejects_negative(self) -> None:
+        """
+        Ensure the smss guard rejects a negative value (kills '> 0'→'!= 0').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(AssertionError):
+            tlp_calc_pto(
+                srtt_ms=100,
+                flight_size=0,
+                smss=-1,
+                max_ack_delay_ms=0,
+                rto_expiration_ms=None,
+                now_ms=0,
+            )

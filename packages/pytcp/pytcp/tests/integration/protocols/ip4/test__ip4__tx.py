@@ -31,12 +31,10 @@ This module contains integration tests for the IPv4 TX packet-handler path.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any, override
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto import (
@@ -63,6 +61,7 @@ from pytcp.tests.lib.network_testcase import (
     IP4__UNSPECIFIED,
     STACK__IP4_HOST,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -1129,6 +1128,7 @@ class TestIp4TxNoIp4Support(Ip4TestCase):
     disabled — '_phtx_ip4' must short-circuit before assembly.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable IPv4 protocol

@@ -53,7 +53,7 @@ Reference RFCs:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__listener__multi_child.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
@@ -62,8 +62,8 @@ from net_addr import Ip4Address
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -121,7 +121,7 @@ class TestTcpListener__MultiChild(TcpTestCase):
         stack.sockets[sock.socket_id] = sock
 
         session.tcp_fsm(syscall=SysCall.LISTEN)
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def test__listener__accept_queue_is_fifo_and_unbounded_backlog(self) -> None:
         """

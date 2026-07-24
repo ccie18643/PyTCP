@@ -28,9 +28,10 @@ container in 'pytcp/protocols/tcp/state/tcp__state__accecn.py'.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__accecn.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__accecn import (
@@ -49,6 +50,7 @@ class TestAccEcnState__Defaults(TestCase):
     of 'AccEcnState'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct a default state instance for every test.
@@ -567,4 +569,415 @@ class TestAccEcnState__ApparentCeDelta(TestCase):
             state.s_cep,
             0b101,
             msg="Matching ACE must leave s.cep unchanged.",
+        )
+
+
+class TestAccEcnState__RecordReceivedCodepointPerCodepoint(TestCase):
+    """
+    Exact per-codepoint byte-counter coverage of
+    'record_received_codepoint' — the ECT(0) / ECT(1) / Not-ECT
+    dispatch arms and the 2^24 wrap, which the CE-only existing
+    test leaves unpinned.
+    """
+
+    def test__accecn_state__record_ect0_bumps_only_ect0_b(self) -> None:
+        """
+        Ensure ip_ecn=2 (ECT0) accumulates the payload length into
+        r.ect0_b alone and leaves r.ce_b / r.ect1_b / r.cep untouched.
+
+        Reference: RFC 9768 §3.2.3 (per-codepoint byte counters).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=2, payload_len=40)
+
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER + 40, msg="ECT0 must add to r.ect0_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="ECT0 must not touch r.ce_b.")
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="ECT0 must not touch r.ect1_b.")
+        self.assertEqual(state.r_cep, ACCECN__INITIAL_CEP, msg="ECT0 must not bump r.cep.")
+
+    def test__accecn_state__record_ect1_bumps_only_ect1_b(self) -> None:
+        """
+        Ensure ip_ecn=1 (ECT1) accumulates the payload length into
+        r.ect1_b alone and leaves r.ce_b / r.ect0_b / r.cep untouched.
+
+        Reference: RFC 9768 §3.2.3 (per-codepoint byte counters).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=1, payload_len=60)
+
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER + 60, msg="ECT1 must add to r.ect1_b.")
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="ECT1 must not touch r.ect0_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="ECT1 must not touch r.ce_b.")
+
+    def test__accecn_state__record_not_ect_bumps_nothing(self) -> None:
+        """
+        Ensure ip_ecn=0 (Not-ECT) accumulates into none of the
+        receiver byte counters.
+
+        Reference: RFC 9768 §3.2.3 (only ECN-capable codepoints counted).
+        """
+
+        state = AccEcnState()
+        state.record_received_codepoint(ip_ecn=0, payload_len=99)
+
+        self.assertEqual(state.r_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="Not-ECT must not touch r.ect0_b.")
+        self.assertEqual(state.r_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="Not-ECT must not touch r.ect1_b.")
+        self.assertEqual(state.r_ce_b, ACCECN__INITIAL_CE_BYTE_COUNTER, msg="Not-ECT must not touch r.ce_b.")
+        self.assertEqual(state.r_cep, ACCECN__INITIAL_CEP, msg="Not-ECT must not bump r.cep.")
+
+    def test__accecn_state__record_ce_byte_counter_wraps_modulo_2_24(self) -> None:
+        """
+        Ensure the CE byte counter wraps modulo 2^24 (the AccECN
+        option counter width).
+
+        Reference: RFC 9768 §3.2.3 (24-bit counter wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ce_b = ACCECN__COUNTER_MASK
+        state.record_received_codepoint(ip_ecn=3, payload_len=5)
+
+        self.assertEqual(
+            state.r_ce_b,
+            4,
+            msg="r.ce_b must wrap: (0xFFFFFF + 5) & 0xFFFFFF == 4.",
+        )
+
+
+class TestAccEcnState__SenderOptionCounters(TestCase):
+    """
+    'update_sender_counters_from_option' — the §3.2.3 abbreviation
+    rule (omitted slots are None and leave the mirror unchanged).
+    """
+
+    def test__accecn_state__option_full_tuple_updates_all_mirrors(self) -> None:
+        """
+        Ensure a fully-populated option tuple installs all three
+        sender byte-counter mirrors in (ect0, ce, ect1) order.
+
+        Reference: RFC 9768 §3.2.1 (sender mirror state).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((11, 22, 33))
+
+        self.assertEqual(state.s_ect0_b, 11, msg="Slot 0 must map to s.ect0_b.")
+        self.assertEqual(state.s_ce_b, 22, msg="Slot 1 must map to s.ce_b.")
+        self.assertEqual(state.s_ect1_b, 33, msg="Slot 2 must map to s.ect1_b.")
+
+    def test__accecn_state__option_none_slots_leave_mirrors_unchanged(self) -> None:
+        """
+        Ensure an omitted (None) option slot leaves its sender mirror
+        at the prior value — only the present slot is applied.
+
+        Reference: RFC 9768 §3.2.3 (abbreviation rule slot omission).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((None, 99, None))
+
+        self.assertEqual(state.s_ce_b, 99, msg="The present slot 1 must update s.ce_b.")
+        self.assertEqual(state.s_ect0_b, ACCECN__INITIAL_BYTE_COUNTER, msg="An omitted slot 0 must leave s.ect0_b.")
+        self.assertEqual(state.s_ect1_b, ACCECN__INITIAL_BYTE_COUNTER, msg="An omitted slot 2 must leave s.ect1_b.")
+
+
+class TestAccEcnState__ApparentCeDeltaArithmetic(TestCase):
+    """
+    'apparent_ce_delta' — the 3-bit modular ACE subtraction, its
+    wrap, and the s.cep accumulation.
+    """
+
+    def test__accecn_state__apparent_delta_simple(self) -> None:
+        """
+        Ensure a forward ACE field yields the straight 3-bit
+        difference and advances s.cep by it.
+
+        Reference: RFC 9768 §3.2.2.5 (ACE-based fallback).
+        """
+
+        state = AccEcnState()  # s.cep default 5 (0b101)
+        delta = state.apparent_ce_delta(7)
+
+        self.assertEqual(delta, 2, msg="apparent delta must be (7 - 5) & 0b111 == 2.")
+        self.assertEqual(state.s_cep, 7, msg="s.cep must advance by the apparent delta to 7.")
+
+    def test__accecn_state__apparent_delta_wraps_modulo_8(self) -> None:
+        """
+        Ensure an ACE field that has wrapped below the stored low 3
+        bits is interpreted modulo 8 (a small forward delta), not as
+        a negative jump.
+
+        Reference: RFC 9768 §3.2.2.5 (3-bit modular ACE arithmetic).
+        """
+
+        state = AccEcnState()
+        state.s_cep = 7
+        delta = state.apparent_ce_delta(1)
+
+        self.assertEqual(delta, 2, msg="apparent delta must be (1 - 7) & 0b111 == 2 (modular wrap).")
+        self.assertEqual(state.s_cep, 9, msg="s.cep must advance to (7 + 2) & MASK == 9.")
+
+
+class TestAccEcnState__CounterWrapAndMaskShape(TestCase):
+    """
+    Mask-shape coverage that distinguishes the AccECN 24-bit
+    bitwise '& mask' from a modular '% mask' on the ECT(0) /
+    ECT(1) byte counters and the 3-bit ACE field, plus the
+    slotted-dataclass invariant.
+    """
+
+    def test__accecn_state__is_slotted(self) -> None:
+        """
+        Ensure AccEcnState is a slotted dataclass so it grows no
+        per-instance __dict__ on the TcpSession.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(AccEcnState(), "__dict__"),
+            msg="AccEcnState must be declared with slots=True.",
+        )
+
+    def test__accecn_state__ect0_byte_counter_masks_not_mods_on_wrap(self) -> None:
+        """
+        Ensure r.ect0_b wraps with a 24-bit bitmask, not a modulo
+        2^24-1: at 0xFFFFFF + 40 the masked result is 39, whereas a
+        '% mask' would yield 40.
+
+        Reference: RFC 9768 §3.2.3 (24-bit counter bitmask wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b = ACCECN__COUNTER_MASK
+        state.record_received_codepoint(ip_ecn=2, payload_len=40)
+
+        self.assertEqual(state.r_ect0_b, 39, msg="r.ect0_b must wrap via '& 0xFFFFFF' to 39, not '% mask'.")
+
+    def test__accecn_state__ect1_byte_counter_masks_not_mods_on_wrap(self) -> None:
+        """
+        Ensure r.ect1_b wraps with a 24-bit bitmask, not a modulo
+        2^24-1, on overflow.
+
+        Reference: RFC 9768 §3.2.3 (24-bit counter bitmask wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect1_b = ACCECN__COUNTER_MASK
+        state.record_received_codepoint(ip_ecn=1, payload_len=40)
+
+        self.assertEqual(state.r_ect1_b, 39, msg="r.ect1_b must wrap via '& 0xFFFFFF' to 39, not '% mask'.")
+
+    def test__accecn_state__ace_delta_uses_bitmask_not_modulo(self) -> None:
+        """
+        Ensure the 3-bit ACE delta is computed with '& 0b111', not
+        '% 0b111': a full-7 delta survives as 7 under a bitmask but
+        would collapse to 0 under a modulo.
+
+        Reference: RFC 9768 §3.2.2.5 (3-bit modular ACE via bitmask).
+        """
+
+        state = AccEcnState()
+        state.s_cep = 8  # low 3 bits == 0
+        delta = state.apparent_ce_delta(7)
+
+        self.assertEqual(delta, 7, msg="(7 - 0) & 0b111 must be 7 (a '% 0b111' would give 0).")
+        self.assertEqual(state.s_cep, 15, msg="s.cep must advance to (8 + 7) & MASK == 15.")
+
+
+class TestAccEcnState__NextEmitCountersSelection(TestCase):
+    """
+    The outbound AccECN-option counter selection
+    ('next_emit_counters') — change detection against the
+    last-emit trackers and the AccECN0 / AccECN1 ordering.
+    """
+
+    def test__accecn_state__first_emit_sends_all_three_via_accecn0(self) -> None:
+        """
+        Ensure the first emission (last-emit sentinels at -1, so all
+        three counters read 'changed') sends the full
+        (ect0, ce, ect1) tuple via AccECN0 and advances the trackers.
+
+        Reference: RFC 9768 §3.2.3 (Length-11 first emission).
+        """
+
+        state = AccEcnState()
+
+        accecn0, accecn1 = state.next_emit_counters()
+
+        self.assertEqual(accecn0, (1, 0, 1), msg="First emit must send the full AccECN0 (ect0, ce, ect1) tuple.")
+        self.assertIsNone(accecn1, msg="AccECN1 must be None when AccECN0 is selected.")
+
+    def test__accecn_state__second_emit_with_no_change_is_empty(self) -> None:
+        """
+        Ensure a second emission with no counter change since the
+        first yields the empty (None, None, None) AccECN0 tuple.
+
+        Reference: RFC 9768 §3.2.3.3 (Length-2 empty option).
+        """
+
+        state = AccEcnState()
+        state.next_emit_counters()  # sync trackers
+
+        accecn0, accecn1 = state.next_emit_counters()
+
+        self.assertEqual(accecn0, (None, None, None), msg="Unchanged second emit must be the empty AccECN0 tuple.")
+        self.assertIsNone(accecn1, msg="AccECN1 must be None.")
+
+    def test__accecn_state__ect1_only_change_selects_accecn1(self) -> None:
+        """
+        Ensure an ECT(1)-only advance since the last emission selects
+        the AccECN1 ordering (ECT(1) first) with only the e1b slot
+        populated.
+
+        Reference: RFC 9768 §3.2.3 (AccECN1 ordering when ECT(1) leads).
+        """
+
+        state = AccEcnState()
+        state.next_emit_counters()  # sync trackers
+        state.record_received_codepoint(ip_ecn=1, payload_len=50)  # r.ect1_b: 1 -> 51
+
+        accecn0, accecn1 = state.next_emit_counters()
+
+        self.assertIsNone(accecn0, msg="AccECN0 must be None when ECT(1) leads.")
+        self.assertEqual(accecn1, (None, None, 51), msg="An ECT(1)-only change must emit AccECN1 with only e1b.")
+
+    def test__accecn_state__e0b_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure change detection uses inequality, not greater-than: a
+        counter that has wrapped BELOW the last-emit tracker still reads
+        'changed' and is emitted.
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 50, 100
+        state.r_ce_b, state.r_last_emit_ceb = 0, 0
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((50, None, None), None),
+            msg="An e0b that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__ceb_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure a CE byte counter wrapped below its last-emit tracker is
+        still detected as changed (Length-8 AccECN0).
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 5, 100
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((1, 5, None), None),
+            msg="A ceb that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__e1b_below_last_emit_is_still_changed(self) -> None:
+        """
+        Ensure an ECT(1) byte counter wrapped below its last-emit
+        tracker is still detected as changed (selects AccECN1).
+
+        Reference: RFC 9768 §3.2.3 (counter change detection on wrap).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 0, 0
+        state.r_ect1_b, state.r_last_emit_e1b = 5, 100
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            (None, (None, None, 5)),
+            msg="An e1b that wrapped below last-emit must still be emitted (!= not >).",
+        )
+
+    def test__accecn_state__s_cep_wraps_modulo_24_bit_on_delta(self) -> None:
+        """
+        Ensure 'apparent_ce_delta' advances s.cep with a 24-bit bitmask
+        wrap: at s.cep == 0xFFFFFF a delta of 3 wraps s.cep to 2.
+
+        Reference: RFC 9768 §3.2.2.5 (s.cep 24-bit modular accumulation).
+        """
+
+        state = AccEcnState()
+        state.s_cep = ACCECN__COUNTER_MASK  # low 3 bits == 7
+
+        delta = state.apparent_ce_delta(2)
+
+        self.assertEqual(delta, 3, msg="(2 - 7) & 0b111 must be 3.")
+        self.assertEqual(state.s_cep, 2, msg="s.cep must wrap: (0xFFFFFF + 3) & 0xFFFFFF == 2.")
+
+
+class TestAccEcnState__BitwiseAndExactness(TestCase):
+    """
+    Inputs that distinguish the AccECN bitwise '& 0b111' / indexing
+    from arithmetic look-alikes that coincide on the common cases.
+    """
+
+    def test__accecn_state__inner_ace_mask_is_bitand_not_power(self) -> None:
+        """
+        Ensure the stored low-3-bits in the ACE delta uses '& 0b111',
+        not '** 0b111': at s.cep == 2 (an even low-3-bits value) the
+        two diverge — '(5 - (2 & 7)) & 7' == 3 vs the power form == 5.
+
+        Reference: RFC 9768 §3.2.2.5 (3-bit modular ACE via bitmask).
+        """
+
+        state = AccEcnState()
+        state.s_cep = 2
+
+        self.assertEqual(
+            state.apparent_ce_delta(5),
+            3,
+            msg="apparent delta must be (5 - (2 & 0b111)) & 0b111 == 3, not the power look-alike.",
+        )
+
+    def test__accecn_state__ceb_above_last_emit_is_changed(self) -> None:
+        """
+        Ensure change detection is symmetric: a CE byte counter ABOVE
+        its last-emit tracker (the ordinary forward case) is detected
+        as changed — pinning '!=' against a '<' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (counter change detection).
+        """
+
+        state = AccEcnState()
+        state.r_ect0_b, state.r_last_emit_e0b = 1, 1
+        state.r_ce_b, state.r_last_emit_ceb = 100, 5
+        state.r_ect1_b, state.r_last_emit_e1b = 1, 1
+
+        self.assertEqual(
+            state.next_emit_counters(),
+            ((1, 100, None), None),
+            msg="A ceb above last-emit must be emitted (!= not <).",
+        )
+
+    def test__accecn_state__option_slot0_index_is_head_not_tail(self) -> None:
+        """
+        Ensure the AccECN-option slot-0 update reads the head element,
+        not the tail: a (5, None, None) tuple installs s.ect0_b == 5,
+        which a wrong index (slot -1 / 2 being None) would leave at the
+        default.
+
+        Reference: RFC 9768 §3.2.3 (option slot ordering ect0, ce, ect1).
+        """
+
+        state = AccEcnState()
+        state.update_sender_counters_from_option((5, None, None))
+
+        self.assertEqual(
+            state.s_ect0_b,
+            5,
+            msg="Slot 0 (present) must install s.ect0_b == 5, pinning the head index.",
         )

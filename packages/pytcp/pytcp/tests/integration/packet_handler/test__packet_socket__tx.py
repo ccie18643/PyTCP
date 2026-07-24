@@ -29,16 +29,16 @@ frame onto the egress interface's TxRing.
 
 pytcp/tests/integration/packet_handler/test__packet_socket__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno
 from typing import Any, cast, override
 from unittest.mock import patch
 
-from pytcp.socket import SOCK_RAW, AddressFamily, socket
-from pytcp.socket.packet__socket import PacketSocket
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket import SOCK_RAW, AddressFamily, socket
+from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.tests.lib.network_testcase import NetworkTestCase
 
 # A complete, pre-built Ethernet frame (the AF_PACKET socket supplies
@@ -60,7 +60,7 @@ class TestPacketSocketTx(NetworkTestCase):
         """
 
         super().setUp()
-        self.enterContext(patch("pytcp.socket.packet__socket.log"))
+        self.enterContext(patch("pytcp.runtime.socket.packet__socket.log"))
         self._tx_ring = cast(Any, self._packet_handler._tx_ring)
 
     def _packet_socket(self) -> PacketSocket:

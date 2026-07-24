@@ -28,12 +28,11 @@ messages (IGMPv2 Report, IGMPv2 Leave Group, IGMPv1 Report).
 
 net_proto/tests/unit/protocols/igmp/test__igmp__legacy_reports.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto.protocols.igmp.igmp__errors import IgmpSanityError
@@ -47,6 +46,7 @@ from net_proto.protocols.igmp.message.igmp__message__v2_leave import (
 from net_proto.protocols.igmp.message.igmp__message__v2_report import (
     IgmpMessageV2Report,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -100,6 +100,7 @@ class TestIgmpLegacyReports(TestCase):
     _bytes: bytes
     _str: str
 
+    @override
     def setUp(self) -> None:
         """
         Build the parametrized legacy IGMP message instance.

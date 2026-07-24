@@ -27,7 +27,7 @@ This module contains the classes used to store the packet processing statistics.
 
 pytcp/lib/packet_stats.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
@@ -363,6 +363,7 @@ class PacketStatsTx(PacketStats):
     ip4__dst_broadcast_disallowed__drop: int = 0
     ip4__link_local_scope_mismatch__drop: int = 0
     ip4__mtu_ok__send: int = 0
+    ip4__loopback__send: int = 0
     ip4__mtu_exceed__frag: int = 0
     ip4__mtu_exceed__frag__send: int = 0
     ip4__mtu_exceed__df_set__drop: int = 0
@@ -374,11 +375,13 @@ class PacketStatsTx(PacketStats):
     ip6__src_multicast__drop: int = 0
     ip6__src_network_unspecified__replace_local: int = 0
     ip6__src_network_unspecified__replace_external: int = 0
+    ip6__src_unspecified__replace_multicast: int = 0
     ip6__src_unspecified__send: int = 0
     ip6__src_unspecified__drop: int = 0
     ip6__src_scope_mismatch__drop: int = 0
     ip6__dst_unspecified__drop: int = 0
     ip6__mtu_ok__send: int = 0
+    ip6__loopback__send: int = 0
     ip6__mtu_exceed__frag: int = 0
 
     ip6_frag__pre_assemble: int = 0
@@ -404,6 +407,7 @@ class PacketStatsTx(PacketStats):
     icmp6__nd__neighbor_advertisement__send: int = 0
     icmp6__mld2__report__send: int = 0
     icmp6__mld1__report__send: int = 0
+    icmp6__mld1__done__send: int = 0
     icmp6__unknown__drop: int = 0
 
     igmp__pre_assemble: int = 0

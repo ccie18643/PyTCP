@@ -28,13 +28,11 @@ Module contains tests for the DHCPv4 Option Overload option
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__overload.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Dhcp4IntegrityError,
@@ -43,6 +41,7 @@ from net_proto import (
     Dhcp4OptionType,
 )
 from net_proto.lib.proto_enum import ProtoEnumByte
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionOverloadValueEnum(TestCase):
@@ -167,6 +166,7 @@ class TestDhcp4OptionOverloadAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the SUT.

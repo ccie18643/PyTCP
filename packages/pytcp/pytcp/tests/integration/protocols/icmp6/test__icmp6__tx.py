@@ -34,10 +34,10 @@ the 'IcmpTestCase' harness.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import cast
+from typing import cast, override
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -63,6 +63,10 @@ from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__message__report import 
 from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__multicast_address_record import (
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
+)
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
 )
 from pytcp.lib.tx_status import TxStatus
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
@@ -945,6 +949,7 @@ class TestIcmp6Tx__SendMulticastListenerReportEmpty(IcmpTestCase):
     filter set is empty (no MLDv2 report sent).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Reset the stack's multicast list to only ff02::1 so the
@@ -952,7 +957,9 @@ class TestIcmp6Tx__SendMulticastListenerReportEmpty(IcmpTestCase):
         """
 
         super().setUp()
-        self._packet_handler._ip6_multicast = [Ip6Address("ff02::1")]
+        self._packet_handler._ip6_multicast_filters = {
+            Ip6Address("ff02::1"): Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+        }
 
     def test__icmp6__tx__send_mlr_empty__no_tx(self) -> None:
         """
@@ -1113,8 +1120,10 @@ class TestIcmp6Tx__SendNeighborSolicitationLocal(IcmpTestCase):
 class TestIcmp6Tx__SendNeighborSolicitationOffNetwork(IcmpTestCase):
     """
     'send_icmp6_neighbor_solicitation' with target outside our
-    networks. The IPv6 TX layer drops the resulting unspecified-source
-    NS because non-DAD NS must carry an SLLA.
+    networks. No owned address shares the off-network target's prefix,
+    so the source stays unspecified and the IPv6 TX layer fills it in
+    via RFC 6724 source selection for the link-local-scoped
+    solicited-node multicast destination; the NS egresses.
     """
 
     _TARGET = Ip6Address("2001:db8:99::1")
@@ -1122,24 +1131,30 @@ class TestIcmp6Tx__SendNeighborSolicitationOffNetwork(IcmpTestCase):
     def _drive(self) -> None:
         self._packet_handler.send_icmp6_neighbor_solicitation(icmp6_ns_target_address=self._TARGET)
 
-    def test__icmp6__tx__send_ns_off_network__no_tx(self) -> None:
+    def test__icmp6__tx__send_ns_off_network__emits_one_frame(self) -> None:
         """
-        Ensure the off-network NS path produces no TX frames — the
-        IPv6 layer drops the packet for unspecified source.
+        Ensure the off-network NS egresses one frame — the IPv6 layer
+        fills the unspecified source via RFC 6724 source selection for
+        the link-local-scoped solicited-node multicast destination
+        rather than dropping it.
 
-        Reference: PyTCP test infrastructure (no RFC clause).
+        Reference: RFC 6724 §4 (source selection applies to multicast destinations).
         """
 
         self._drive()
 
-        self._assert_no_tx()
+        self.assertEqual(
+            len(self._frames_tx),
+            1,
+            msg="The off-network NS must egress one frame with an RFC 6724-selected source.",
+        )
 
     def test__icmp6__tx__send_ns_off_network__packet_stats_tx(self) -> None:
         """
-        Ensure the helper still bumps the early-stage TX counters
-        even though the IPv6 layer ultimately drops the packet.
+        Ensure the off-network NS bumps the send counters, including the
+        multicast-destination source-replacement counter.
 
-        Reference: PyTCP test infrastructure (no RFC clause).
+        Reference: RFC 6724 §4 (source selection applies to multicast destinations).
         """
 
         self._drive()
@@ -1148,7 +1163,12 @@ class TestIcmp6Tx__SendNeighborSolicitationOffNetwork(IcmpTestCase):
             icmp6__pre_assemble=1,
             icmp6__nd__neighbor_solicitation__send=1,
             ip6__pre_assemble=1,
-            ip6__src_unspecified__drop=1,
+            ip6__src_unspecified__replace_multicast=1,
+            ip6__mtu_ok__send=1,
+            ethernet__pre_assemble=1,
+            ethernet__src_unspec__fill=1,
+            ethernet__dst_unspec__ip6_lookup=1,
+            ethernet__dst_unspec__ip6_lookup__multicast__send=1,
         )
 
 

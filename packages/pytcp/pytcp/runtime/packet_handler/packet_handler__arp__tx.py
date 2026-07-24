@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the outbound ARP packets.
 
 pytcp/runtime/packet_handler/packet_handler__arp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING

@@ -27,12 +27,12 @@ This module contains tests for the IPv6 Routing assembler operation.
 
 net_proto/tests/unit/protocols/ip6_routing/test__ip6_routing__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.protocols.ip6_routing.ip6_routing__assembler import (
     Ip6RoutingAssembler,

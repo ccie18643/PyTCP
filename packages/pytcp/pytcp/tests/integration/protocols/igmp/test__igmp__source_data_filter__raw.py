@@ -32,7 +32,7 @@ gates both UDP and RAW multicast delivery through the same filter
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_data_filter__raw.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -42,7 +42,7 @@ from net_proto import EthernetAssembler, Ip4Assembler, IpProto
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.raw.raw__assembler import RawAssembler
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,
     IP_BLOCK_SOURCE,
@@ -50,7 +50,7 @@ from pytcp.socket import (
     AddressFamily,
     SocketType,
 )
-from pytcp.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.tests.lib.udp_testcase import HOST_A__IP4_ADDRESS, UdpTestCase
 
 _GROUP = Ip4Address("239.1.1.1")
@@ -96,6 +96,10 @@ class TestRawMulticastSourceDataFilter(UdpTestCase):
 
         super().setUp()
         self._sock = RawSocket(family=AddressFamily.INET4, type=SocketType.RAW, protocol=_PROTO)
+        # 'RawSocket.__init__' registers under the unspecified local
+        # address; drop that and re-register bound to the test group (a
+        # plain 'bind' rejects a multicast local address).
+        stack.sockets.unregister(self._sock)
         self._sock._local_ip_address = _GROUP
         stack.sockets[self._sock.socket_id] = self._sock
 

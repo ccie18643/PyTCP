@@ -35,18 +35,17 @@ SOCKET_CALL op keyed by the daemon-assigned handle.
 
 pytcp/client/client__packet_socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-import socket
 
 from net_proto.lib.enums import EtherType
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__packet_bridge import IPC__PACKET_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__packet_frame import decode_packet, encode_packet
 from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
-from pytcp.socket import ETH_P_ALL, AddressFamily, SocketType
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 
 
 class ClientPacketSocket:
@@ -68,7 +67,7 @@ class ClientPacketSocket:
             protocol=protocol,
         )
         self._handle = handle
-        self._data_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM, fileno=data_fd)
+        self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_DGRAM, fileno=data_fd)
 
     def fileno(self) -> int:
         """

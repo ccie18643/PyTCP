@@ -34,7 +34,7 @@ persistence) will add 'ip4_link_local.cache_path'.
 
 pytcp/protocols/ip4/link_local/link_local__constants.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 # RFC 3927 §9 MAX_CONFLICTS — the number of consecutive probe

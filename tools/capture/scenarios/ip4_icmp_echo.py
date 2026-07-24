@@ -28,14 +28,13 @@ the stack over IPv4 (ARP resolution + ICMP Echo).
 
 tools/capture/scenarios/ip4_icmp_echo.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import Harness, common_options, make_config
 
 
@@ -50,38 +49,11 @@ def command(*, count: int, **kwargs: Any) -> None:
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
         peer = harness.detect_peer4()
-        harness.start_capture("arp or icmp")
-        harness.start_example(
-            "examples.stack",
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip4-address",
-            cfg.ip4,
-            "--stack-ip4-gateway",
-            cfg.gw4,
-            "--stack-no-ip6",
-        )
+        harness.start_stack(ip4="static", ip6="off")
         harness.wait_for(f"Successfully claimed IPv4 address {cfg.ip4_addr}", cfg.claim_timeout)
         time.sleep(1)
         harness.ping(cfg.ip4_addr, ipv6=False, count=count)
         time.sleep(1)
-        harness.stop_example()
+        harness.stop_all()
         harness.print_client_output(f"host ping ({peer} -> {cfg.ip4_addr})")
-        harness.wire(
-            "-Y",
-            "arp || icmp",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "ip.src",
-            "-e",
-            "ip.dst",
-            "-e",
-            "arp.src.proto_ipv4",
-            "-e",
-            "arp.dst.proto_ipv4",
-            "-e",
-            "_ws.col.Info",
-        )
+        harness.wire("arp or icmp")

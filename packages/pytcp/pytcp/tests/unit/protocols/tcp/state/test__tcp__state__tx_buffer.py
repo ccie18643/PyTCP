@@ -27,9 +27,10 @@ Unit tests for TxBufferState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__tx_buffer.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__tx_buffer import TxBufferState
@@ -107,3 +108,47 @@ class TestTxBufferState(TestCase):
 
         s.bump_seq_mod_for_flags(flag_syn=False, flag_fin=False)
         self.assertEqual(s.seq_mod, 104, msg="No flags must leave seq_mod unchanged.")
+
+
+class TestTxBufferState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for TxBufferState.
+    """
+
+    def test__tcp_state__tx_buffer__is_slotted(self) -> None:
+        """
+        Ensure TxBufferState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(TxBufferState(), "__dict__"),
+            msg="TxBufferState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestTxBufferState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the TxBufferState mutator signatures.
+    """
+
+    def test__tcp_state__tx_buffer__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the TxBufferState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(TxBufferState.drain).parameters["bytes_count"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="TxBufferState.drain 'bytes_count' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(TxBufferState.bump_seq_mod_for_flags).parameters["flag_syn"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="TxBufferState.bump_seq_mod_for_flags 'flag_syn' must be keyword-only.",
+        )

@@ -27,5 +27,5 @@ This package contains the shared library modules used by net_proto.
 
 net_proto/lib/__init__.py
 
-ver 3.0.7
+ver 3.0.8
 """

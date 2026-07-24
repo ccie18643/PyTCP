@@ -26,8 +26,9 @@ Phase-2 router work and out of host scope.
 | RFC 2710 §4 | Hop Limit 1; link-local; Router Alert option | met |
 | RFC 3810 §8.1 | MLDv1 vs MLDv2 Query length discrimination (24 vs ≥28) | met |
 | RFC 3810 §8.2.1 | Host Compatibility Mode + Older Version Querier Present timer | met |
+| Linux parity   | Forced MLD version knob (`mld.version` sysctl, IPv6 analogue of `force_igmp_version`) | met |
 | RFC 3810 §8.3.1 | Emit MLDv1 Reports while in MLDv1 mode | met |
-| RFC 2710 §5 | MLDv1 Done on leaving a group (last reporter) | deferred (SHOULD; see below) |
+| RFC 2710 §5 | MLDv1 Done on leaving a group | met (emitted on leave while in MLDv1 compat mode, to ff02::2) |
 | RFC 2710 §4 | Report suppression on hearing another host's Report | deferred (optimization) |
 | RFC 2710 §3 | Querier role (emit Queries) | n/a (host; Phase 2) |
 
@@ -74,6 +75,16 @@ timer), mirroring `_igmp_host_compatibility_mode`. The scalar is
 written under the per-interface `_lock__multicast` (the no-GIL standing
 invariant) and read lock-free.
 
+A forced `mld.version` sysctl (`MLD__FORCE_VERSION` in
+`packages/pytcp/pytcp/protocols/icmp6/mld__constants.py`, range 0-2)
+overrides the automatic tracking: 0 = auto fallback (the timer-driven
+behaviour above), 1/2 = pin the interface to MLDv1/MLDv2 regardless of
+the queriers heard. `_mld_host_compatibility_mode()` reads it via
+qualified module access so an operator override resolves live. This is a
+PyTCP Linux-parity extension — the IPv6 analogue of Linux
+`net.ipv4.conf.*.force_igmp_version` (which has no shipped IPv6
+counterpart) and of PyTCP's own `igmp.version` knob.
+
 ## RFC 3810 §8.3.1 — emit MLDv1 Reports while in MLDv1 mode
 
 **Adherence:** met. `_send_icmp6_multicast_listener_report` selects the
@@ -88,13 +99,14 @@ group); the MLDv2 Report goes to `ff02::16`.
 
 ## Deferred (with rationale)
 
-- **RFC 2710 §5 MLDv1 Done on leave** — deferred. PyTCP's MLDv2 path
-  sends nothing on leaving a group today (`_remove_ip6_multicast`
-  emits no message; it relies on the querier's group-membership
-  timer), so a Done-on-leave would be new behaviour with no MLDv2
-  counterpart. RFC 2710 §5 makes the Done a SHOULD (only the last
-  reporter). The `Icmp6Mld1MessageDone` codec is in place for when the
-  leave-TX path is added.
+- **RFC 2710 §5 MLDv1 Done on leave** — **shipped.** Leaving an IPv6
+  multicast group now emits a departure message: an MLDv2
+  `CHANGE_TO_INCLUDE` State Change Report in MLDv2 mode, or — while the
+  interface is in MLDv1 Host Compatibility Mode — an MLDv1 Done
+  (type 132) to all-routers (ff02::2). `remove_ip6_multicast` calls
+  `_send_mld_state_change`, and `send_mld_leave_all` does the graceful
+  leave-all on stack shutdown. (This was the previously-deferred SHOULD;
+  it landed once the MLDv2 leave path gave it a counterpart.)
 - **RFC 2710 §4 Report suppression** — deferred. A host that hears
   another host's Report for a group may cancel its own pending Report.
   This is an optimization, not a correctness MUST, and PyTCP does not
@@ -122,6 +134,25 @@ group); the MLDv2 Report goes to `ff02::16`.
 
 **Status:** locked in.
 
+### Forced MLD version knob (`mld.version` sysctl)
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld1_compat.py::TestIcmp6MldForcedVersion`
+  — a forced `mld.version` of 1/2 pins `_mld_host_compatibility_mode()`
+  to MLDv1/MLDv2 (the default 0 leaves the automatic fallback), and a
+  forced v1 makes an MLDv2 Query elicit an MLDv1 Report (type 131).
+
+**Status:** locked in.
+
+### RFC 2710 §5 MLDv1 Done on leave
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld2_leave.py`
+  — `test__mld1_compat__leave_emits_mld1_done` drives the interface
+  into MLDv1 compat mode and asserts a leave emits an MLDv1 Done
+  (type 132) to ff02::2 (the MLDv2-mode leave and shutdown leave-all
+  are covered by the sibling tests in the same file).
+
+**Status:** locked in.
+
 ### Test coverage summary
 
 | Aspect | Coverage |
@@ -130,7 +161,8 @@ group); the MLDv2 Report goes to `ff02::16`.
 | §8.1 Query length discrimination | locked in (integration) |
 | §8.2.1 compatibility-mode entry + revert | locked in |
 | §8.3.1 MLDv1 Report emission in v1 mode | locked in |
-| §5 Done on leave | n/a (deferred) |
+| Forced `mld.version` knob | locked in (`TestIcmp6MldForcedVersion`) |
+| §5 Done on leave | locked in (`test__icmp6__mld2_leave`) |
 | §4 Report suppression | n/a (deferred) |
 
 ---
@@ -139,7 +171,7 @@ group); the MLDv2 Report goes to `ff02::16`.
 
 PyTCP's MLDv1 host fallback is complete for the RFC 3810 §8 MUSTs: an
 MLDv2 host correctly degrades to MLDv1 Reports on an MLDv1-querier
-link and reverts when the querier upgrades. The MLDv1 Done-on-leave
-and Report-suppression behaviours are deferred SHOULD/optimizations
-(neither has a current MLDv2 counterpart), and the querier role is
-Phase-2 router scope.
+link and reverts when the querier upgrades, and announces departures
+with an MLDv1 Done while in v1 mode. The Report-suppression behaviour
+is a deferred optimization, and the querier role is Phase-2 router
+scope.

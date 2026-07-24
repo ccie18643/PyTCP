@@ -29,11 +29,13 @@ plan at 'docs/refactor/sysctl_framework.md'.
 
 pytcp/tests/unit/stack/test__stack__sysctl.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 import sys
 import types
+from typing import override
 from unittest import TestCase
 
 from pytcp.stack import sysctl
@@ -63,6 +65,7 @@ class _SysctlFixtureBase(TestCase):
     re-register fresh keys per case.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the registry membership and module-level
@@ -73,6 +76,7 @@ class _SysctlFixtureBase(TestCase):
         self._snapshot_finalize = list(sysctl._finalize_validators)
         self._carriers: list[str] = []
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the registry membership / finalize-validator list
@@ -651,3 +655,127 @@ class TestSysctlValidatorHelpers(_SysctlFixtureBase):
             with self.subTest(bad=bad):
                 with self.assertRaises(ValueError):
                     validator(bad)
+
+
+class TestSysctlValidatorBoundaryGoldens(TestCase):
+    """
+    Exact inclusive-range boundary goldens for the sysctl range
+    validators, closing the '<=' boundary and keyword-only-separator
+    mutation survivors.
+    """
+
+    def test__sysctl__is_int_in_range_inclusive_boundaries(self) -> None:
+        """
+        Ensure is_int_in_range accepts both endpoints and rejects the
+        values just outside them, pinning the '<= value <=' bounds.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        validator = sysctl.is_int_in_range("test.knob", low=10, high=20)
+        validator(10)
+        validator(20)
+        for bad in (9, 21):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    validator(bad)
+
+    def test__sysctl__is_float_in_range_inclusive_boundaries(self) -> None:
+        """
+        Ensure is_float_in_range accepts both endpoints and rejects the
+        values just outside them.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        validator = sysctl.is_float_in_range("test.knob", low=1.0, high=2.0)
+        validator(1.0)
+        validator(2.0)
+        for bad in (0.9, 2.1):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    validator(bad)
+
+    def test__sysctl__range_validators_reject_bool(self) -> None:
+        """
+        Ensure both range validators reject booleans (which Python
+        otherwise treats as ints), pinning the explicit bool guard.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl.is_int_in_range("test.knob", low=0, high=5)(True)
+        with self.assertRaises(ValueError):
+            sysctl.is_float_in_range("test.knob", low=0.0, high=5.0)(True)
+
+    def test__sysctl__range_validator_bounds_are_keyword_only(self) -> None:
+        """
+        Ensure the low / high bounds on the range-validator factories
+        are keyword-only (kills the '*'→'/' separator mutation).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        for factory in (sysctl.is_int_in_range, sysctl.is_float_in_range):
+            kw_only = {
+                name
+                for name, param in inspect.signature(factory).parameters.items()
+                if param.kind is inspect.Parameter.KEYWORD_ONLY
+            }
+            self.assertEqual(
+                kw_only,
+                {"low", "high"},
+                msg=f"{factory.__name__} low/high must be keyword-only.",
+            )
+
+
+class TestSysctlSplitIfaceKeyGoldens(TestCase):
+    """
+    Exact goldens for the interface-scope key splitter, closing the
+    'len(parts) < 3' boundary and the base-reconstruction / ifname
+    slice-index mutation survivors. Uses the real registry's
+    interface-scoped 'ip4.accept_source_route' knob.
+    """
+
+    def test__sysctl__split_iface_key_three_part_key(self) -> None:
+        """
+        Ensure a '<ns>.<ifname>.<field>' key splits into the base key
+        (with the ifname removed) plus the ifname, exercising the
+        'parts[:-2] + parts[-1:]' base reconstruction and the
+        'parts[-2]' ifname extraction.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            sysctl._split_iface_key("ip4.eth0.accept_source_route"),
+            ("ip4.accept_source_route", "eth0"),
+            msg="a 3-part interface key must split into (base, ifname).",
+        )
+
+    def test__sysctl__split_iface_key_too_short_returns_none(self) -> None:
+        """
+        Ensure a key with fewer than three segments is not an
+        interface key (pins the 'len(parts) < 3' boundary).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIsNone(
+            sysctl._split_iface_key("ip4.accept_source_route"),
+            msg="a 2-segment key must not be treated as an interface key.",
+        )
+
+    def test__sysctl__split_iface_key_non_interface_scope_returns_none(self) -> None:
+        """
+        Ensure a key whose base is not a registered interface-scope
+        knob returns None.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIsNone(
+            sysctl._split_iface_key("foo.eth0.bar"),
+            msg="a key whose base is unregistered must return None.",
+        )

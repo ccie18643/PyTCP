@@ -27,12 +27,12 @@ This module contains tests for the IPv6 Dest Opts packet assembler operation.
 
 net_proto/tests/unit/protocols/ip6_dest_opts/test__ip6_dest_opts__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.protocols.ip6_dest_opts.ip6_dest_opts__assembler import Ip6DestOptsAssembler
 from net_proto.protocols.ip6_dest_opts.options.ip6_dest_opts__option__pad1 import (

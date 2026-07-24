@@ -27,11 +27,11 @@ This module contains tests for the Ethernet 802.3 header fields and asserts.
 
 net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import MacAddress
@@ -53,6 +53,7 @@ class TestEthernet8023HeaderAsserts(TestCase):
     The Ethernet 802.3 header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the Ethernet 802.3 header constructor.
@@ -400,7 +401,7 @@ class TestEthernet8023HeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Ethernet8023Header(  # type: ignore[misc]
+            Ethernet8023Header(  # type: ignore[call-arg]
                 MacAddress(),
                 MacAddress(),
                 0,
@@ -425,6 +426,7 @@ class TestEthernet8023HeaderProperties(TestCase):
     The Ethernet8023HeaderProperties mixin accessors and setters tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh host with a known-good Ethernet 802.3 header per test case.

@@ -28,7 +28,7 @@ as policy sysctls.
 
 pytcp/protocols/icmp4/icmp4__constants.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 # Linux 'net.ipv4.icmp_echo_ignore_broadcasts' — when set (1, the

@@ -77,7 +77,7 @@ corrupted cache cannot crash the lifecycle.
 
 pytcp/protocols/dhcp4/dhcp4__lease_cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json
@@ -130,7 +130,11 @@ def _resolve_gateway_mac(lease: "Dhcp4Lease", /) -> MacAddress | None:
         return None
     try:
         mac = arp_cache.find_entry(ip4_address=lease.gateway)
-    except Exception:  # noqa: BLE001 — defensive; missing entry / stale fixture
+    except AssertionError, AttributeError:
+        # Best-effort: 'find_entry' asserts the ARP cache is owner-bound
+        # (an 'AttributeError' under 'python -O'); during very early boot
+        # or in test fixtures it may not be, so degrade to None rather
+        # than propagate the not-yet-wired condition.
         return None
     if mac is None or isinstance(mac, MacAddress):
         return mac
@@ -190,8 +194,8 @@ def write_cached_lease(path: str, lease: "Dhcp4Lease", /) -> None:
         # A crash mid-write leaves the prior cache intact.
         fd, tmp_path = tempfile.mkstemp(prefix=".dhcp4_lease.", dir=directory)
         try:
-            with os.fdopen(fd, "w") as fh:
-                json.dump(payload, fh)
+            with os.fdopen(fd, "w", encoding="utf-8") as cache_file:
+                json.dump(payload, cache_file)
             os.replace(tmp_path, path)
         except BaseException:
             # Cleanup the half-written tempfile on any failure.
@@ -229,8 +233,8 @@ def read_cached_lease(path: str, /) -> "Dhcp4Lease | None":
         return None
 
     try:
-        with open(path, "r") as fh:
-            payload = json.load(fh)
+        with open(path, "r", encoding="utf-8") as cache_file:
+            payload = json.load(cache_file)
     except FileNotFoundError:
         return None
     except (OSError, json.JSONDecodeError) as error:

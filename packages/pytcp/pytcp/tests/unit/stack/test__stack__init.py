@@ -29,17 +29,18 @@ helpers.
 
 pytcp/tests/unit/stack/test__stack__init.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os
 import sys
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec, patch
 
 import pytcp.stack as stack
 import pytcp.stack.lifecycle as lifecycle
+import pytcp.stack.sysctl as sysctl_module
 from net_addr import (
     Ip4Address,
     Ip4IfAddr,
@@ -50,6 +51,10 @@ from net_addr import (
     MacAddress,
 )
 from pytcp.lib.interface_layer import InterfaceLayer
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.runtime.fib import Route, RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
@@ -59,6 +64,65 @@ from pytcp.stack.lifecycle import add_interface, remove_interface
 from pytcp.stack.link import LinkApi
 from pytcp.stack.neighbor import NeighborApi
 from pytcp.stack.route import RouteApi
+
+
+def _configure_handler_attach_side_effects(handler: MagicMock, /) -> None:
+    """
+    Wire the construction-time public mutators of a spec'd PacketHandlerL2
+    mock so the binding side effects 'mock__init' (and start/stop) drive
+    through 'attach_rings' / 'attach_caches' / 'attach_arp_cache' /
+    'set_ifindex' land on the mock's '_rx_ring' / '_tx_ring' / '_arp_cache'
+    / '_nd_cache' / '_ifindex' the storage-assertion tests inspect. Also
+    mirrors the public read accessors ('ifindex', 'rx_ring', 'tx_ring',
+    'arp_cache', 'nd_cache') the lifecycle start/stop paths consult onto
+    the same storage, so the recording mocks installed on the private
+    names are what those paths reach.
+    """
+
+    def _attach_rings(*, rx_ring: object = None, tx_ring: object = None) -> None:
+        if rx_ring is not None:
+            handler._rx_ring = handler.rx_ring = rx_ring
+        if tx_ring is not None:
+            handler._tx_ring = handler.tx_ring = tx_ring
+
+    def _attach_caches(*, arp_cache: object, nd_cache: object, iface_name: object = None) -> None:
+        handler._arp_cache = handler.arp_cache = arp_cache
+        handler._nd_cache = handler.nd_cache = nd_cache
+
+    def _attach_arp_cache(arp_cache: object, /) -> None:
+        handler._arp_cache = handler.arp_cache = arp_cache
+
+    def _set_ifindex(ifindex: int, /) -> None:
+        handler._ifindex = handler.ifindex = ifindex
+
+    handler.attach_rings.side_effect = _attach_rings
+    handler.attach_caches.side_effect = _attach_caches
+    handler.attach_arp_cache.side_effect = _attach_arp_cache
+    handler.set_ifindex.side_effect = _set_ifindex
+
+
+# Silence stack log output module-wide. Several tests drive real stack
+# lifecycle / neighbor / DHCPv4 paths that log on the 'stack' channel,
+# which otherwise leaks into the runner output (unit_testing.md §10a.4).
+# The captured original feeds 'test__stack__log_channels_present', which
+# asserts on the production channel set rather than the emptied live one.
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class TestStackModuleConstants(TestCase):
@@ -255,7 +319,7 @@ class TestStackModuleConstants(TestCase):
             "socket",
             "tcp-ss",
         }
-        missing = required - stack.LOG__CHANNEL
+        missing = required - _ORIGINAL_LOG_CHANNEL
         self.assertEqual(
             missing,
             set(),
@@ -297,6 +361,7 @@ class TestStackInitializeInterfaceTap(TestCase):
     The 'initialize_interface__tap' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Suppress log output and patch the low-level syscalls that the
@@ -306,6 +371,7 @@ class TestStackInitializeInterfaceTap(TestCase):
         self._log_patch = patch("pytcp.stack.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down patches.
@@ -396,6 +462,7 @@ class TestStackInitializeInterfaceTun(TestCase):
     The 'initialize_interface__tun' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Suppress log output.
@@ -404,6 +471,7 @@ class TestStackInitializeInterfaceTun(TestCase):
         self._log_patch = patch("pytcp.stack.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Tear down patches.
@@ -472,6 +540,7 @@ class TestStackMockInit(TestCase):
     The 'stack.mock__init' helper tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons so each test can reset
@@ -483,6 +552,7 @@ class TestStackMockInit(TestCase):
         self._sentinel = object()
         self._snapshot = {name: getattr(stack, name, self._sentinel) for name in ("timer", "interfaces")}
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot of module-level singletons.
@@ -514,7 +584,8 @@ class TestStackMockInit(TestCase):
         fake_arp = MagicMock()
         fake_nd = MagicMock()
         fake_handler = MagicMock(spec=PacketHandlerL2)
-        fake_handler._ifindex = 1
+        fake_handler._ifindex = fake_handler.ifindex = 1
+        _configure_handler_attach_side_effects(fake_handler)
 
         stack.mock__init(
             mock__timer=fake_timer,
@@ -540,7 +611,8 @@ class TestStackMockInit(TestCase):
         """
 
         handler = MagicMock(spec=PacketHandlerL2)
-        handler._ifindex = 1
+        handler._ifindex = handler.ifindex = 1
+        _configure_handler_attach_side_effects(handler)
 
         stack.mock__init(mock__packet_handler=handler)
 
@@ -561,7 +633,8 @@ class TestStackMockInit(TestCase):
         """
 
         handler = MagicMock(spec=PacketHandlerL2)
-        handler._ifindex = 1
+        handler._ifindex = handler.ifindex = 1
+        _configure_handler_attach_side_effects(handler)
         stack.mock__init(mock__timer=MagicMock(), mock__packet_handler=handler)
 
         new_timer = MagicMock()
@@ -579,11 +652,90 @@ class TestStackMockInit(TestCase):
         )
 
 
+class TestStackStartDhcpBootWait(TestCase):
+    """
+    The 'stack.start(wait_for_dhcp_bind=...)' DHCPv4 boot-wait tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Snapshot the module-level state, install a mocked timer and a
+        single L2 interface whose DHCPv4 client is an autospec'd mock, and
+        patch '_start_interface' so no real subsystem threads spawn.
+        """
+
+        self.enterContext(patch("pytcp.stack.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+        self.enterContext(patch.object(lifecycle, "_start_interface"))
+
+        self._saved = {
+            name: getattr(stack, name, None)
+            for name in ("stack_initialized", "stack_running", "timer", "interfaces", "link_local")
+        }
+
+        stack.timer = MagicMock()
+        stack.link_local = None
+        handler = MagicMock(spec=PacketHandlerL2)
+        handler._ifindex = handler.ifindex = 1
+        # 'start()' reaches the DHCP clients via the public read accessors.
+        handler._dhcp4_client = handler.dhcp4_client = create_autospec(Dhcp4Client, spec_set=True)
+        handler._dhcp6_client = handler.dhcp6_client = None
+        self._dhcp4_client = handler.dhcp4_client
+        interfaces = InterfaceTable(first_ifindex=stack.STACK__DEFAULT_IFINDEX)
+        interfaces[1] = handler
+        stack.interfaces = interfaces
+        stack.stack_initialized = True
+        stack.stack_running = False
+
+    @override
+    def tearDown(self) -> None:
+        """
+        Restore the snapshotted module-level state.
+        """
+
+        for name, value in self._saved.items():
+            if value is not None:
+                setattr(stack, name, value)
+
+    def test__start__daemon_mode_does_not_block_on_dhcp_bind(self) -> None:
+        """
+        Ensure 'stack.start(wait_for_dhcp_bind=False)' starts the DHCPv4
+        client without blocking for the BOUND boot-wait, so a daemon's
+        control plane comes up immediately while the lease lands in the
+        background.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.start(wait_for_dhcp_bind=False)
+
+        self._dhcp4_client.start.assert_called_once_with()
+        self._dhcp4_client.start_and_wait_for_bind.assert_not_called()
+
+    def test__start__default_waits_for_dhcp_bind(self) -> None:
+        """
+        Ensure the default 'stack.start()' blocks for the DHCPv4 boot-wait
+        via 'start_and_wait_for_bind', preserving the in-process
+        boot-blocking semantics for non-daemon callers.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._dhcp4_client.start_and_wait_for_bind.return_value = True
+
+        stack.start()
+
+        self._dhcp4_client.start_and_wait_for_bind.assert_called_once()
+        self._dhcp4_client.start.assert_not_called()
+
+
 class TestStackStopOrdering(TestCase):
     """
     The 'stack.stop()' subsystem teardown-order tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level state and replace each subsystem
@@ -605,23 +757,30 @@ class TestStackStopOrdering(TestCase):
             return m
 
         # 'start()' / 'stop()' iterate 'stack.interfaces' and reach each
-        # interface's rings + caches via the handler's injected '_rx_ring' /
-        # '_tx_ring' / '_arp_cache' / '_nd_cache' (the handler IS the
-        # interface). Wire those to the recording mocks and register the
-        # handler as the sole interface; the timer is the only remaining
-        # module-level subsystem 'stop()' touches.
+        # interface's rings + caches via the handler's public read
+        # accessors ('rx_ring' / 'tx_ring' / 'arp_cache' / 'nd_cache' —
+        # the handler IS the interface). Wire those to the recording
+        # mocks and register the handler as the sole interface; the timer
+        # is the only remaining module-level subsystem 'stop()' touches.
         stack.timer = _make_subsystem("timer")
         handler = _make_subsystem("packet_handler")
-        handler._ifindex = 1
-        handler._rx_ring = _make_subsystem("rx_ring")
-        handler._tx_ring = _make_subsystem("tx_ring")
-        handler._arp_cache = _make_subsystem("arp_cache")
-        handler._nd_cache = _make_subsystem("nd_cache")
+        handler._ifindex = handler.ifindex = 1
+        handler.rx_ring = _make_subsystem("rx_ring")
+        handler.tx_ring = _make_subsystem("tx_ring")
+        handler.arp_cache = _make_subsystem("arp_cache")
+        handler.nd_cache = _make_subsystem("nd_cache")
+        # 'start()' / 'stop()' also probe the DHCP clients; this stop-order
+        # test runs no DHCP, so a plain MagicMock 'handler' would auto-
+        # create truthy child mocks. Pin them None so the isinstance +
+        # not-None guards skip the DHCP branches.
+        handler.dhcp4_client = None
+        handler.dhcp6_client = None
         _interfaces = InterfaceTable(first_ifindex=stack.STACK__DEFAULT_IFINDEX)
         _interfaces[1] = handler
         stack.interfaces = _interfaces
         stack.stack_initialized = True
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the saved module-level subsystems.
@@ -710,7 +869,7 @@ class TestStackStopOrdering(TestCase):
         Reference: RFC 3376 §5.1 (host announces leaving on shutdown).
         """
 
-        cast(MagicMock, stack.interfaces[1])._send_igmp_leave_all.side_effect = lambda: self._call_log.append(
+        cast(MagicMock, stack.interfaces[1]).send_igmp_leave_all.side_effect = lambda: self._call_log.append(
             "igmp_leave"
         )
 
@@ -733,6 +892,7 @@ class TestStackInitSharedPacketStats(TestCase):
     The 'stack.init()' shared 'PacketStats' wiring tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons that 'stack.init()'
@@ -757,6 +917,7 @@ class TestStackInitSharedPacketStats(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start from the same
@@ -912,6 +1073,7 @@ class TestStackInitArpCacheConfig(TestCase):
     compile-time defaults that the ARP cache loop reads.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons 'init()' rebinds so
@@ -940,6 +1102,7 @@ class TestStackInitArpCacheConfig(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore module-level singletons and sysctl defaults.
@@ -1057,6 +1220,126 @@ class TestStackInitArpCacheConfig(TestCase):
         )
 
 
+class TestStackInitControlApis(TestCase):
+    """
+    The 'stack.init()' control-API singleton-wiring tests.
+
+    'mock__init' (the test path) and the real 'init()' must wire the same
+    control-API singletons; a singleton wired only in 'mock__init' works
+    in every integration test but raises 'AttributeError' against a live
+    daemon when the matching control op resolves 'stack.<api>'.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Snapshot the singletons 'init()' rebinds, then clear the
+        control-API attributes under test so the assertion verifies that
+        'init()' itself re-binds them (not a value leaked from a prior
+        test's 'mock__init' / 'init'). Silence the subsystem-init logs.
+        """
+
+        log_patch = patch("pytcp.stack.log")
+        log_patch.start()
+        self.addCleanup(log_patch.stop)
+        subsystem_log_patch = patch("pytcp.runtime.subsystem.log")
+        subsystem_log_patch.start()
+        self.addCleanup(subsystem_log_patch.stop)
+
+        self._sentinel = object()
+        self._snapshot = {
+            name: getattr(stack, name, self._sentinel) for name in ("timer", "stack_initialized", "ss", "resolver")
+        }
+        for name in ("ss", "resolver"):
+            if hasattr(stack, name):
+                delattr(stack, name)
+
+    @override
+    def tearDown(self) -> None:
+        """
+        Restore the snapshotted singletons.
+        """
+
+        for name, value in self._snapshot.items():
+            if value is self._sentinel:
+                if hasattr(stack, name):
+                    delattr(stack, name)
+            else:
+                setattr(stack, name, value)
+
+    def _init_l2(self) -> None:
+        """
+        Run 'stack.init()' on the L2 path with the rings / handler / caches
+        patched out so the control-API wiring is exercised in isolation.
+        """
+
+        with (
+            patch.object(stack.lifecycle, "TxRing"),
+            patch.object(stack.lifecycle, "RxRing"),
+            patch.object(stack.lifecycle, "PacketHandlerL2"),
+            patch.object(stack.lifecycle, "ArpCache"),
+            patch.object(stack.lifecycle, "NdCache"),
+        ):
+            stack.init(
+                fd=-1,
+                layer=InterfaceLayer.L2,
+                mtu=1500,
+                mac_address=MacAddress("02:00:00:00:00:01"),
+                ip4_support=False,
+                ip4_host=None,
+                ip4_dhcp=False,
+                ip6_support=False,
+                ip6_host=None,
+                ip6_gua_autoconfig=False,
+                ip6_lla_autoconfig=False,
+            )
+
+    def test__stack__init_wires_socket_introspect_api(self) -> None:
+        """
+        Ensure 'stack.init()' binds the socket-introspection API at
+        'stack.ss' — the singleton the 'list_sockets' control op (and
+        'pytcp ss' / 'pytcp daemon status') resolves on a live daemon.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.stack.socket_introspect import SocketIntrospectApi
+
+        self._init_l2()
+
+        self.assertTrue(
+            hasattr(stack, "ss"),
+            msg="stack.init() must bind stack.ss so the list_sockets control op resolves on a live daemon.",
+        )
+        self.assertIsInstance(
+            stack.ss,
+            SocketIntrospectApi,
+            msg="stack.ss must be a SocketIntrospectApi after stack.init().",
+        )
+
+    def test__stack__init_wires_resolver_api(self) -> None:
+        """
+        Ensure 'stack.init()' binds the DNS resolver API at
+        'stack.resolver' — the 'resolve' control op singleton.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        from pytcp.stack.resolver import ResolverApi
+
+        self._init_l2()
+
+        self.assertTrue(
+            hasattr(stack, "resolver"),
+            msg="stack.init() must bind stack.resolver so the resolve control op resolves on a live daemon.",
+        )
+        self.assertIsInstance(
+            stack.resolver,
+            ResolverApi,
+            msg="stack.resolver must be a ResolverApi after stack.init().",
+        )
+
+
 class TestStackPythonVersionGuard(TestCase):
     """
     The Python-version-guard tests at module import time.
@@ -1083,6 +1366,7 @@ class TestStackAddInterface(TestCase):
     The 'add_interface' per-interface construction / registration tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level interface registry + N=1 back-compat
@@ -1284,6 +1568,7 @@ class TestStackInterfaceLifecycleDynamic(TestCase):
     stack (RTM_NEWLINK / RTM_DELLINK).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the interface registry + N=1 shims + running flag,
@@ -1441,8 +1726,15 @@ class TestStackInterfaceLifecycleDynamic(TestCase):
         v6 = Ip6IfAddr("2001:db8:50::7/64")
         handler._ip4_ifaddr = [Ip4IfAddr("10.0.50.7/24")]
         handler._ip6_ifaddr = [v6]
-        handler._ip6_multicast = [v6.address.solicited_node_multicast]
+        handler._ip6_multicast_filters = {
+            v6.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
+        }
         handler._mac_multicast = [v6.address.solicited_node_multicast.multicast_mac]
+        # Removing the interface leaves the solicited-node multicast,
+        # which emits an MLDv2 state-change Report (RFC 3810 §6.1); this
+        # unit test has no live timer, so stub the emit — the leave path
+        # is exercised in the icmp6 MLDv2-leave integration tests.
+        handler._send_mld_state_change = MagicMock()  # type: ignore[method-assign]
 
         remove_interface(ifindex)
 
@@ -1561,6 +1853,7 @@ class TestStackInitZeroInterface(TestCase):
     later via 'add_interface'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the module-level singletons 'stack.init()' rebinds and
@@ -1593,6 +1886,7 @@ class TestStackInitZeroInterface(TestCase):
             )
         }
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start clean.
@@ -1605,26 +1899,74 @@ class TestStackInitZeroInterface(TestCase):
             else:
                 setattr(stack, name, value)
 
-    def test__stack__init_zero_interface_registers_no_interface(self) -> None:
+    def test__stack__init_no_device_registers_only_loopback(self) -> None:
         """
         Ensure 'stack.init()' called with no fd / layer brings the stack
-        up with an empty interface registry — the daemon's valid resting
-        state before any device attaches.
+        up with exactly the loopback interface — like Linux, 'lo' is
+        always present, and it is the daemon's resting state before any
+        physical device attaches.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         stack.init()
+        self.addCleanup(self._close_loopback_ring)
 
         self.assertEqual(
             len(stack.interfaces),
-            0,
-            msg="Zero-interface init() must register no interfaces.",
+            1,
+            msg="No-device init() must register exactly the loopback interface.",
+        )
+        lo = stack.loopback_handler()
+        self.assertIsNotNone(
+            lo,
+            msg="No-device init() must register a loopback interface.",
+        )
+        assert lo is not None  # narrowed for mypy / pyright; asserted above
+        self.assertIs(
+            lo.interface_layer,
+            InterfaceLayer.LOOPBACK,
+            msg="The sole registered interface must be the loopback interface.",
         )
         self.assertTrue(
             stack.stack_initialized,
-            msg="Zero-interface init() must still mark the stack initialized.",
+            msg="No-device init() must still mark the stack initialized.",
         )
+
+    def test__stack__init_loopback_owns_loopback_addresses(self) -> None:
+        """
+        Ensure the loopback interface 'stack.init()' brings up owns the
+        IPv4 and IPv6 loopback addresses (127.0.0.1 and ::1) so local
+        delivery has a receiving address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.init()
+        self.addCleanup(self._close_loopback_ring)
+
+        lo = stack.loopback_handler()
+        assert lo is not None  # narrowed for mypy; asserted above
+        self.assertEqual(
+            lo.ip4_unicast,
+            [Ip4Address("127.0.0.1")],
+            msg="The loopback interface must own 127.0.0.1.",
+        )
+        self.assertEqual(
+            lo.ip6_unicast,
+            [Ip6Address("::1")],
+            msg="The loopback interface must own ::1.",
+        )
+
+    def _close_loopback_ring(self) -> None:
+        """
+        Close the loopback ring's eventfd if a loopback interface is
+        registered — keeps a real-'init()' test from leaking the fd.
+        """
+
+        lo = stack.loopback_handler()
+        if lo is not None:
+            lo._lo_ring.close()
 
     def test__stack__init_zero_interface_builds_unbound_tools(self) -> None:
         """
@@ -1735,6 +2077,71 @@ class TestStackInitZeroInterface(TestCase):
         )
 
 
+class TestStackLoopbackLifecycle(TestCase):
+    """
+    The loopback interface start / stop lifecycle tests — 'lo's own
+    consumer thread comes up with 'stack.start()' and winds down with
+    'stack.stop()'.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Snapshot the module-level singletons the lifecycle rebinds and
+        suppress the subsystem-init log lines.
+        """
+
+        self.enterContext(patch("pytcp.stack.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+
+        self._sentinel = object()
+        self._snapshot = {
+            name: getattr(stack, name, self._sentinel)
+            for name in ("timer", "interfaces", "stack_initialized", "stack_running")
+        }
+
+    @override
+    def tearDown(self) -> None:
+        """
+        Stop the stack if a test left it running, then restore the
+        snapshot so a follow-up test starts clean.
+        """
+
+        if getattr(stack, "stack_running", False):
+            stack.stop()
+        for name, value in self._snapshot.items():
+            if value is self._sentinel:
+                if hasattr(stack, name):
+                    delattr(stack, name)
+            else:
+                setattr(stack, name, value)
+
+    def test__stack__loopback_thread_starts_and_stops(self) -> None:
+        """
+        Ensure 'stack.start()' brings the loopback interface's consumer
+        thread up and 'stack.stop()' winds it down, so locally-delivered
+        traffic is serviced only while the stack is running.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        stack.init()
+        lo = stack.loopback_handler()
+        assert lo is not None  # narrowed for mypy; init() always registers lo
+
+        stack.start(wait_for_dhcp_bind=False)
+        self.assertTrue(
+            lo._thread is not None and lo._thread.is_alive(),
+            msg="stack.start() must bring the loopback consumer thread up.",
+        )
+
+        stack.stop()
+        self.assertFalse(
+            lo._thread is not None and lo._thread.is_alive(),
+            msg="stack.stop() must wind the loopback consumer thread down.",
+        )
+
+
 class TestAddInterfacePerInterfaceSubsystems(TestCase):
     """
     The 'add_interface' per-interface DHCPv4 / link-local construction
@@ -1742,6 +2149,7 @@ class TestAddInterfacePerInterfaceSubsystems(TestCase):
     its own client(s), bound to that interface via 'interface(ifindex)'.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bring the stack core up with a zero-interface 'init()' and
@@ -1788,6 +2196,7 @@ class TestAddInterfacePerInterfaceSubsystems(TestCase):
             p.start()
             self.addCleanup(p.stop)
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the snapshot so subsequent tests start clean.
@@ -1936,6 +2345,7 @@ class TestStackEgressPacketHandler(TestCase):
     destination egresses the local link — the sole interface at N=1.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot 'stack.interfaces' / FIBs so each test installs its own.
@@ -2025,6 +2435,7 @@ class TestStackLocalAddressIntrospection(TestCase):
     use on a multi-homed host.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two fake interfaces, each owning one IPv4/IPv6 host +
@@ -2125,6 +2536,7 @@ class TestStackEgressPacketHandlerFib(TestCase):
     interface on which the gateway is reachable.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two interfaces on distinct subnets (ifindex 1 -> 10.0.1.0/24,
@@ -2240,6 +2652,7 @@ class TestStackHasRouteTo(TestCase):
     (Linux parity) when the FIB cannot reach a destination.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install one interface (10.0.1.0/24) and a fresh IPv4 FIB.
@@ -2400,6 +2813,7 @@ class TestStackEgressInterfaceMtu(TestCase):
     interface the FIB selects for the peer.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install two interfaces on distinct subnets with distinct MTUs
@@ -2422,12 +2836,12 @@ class TestStackEgressInterfaceMtu(TestCase):
         self._iface_1 = SimpleNamespace(
             ip4_host=[Ip4IfAddr("10.0.1.7/24")],
             ip6_host=[Ip6IfAddr("2001:db8:0:1::7/64")],
-            _interface_mtu=1500,
+            interface_mtu=1500,
         )
         self._iface_2 = SimpleNamespace(
             ip4_host=[Ip4IfAddr("10.0.2.7/24")],
             ip6_host=[Ip6IfAddr("2001:db8:0:2::7/64")],
-            _interface_mtu=9000,
+            interface_mtu=9000,
         )
         self._table = InterfaceTable()
         self._table[1] = cast("PacketHandlerL2", self._iface_1)
@@ -2538,6 +2952,7 @@ class TestStackAddInterfaceDhcp4PerInterface(TestCase):
     host.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build an empty interface registry plus the control-plane APIs the
@@ -2625,3 +3040,170 @@ class TestStackAddInterfaceDhcp4PerInterface(TestCase):
             client_2,
             msg="Each interface must own a DISTINCT DHCPv4 client (no shared module slot).",
         )
+
+
+class TestStackConfigConstantGoldens(TestCase):
+    """
+    Exact-value goldens for the stack configuration constants whose
+    NumberReplacer / boolean-flip mutations survived the range-style
+    assertions: secret lengths, the TFO cache cap, fragment-flow
+    timeouts, the ephemeral port range, and the boolean policy
+    defaults.
+    """
+
+    def test__stack__secret_lengths_are_16_bytes(self) -> None:
+        """
+        Ensure every bootstrap secret is exactly 16 bytes (128 bits).
+
+        Reference: RFC 6528 §3 (ISS secret as opaque keying material).
+        """
+
+        self.assertEqual(len(stack.TCP__ISS_SECRET), 16, msg="ISS secret must be 16 bytes.")
+        self.assertEqual(len(stack.IP6__FLOW_SECRET), 16, msg="IPv6 flow secret must be 16 bytes.")
+        self.assertEqual(len(stack.TCP__FASTOPEN_SECRET), 16, msg="TFO secret must be 16 bytes.")
+        self.assertEqual(len(stack.TCP__PORT_SECRET), 16, msg="port secret must be 16 bytes.")
+
+    def test__stack__fastopen_cache_max_size(self) -> None:
+        """
+        Ensure the TCP Fast Open cache cap is exactly 1024 entries.
+
+        Reference: RFC 7413 §6.1 (server-side TFO state bound).
+        """
+
+        self.assertEqual(
+            stack.TCP__FASTOPEN_CACHE_MAX_SIZE,
+            1024,
+            msg="TCP__FASTOPEN_CACHE_MAX_SIZE must be 1024.",
+        )
+
+    def test__stack__fragment_flow_timeouts_are_5_seconds(self) -> None:
+        """
+        Ensure the IPv4 and IPv6 fragment-flow reassembly timeouts are
+        exactly 5 seconds.
+
+        Reference: RFC 791 §3.2 (IPv4 reassembly timeout).
+        """
+
+        self.assertEqual(stack.IP4__FRAG_FLOW_TIMEOUT__S, 5, msg="IPv4 frag-flow timeout must be 5 s.")
+        self.assertEqual(stack.IP6__FRAG_FLOW_TIMEOUT__S, 5, msg="IPv6 frag-flow timeout must be 5 s.")
+
+    def test__stack__ephemeral_port_range_exact_bounds(self) -> None:
+        """
+        Ensure the ephemeral port range is exactly [32768, 61000].
+
+        Reference: RFC 6056 §3.2 (ephemeral port range).
+        """
+
+        self.assertEqual(
+            stack.STACK__EPHEMERAL_PORT_RANGE__LOW,
+            32768,
+            msg="ephemeral low must be 32768.",
+        )
+        self.assertEqual(
+            stack.STACK__EPHEMERAL_PORT_RANGE__HIGH,
+            61000,
+            msg="ephemeral high must be 61000.",
+        )
+
+    def test__stack__boolean_policy_defaults(self) -> None:
+        """
+        Ensure the boolean policy defaults are False (a True-flip is
+        caught).
+
+        Reference: RFC 1122 §3.3.5 (source-route default off).
+        """
+
+        self.assertIs(stack.UDP__ECHO_NATIVE, False, msg="UDP__ECHO_NATIVE must default False.")
+        self.assertIs(stack.LOG__DEBUG, False, msg="LOG__DEBUG must default False.")
+        self.assertIs(
+            stack.IP4__ACCEPT_SOURCE_ROUTE["default"],
+            False,
+            msg="IP4__ACCEPT_SOURCE_ROUTE default must be False.",
+        )
+
+
+class TestStackSysctlValidatorGoldens(TestCase):
+    """
+    Boundary goldens for the stack-registered sysctl validators,
+    closing the bool-guard, ephemeral-range validator-bound, and
+    cross-knob low-less-than-high mutation survivors. Each test
+    restores the registry to defaults on cleanup.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Register a registry reset on cleanup so a validator-probe set
+        does not leak into sibling tests.
+        """
+
+        self.addCleanup(sysctl_module.reset_to_defaults)
+
+    def test__stack__bool_validator_rejects_non_bool(self) -> None:
+        """
+        Ensure the source-route bool validator rejects a non-bool value
+        and accepts a bool (pins 'not isinstance(value, bool)').
+
+        Reference: RFC 791 §3.1 (source-route acceptance is a boolean policy).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("ip4.default.accept_source_route", "notbool")
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("ip4.default.accept_source_route", True)
+        self.assertTrue(
+            sysctl_module.get("ip4.default.accept_source_route"),
+            msg="a bool value must be accepted by the source-route validator.",
+        )
+
+    def test__stack__ephemeral_low_validator_bound_is_1024(self) -> None:
+        """
+        Ensure the ephemeral-low validator's lower bound is exactly
+        1024: 1024 is accepted, 1023 is rejected (pins the 1024
+        validator-bound constant).
+
+        Reference: RFC 6056 §3.2 (ephemeral port range lower bound).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("net.ephemeral_port_range.low", 1023)
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("net.ephemeral_port_range.low", 1024)
+        self.assertEqual(
+            sysctl_module.get("net.ephemeral_port_range.low"),
+            1024,
+            msg="ephemeral low must accept its exact 1024 boundary.",
+        )
+
+    def test__stack__ephemeral_high_validator_bound_is_65535(self) -> None:
+        """
+        Ensure the ephemeral-high validator's upper bound is exactly
+        65535: 65535 is accepted, 65536 is rejected (pins the 65535
+        validator-bound constant).
+
+        Reference: RFC 6056 §3.2 (ephemeral port range upper bound).
+        """
+
+        with self.assertRaises(ValueError):
+            sysctl_module.set("net.ephemeral_port_range.high", 65536)
+        sysctl_module.reset_to_defaults()
+        sysctl_module.set("net.ephemeral_port_range.high", 65535)
+        self.assertEqual(
+            sysctl_module.get("net.ephemeral_port_range.high"),
+            65535,
+            msg="ephemeral high must accept its exact 65535 boundary.",
+        )
+
+    def test__stack__ephemeral_range_cross_knob_rejects_low_equals_high(self) -> None:
+        """
+        Ensure the cross-knob finalize validator rejects low == high
+        (the 'range(low, high)' pool would be empty), pinning the
+        'low >= high' comparison against a strict '>'.
+
+        Reference: RFC 6056 §3.2 (a non-empty ephemeral range).
+        """
+
+        sysctl_module.set("net.ephemeral_port_range.low", 40000)
+        sysctl_module.set("net.ephemeral_port_range.high", 40000)
+        with self.assertRaises(ValueError):
+            sysctl_module.finalize_validators()

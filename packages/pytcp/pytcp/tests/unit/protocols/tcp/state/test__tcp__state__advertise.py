@@ -27,7 +27,7 @@ Unit tests for AdvertiseState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__advertise.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -61,3 +61,22 @@ class TestAdvertiseState(TestCase):
         self.assertTrue(s.accecn, msg="accecn must default to True.")
         self.assertTrue(s.fastopen, msg="fastopen must default to True.")
         self.assertFalse(s.send_sack, msg="send_sack must default to False.")
+
+
+class TestAdvertiseState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for AdvertiseState.
+    """
+
+    def test__tcp_state__advertise__is_slotted(self) -> None:
+        """
+        Ensure AdvertiseState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(AdvertiseState(), "__dict__"),
+            msg="AdvertiseState must be declared with slots=True (no per-instance __dict__).",
+        )

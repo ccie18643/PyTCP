@@ -29,9 +29,10 @@ seq state container in
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__send_seq.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__send_seq import SendSeqState
@@ -171,4 +172,59 @@ class TestSendSeqState__Methods(TestCase):
             s.bytes_acked(new_una=2),
             4,
             msg="bytes_acked must wrap modulo 2^32.",
+        )
+        s.una = 0
+        self.assertEqual(
+            s.bytes_acked(new_una=0xFFFF_FFFF),
+            0xFFFF_FFFF,
+            msg="bytes_acked over the full 32-bit span must preserve every masked bit.",
+        )
+
+
+class TestSendSeqState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for SendSeqState.
+    """
+
+    def test__tcp_state__send_seq__is_slotted(self) -> None:
+        """
+        Ensure SendSeqState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(SendSeqState(), "__dict__"),
+            msg="SendSeqState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestSendSeqState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the SendSeqState mutator signatures.
+    """
+
+    def test__tcp_state__send_seq__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the SendSeqState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(SendSeqState.reset_to).parameters["iss"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="SendSeqState.reset_to 'iss' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(SendSeqState.advance_nxt).parameters["seq"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="SendSeqState.advance_nxt 'seq' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(SendSeqState.bytes_acked).parameters["new_una"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="SendSeqState.bytes_acked 'new_una' must be keyword-only.",
         )

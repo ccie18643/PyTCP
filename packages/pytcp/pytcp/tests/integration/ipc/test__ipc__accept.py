@@ -42,7 +42,7 @@ so it completes without deadlock.
 
 pytcp/tests/integration/ipc/test__ipc__accept.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os
@@ -53,7 +53,7 @@ from typing import cast, override
 from pytcp import stack
 from pytcp.client import ClientStack, ClientTcpSocket, connect
 from pytcp.ipc.ipc__server import IpcServer
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.tests.lib.network_testcase import HOST_A__IP4_ADDRESS, STACK__IP4_HOST
 from pytcp.tests.lib.tcp_segment_factory import build_tcp4
 from pytcp.tests.lib.tcp_testcase import TcpTestCase

@@ -27,7 +27,7 @@ This module contains tests for the 'TxRing' subsystem.
 
 pytcp/tests/unit/runtime/test__runtime__tx_ring.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os
@@ -37,6 +37,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 import pytcp.runtime.tx_ring as tx_ring_module
+from net_addr import Buffer
 from net_proto import (
     Ethernet8023Assembler,
     EthernetAssembler,
@@ -44,7 +45,6 @@ from net_proto import (
     Ip4FragAssembler,
     Ip6Assembler,
 )
-from net_proto.lib.buffer import Buffer
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.tx_ring import TxRing
 
@@ -702,10 +702,12 @@ class TestTxRingDispatchFastPath(_TxRingFixture):
             iterates '.items()'.
             """
 
+            @override
             def get(self, key: Any, default: Any = None) -> Any:
                 get_calls.append(key)
                 return super().get(key, default)
 
+            @override
             def items(self) -> Any:
                 raise AssertionError(
                     "isinstance fallback path entered — real EthernetAssembler should "
@@ -1096,3 +1098,71 @@ class TestTxRingRawFrame(_TxRingFixture):
             frame,
             msg="A raw frame must be written verbatim, with no framing prefix added.",
         )
+
+
+class TestTxRingOnCompleteHook(_TxRingFixture):
+    """
+    The 'on_complete' hook threaded through '_TxRequest' /
+    'dispatch_async' — the SO_SNDBUF send-buffer release signal. It
+    fires exactly once after the marshaled call finishes on whichever
+    thread runs it, including when the call raises.
+    """
+
+    def test__tx_request__fires_on_complete_after_execute(self) -> None:
+        """
+        Ensure '_TxRequest.execute' invokes 'on_complete' once after
+        the callable returns.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        calls: list[int] = []
+        request = tx_ring_module._TxRequest(
+            lambda: TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            blocking=False,
+            on_complete=lambda: calls.append(1),
+        )
+
+        request.execute()
+
+        self.assertEqual(calls, [1], msg="on_complete must fire exactly once after execute().")
+
+    def test__tx_request__fires_on_complete_even_when_call_raises(self) -> None:
+        """
+        Ensure '_TxRequest.execute' still invokes 'on_complete' when
+        the fire-and-forget callable raises — the release runs in the
+        'finally', so send-buffer accounting never leaks on a failed
+        TX pipeline.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        calls: list[int] = []
+
+        def boom() -> TxStatus:
+            raise RuntimeError("tx pipeline blew up")
+
+        request = tx_ring_module._TxRequest(boom, blocking=False, on_complete=lambda: calls.append(1))
+
+        with patch("pytcp.runtime.tx_ring.log"):
+            request.execute()
+
+        self.assertEqual(calls, [1], msg="on_complete must fire even when the callable raises.")
+
+    def test__dispatch_async__fires_on_complete_inline_when_no_worker(self) -> None:
+        """
+        Ensure 'dispatch_async' fires 'on_complete' on the inline
+        fallback path (no live worker) so accounting is released even
+        without a running TX worker.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        calls: list[int] = []
+
+        self._ring.dispatch_async(
+            lambda: TxStatus.PASSED__ETHERNET__TO_TX_RING,
+            on_complete=lambda: calls.append(1),
+        )
+
+        self.assertEqual(calls, [1], msg="dispatch_async must fire on_complete on the inline path.")

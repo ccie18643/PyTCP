@@ -182,7 +182,7 @@ The §4 clauses above are pinned by:
 |--------|-------------------|
 | Atomic returns COMPLETE without flow-table allocation | `packages/pytcp/pytcp/tests/unit/protocols/ip/test__ip__ip_frag_table.py::TestIpFragTableAtomicFragment::test__ip_frag_table__add_fragment__atomic_returns_complete_without_admission` |
 | Atomic isolated from existing flow id | Same class :: `test__ip_frag_table__add_fragment__atomic_isolated_from_existing_flow` |
-| Handler dispatches + bumps `ip6_frag__atomic__defrag` | `packages/pytcp/pytcp/tests/unit/stack/packet_handler/test__stack__packet_handler__ip6_frag__rx.py::TestPacketHandlerIp6FragRx::test__stack__packet_handler__ip6_frag__rx__atomic_fragment_dispatches_without_flow_table` |
+| Handler dispatches + bumps `ip6_frag__atomic__defrag` | `packages/pytcp/pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6_frag__rx.py::TestPacketHandlerIp6FragRx::test__stack__packet_handler__ip6_frag__rx__atomic_fragment_dispatches_without_flow_table` |
 | Handler does not allocate flow-table entry | Same test (asserts `_ip6_frag_table.flows == {}`) |
 
 The TX-side §3 MUST NOT (do-not-generate-atomic-fragments)

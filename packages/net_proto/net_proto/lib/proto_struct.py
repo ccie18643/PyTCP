@@ -27,14 +27,14 @@ This module contains the base class for the protocol headers.
 
 net_proto/lib/proto_struct.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

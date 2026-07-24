@@ -28,14 +28,13 @@ monkeys echoed over IPv6 TCP with a graceful service-side close.
 
 tools/capture/scenarios/ip6_tcp_monkeys.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import SERVICE_LOG_RE, Harness, common_options, make_config
 
 
@@ -62,40 +61,20 @@ def command(*, payload: str, graceful: bool, **kwargs: Any) -> None:
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
         harness.add_host_v6()
-        harness.start_capture("ip6 or arp")
-        harness.start_example(
-            "examples.service__tcp_echo",
-            "--local-port",
+        harness.start_stack(ip4="off", ip6="static")
+        harness.wait_for(f"Successfully claimed IPv6 address {cfg.ip6_addr}", cfg.claim_timeout)
+        harness.start_service(
+            "examples.tcp_echo_server__async",
+            "--host",
+            cfg.ip6_addr,
+            "--port",
             str(cfg.port),
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip6-address",
-            cfg.ip6,
-            "--stack-no-ip4",
         )
-        harness.wait_for(f"Socket created, bound to {cfg.ip6_addr}, port {cfg.port}", cfg.bind_timeout)
-        harness.wait_for("Socket set to listening mode", 10)
-        time.sleep(1)
+        harness.wait_for(f"async TCP echo server on {cfg.ip6_addr}:{cfg.port}", cfg.bind_timeout)
+        time.sleep(2)
         harness.drive_monkeys(cfg.ip6_addr, ipv6=True, udp=False, payload=payload, graceful=graceful)
         time.sleep(2)
-        harness.stop_example()
+        harness.stop_all()
         harness.print_client_output("client output (banner + echoed monkeys)")
         harness.log_highlights(SERVICE_LOG_RE, 20)
-        harness.wire(
-            "-Y",
-            f"ipv6.addr=={cfg.ip6_addr} || icmpv6",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "_ws.col.Protocol",
-            "-e",
-            "ipv6.src",
-            "-e",
-            "ipv6.dst",
-            "-e",
-            "tcp.flags.str",
-            "-e",
-            "_ws.col.Info",
-        )
+        harness.wire(f"icmpv6 or ipv6.addr == {cfg.ip6_addr}")

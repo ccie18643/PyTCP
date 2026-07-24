@@ -31,14 +31,15 @@ This module contains base testcase for PyTCP Packet Handler tests.
 
 pytcp/tests/lib/network_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
 from net_addr import (
+    Buffer,
     Ip4Address,
     Ip4IfAddr,
     Ip4Network,
@@ -47,13 +48,16 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp import stack
 from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
+)
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
 )
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
@@ -62,6 +66,7 @@ from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.runtime.packet_handler import (
     PacketHandlerL2,
     PacketHandlerL3,
+    PacketHandlerLoopback,
     packet_handler__ip6_frag__tx,
 )
 from pytcp.runtime.rx_ring import RxRing
@@ -102,6 +107,11 @@ STACK__IP4_HOST__CANDIDATE = Ip4IfAddr("10.0.1.5/24")
 STACK__IP6_HOST__CANDIDATE = Ip6IfAddr("2001:db8:0:1::5/64")
 
 # Set the PyTCP stack addressing.
+# Backstop iteration cap for 'drive_loopback' — a conversation driven
+# over the loopback ring should quiesce in far fewer round-trips; the
+# cap only guards against a non-terminating exchange in a buggy test.
+_LOOPBACK__DRIVE_MAX_ITERS: int = 10000
+
 STACK__MAC_ADDRESS = MacAddress("02:00:00:00:00:07")
 STACK__IP4_HOST = Ip4IfAddr("10.0.1.7/24")
 STACK__IP4_GATEWAY = Ip4Address("10.0.1.1")
@@ -195,6 +205,22 @@ class AddedInterface:
         return list(self.frames_tx[before:])
 
 
+def _dispatch_async_inline(run: Any, on_complete: Any = None) -> None:
+    """
+    Mock stand-in for 'TxRing.dispatch_async': run the marshaled
+    '_phtx_*' callable inline (no worker thread under test) and fire
+    the 'on_complete' hook in a 'finally', mirroring the real
+    fire-and-forget path so SO_SNDBUF send-buffer accounting is
+    released exactly as in production.
+    """
+
+    try:
+        run()
+    finally:
+        if on_complete is not None:
+            on_complete()
+
+
 class NetworkTestCase(TestCase):
     """
     Base class for all unit tests that require mock network.
@@ -214,9 +240,12 @@ class NetworkTestCase(TestCase):
     _ip6_flow_label_generation_prior: int
     _interfaces_snapshot: dict[int, PacketHandlerL2 | PacketHandlerL3]
     _packet_sockets_prior: list[Any]
+    _sockets_prior: dict[Any, Any]
+    _icmp_echo_sockets_prior: dict[Any, Any]
     _timer: FakeTimer
     _timer_prior: Timer | None
 
+    @override
     def setUp(self) -> None:
         """
         Prepare the test case.
@@ -285,7 +314,7 @@ class NetworkTestCase(TestCase):
         # Phase 4b fire-and-forget marshaling boundary — run the
         # callable inline (discard the result) so async sends still
         # land frames in the mocked 'enqueue' under test.
-        mock_TxRing.dispatch_async.side_effect = lambda run: run()
+        mock_TxRing.dispatch_async.side_effect = _dispatch_async_inline
 
         # Mock the ArpCache so we can get predictable responses.
         def _mock_arp_find_entry(*, ip4_address: Ip4Address) -> MacAddress | None:
@@ -339,10 +368,10 @@ class NetworkTestCase(TestCase):
             IP4__MULTICAST__ALL_NODES: Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE)
         }
         self._packet_handler._ip6_ifaddr = [STACK__IP6_HOST]
-        self._packet_handler._ip6_multicast = [
-            IP6__MULTICAST__ALL_NODES,
-            STACK__IP6_HOST.address.solicited_node_multicast,
-        ]
+        self._packet_handler._ip6_multicast_filters = {
+            IP6__MULTICAST__ALL_NODES: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+            STACK__IP6_HOST.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+        }
         self._packet_handler._ip4_ifaddr_candidate = [STACK__IP4_HOST__CANDIDATE]
         self._packet_handler._ip6_ifaddr_candidate = [STACK__IP6_HOST__CANDIDATE]
 
@@ -434,6 +463,20 @@ class NetworkTestCase(TestCase):
         self._packet_sockets_prior = stack.packet_sockets.snapshot()
         stack.packet_sockets.clear()
 
+        # Snapshot + clear the process-wide TCP/UDP socket table. It is a
+        # module-level singleton that 'mock__init' does NOT rebuild, so a
+        # socket a test binds (and any port it holds) would otherwise
+        # accumulate across the run and make a later explicit 'bind' to the
+        # same port fail — an order-dependent flake (§5.4
+        # module-state-on-touch).
+        self._sockets_prior = dict(stack.sockets)
+        stack.sockets.clear()
+
+        # Snapshot + clear the process-wide ICMP Echo ('ping') socket
+        # registry for the same reason (§5.4 module-state-on-touch).
+        self._icmp_echo_sockets_prior = dict(stack.icmp_echo_sockets)
+        stack.icmp_echo_sockets.clear()
+
     def _add_interface(
         self,
         *,
@@ -466,7 +509,7 @@ class NetworkTestCase(TestCase):
         mock_tx_ring = create_autospec(TxRing, spec_set=True)
         mock_tx_ring.enqueue.side_effect = _enqueue
         mock_tx_ring.dispatch.side_effect = lambda run: run()
-        mock_tx_ring.dispatch_async.side_effect = lambda run: run()
+        mock_tx_ring.dispatch_async.side_effect = _dispatch_async_inline
 
         # RX is injected directly via 'drive_rx' (calling '_phrx_ethernet'),
         # never read off this ring — but a real interface owns one, and
@@ -502,10 +545,10 @@ class NetworkTestCase(TestCase):
         handler._ip6_ifaddr = [ip6_host] if ip6_host is not None else []
         if ip6_host is not None:
             handler._mac_multicast = [ip6_host.address.solicited_node_multicast.multicast_mac]
-            handler._ip6_multicast = [
-                IP6__MULTICAST__ALL_NODES,
-                ip6_host.address.solicited_node_multicast,
-            ]
+            handler._ip6_multicast_filters = {
+                IP6__MULTICAST__ALL_NODES: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+                ip6_host.address.solicited_node_multicast: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE),
+            }
         handler._tx_ring = cast(TxRing, mock_tx_ring)
         handler._rx_ring = cast(RxRing, mock_rx_ring)
         handler._arp_cache = cast(ArpCache, mock_arp_cache)
@@ -518,6 +561,48 @@ class NetworkTestCase(TestCase):
 
         return AddedInterface(handler=handler, frames_tx=frames_tx)
 
+    def _register_loopback(self) -> PacketHandlerLoopback:
+        """
+        Register a real loopback ('lo') interface alongside the boot
+        interface and return its handler — the opt-in local-delivery
+        affordance for tests that exercise 'connect(("127.0.0.1", ...))'
+        / own-IP loops. Registered AFTER the setUp interface snapshot, so
+        'tearDown' drops it from the registry; its ring eventfd is closed
+        via 'addCleanup'.
+        """
+
+        lo = PacketHandlerLoopback(interface_mtu=stack.INTERFACE__LOOPBACK__MTU)
+        self.addCleanup(lo._lo_ring.close)
+        stack.interfaces.add(lo)
+        return lo
+
+    def drive_loopback(self, *, lo: PacketHandlerLoopback) -> int:
+        """
+        Synchronously drain the loopback ring and deliver each queued
+        packet into the IP RX path, returning the number delivered.
+        Keeps loopback integration tests single-threaded / deterministic
+        — no consumer thread — matching the harness's inline-TX model.
+
+        Replies generated during delivery re-enqueue onto the same ring
+        (the TX diversion), so a single call drives a conversation
+        (handshake, request/response) to quiescence. A generous
+        iteration cap is a backstop against a non-terminating exchange.
+        """
+
+        delivered = 0
+        for _ in range(_LOOPBACK__DRIVE_MAX_ITERS):
+            if lo._lo_ring.qsize == 0:
+                break
+            packet_rx = lo._lo_ring.dequeue()
+            if packet_rx is None:
+                break
+            lo._deliver_loopback(packet_rx)
+            delivered += 1
+        else:
+            raise AssertionError(f"drive_loopback did not quiesce within {_LOOPBACK__DRIVE_MAX_ITERS} iterations.")
+        return delivered
+
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack globals patched in 'setUp' so test-only
@@ -536,6 +621,14 @@ class NetworkTestCase(TestCase):
         stack.packet_sockets.clear()
         for packet_sock in self._packet_sockets_prior:
             stack.packet_sockets.register(packet_sock)
+
+        # Restore the TCP/UDP socket table to its pre-test snapshot.
+        stack.sockets.clear()
+        stack.sockets.update(self._sockets_prior)
+
+        # Restore the ICMP Echo ('ping') socket registry.
+        stack.icmp_echo_sockets.clear()
+        stack.icmp_echo_sockets.update(self._icmp_echo_sockets_prior)
 
         stack.__dict__.update(self._stack__attr_snapshot)
 

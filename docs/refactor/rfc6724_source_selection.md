@@ -212,8 +212,13 @@ Ships:
   `lookup(address) → (precedence, label)` function. (Shipped as
   `packages/pytcp/pytcp/protocols/ip6/ip6__policy_table.py`, not the
   planned `lib/ip6_policy_table.py`.)
-- Optional sysctl-driven override (deferred to §12c.3.b
-  if needed).
+- Operator override — **shipped** as `set_policy_table` /
+  `reset_policy_table` / `get_policy_table` on the policy-table
+  module (the `ip addrlabel` analogue, a dedicated control API
+  rather than a scalar sysctl since a whole table is not a
+  scalar; copy-on-write reference swap, lock-free under
+  free-threading). `lookup` reads the active table live so the
+  rule-6 selector picks up an override without a restart.
 - Rule 6 wired into `_select_ip6_source`.
 
 ## §12c.4 — IPv4 source-selection symmetry

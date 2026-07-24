@@ -28,14 +28,13 @@ RX path (the host Query-response state machine).
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__query_response.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import EthernetAssembler, Ip4Assembler, IpProto, RawAssembler
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.inet_cksum import inet_cksum
 from pytcp.stack import sysctl
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase

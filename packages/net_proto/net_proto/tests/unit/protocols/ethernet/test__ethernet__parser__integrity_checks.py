@@ -31,13 +31,11 @@ frame must produce an EthernetIntegrityError before parsing begins.
 
 net_proto/tests/unit/protocols/ethernet/test__ethernet__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     ETHERNET__HEADER__LEN,
@@ -45,6 +43,7 @@ from net_proto import (
     EthernetParser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

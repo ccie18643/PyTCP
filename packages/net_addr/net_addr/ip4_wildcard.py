@@ -27,12 +27,13 @@ This module contains IPv4 wildcard support class.
 
 net_addr/ip4_wildcard.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket
 from typing import Self, final, override
 
+from net_addr.buffer import Buffer
 from net_addr.errors import Ip4WildcardFormatError
 from net_addr.ip4_address import IP4__ADDRESS_LEN, IP4__MASK
 from net_addr.ip_version import IpVersion
@@ -54,7 +55,7 @@ class Ip4Wildcard(IpWildcard):
 
     def __init__(
         self,
-        wildcard: Self | str | bytes | bytearray | memoryview | int | None = None,
+        wildcard: Self | str | Buffer | int | None = None,
         /,
     ) -> None:
         """

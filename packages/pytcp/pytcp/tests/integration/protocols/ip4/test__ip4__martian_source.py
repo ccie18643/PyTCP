@@ -39,7 +39,7 @@ configured '_ip4_ifaddr' list is in scope.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__martian_source.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, MacAddress

@@ -27,16 +27,15 @@ This module contains tests for the IPv6 packet parser operation.
 
 net_proto/tests/unit/protocols/ip6/test__ip6__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import Ip6Header, Ip6Parser, IpProto, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -179,6 +178,7 @@ class TestIp6PacketParserOperation(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx so it can be fed to

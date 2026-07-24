@@ -36,7 +36,7 @@ their tests demand.
 
 pytcp/tests/lib/nd_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
@@ -77,7 +77,7 @@ class NdTestCase(IcmpTestCase):
         """
         Join any DAD daemon thread spawned during the test before the
         harness tears down 'stack'. An address-claim worker
-        ('_claim_ip6_address_async' -> '_perform_ip6_nd_dad') that
+        ('claim_ip6_address_async' -> '_perform_ip6_nd_dad') that
         outlives the fixture would otherwise reach 'stack.timer' after
         teardown removed it and raise from the daemon thread
         (unit_testing.md §10a.3). Joining here lets the worker finish

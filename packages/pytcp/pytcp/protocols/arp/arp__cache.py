@@ -35,17 +35,15 @@ ring dispatch with destination-MAC rewrite for flushes.
 
 pytcp/protocols/arp/arp__cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp.lib.neighbor import NeighborCache
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2
+from pytcp.runtime.packet_handler_api import ArpCacheOwner
 
 
 class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
@@ -68,7 +66,7 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
     # Linux per-ifindex ARP model). Class-level 'None' default
     # (rather than an '__init__' assignment) so 'create_autospec'
     # exposes the attribute as settable for the test harness.
-    _owner: "PacketHandlerL2 | None" = None
+    _owner: ArpCacheOwner | None = None
 
     @override
     def __init__(self) -> None:
@@ -83,6 +81,18 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
             solicit_callback=self._solicit_arp,
             flush_callback=self._flush_packet,
         )
+
+    def attach_owner(self, owner: ArpCacheOwner, /, *, iface_name: str | None) -> None:
+        """
+        Bind this cache to its owning interface handler (the
+        bidirectional cache <-> handler link) and record the interface
+        name for the 'neighbor.<ifname>.*' sysctl namespace. Called by
+        the stack lifecycle at construction time; the solicit / flush
+        callbacks route through 'owner'.
+        """
+
+        self._owner = owner
+        self._iface_name = iface_name
 
     # ------------------------------------------------------------
     # Public API — kw-only methods preserve the established ARP
@@ -185,9 +195,15 @@ class ArpCache(NeighborCache[Ip4Address, EthernetAssembler]):
         """
 
         assert self._owner is not None, "ARP cache must be bound to an interface handler before flushing."
-        assert self._owner._tx_ring is not None, "Owning interface handler must have a TX ring to flush."
+        assert self._owner.tx_ring is not None, "Owning interface handler must have a TX ring to flush."
         packet.dst = mac_address
+        # AF_PACKET egress tap: the flush bypasses '__send_out_packet'
+        # (it enqueues to the TX ring directly), so re-invoke the tap here
+        # or a queued-then-flushed frame — e.g. a TCP SYN-ACK to an
+        # unresolved peer — would never be observed on egress (Linux
+        # 'dev_queue_xmit_nit' taps neighbor-queued frames too).
+        self._owner.deliver_tx_to_packet_sockets(packet)
         # Phase 4: this direct enqueue becomes a ring-handoff TX
         # request once the per-interface TX worker owns the
         # send-out pipeline.
-        self._owner._tx_ring.enqueue(packet)
+        self._owner.tx_ring.enqueue(packet)

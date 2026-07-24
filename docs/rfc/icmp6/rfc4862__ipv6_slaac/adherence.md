@@ -103,7 +103,7 @@ the RFC §3.1 transitions:
 `packages/pytcp/pytcp/protocols/icmp6/nd/nd__constants.py:104` defines
 the 2-hour boundary; the gate runs in
 `_update_icmp6_slaac_address` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:615-629`
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1836-1845`
 (audited in detail under §5.5.3 below).
 
 ---
@@ -155,8 +155,8 @@ without a separate timer.
   across networks.
 
 The link-local claim path runs at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1746-1753`
-(`_create_stack_ip6_addressing`). The sysctl
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3839`
+(`PacketHandlerL2._create_stack_ip6_addressing`). The sysctl
 `icmp6.use_rfc7217` selects which path the IID generator
 takes (default 1 = RFC 7217); see also the dedicated
 [`../rfc7217__stable_iid/adherence.md`](../rfc7217__stable_iid/adherence.md).
@@ -190,9 +190,9 @@ takes (default 1 = RFC 7217); see also the dedicated
 >  MAX_RTR_SOLICITATION_DELAY seconds."
 
 **Adherence:** met. `_perform_ip6_nd_dad` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1509-1517`
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3561-3626`
 sleeps a random `[0, ICMP6__DAD_INITIAL_DELAY_MS]` ms
-window before the first probe; the probe loop at `:1517-1595`
+window before the first probe; the probe loop at `:3645-3688`
 emits `ICMP6__DAD_TRANSMITS` NS messages spaced by
 `ICMP6__RETRANS_TIMER_MS`.
 
@@ -255,7 +255,7 @@ controls the failure policy (values 0/1/2 declared at
 
 **Adherence:** met (cross-reference RFC 7559).
 `_send_icmp6_nd_router_solicitations_with_backoff` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1431-1456`
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:3534-3559`
 implements the truncated binary exponential backoff
 described in
 [`../rfc7559__rs_backoff/adherence.md`](../rfc7559__rs_backoff/adherence.md).
@@ -279,12 +279,12 @@ only the link-local address.
 >  of an existing prefix."
 
 **Adherence:** met. RA RX at
-`packet_handler__icmp6__rx.py:741-808` walks the option
+`packet_handler__icmp6__rx.py:805-933` walks the option
 list; PI options pass through the §5.4.1 validation gate
-(lines 777-795: A-flag set, valid_lifetime ≥
+(lines 843-850: A-flag set, valid_lifetime ≥
 preferred_lifetime, prefix not link-local) and then
 hand off to `_update_icmp6_slaac_address` at
-`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:578-643` which
+`packages/pytcp/pytcp/runtime/packet_handler/__init__.py:1793-1874` which
 applies the (e)(1)-(e)(6) refresh logic:
 
 - **(e)(1)** Valid Lifetime == 0 → remove the address.
@@ -296,7 +296,7 @@ applies the (e)(1)-(e)(6) refresh logic:
   - Else clamp to 2 hours.
 - **(e)(6)** First-install → bypass the 2-hour rule.
 
-Address derivation at line 631 calls `_derive_ip6_host`
+Address derivation at line 1847 calls `_derive_ip6_host`
 which selects EUI-64 or RFC 7217 per the
 `icmp6.use_rfc7217` sysctl.
 
@@ -365,7 +365,7 @@ the RFC 7217 / 7527 extensions):
   hairpin detection at
   `packet_handler__icmp6__rx.py:881-892` prevents an
   L2 loop from triggering a false DAD failure. Gate
-  via `icmp6.use_enhanced_dad` sysctl
+  via `icmp6.enhanced_dad` sysctl
   (`packages/pytcp/pytcp/protocols/icmp6/nd/nd__constants.py:621-626`).
 - **Optimistic DAD (RFC 4429)** — pre-DAD provisional
   assignment at
@@ -468,8 +468,8 @@ not a gap against RFC 4862's MUSTs.
 - `docs/rfc/icmp6/rfc9131__gratuitous_na/adherence.md` —
   gratuitous NA on DAD-success.
 - Source: `packages/pytcp/pytcp/runtime/packet_handler/__init__.py`
-  (SLAAC orchestration; ~lines 578-1693),
-  `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__rx.py:741-808`
+  (SLAAC orchestration; ~lines 1793-3714),
+  `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__icmp6__rx.py:805-933`
   (RA RX), `packages/pytcp/pytcp/lib/dad_slot_registry.py` (atomic DAD
   signalling), `packages/net_addr/net_addr/ip6_ifaddr.py:164-282`
   (IID derivation).

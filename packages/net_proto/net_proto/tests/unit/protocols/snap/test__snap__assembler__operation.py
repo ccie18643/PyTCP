@@ -28,14 +28,13 @@ Protocol) packet assembler.
 
 net_proto/tests/unit/protocols/snap/test__snap__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     SNAP__HEADER__LEN,
     SnapAssembler,
@@ -44,7 +43,7 @@ from net_proto import (
     SnapOui,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -151,6 +150,7 @@ class TestSnapAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the SNAP packet assembler from the parametrized

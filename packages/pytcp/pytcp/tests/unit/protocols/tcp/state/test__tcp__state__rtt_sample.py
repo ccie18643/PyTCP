@@ -27,9 +27,10 @@ Unit tests for RttSampleState dataclass.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__rtt_sample.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__rtt_sample import RttSampleState
@@ -131,4 +132,43 @@ class TestRttSampleState__Methods(TestCase):
             s.last_send_time_ms,
             10000,
             msg="clear must NOT touch last_send_time_ms.",
+        )
+
+
+class TestRttSampleState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for RttSampleState.
+    """
+
+    def test__tcp_state__rtt_sample__is_slotted(self) -> None:
+        """
+        Ensure RttSampleState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(RttSampleState(), "__dict__"),
+            msg="RttSampleState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestRttSampleState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the RttSampleState mutator signatures.
+    """
+
+    def test__tcp_state__rtt_sample__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the RttSampleState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(RttSampleState.record).parameters["seq"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RttSampleState.record 'seq' must be keyword-only.",
         )

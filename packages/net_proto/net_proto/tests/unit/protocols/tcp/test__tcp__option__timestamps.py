@@ -27,13 +27,11 @@ Module contains tests for the TCP Timestamps option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__timestamps.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__TIMESTAMPS__LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpOptionTimestamps,
     TcpOptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionTimestampsAsserts(TestCase):
@@ -50,6 +49,7 @@ class TestTcpOptionTimestampsAsserts(TestCase):
     The TCP Timestamps option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP Timestamps option
@@ -224,6 +224,7 @@ class TestTcpOptionTimestampsAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Timestamps option from the parametrized kwargs.
@@ -411,12 +412,33 @@ class TestTcpOptionTimestampsParser(TestCase):
             },
         },
         {
+            "_description": "TCP Timestamps option, buffer 'type' byte is below TcpOptionType.TIMESTAMPS.",
+            "_args": [b"\x05\x0a\x00\x00\x00\x00\x00\x00\x00\x00"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Timestamps option type must be {TcpOptionType.TIMESTAMPS!r}. "
+                    f"Got: {TcpOptionType.from_int(5)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Timestamps option, declared 'len' differs from TCP__OPTION__TIMESTAMPS__LEN.",
             "_args": [b"\x08\x09\x00\x00\x00\x00\x00\x00\x00\x00"],
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": (
                     "[INTEGRITY ERROR][TCP] The TCP Timestamps option length value must be 10 bytes. Got: 9"
+                ),
+            },
+        },
+        {
+            "_description": "TCP Timestamps option, declared 'len' over TCP__OPTION__TIMESTAMPS__LEN (buffer present).",
+            "_args": [b"\x08\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": (
+                    "[INTEGRITY ERROR][TCP] The TCP Timestamps option length value must be 10 bytes. Got: 11"
                 ),
             },
         },

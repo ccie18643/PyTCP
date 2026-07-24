@@ -27,13 +27,11 @@ Module contains tests for the unknown TCP option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__unknown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TcpIntegrityError,
@@ -42,6 +40,7 @@ from net_proto import (
 )
 from net_proto.lib.int_checks import UINT_8__MAX
 from net_proto.protocols.tcp.options.tcp__option import TCP__OPTION__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionUnknownAsserts(TestCase):
@@ -49,6 +48,7 @@ class TestTcpOptionUnknownAsserts(TestCase):
     The unknown TCP option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP unknown option
@@ -160,6 +160,7 @@ class TestTcpOptionUnknownAssembler(TestCase):
     The unknown TCP option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the unknown TCP option fixture (type=255, data=ASCII hex).

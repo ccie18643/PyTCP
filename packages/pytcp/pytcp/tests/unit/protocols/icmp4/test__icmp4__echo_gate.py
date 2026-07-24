@@ -27,16 +27,15 @@ This module contains tests for the ICMPv4 Echo Reply emission gate.
 
 pytcp/tests/unit/protocols/icmp4/test__icmp4__echo_gate.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.protocols.icmp4.icmp4__echo_gate import should_emit_echo_reply
 from pytcp.stack import sysctl
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class TestShouldEmitEchoReply__Permit(TestCase):

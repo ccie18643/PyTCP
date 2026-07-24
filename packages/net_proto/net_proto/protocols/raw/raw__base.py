@@ -27,12 +27,12 @@ This module contains the Raw protocol base class.
 
 net_proto/protocols/raw/raw__base.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import EtherType, IpProto
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.proto import Proto

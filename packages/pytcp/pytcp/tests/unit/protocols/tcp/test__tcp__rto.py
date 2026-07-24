@@ -43,9 +43,10 @@ Reference RFCs:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__rto.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from dataclasses import FrozenInstanceError
 from unittest import TestCase
 
 from pytcp.protocols.tcp.tcp__rto import (
@@ -508,3 +509,132 @@ class TestRtoConvergence(TestCase):
             srtt_ms // 10,
             msg="RTTVAR must converge toward zero (much smaller than SRTT) after a long run of identical samples.",
         )
+
+
+class TestRtoMutationGoldens(TestCase):
+    """
+    Exact-literal and structural goldens closing the rto mutation
+    survivors: the clamp boundaries against literal MIN/MAX (so a
+    constant edit is caught even though the clamp helper reads the
+    same constant), the first-sample RTTVAR floor division on an
+    odd sample, the EWMA second-multiplier on numerators chosen to
+    cross the floor boundary, the clock-granularity term exposed at
+    RTTVAR=0, and the frozen / slotted RtoState dataclass.
+    """
+
+    def test__rto__clamp_boundaries_are_exact_literals(self) -> None:
+        """
+        Ensure clamp_rto pins to the literal 1000 ms / 60000 ms
+        bounds, so a NumberReplacer edit of MIN_RTO_MS / MAX_RTO_MS
+        is caught.
+
+        Reference: RFC 6298 §2.4 (RTO lower bound of 1 second).
+        Reference: RFC 6298 §2.5 (RTO upper bound, at least 60 seconds).
+        """
+
+        self.assertEqual(
+            clamp_rto(50),
+            1000,
+            msg="clamp_rto below the floor must return exactly 1000 ms.",
+        )
+        self.assertEqual(
+            clamp_rto(99999),
+            60000,
+            msg="clamp_rto above the ceiling must return exactly 60000 ms.",
+        )
+
+    def test__rto__first_sample_rttvar_floor_divides_on_odd_R(self) -> None:
+        """
+        Ensure the first-sample RTTVAR is R // 2 (integer floor): an
+        odd R=301 yields 150, never the true-division 150.5.
+
+        Reference: RFC 6298 §2.2 (first sample: RTTVAR = R / 2).
+        """
+
+        state = update(initial_state(), 301)
+        self.assertEqual(
+            state.rttvar_ms,
+            150,
+            msg="first-sample RTTVAR for odd R=301 must floor to 150.",
+        )
+        self.assertEqual(
+            state.srtt_ms,
+            301,
+            msg="first-sample SRTT must equal R=301.",
+        )
+
+    def test__rto__ewma_second_multiplier_rttvar(self) -> None:
+        """
+        Ensure the RTTVAR EWMA scales the new deviation by BETA_NUM
+        (multiply, not add): with prior RTTVAR=150 and a second
+        sample of 321 the result is 117, where the multiply→add
+        mutant would yield 118.
+
+        Reference: RFC 6298 §2.3 (RTTVAR EWMA, beta = 1/4).
+        """
+
+        state = update(update(initial_state(), 300), 321)
+        self.assertEqual(
+            state.rttvar_ms,
+            117,
+            msg="RTTVAR EWMA at sample 321 must be 117 (kills the multiply→add mutant).",
+        )
+
+    def test__rto__ewma_second_multiplier_srtt(self) -> None:
+        """
+        Ensure the SRTT EWMA scales the new sample by ALPHA_NUM
+        (multiply, not add): with prior SRTT=300 and a second sample
+        of 323 the result is 302, where the multiply→add mutant would
+        yield 303.
+
+        Reference: RFC 6298 §2.3 (SRTT EWMA, alpha = 1/8).
+        """
+
+        state = update(update(initial_state(), 300), 323)
+        self.assertEqual(
+            state.srtt_ms,
+            302,
+            msg="SRTT EWMA at sample 323 must be 302 (kills the multiply→add mutant).",
+        )
+
+    def test__rto__clock_granularity_floor_exposed_at_zero_rttvar(self) -> None:
+        """
+        Ensure the RTO adds max(CLOCK_GRANULARITY_MS, K*RTTVAR): after
+        a long run of identical large samples RTTVAR decays to 0 and
+        SRTT settles at 2000, so the unclamped RTO is exactly
+        2000 + 1 = 2001 — a CLOCK_GRANULARITY_MS edit moves it.
+
+        Reference: RFC 6298 §2.4 (RTO = SRTT + max(G, K*RTTVAR)).
+        """
+
+        state = initial_state()
+        for _ in range(120):
+            state = update(state, 2000)
+
+        self.assertEqual(
+            state.rttvar_ms,
+            0,
+            msg="RTTVAR must decay to exactly 0 after a long identical-sample run.",
+        )
+        self.assertEqual(
+            state.rto_ms,
+            2001,
+            msg="RTO must be SRTT(2000) + CLOCK_GRANULARITY(1) = 2001 when RTTVAR=0.",
+        )
+
+    def test__rto__state_is_frozen_and_slotted(self) -> None:
+        """
+        Ensure RtoState is a frozen, slotted dataclass (no __dict__,
+        immutable), so the frozen=/slots= flags cannot be flipped
+        unnoticed.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        state = initial_state()
+        self.assertFalse(
+            hasattr(state, "__dict__"),
+            msg="RtoState must be slotted (no __dict__).",
+        )
+        with self.assertRaises(FrozenInstanceError):
+            state.rto_ms = 5  # type: ignore[misc]

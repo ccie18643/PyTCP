@@ -32,13 +32,11 @@ stub that raises NotImplementedError — sockets are the user-facing API.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, Ip4Mask, MacAddress
 from net_proto import (
@@ -60,6 +58,7 @@ from net_proto import (
 )
 from net_proto.protocols.dhcp4.dhcp4__assembler import Dhcp4Assembler
 from net_proto.protocols.dhcp4.dhcp4__enums import Dhcp4Operation
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _bootp_header(
@@ -232,6 +231,7 @@ class TestDhcp4AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Construct a Dhcp4Assembler for every parameterized testcase.

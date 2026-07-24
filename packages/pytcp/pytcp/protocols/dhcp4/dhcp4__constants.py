@@ -32,7 +32,7 @@ can tune it via 'stack.init(sysctls={...})' at boot or
 
 pytcp/protocols/dhcp4/dhcp4__constants.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 # RFC 2131 §4.1 — DHCPv4 retransmission backoff. The first

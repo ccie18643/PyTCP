@@ -31,15 +31,14 @@ an EXCLUDE interface, empty ⇒ no response).
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_query_response.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
 from typing import override
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import IgmpV3RecordType, IpProto
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
@@ -50,7 +49,7 @@ from net_proto.protocols.igmp.message.igmp__message__v3_report import (
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.raw.raw__assembler import RawAssembler
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,

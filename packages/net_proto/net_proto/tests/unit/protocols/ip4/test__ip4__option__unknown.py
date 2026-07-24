@@ -27,13 +27,11 @@ Module contains tests for the unknown IPv4 option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__unknown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Ip4IntegrityError,
@@ -42,6 +40,7 @@ from net_proto import (
 )
 from net_proto.lib.int_checks import UINT_8__MAX
 from net_proto.protocols.ip4.options.ip4__option import IP4__OPTION__LEN
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionUnknownAsserts(TestCase):
@@ -49,6 +48,7 @@ class TestIp4OptionUnknownAsserts(TestCase):
     The unknown IPv4 option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict so each test can override exactly
@@ -214,6 +214,7 @@ class TestIp4OptionUnknownAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the unknown IPv4 option from the parametrized kwargs.

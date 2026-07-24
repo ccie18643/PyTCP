@@ -27,13 +27,11 @@ Module contains tests for the TCP Wscale (Window Scale) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__wscale.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__WSCALE__LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpOptionType,
     TcpOptionWscale,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionWscaleAsserts(TestCase):
@@ -149,6 +148,7 @@ class TestTcpOptionWscaleAssembler(TestCase):
     _wscale: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Wscale option from the parametrized 'wscale' value.
@@ -375,11 +375,30 @@ class TestTcpOptionWscaleParser(TestCase):
             },
         },
         {
+            "_description": "TCP Wscale option, buffer 'type' byte is below TcpOptionType.WSCALE.",
+            "_args": [b"\x02\x03\x0e"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Wscale option type must be {TcpOptionType.WSCALE!r}. "
+                    f"Got: {TcpOptionType.from_int(2)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Wscale option, declared 'len' byte differs from TCP__OPTION__WSCALE__LEN.",
             "_args": [b"\x03\x02\x0e"],
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": ("[INTEGRITY ERROR][TCP] The TCP Wscale option length value must be 3 bytes. Got: 2"),
+            },
+        },
+        {
+            "_description": "TCP Wscale option, declared 'len' over TCP__OPTION__WSCALE__LEN (buffer present).",
+            "_args": [b"\x03\x04\x0e\x00"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": ("[INTEGRITY ERROR][TCP] The TCP Wscale option length value must be 3 bytes. Got: 4"),
             },
         },
         {

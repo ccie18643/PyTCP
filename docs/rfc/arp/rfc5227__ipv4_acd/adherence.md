@@ -54,9 +54,9 @@ Consumers:
 - **RFC 3927 link-local client**: `claim` + `poll_conflict`,
   `defend` / abandon per its §2.5 decision tree.
 
-`Ip4AddressApi` (`packages/pytcp/pytcp/stack/address.py`) is now the pure
-`ip addr` surface (`add_ifaddr` / `remove_ifaddr` /
-`replace_ifaddr` / `list_ip4_ifaddrs`); `remove_ifaddr` ABORTs
+`AddressApi` (`packages/pytcp/pytcp/stack/address.py:60`) is now the
+pure `ip addr` surface (`add` / `remove` / `replace` /
+`list_ifaddrs`, covering both IPv4 and IPv6); `remove` ABORTs
 bound TCP sessions per the §2.4-final SHOULD (via the internal
 `_abort_bound_tcp_sessions` helper). (The former `probe` /
 `announce` / `claim_with_acd` / `send_gratuitous_arp` /
@@ -381,7 +381,7 @@ handler abandons the address (removing it via the Address API,
 which ABORTs bound TCP sessions per the §2.4-final SHOULD) and
 returns to its INIT state to pick a fresh candidate; the
 DHCPv4 client declines and re-acquires. The
-`Ip4AddressApi.remove_ifaddr(..., abort_bound_sessions=True)`
+`AddressApi.remove(..., abort_bound_sessions=True)`
 path is the shared teardown primitive.
 
 > "(c) If a host has been configured such that it should
@@ -406,7 +406,7 @@ mechanism is in place.
 > using that address."
 
 **Adherence:** **met**. The abandon paths remove the address
-through `Ip4AddressApi.remove_ifaddr(...,
+through `AddressApi.remove(...,
 abort_bound_sessions=True)`, which issues `SysCall.ABORT` to
 every `TcpSession` whose local address equals the abandoned IP
 (via the internal `_abort_bound_tcp_sessions` helper) — the
@@ -424,9 +424,9 @@ session down.
 
 **Adherence:** **met**. The Reply path runs unconditionally
 once the candidate has been admitted to `self._ip4_ifaddr`:
-`packet_handler__arp__rx.py:378-386` calls
+`packet_handler__arp__rx.py:233-242` calls
 `_send_arp_reply(...)` for any Request whose TPA matches our
-IP.
+IP (destined to our unicast MAC or broadcast).
 
 > "This applies equally for both standard ARP Requests with
 > non-zero sender IP addresses and Probe Requests with
@@ -448,8 +448,8 @@ differentiation is in conflict-detection logic upstream.
 
 **Adherence:** **met (NOT-RECOMMENDED form not selected)**.
 PyTCP unicasts ARP Replies to the requester
-(`packet_handler__arp__tx.py:209-218` sets `ethernet__dst =
-arp__tha`). RFC 5227 §2.6 says broadcast Replies SHOULD NOT
+(`packet_handler__arp__tx.py:131-145` `_send_arp_reply` sets
+`ethernet__dst = arp__tha`). RFC 5227 §2.6 says broadcast Replies SHOULD NOT
 be used universally; PyTCP follows the default. RFC 3927
 link-local does not flip this — see
 [`../../ip4/rfc3927__ip4_link_local/adherence.md`](../../ip4/rfc3927__ip4_link_local/adherence.md).
@@ -582,12 +582,12 @@ link-local BOUND-conflict handler); `Ip4Acd` supplies the
 ### §2.4-final — Reset connections before abandoning (SHOULD)
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/stack/test__stack__address.py::TestIp4AddressApiRemoveHost::test__ip4_address_api__remove_host_default_aborts_bound_sessions`
-  — asserts `remove_ifaddr` issues `SysCall.ABORT` to every
+  `packages/pytcp/pytcp/tests/unit/stack/test__stack__address.py::TestAddressApiRemoveHost::test__ip4_address_api__remove_host_default_aborts_bound_sessions`
+  — asserts `remove` issues `SysCall.ABORT` to every
   `TcpSession` bound to the removed address (the shared
   abandon teardown).
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/stack/test__stack__address.py::TestIp4AddressApiAbortBoundSessions`
+  `packages/pytcp/pytcp/tests/unit/stack/test__stack__address.py::TestAddressApiAbortBoundSessions`
   — asserts the standalone primitive is consumer-callable
   for RFC 3927 §2.5(a) abandon paths.
 
@@ -630,7 +630,7 @@ the §2.6 broadcast form either.
 | §2.1.1      | PROBE_WAIT initial random delay                              | locked in                      |
 | §2.1.1      | PROBE_NUM + PROBE_MIN/MAX spacing                            | locked in                      |
 | §2.1.1      | RX-side conflict detection (all four shapes)                 | locked in                      |
-| §2.1.1      | Conflict aborts claim (end-to-end via DAD registry)          | locked in                      |
+| §2.1.1      | Conflict aborts claim (end-to-end via Ip4Acd socket)         | locked in                      |
 | §2.1.1      | Simultaneous-probe detection (SPA=0, foreign SHA)            | locked in                      |
 | §2.1.1      | MAX_CONFLICTS / RATE_LIMIT_INTERVAL                          | locked in (link-local subsystem) |
 | §2.1.1      | ANNOUNCE_WAIT post-probe quiet period                        | locked in                      |
@@ -689,7 +689,7 @@ kernel-equivalent stack ARP RX path performs no conflict
 detection. Each managed address (DHCPv4 lease, RFC 3927
 link-local) runs its own `Ip4Acd` over a per-address AF_PACKET
 socket; a statically configured address gets probe + announce
-only, no ongoing defender (bare `ip addr add`). `Ip4AddressApi`
+only, no ongoing defender (bare `ip addr add`). `AddressApi`
 (`pytcp.stack.address`) is the pure `ip addr` surface; the
 former in-RX `_handle_arp_conflict` / `_arp_dad_*` machinery
 and the `claim_with_acd` / `probe` / `announce` API wrappers

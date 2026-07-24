@@ -11,10 +11,12 @@ APIs; everything else is internal to the stack.
 Consumer code MUST use only these surfaces — never
 reach into `packet_handler.*`, `pytcp.lib.*` internals, or
 any other implementation-detail module. The architectural
-seam each API provides today (a thin Python wrapper over
-in-process state) is what the eventual Phase-3 IPC channel
-will swap behind without changing the consumer-facing
-shape.
+seam each API provides is what the Phase-3 IPC channel sits
+behind without changing the consumer-facing shape: as of
+3.0.8 that channel has shipped (`pytcp.ipc` / `pytcp.client`
+over AF_UNIX, with the `pytcp.daemon` owning the stack), so
+these surfaces are consumed both in-process and out-of-process
+through the same API shape.
 
 ## Surface inventory
 
@@ -24,8 +26,8 @@ shape.
 | **Sysctl registry** (`pytcp.stack.sysctl`)        | Protocol-policy control | `/proc/sys/net/`                                       | shipped    | [`sysctl_registry.md`](sysctl_registry.md)     |
 | **Link API** (`pytcp.stack.link`)                 | Link control           | `ip link` / RTNETLINK `RTM_NEWLINK`                    | shipped    | [`link_api.md`](link_api.md)                   |
 | **Address API** (`pytcp.stack.address`)           | Network-layer control  | `ip addr` / RTNETLINK `RTM_NEWADDR`                    | shipped    | [`address_api.md`](address_api.md)             |
-| **Route API**                                     | Routing control        | `ip route` / RTNETLINK `RTM_NEWROUTE`                  | not yet    | [`route_api.md`](route_api.md)                 |
-| **Neighbor API**                                  | Neighbor control       | `ip neighbor` / RTNETLINK `RTM_NEWNEIGH`               | not yet    | [`neighbor_api.md`](neighbor_api.md)           |
+| **Route API** (`pytcp.stack.route`)               | Routing control        | `ip route` / RTNETLINK `RTM_NEWROUTE`                  | shipped    | [`route_api.md`](route_api.md)                 |
+| **Neighbor API** (`pytcp.stack.neighbor`)         | Neighbor control       | `ip neighbor` / RTNETLINK `RTM_NEWNEIGH`               | shipped    | [`neighbor_api.md`](neighbor_api.md)           |
 | **Introspection API**                             | State observation      | `/proc/net/route`, `/proc/net/arp`, `ss`, `/proc/net/dev` | partial    | [`introspection_api.md`](introspection_api.md) |
 
 ## What "shipped" means
@@ -86,6 +88,9 @@ Each per-API doc follows the same shape:
   implications (the source of truth for these surface
   boundaries).
 - **Per-RFC adherence records** — `docs/rfc/<family>/rfcXXXX__<name>/adherence.md`.
-- **Refactor plans** — `docs/refactor/<surface>_plan.md`
-  for surfaces that shipped via a multi-phase track
-  (Link API, RFC 3927 Address API extraction, DHCPv4).
+- **Refactor plans** — the `docs/refactor/*.md` track that
+  built each surface, e.g. [`link_api.md`](../refactor/link_api.md),
+  [`address_api_unification.md`](../refactor/address_api_unification.md),
+  [`routing_table_host_mode.md`](../refactor/routing_table_host_mode.md),
+  [`rfc3927_link_local_autoconfig.md`](../refactor/rfc3927_link_local_autoconfig.md),
+  and [`dhcp4_client_full_parity.md`](../refactor/dhcp4_client_full_parity.md).

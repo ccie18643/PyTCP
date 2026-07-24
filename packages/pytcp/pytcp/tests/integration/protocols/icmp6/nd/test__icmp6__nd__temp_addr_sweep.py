@@ -44,10 +44,11 @@ PacketHandler subsystem loop, rate-limited by the
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__temp_addr_sweep.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr, Ip6Network
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6TempAddress
@@ -65,6 +66,7 @@ class TestIcmp6Nd__TempAddrSweep__SysctlRegistration(NdTestCase):
     sensible default; validator accepts positive ints.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

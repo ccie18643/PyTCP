@@ -43,8 +43,10 @@ came from somewhere other than RA SLAAC, e.g. static config).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__multi_prefix_router.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6NdOptionPi, Icmp6NdRoutePreference
@@ -91,6 +93,7 @@ class TestIcmp6Nd__MultiPrefixRouter__SourceMatchingRouter(NdTestCase):
     the supplied source address.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Drive two RAs, one from each router, each advertising

@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package IPv6 host support class.
 
 net_addr/tests/unit/test__ip6_ifaddr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4IfAddr,
@@ -48,6 +46,8 @@ from net_addr import (
     IpVersion,
     MacAddress,
 )
+from net_addr.ip6_ifaddr import _is_reserved_iid
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -131,6 +131,7 @@ class TestNetAddrIp6Host(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv6 host object with testcase arguments.
@@ -483,6 +484,53 @@ class TestNetAddrIp6HostFromEui64(TestCase):
             msg="EUI64 address must flip the U/L bit and embed the MAC.",
         )
 
+    def test__net_addr__ip6_host__from_eui64__non_degenerate(self) -> None:
+        """
+        Ensure 'from_eui64()' embeds every MAC octet and every prefix
+        bit — a non-degenerate MAC (bits set in every octet) placed in
+        a fully populated /64 so a corrupted netmask, U/L flip, or
+        field placement changes the resulting address.
+
+        Reference: RFC 4291 §2.5.1 (modified EUI-64 IIDs are 64 bits).
+        """
+
+        # aa:bb:cc:dd:ee:ff is the canonical EUI-64 vector: the U/L bit
+        # flip turns the leading 0xaa into 0xa8 and 0xff:0xfe is inserted
+        # between the two 24-bit MAC halves. The prefix uses all four
+        # leading hextets so a corrupted /64 netmask is observable.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                ip6_network=Ip6Network("2001:db8:aaaa:bbbb::/64"),
+            ).address,
+            Ip6Address("2001:db8:aaaa:bbbb:a8bb:ccff:fedd:eeff"),
+            msg="from_eui64() must flip the U/L bit, insert ff:fe, and keep the full /64 prefix.",
+        )
+
+        # A second vector with a different leading octet hardens the U/L
+        # flip (0x12 -> 0x10) across a link-local prefix.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("12:34:56:78:9a:bc"),
+                ip6_network=Ip6Network("fe80::/64"),
+            ).address,
+            Ip6Address("fe80::1034:56ff:fe78:9abc"),
+            msg="from_eui64() U/L flip must turn 0x12 into 0x10 and embed the MAC.",
+        )
+
+        # An all-ones top-64 prefix sets every prefix bit, so any
+        # corruption of the /64 netmask (which masks exactly bits
+        # 64-127) changes the result — closing the netmask-arithmetic
+        # mutants a partially-populated prefix leaves unconstrained.
+        self.assertEqual(
+            Ip6IfAddr.from_eui64(
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                ip6_network=Ip6Network("ffff:ffff:ffff:ffff::/64"),
+            ).address,
+            Ip6Address("ffff:ffff:ffff:ffff:a8bb:ccff:fedd:eeff"),
+            msg="from_eui64() must preserve an all-ones /64 prefix exactly.",
+        )
+
     def test__net_addr__ip6_host__from_eui64__non_64_mask_raises(self) -> None:
         """
         Ensure 'from_eui64()' rejects a network whose mask is not
@@ -643,6 +691,64 @@ class TestNetAddrIp6HostFromRfc7217(TestCase):
             host_0.address,
             host_1.address,
             msg=f"Different DAD counters must yield different IIDs. Got: {host_0!r} vs {host_1!r}",
+        )
+
+    def test__net_addr__ip6_host__from_rfc7217__golden_vector(self) -> None:
+        """
+        Ensure 'from_rfc7217' reproduces a byte-exact known IID for a
+        fixed {prefix, mac, secret, dad} tuple — pinning the whole PRF
+        construction (the F() input assembly, the digest slice, and
+        the prefix/IID combine) which the differential determinism /
+        unlinkability tests leave unconstrained.
+
+        Reference: RFC 7217 §5 (Algorithm Specification).
+        """
+
+        host = Ip6IfAddr.from_rfc7217(
+            ip6_network=Ip6Network("2001:db8:aaaa:bbbb::/64"),
+            mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+            secret_key=b"a-fixed-128-bit-secret-key-bytes",
+            dad_counter=0,
+        )
+        self.assertEqual(
+            host.address,
+            Ip6Address("2001:db8:aaaa:bbbb:7860:ab56:5da3:c5a9"),
+            msg="from_rfc7217 must reproduce the exact PRF-derived IID for the fixed golden input.",
+        )
+
+        # An all-ones top-64 prefix sets every prefix bit, so any
+        # corruption of the /64 netmask (which masks exactly bits
+        # 64-127) changes the result — closing the netmask-arithmetic
+        # mutants a partially-populated prefix leaves unconstrained.
+        self.assertEqual(
+            Ip6IfAddr.from_rfc7217(
+                ip6_network=Ip6Network("ffff:ffff:ffff:ffff::/64"),
+                mac_address=MacAddress("aa:bb:cc:dd:ee:ff"),
+                secret_key=b"a-fixed-128-bit-secret-key-bytes",
+                dad_counter=0,
+            ).address,
+            Ip6Address("ffff:ffff:ffff:ffff:a6bf:2117:5bda:6d09"),
+            msg="from_rfc7217 must preserve an all-ones /64 prefix exactly.",
+        )
+
+    def test__net_addr__ip6_host__from_rfc7217__minimum_secret_length(self) -> None:
+        """
+        Ensure a secret key of exactly the 16-byte minimum is accepted
+        (the boundary just above the rejection threshold), so the
+        length guard rejects strictly-shorter keys only.
+
+        Reference: RFC 7217 §5 (secret_key length).
+        """
+
+        host = Ip6IfAddr.from_rfc7217(
+            ip6_network=Ip6Network("2001:db8::/64"),
+            mac_address=MacAddress("02:00:00:11:22:33"),
+            secret_key=b"sixteen-byte-key",
+        )
+        self.assertEqual(
+            host.network,
+            Ip6Network("2001:db8::/64"),
+            msg="A 16-byte secret_key (the minimum) must be accepted.",
         )
 
     def test__net_addr__ip6_host__from_rfc7217__keeps_prefix(self) -> None:
@@ -970,8 +1076,30 @@ class TestNetAddrIp6IfAddrFormat(TestCase):
                 self.assertEqual(format(a, spec), expected, msg=f"format({spec!r}) must be {expected!r}.")
 
         self.assertEqual(f"{a}", "2001:db8::5/64", msg="Default format must equal str().")
-        with self.assertRaises(Ip6IfAddrSanityError, msg="An unknown format spec must raise Ip6IfAddrSanityError."):
-            format(a, "zz")
+
+        # A spec ending in 's' routes through Python's str formatting
+        # for width / alignment, applied to the default rendering. A
+        # multi-character width spec also pins that only the final
+        # character selects this branch.
+        for spec in ("s", ">22s", "<22s", "^20s"):
+            with self.subTest(spec=spec):
+                self.assertEqual(
+                    format(a, spec),
+                    format("2001:db8::5/64", spec),
+                    msg=f"Width/alignment spec {spec!r} must format the default rendering.",
+                )
+
+        # Unknown specs must raise the sanity error — including ones
+        # whose final character sorts at or below 's' (e.g. 'zq'), which
+        # a '<='-relaxation of the width-branch test ('[-1:] == "s"')
+        # would mis-route to str formatting (leaking a ValueError).
+        for spec in ("zz", "zq", "qa"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip6IfAddrSanityError,
+                    msg=f"Unknown format spec {spec!r} must raise Ip6IfAddrSanityError.",
+                ):
+                    format(a, spec)
 
 
 class TestNetAddrIp6IfAddrScoped(TestCase):
@@ -1185,6 +1313,49 @@ class TestNetAddrIp6IfAddrOrdering(TestCase):
         self.assertTrue(b < c, msg="Lower host address must sort before.")
         self.assertEqual(min(c, b, a), a, msg="min() must return the lowest Ip6IfAddr.")
 
+    def test__net_addr__ip6_ifaddr__ordering__total_order_relations(self) -> None:
+        """
+        Ensure every ordering operator is pinned in both directions
+        and reflexively, including the network tiebreak between two
+        interface addresses that share a host address, and that
+        equality rejects a strictly-greater operand in either argument
+        order — so a flipped or weakened comparison in '<', '<=', '>',
+        '>=' or '==' is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Same host address, different network: the /65 network sorts
+        # after the /64 via the mask tiebreak.
+        a = Ip6IfAddr("2001:db8::5/64")
+        b = Ip6IfAddr("2001:db8::5/65")
+
+        self.assertLess(a, b, msg="Same host, longer-prefix network must be strictly less.")
+        self.assertFalse(b < a, msg="'<' must be False in the reverse direction.")
+        self.assertFalse(a < a, msg="'<' must be irreflexive.")
+
+        self.assertLessEqual(a, b, msg="'<=' must hold in the forward direction.")
+        self.assertFalse(b <= a, msg="'<=' must be False in the reverse direction.")
+        self.assertLessEqual(a, a, msg="'<=' must be reflexive.")
+
+        self.assertGreater(b, a, msg="Same host, longer-prefix network must be strictly greater.")
+        self.assertFalse(a > b, msg="'>' must be False in the reverse direction.")
+        self.assertFalse(a > a, msg="'>' must be irreflexive.")
+
+        self.assertGreaterEqual(b, a, msg="'>=' must hold in the forward direction.")
+        self.assertFalse(a >= b, msg="'>=' must be False in the reverse direction.")
+        self.assertGreaterEqual(a, a, msg="'>=' must be reflexive.")
+
+        self.assertNotEqual(a, b, msg="Interface addresses differing only by network must not be equal.")
+        self.assertNotEqual(b, a, msg="Inequality must hold with the greater interface address on the left.")
+
+        # Different host address, same network: equality must reject it
+        # in either argument order — pins the host-address comparison in
+        # __eq__ (the network-only pair above leaves it unexercised).
+        higher = Ip6IfAddr("2001:db8::6/64")
+        self.assertNotEqual(higher, a, msg="A higher host address must not equal a lower one (greater on left).")
+        self.assertNotEqual(a, higher, msg="A lower host address must not equal a higher one (lesser on left).")
+
     def test__net_addr__ip6_ifaddr__ordering__scope_consistent_with_equality(self) -> None:
         """
         Ensure a scoped and an unscoped interface address with
@@ -1215,3 +1386,38 @@ class TestNetAddrIp6IfAddrOrdering(TestCase):
 
         with self.assertRaises(TypeError, msg="Ip6IfAddr < Ip4IfAddr must raise TypeError."):
             _ = Ip6IfAddr("2001:db8::5/64") < Ip4IfAddr("10.0.0.5/24")
+
+
+class TestNetAddrIp6ReservedIid(TestCase):
+    """
+    The NetAddr RFC 5453 reserved-IID predicate tests.
+    """
+
+    def test__net_addr__ip6__is_reserved_iid(self) -> None:
+        """
+        Ensure '_is_reserved_iid' flags exactly the RFC 5453 / RFC 2526
+        reserved interface identifiers — the all-zero Subnet-Router
+        Anycast IID and the Reserved Subnet Anycast block
+        (fdff:ffff:ffff:ff80 .. ffff) inclusive — and accepts every
+        IID just outside those bounds. Tested directly with crafted
+        IIDs (the generators only reach this path on a ~7e-18 random
+        hit, so the predicate is pinned at its boundaries here).
+
+        Reference: RFC 5453 (Reserved IPv6 Interface Identifiers).
+        Reference: RFC 2526 §3 (Reserved Subnet Anycast Addresses).
+        """
+
+        for iid, reserved in [
+            (0x0000_0000_0000_0000, True),  # Subnet-Router Anycast (all-zero)
+            (0x0000_0000_0000_0001, False),  # one above the anycast IID
+            (0xFDFF_FFFF_FFFF_FF7F, False),  # one below the reserved block
+            (0xFDFF_FFFF_FFFF_FF80, True),  # reserved block lower bound
+            (0xFDFF_FFFF_FFFF_FFFF, True),  # reserved block upper bound
+            (0xFE00_0000_0000_0000, False),  # one above the reserved block
+        ]:
+            with self.subTest(iid=hex(iid)):
+                self.assertEqual(
+                    _is_reserved_iid(iid),
+                    reserved,
+                    msg=f"_is_reserved_iid({iid:#018x}) must be {reserved}.",
+                )

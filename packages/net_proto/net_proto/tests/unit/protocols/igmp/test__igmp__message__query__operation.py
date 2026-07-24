@@ -27,13 +27,11 @@ This module contains tests for the IGMP Membership Query parser.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto.protocols.igmp.message.igmp__message import IgmpVersion
@@ -41,6 +39,7 @@ from net_proto.protocols.igmp.message.igmp__message__query import (
     IgmpMessageQuery,
     decode_igmp_float_code,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -182,6 +181,7 @@ class TestIgmpMessageQueryParser(TestCase):
     _frame: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Parse the parametrized IGMP Query frame.

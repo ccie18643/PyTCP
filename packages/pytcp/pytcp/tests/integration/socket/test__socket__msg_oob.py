@@ -30,7 +30,7 @@
 Tests for the M3 row of the socket-layer Linux parity audit
 ('docs/refactor/socket_linux_parity_audit.md' §M3) — the
 'MSG_OOB' / 'SO_OOBINLINE' Linux constants are exposed on
-'pytcp.socket' so applications looking them up by name don't
+'pytcp.runtime.socket' so applications looking them up by name don't
 hit ImportError, and 'SO_OOBINLINE' setsockopt enforces
 PyTCP's RFC 6093 §6 universal-inline design constraint.
 
@@ -47,20 +47,20 @@ silently failing.
 
 pytcp/tests/integration/socket/test__socket__msg_oob.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno
 from unittest import TestCase
 
 from pytcp import stack
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     MSG_OOB,
     SO_OOBINLINE,
     SOL_SOCKET,
     AddressFamily,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 _ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
 

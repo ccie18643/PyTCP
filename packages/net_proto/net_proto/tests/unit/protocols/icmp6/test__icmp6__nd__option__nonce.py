@@ -29,15 +29,14 @@ RFC 3971 §5.3.2 (Nonce wire format) as referenced by RFC 7527
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__nonce.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Icmp6IntegrityError, Icmp6NdOptionNonce
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -83,6 +82,7 @@ class TestIcmp6NdOptionNonceAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the option from _kwargs.

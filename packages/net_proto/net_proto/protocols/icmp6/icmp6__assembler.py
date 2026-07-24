@@ -27,12 +27,12 @@ This module contains the ICMPv6 packet assembler.
 
 net_proto/protocols/icmp6/icmp6__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.proto_assembler import ProtoAssembler
 from net_proto.lib.tracker import Tracker

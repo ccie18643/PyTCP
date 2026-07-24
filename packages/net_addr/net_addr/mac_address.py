@@ -27,13 +27,14 @@ This module contains Ethernet MAC address manipulation class.
 
 net_addr/mac_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import re
 from typing import ClassVar, Self, final, override
 
 from net_addr.address import Address
+from net_addr.buffer import Buffer
 from net_addr.errors import MacAddressFormatError, MacAddressSanityError, NetAddrError
 
 MAC__ADDRESS_LEN = 6
@@ -62,7 +63,7 @@ class MacAddress(Address):
 
     def __init__(
         self,
-        address: Self | str | bytes | bytearray | memoryview | int | None = None,
+        address: Self | str | Buffer | int | None = None,
         /,
     ) -> None:
         """

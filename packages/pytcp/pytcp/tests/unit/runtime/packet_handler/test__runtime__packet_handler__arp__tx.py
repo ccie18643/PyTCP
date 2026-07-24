@@ -27,11 +27,11 @@ This module contains unit tests for the 'ArpTxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__arp__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 
 from net_addr import Ip4Address, Ip4IfAddr, MacAddress
@@ -288,6 +288,7 @@ class TestPacketHandlerArpTxConvenienceHelpers(TestCase):
     send_arp_unicast_request) tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh stub handler for each case.
@@ -428,6 +429,7 @@ class TestPacketHandlerArpTxAnnounceSysctl(TestCase):
     the SPA according to the registered mode value.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a stub handler with two local IPv4 hosts on
@@ -442,6 +444,7 @@ class TestPacketHandlerArpTxAnnounceSysctl(TestCase):
             ],
         )
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so a per-test override never

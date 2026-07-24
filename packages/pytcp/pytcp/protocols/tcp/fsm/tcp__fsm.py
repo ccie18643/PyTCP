@@ -40,10 +40,8 @@ absent from that event's table - the dispatcher uses dict
 
 pytcp/protocols/tcp/fsm/tcp__fsm.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-from __future__ import annotations
 
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -91,11 +89,11 @@ from pytcp.protocols.tcp.fsm.tcp__fsm__time_wait import (
     fsm__time_wait__timer,
 )
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
+from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__icmp__synchronized(session: TcpSession, metadata: IcmpMetadata) -> None:

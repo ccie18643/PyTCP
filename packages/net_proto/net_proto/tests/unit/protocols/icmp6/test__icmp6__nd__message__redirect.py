@@ -27,13 +27,11 @@ Module contains tests for the ICMPv6 ND Redirect message (RFC 4861 §4.5).
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__redirect.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import (
@@ -47,6 +45,7 @@ from net_proto import (
     Icmp6SanityError,
     Icmp6Type,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Common fixtures
 _TARGET = Ip6Address("fe80::1")
@@ -265,6 +264,7 @@ class TestIcmp6NdMessageRedirectAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the Redirect message from the parametrized kwargs.
@@ -466,6 +466,7 @@ class TestIcmp6NdMessageRedirectSanity(TestCase):
     (RFC 4861 §8.1 acceptance gates that the parser enforces).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a baseline Redirect message used across the

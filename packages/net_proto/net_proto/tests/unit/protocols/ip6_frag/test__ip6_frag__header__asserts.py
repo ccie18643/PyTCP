@@ -27,10 +27,10 @@ This module contains tests for the IPv6 Frag header fields asserts.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -48,6 +48,7 @@ class TestIp6FragHeaderAsserts(TestCase):
     The IPv6 Frag header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the IPv6 Frag header

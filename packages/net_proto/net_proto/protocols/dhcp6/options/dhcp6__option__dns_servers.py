@@ -27,15 +27,14 @@ This module contains the DHCPv6 DNS Recursive Name Server option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__dns_servers.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address
 from net_proto.protocols.dhcp6.dhcp6__errors import Dhcp6IntegrityError
 from net_proto.protocols.dhcp6.options.dhcp6__option import (
     DHCP6__OPTION__LEN,

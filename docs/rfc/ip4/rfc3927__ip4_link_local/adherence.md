@@ -20,8 +20,8 @@ implemented**.
 
 The audit was performed by reading the RFC text fresh and
 inspecting `packages/net_addr/net_addr/ip4_address.py`,
-`packages/pytcp/pytcp/lib/ip4_source_selection.py`, and the IPv4 packet
-handlers directly. Non-normative content (§1 Introduction,
+`packages/pytcp/pytcp/protocols/ip4/ip4__source_selection.py`, and the IPv4
+packet handlers directly. Non-normative content (§1 Introduction,
 §1.1-§1.9 Requirements / Applicability, §3 Considerations, §4
 Security, §5 Acknowledgements) is omitted.
 
@@ -44,9 +44,9 @@ on the TX path closes the §2.7 / §2.8 host-side cases.
 |---------|-------------------------------------------------------------|--------|
 | §1.9    | When to configure a Link-Local address (after DHCP fails)   | met (`_reconcile_with_dhcp` fallback timer) |
 | §2.1    | Random address selection from 169.254.1.0 - 169.254.254.255 | met (`link_local__rng.candidate_from_mac`) |
-| §2.2    | Claim via ARP Probe                                         | met (`Ip4AddressApi.claim_with_acd` → RFC 5227 §2.1.1) |
-| §2.4    | Announce via gratuitous ARP                                 | met (`Ip4AddressApi.claim_with_acd` → RFC 5227 §2.3) |
-| §2.5    | Conflict detection / defense                                | met (`_on_bound_conflict` defend/abandon decision tree) |
+| §2.2    | Claim via ARP Probe                                         | met (`Ip4Acd.claim` → RFC 5227 §2.1.1) |
+| §2.4    | Announce via gratuitous ARP                                 | met (`Ip4Acd.claim` → RFC 5227 §2.3) |
+| §2.5    | Conflict detection / defense                                | met (`_handle_bound_conflict` defend/abandon decision tree) |
 | §2.6    | Source / destination address usage rules                    | met (`_phtx_ip4` scope-mismatch gate) |
 | §2.7    | Link-local packets are not forwarded                        | n/a (no forwarding) |
 | §2.8    | Link-local packets are local-only                           | met (subsumed by §2.6) |
@@ -134,14 +134,15 @@ left persistent caching as an optional follow-on.
 
 **Adherence:** met.
 `Ip4LinkLocal._do_claiming` calls
-`stack.address.claim_with_acd(ip4_ifaddr=self._candidate)`
-which delegates to the underlying RFC 5227 §2.1.1 ARP probe
+`self._acd.claim(address=self._candidate.address)` on the
+`Ip4Acd` engine, which runs the RFC 5227 §2.1.1 ARP probe
 sequence. The probe is synchronous (blocks ~5-9 s on the
 subsystem's dedicated thread). On clean probe the address
-is announced via RFC 5227 §2.3 and installed via
-`add_ifaddr`; on conflict the candidate is cleared and the
-FSM cycles back to INIT for a fresh attempt with the RNG's
-`attempt` counter incremented.
+is announced via RFC 5227 §2.3 (the engine keeps the defense
+socket open) and installed through the `ip addr` surface via
+`self._address_api.add(ifaddr=self._candidate)`; on conflict
+the candidate is cleared and the FSM cycles back to INIT for
+a fresh attempt with the RNG's `attempt` counter incremented.
 
 ## §2.5 Conflict Detection and Defense (post-claim)
 
@@ -149,23 +150,21 @@ FSM cycles back to INIT for a fresh attempt with the RNG's
 > effect for as long as a host is using an IPv4 Link-Local
 > address."
 
-**Adherence:** met. On the BOUND transition,
-`Ip4LinkLocal._do_claiming` calls
-`stack.address.subscribe_conflicts(address=..., on_conflict=
-self._on_bound_conflict)`. The ARP RX path (RFC 5227 §2.4
-detection) fans events out via
-`Ip4AddressApi._fire_conflict_event`; the link-local
-subsystem's callback implements the §2.5 decision tree:
+**Adherence:** met. While BOUND, the subsystem loop polls
+the ACD engine every tick via `self._acd.poll_conflict()`;
+a returned peer MAC (RFC 5227 §2.4 detection) invokes
+`_handle_bound_conflict(peer_mac)`, which implements the
+§2.5 decision tree:
 
 - **§2.5(b)** — first conflict in `ARP__DEFEND_INTERVAL`:
-  one defensive gratuitous ARP via
-  `stack.address.send_gratuitous_arp`, stay BOUND.
+  one defensive gratuitous ARP via `self._acd.defend()`,
+  stay BOUND.
 - **§2.5(a)** — second conflict within the window: abandon.
-  `abort_bound_tcp_sessions` honours the §2.5 paragraph 7
-  SHOULD (reset bound TCP sessions); `remove_ifaddr`
-  uninstalls the address; `unsubscribe_conflicts` tears
-  down the subscription; state cycles to INIT for a fresh
-  reconfigure.
+  `self._address_api.remove(address=...)` uninstalls the
+  address (and, with `abort_bound_sessions=True` by default,
+  honours the §2.5 paragraph 7 SHOULD by resetting bound TCP
+  sessions); `self._acd.release()` closes the defense socket;
+  state cycles to INIT for a fresh reconfigure.
 
 The decision uses `ARP__DEFEND_INTERVAL` (RFC 5227 §1.1
 DEFEND_INTERVAL = 10 s, exposed via the `arp.defend_interval`
@@ -224,7 +223,7 @@ host-stack model — the gate at the IPv4 layer is necessary
 and sufficient. An explicit Ethernet-layer short-circuit
 would be dead code and is intentionally omitted. The
 adherence is observable via the §2.6 test class
-(`TestPacketHandlerIp4TxRfc3927ScopeGate`) which proves
+(`TestIp4TxRfc3927ScopeGate`) which proves
 every non-link-local-to-link-local path is rejected before
 reaching the gateway-selection logic.
 
@@ -273,16 +272,18 @@ RFC 3927 track was adding a read-only `state` property on
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__rfc6724_source_selection.py`
   Verifies that the link-local scope value
-  `IP4__SCOPE__LINK_LOCAL = 0x2`
-  (`packages/pytcp/pytcp/lib/ip4_source_selection.py:49`) is consulted by
-  the rule-2 source-scope sort key.
+  `IpScope.LINK_LOCAL = 0x2`
+  (`packages/pytcp/pytcp/protocols/ip/ip_scope.py:58`, returned by
+  `ip4_address_scope` in
+  `packages/pytcp/pytcp/protocols/ip4/ip4__source_selection.py`) is consulted
+  by the rule-2 source-scope sort key.
 
 **Status:** locked in.
 
 ### §2.6 TX-side scope-mismatch gate
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc3927ScopeGate`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc3927ScopeGate`
   Five cases: link-local src + global dst → drop with new
   TxStatus + counter bump; symmetric global src + link-
   local dst → same drop; link-local src + link-local dst →
@@ -350,7 +351,7 @@ RFC 3927 track was adding a read-only `state` property on
 ### §2.6 TX-side scope-mismatch gate
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc3927ScopeGate`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc3927ScopeGate`
   Five cases: link-local src + global dst → drop with new
   TxStatus + counter bump; symmetric global src + link-
   local dst → same drop; link-local src + link-local dst →
@@ -381,9 +382,9 @@ RFC 3927 track was adding a read-only `state` property on
 |-----------------------------------------------------|--------|
 | §1.9 Link-local fallback when DHCP fails            | met (fallback timer in `_reconcile_with_dhcp`) |
 | §2.1 Random address selection from 169.254.1-254/24 | met (MAC-seeded LCG in `link_local__rng`) |
-| §2.2 ARP Probe                                      | met (`Ip4AddressApi.claim_with_acd` → RFC 5227 §2.1.1) |
-| §2.4 ARP Announce                                   | met (`Ip4AddressApi.claim_with_acd` → RFC 5227 §2.3) |
-| §2.5 Conflict detection / defense                   | met (`_on_bound_conflict` decision tree) |
+| §2.2 ARP Probe                                      | met (`Ip4Acd.claim` → RFC 5227 §2.1.1) |
+| §2.4 ARP Announce                                   | met (`Ip4Acd.claim` → RFC 5227 §2.3) |
+| §2.5 Conflict detection / defense                   | met (`_handle_bound_conflict` decision tree) |
 | §2.6 TX-side scope-mismatch gate                    | met (`_phtx_ip4` scope check) |
 | §2.7 / §2.8 No forwarding / local-only              | n/a (host) / met (subsumed by §2.6) |
 | §2.11 DHCP client interaction                       | met (one-way state poll; DHCP behaviour unchanged) |

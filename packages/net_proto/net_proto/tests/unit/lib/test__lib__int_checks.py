@@ -27,13 +27,11 @@ This module contains tests for integer range checks and alignment helpers.
 
 net_proto/tests/unit/lib/test__lib__int_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any, Callable
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.int_checks import (
     UINT_2__MAX,
@@ -63,6 +61,7 @@ from net_proto.lib.int_checks import (
     is_uint20,
     is_uint32,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestNetProtoLibIntChecksConstants(TestCase):

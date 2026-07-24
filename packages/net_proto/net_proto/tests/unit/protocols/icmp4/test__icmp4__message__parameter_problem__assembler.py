@@ -28,21 +28,20 @@ assembler.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__parameter_problem__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp4Assembler,
     Icmp4MessageParameterProblem,
     Icmp4ParameterProblemCode,
     Icmp4Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -118,6 +117,7 @@ class TestIcmp4MessageParameterProblemAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized Parameter Problem
@@ -215,4 +215,36 @@ class TestIcmp4MessageParameterProblemAssembler(TestCase):
             b"".join(buffers),
             self._results["__bytes__"],
             msg=f"Unexpected assemble() output for case: {self._description}",
+        )
+
+
+class TestIcmp4MessageParameterProblemWithData(TestCase):
+    """
+    The ICMPv4 Parameter Problem with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__parameter_problem__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Parameter Problem message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Parameter Problem message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageParameterProblem(
+            code=Icmp4ParameterProblemCode.POINTER_INDICATES_ERROR, pointer=4, data=data
+        )
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Parameter Problem length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Parameter Problem assembled wire length must be 8 + the embedded data length.",
         )

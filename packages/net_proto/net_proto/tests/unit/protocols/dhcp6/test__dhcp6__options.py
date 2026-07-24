@@ -27,9 +27,10 @@ Module contains tests for the DHCPv6 packet options container.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -77,6 +78,7 @@ class TestDhcp6OptionsLookupsPresent(TestCase):
     The DHCPv6 options container lookup-property tests (options present).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fully-populated DHCPv6 options container.
@@ -183,6 +185,7 @@ class TestDhcp6OptionsLookupsAbsent(TestCase):
     The DHCPv6 options container lookup-property tests (options absent).
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build an empty DHCPv6 options container.

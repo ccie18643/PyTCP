@@ -29,10 +29,8 @@ This module contains the TCP FSM LISTEN state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__listen.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
@@ -41,12 +39,12 @@ from net_proto.protocols.tcp.tcp__header import TCP__MIN_MSS
 from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
+from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
 from pytcp.protocols.tcp.tcp__seq import add32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 def fsm__listen__icmp(session: TcpSession, metadata: IcmpMetadata) -> None:
@@ -83,8 +81,8 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
     """
 
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket import AddressFamily
-    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.runtime.socket import AddressFamily
+    from pytcp.runtime.socket.tcp__socket import TcpSocket
 
     # Got SYN packet -> Send SYN + ACK packet / change state to SYN_RCVD.
     if all({packet_rx_md.tcp__flag_syn}) and not any(
@@ -114,7 +112,6 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
             # listening process from accept-queue exhaustion -
             # one of the oldest TCP-stack DoS classes -
             # without requiring application changes.
-            # pylint: disable=protected-access
             accept_q_len = len(session._socket._tcp_accept)
             accept_q_cap = session._socket._backlog
             if accept_q_len >= accept_q_cap:
@@ -123,7 +120,6 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
                     f"[{session}] - Accept queue full " f"({accept_q_len}/{accept_q_cap}); " "dropping SYN silently",
                 )
                 return
-            # pylint: enable=protected-access
             # Listener fork pattern (RFC 9293 §3.10.7.2). The
             # current 'session' object is the LISTEN-state session.
             # On peer's SYN we mutate it IN PLACE into the new
@@ -164,7 +160,7 @@ def fsm__listen__packet(session: TcpSession, packet_rx_md: TcpMetadata) -> None:
             # RFC 1122 §4.2.3.4: inherit the Nagle disable
             # flag.
             tcp_session._tcp_nodelay = listen_socket._tcp_nodelay
-            session._socket._tcp_session = tcp_session  # pylint: disable=protected-access
+            session._socket._tcp_session = tcp_session
             # Re-bind 'session' to the peer's 4-tuple and create a
             # new TcpSocket that exposes this child session to
             # the application's eventual 'accept()' caller.

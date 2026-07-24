@@ -41,7 +41,7 @@ forwarding is Phase 2.
 | §3.1    | Header format / each wire field    | shipped     | `packages/net_proto/net_proto/protocols/ip4/ip4__header.py` |
 | §3.1    | Header checksum                    | shipped     | `packages/net_proto/net_proto/lib/inet_cksum.py` + `ip4__parser.py:108` / `ip4__assembler.py:118` |
 | §3.1    | Options framework + nine options   | shipped     | `packages/net_proto/net_proto/protocols/ip4/options/` (10 files) |
-| §3.2    | Fragmentation on send              | shipped     | `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__tx.py:179-208` |
+| §3.2    | Fragmentation on send              | shipped     | `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__tx.py:288-323` |
 | §3.2    | Reassembly on receive              | shipped     | `packages/pytcp/pytcp/protocols/ip/ip_frag.py`, `ip_frag_table.py`, plus RFC 815 audit |
 | §3.2    | TTL decrement / TTL=0 drop         | partial     | RX enforces `ttl > 0`; forwarding decrement is Phase 2 |
 | Appendix B | Network byte order              | shipped     | `struct` format strings prefixed `! `                |
@@ -57,7 +57,7 @@ forwarding is Phase 2.
 field pinned to `IpVersion.IP4`
 (`packages/net_proto/net_proto/protocols/ip4/ip4__header.py:93-97`). The parser
 rejects any frame whose first nibble is not 4 at integrity
-(`ip4__parser.py:94-97`).
+(`ip4__parser.py:102-105`).
 
 ## §3.1 IHL (Internet Header Length)
 
@@ -73,7 +73,7 @@ the header. Pack/unpack converts via `>> 2` / `<< 2`
 `20 <= hlen <= 60` and `is_4_byte_alligned(hlen)`
 (`ip4__header.py:118-126`). Parser integrity check enforces
 `IP4__HEADER__LEN <= hlen <= plen <= len(frame)`
-(`ip4__parser.py:102-106`).
+(`ip4__parser.py:116-120`).
 
 ## §3.1 Type of Service / DSCP+ECN
 
@@ -105,9 +105,9 @@ field (`ip4__header.py:101,132-140`). The "576 octet minimum
 MTU" floor is asserted at module scope as
 `IP4__MIN_MTU = 576` (`ip4__header.py:76`) and consulted by
 PMTUD (RFC 1191 audit) and the TX path's MTU comparison
-(`packet_handler__ip4__tx.py:151`). Parser enforces
+(`packet_handler__ip4__tx.py:232`). Parser enforces
 `plen >= IP4__HEADER__LEN` and `plen <= len(frame)`
-(`ip4__parser.py:102-106`).
+(`ip4__parser.py:116-120`).
 
 ## §3.1 Identification
 
@@ -141,9 +141,9 @@ not reject Reserved=1.
 
 Sanity rules enforced:
 `flag_df && flag_mf` → `Ip4SanityError` + ICMP Parameter
-Problem (`ip4__parser.py:160-165`), and
+Problem (`ip4__parser.py:226-231`), and
 `flag_df && offset != 0` → `Ip4SanityError` + ICMP Parameter
-Problem (`ip4__parser.py:167-171`). Both are RFC 1122
+Problem (`ip4__parser.py:235-239`). Both are RFC 1122
 §3.2.1.4 hardenings; cited in the parser docstring.
 
 ## §3.1 Fragment Offset
@@ -160,8 +160,8 @@ payload slicing; pack/unpack converts via `>> 3` / `<< 3`
 `is_uint13(offset >> 3)` and `is_8_byte_alligned(offset)`
 (`ip4__header.py:148-152`). Fragmentation on send slices
 the payload at MTU-aligned 8-byte boundaries
-(`packet_handler__ip4__tx.py:190-191`,
-`payload_mtu = (self._interface_mtu - hlen) & 0b1111111111111000`).
+(`packet_handler__ip4__tx.py:288-291`, via
+`iter_fragment_chunks(max_chunk_bytes=self._if._interface_mtu - ip4_packet_tx.hlen)`).
 
 ## §3.1 Time to Live
 
@@ -170,8 +170,8 @@ the payload at MTU-aligned 8-byte boundaries
 
 **Adherence:** partial. On RX, `Ip4Parser._validate_sanity`
 rejects `ttl == 0` and the handler emits ICMPv4 Parameter
-Problem with pointer = 8 (`ip4__parser.py:136-140`,
-`packet_handler__ip4__rx.py:258-300`). This is the host-side
+Problem with pointer = 8 (`ip4__parser.py:162-166`,
+`packet_handler__ip4__rx.py:309-354`). This is the host-side
 "refuse delivery of a TTL=0 datagram" half of the rule.
 
 The forwarding half ("each module decrements TTL by at least
@@ -189,11 +189,12 @@ land with the router track.
 
 **Adherence:** shipped. `Ip4Header.proto: IpProto` is a typed
 enum (`packages/net_proto/net_proto/lib/enums.py::IpProto`). RX dispatches via
-`match packet_rx.ip4.proto` to the per-protocol handler
-(`packet_handler__ip4__rx.py:198-211`); unknown protocols are
-dropped and trigger an ICMPv4 Destination Unreachable code 2
+a proto→handler lookup on `self._if._ip4_proto_registry`
+(`packet_handler__ip4__rx.py:250`); a registry miss is an
+unsupported transport protocol — the packet is
+dropped and triggers an ICMPv4 Destination Unreachable code 2
 (Protocol Unreachable) subject to the RFC 1122 / RFC 1812
-gates and the error rate limiter (lines 213-256).
+gates and the error rate limiter (`__phrx_ip4__emit_protocol_unreachable`, lines 262-307).
 
 ## §3.1 Header Checksum
 
@@ -207,10 +208,10 @@ gates and the error rate limiter (lines 213-256).
 `packages/net_proto/net_proto/lib/inet_cksum.py` as the canonical one's-complement
 sum. RX integrity check rejects any header where
 `inet_cksum(self._frame[:hlen])` evaluates to non-zero
-(`ip4__parser.py:108-111`). TX path injects the freshly-
+(`ip4__parser.py:127-130`). TX path injects the freshly-
 computed checksum into the header `bytearray` just before
 appending to the buffer list (`ip4__assembler.py:118`,
-`packet_handler__ip4__rx.py:341` for the reassembled-packet
+`packet_handler__ip4__rx.py:413` for the reassembled-packet
 rewrite).
 
 ## §3.1 Source / Destination Address
@@ -239,14 +240,14 @@ address-space order:
 All five raise `Ip4SanityError` with `pointer=12` and trigger
 ICMPv4 Parameter Problem
 (`ip4__parser.py` `_validate_sanity`,
-`packet_handler__ip4__rx.py:258-300`). The `src.is_unspecified`
+`packet_handler__ip4__rx.py:309-354`). The `src.is_unspecified`
 case (`0.0.0.0` exactly) is deliberately **not** rejected at
 parser level so DHCPv4 client discovery (which uses
 `src=0.0.0.0` per RFC 2131) can reach the UDP RX path.
 TX-side source selection runs the RFC 6724-style rules 1, 2,
 and 8 across the owned candidate set
-(`packet_handler__ip4__tx.py:372-416`) with a DHCPv4 carve-out
-for src=0.0.0.0 (lines 322-338).
+(`packet_handler__ip4__tx.py:477-521`) with a DHCPv4 carve-out
+for src=0.0.0.0 (lines 432-443).
 
 ## §3.1 Options (framework)
 
@@ -278,7 +279,7 @@ defined kind:
 
 The "copied flag" semantics on the option-type byte are
 **honoured** on fragmentation: when the TX path splits an
-oversized packet (`packet_handler__ip4__tx.py:195-218`), the
+oversized packet (`packet_handler__ip4__tx.py:269-323`), the
 first fragment carries the full original options and every
 subsequent fragment carries only the copy_flag=1 subset
 (`options.with_copy_flag(True)` padded to a 4-byte boundary
@@ -397,18 +398,18 @@ labelling semantics. Out of scope for this audit (see
 > long datagram into all of the new internet headers."
 
 **Adherence:** shipped.
-`packet_handler__ip4__tx.py:179-220` slices the payload at
+`packet_handler__ip4__tx.py:288-323` slices the payload at
 MTU-aligned 8-byte boundaries, assembles one
 `Ip4FragAssembler` per slice, copies src / dst / ttl / proto
 / id into each fragment, sets `flag_mf=True` on every fragment
-except the last, and writes the incremented `_ip4_id` once
-per outbound datagram (line 193).
+except the last, and writes the `_next_ip4_id()` counter value once
+per outbound datagram (line 286).
 
 > "An internet datagram with the Don't Fragment (DF) flag set
 > ... may also be discarded ... if it would be fragmented."
 
 **Adherence:** shipped.
-`packet_handler__ip4__tx.py:169-176` checks `flag_df` against
+`packet_handler__ip4__tx.py:250-257` checks `flag_df` against
 the post-assembly length-vs-MTU comparison and drops the
 datagram with `DROPPED__IP4__MTU_EXCEED_DF` when DF=1 would
 require splitting. The counter
@@ -507,7 +508,7 @@ octet field in PyTCP wire codecs is network-order.
   Container composition + integrity (max length, padding,
   alignment).
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__rx__source_route.py`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__source_route.py`
   exercises the `IP4__ACCEPT_SOURCE_ROUTE` gate (LSRR / SSRR
   drop matrix with and without the override).
 
@@ -559,11 +560,11 @@ octet field in PyTCP wire codecs is network-order.
   bit-set / clear), `TestIp4OptionsWithCopyFlag` (4 cases —
   copy_flag=True / False filter, empty input, non-mutating).
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc791OptionCopyFlagOnFragmentation`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__tx.py::TestIp4TxRfc791OptionCopyFlagOnFragmentation`
   (3 cases — mixed copy-flag fragmentation, copy_flag=0
   only, no-options regression).
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__rx.py::TestPacketHandlerIp4RxRfc791OptionPreservedOnReassembly`
+  `packages/pytcp/pytcp/tests/integration/protocols/ip4/test__ip4__rx.py::TestIp4RxRfc791OptionPreservedOnReassembly`
   (2 cases — options preserved on reassembly, no-options
   regression).
 

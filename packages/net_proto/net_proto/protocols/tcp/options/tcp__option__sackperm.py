@@ -27,14 +27,14 @@ This module contains the TCP Sackperm (SACK Permitted) option support code.
 
 net_proto/protocols/tcp/options/tcp__option__sackperm.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.protocols.tcp.options.tcp__option import (
     TCP__OPTION__LEN,
     TcpOption,

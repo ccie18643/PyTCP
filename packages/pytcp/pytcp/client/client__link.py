@@ -32,7 +32,7 @@ zero-argument reads over the RPC).
 
 pytcp/client/client__link.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast

@@ -1,147 +1,104 @@
-# Quick Guide to the Provided Examples
+# PyTCP Examples — daemon-backed applications
 
-The PyTCP stack depends on the Linux TAP interface. The TAP interface is a virtual interface that, on the network end, can be 'plugged' into existing virtual network infrastructure via either Linux bridge or Open vSwitch. On the internal end, the TAP interface can be used like any other NIC by programmatically sending and receiving packets to/from it.
+Real, off-the-shelf-shaped programs that run **against a running PyTCP
+daemon** through the 1:1 stdlib-`socket` drop-in introduced in 3.0.8. Each
+one changes nothing about how ordinary Python network code is written — it
+imports `pytcp.socket` in place of the standard library's `socket`, and the
+factory opens the socket on the daemon over its AF_UNIX control boundary,
+handing back a real, `selectors`-pollable descriptor:
 
-## Word of Wisdom Before You Start
-- If you use the TAP interface, the Linux machine you run the stack on does not need to have assigned IPv6 or IPv4 addresses on any of its interfaces (unless used as a source or destination for running examples). All that a Linux machine needs to provide is a bridge between the TAP interface used by the stack and one of its own Ethernet interfaces (preferably one that connects to the LAN). This setup is sufficient for the stack to operate. Additionally, if the LAN is appropriately configured, the stack can access other hosts present on it and connect to Internet hosts.
-- To enjoy the full functionality of the stack, you should use the TAP interface. The TAP interface operates at Layer 2 of the OSI model and provides (with proper bridge configuration) direct access to the LAN network and lets the stack behave like any other host connected to that LAN.
-- The TUN interface operates at Layer 3 of the OSI model and enables direct access to the Linux host network via IPv6 and IPv4 without using Ethernet and ARP protocols. With proper configuration of routing on a Linux host, this can still give you access to the LAN and even the Internet (assuming proper NAT is in place). However, using the TUN interface will require manual assignment of IPv6 and IPv4 addressing for the stack. Autoconfiguration of those, although technically possible, is not provided because in the real world, the TUN interface is a specialized point-to-point contraption that is used for direct communication between the Linux TCP/IP stack and the user space piece of software attached to that TUN interface (in our case, that's the PyTCP stack). So, a decision has been made to provide TUN interface support (multiple users requested it), but also to keep this support as simple as possible to not overcomplicate things in the effort of using the TUN interface to do things it wasn't designed to do in the first place.
-
-## How to Run the Provided Examples
-After the example program (either client or service) starts the stack, it will communicate with it via a simplified BSD Sockets-like API interface.
-
-Before running any of the examples, please make sure to:
- - Go to the stack root directory (it is called 'PyTCP').
- - Run the 'sudo make bridge' command to create the 'br0' bridge if needed.
- - Run the 'sudo make tap7' command to create the tap7 interface and assign it to the 'br0' bridge.
- - Run the 'sudo make tap9' command to create the tap9 interface and assign it to the 'br0' bridge.
- - Run the 'sudo make tun3' command to create the tun3 interface and assign IP addressing.
- - Run the 'sudo make tun5' command to create the tun5 interface and assign IP addressing.
- - Run the 'make' command to create the proper virtual environment.
- - Run the '. venv/bin/activate' command to start the stack virtual environment.
- - Execute any example, e.g., 'examples/stack.py'.
- - Hit Ctrl-C to stop it.
-
-## The Suggested Network Topology for the TAP Interface
-
-If you wish to test the PyTCP stack in your local network, I'd suggest creating the following network setup that will allow you to connect both the Linux kernel (essentially your Linux OS) and the PyTCP stack(s) to your local network at the same time.
-
-```
-<INTERNET> <---> [ROUTER] <---> (eth0)-[Linux bridge]-(br0) <---> [Linux kernel]
-                                            |
-                                            |--(tap7) <---> [PyTCP stack 1]
-                                            |
-                                            |--(tap9) <---> [PyTCP stack 2]
+```python
+from pytcp import socket          # the daemon-backed stdlib-socket drop-in
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("10.0.1.1", 7))     # a real, selectable fd backs this socket
 ```
 
-**NOTE:** Do NOT assign any IP addresses to interfaces tap7 & tap9. Stack will handle IP addressing on those interfaces.
+Most programs here take their socket from an injectable `make_socket`
+factory (`ping` is the exception — it drives the shared
+`pytcp.cli.cli__ping` engine), so the same application logic is
+exercised over real loopback sockets in the project's test suite and
+wired to daemon sockets by its `main` entry point. They double as the
+proof points that off-the-shelf protocol code — including **blocking**
+stdlib programs and **`asyncio`**
+servers and clients — runs unmodified over PyTCP.
 
-## Testing Examples Using 3rd Party Tools
-To test the example code with 3rd party tools (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
+> These examples are for **writing applications** against a running stack.
+> For how to **boot and run the stack itself**, see the Quickstart in the
+> [root README](../README.md): `pytcp stack start` (the supported daemon
+> launcher) plus the `pytcp` CLI to operate it.
 
-**NOTE:** The 'ncat' tool comes with the 'nmap' package.
+## Prerequisites
 
-#### ICMP Echo Client over IPv4 (to Linux host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 <br0 IPv4 address>
+All of these need a **running daemon** that owns the TAP interface. The
+first-class launcher ships in the package; `pytcp stack start`
+autoconfigures via DHCPv4, so either run a DHCP server on the link or use
+`python -m pytcp.daemon` to boot with a static address:
 
-#### ICMP Echo Client over IPv4 (to Internet host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 1.1.1.1
-
-#### ICMP Echo Client over IPv6 (to Linux host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 <br0 IPv6 address>
-
-#### ICMP Echo Client over IPv6 (to Internet host)
- - In a terminal window, run: examples/client_icmp_echo.py --stack-interface tap7 2600::
-
-#### UDP Echo Client over IPv4 (to Linux host)
- - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv4 address>
-
-#### UDP Echo Client over IPv6 (to Linux host)
- - In the first terminal window, run: ncat -ulk 7 -e /bin/cat
- - in second terminal window run: examples/client__udp_echo.py --stack-interface tap7 <br0 IPv6 address>
-
-#### TCP Echo Client over IPv4 (to Linux host)
- - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv4 address>
-
-#### TCP Echo Client over IPv6 (to Linux host)
- - In the first terminal window, run: ncat -lk 7 -e /bin/cat
- - In second terminal window, run: examples/client__tcp_echo.py --stack-interface tap7 <br0 IPv6 address>
-
-#### ICMP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: ping <tap7 stack IPv4 address> 
-
-#### ICMP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: ping <tap7 stack IPv6 address>
-
-#### UDP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: ncat -u <tap7 stack IPv4 address> 7
- - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
-
-#### UDP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: ncat -u <tap7 stack IPv6 address> 7
- - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
-
-#### TCP Echo Service over IPv4 (from Linux host)
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: ncat <tap7 stack IPv4 address> 7
- - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
-
-#### TCP Echo Service over IPv6 (from Linux host)
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: ncat <tap7 stack IPv6 address> 7
- - In the second terminal type a couple of words, press enter after each, and observe them echoed back by the Echo service.
-
-#### IPv4 Multicast Listener / IGMP (from Linux host)
- - In the first terminal window, run: examples/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1
- - On join the stack emits an IGMP membership Report (visible by piping the output through grep IGMP, or with tcpdump -i tap7 igmp on the host).
- - In the second terminal window, send a datagram to the group, e.g.: ncat -u 239.1.1.1 5007  (type a word and press enter), or use a tool such as iperf/socat multicast.
- - Observe the listener log the received datagram; stopping the stack (Ctrl-C) emits the IGMP Leave.
- - To also make the group answer ping, add --pingable: examples/service__mcast_listener.py --stack-interface tap7 --group 239.1.1.1 --pingable — then ping 239.1.1.1 gets a reply from the stack's unicast address. Without --pingable (the default) the stack ignores multicast/broadcast pings (Smurf mitigation); the flag clears the icmp4.echo_ignore_broadcasts sysctl for the life of the service and restores it on exit.
-
-## Testing Examples Using Two Stacks Talking to Each Other
-To test the example code with two stack instances talking to each other (assuming you are connected with two terminals to the Linux machine pictured in the above diagram):
-
-#### ICMP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: examples/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
-
-#### ICMP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/stack.py --stack-interface tap7
- - In the second terminal window, run: examples/client__icmp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
-
-#### UDP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
-
-#### UDP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/service__udp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
-
-#### TCP Echo Service & Client over IPv4
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__tcp_echo.py --stack-interface tap9 <tap7 stack IPv4 address>
-
-#### TCP Echo Service & Client over IPv6
- - In the first terminal window, run: examples/service__tcp_echo.py --stack-interface tap7
- - In the second terminal window, run: examples/client__udp_echo.py --stack-interface tap9 <tap7 stack IPv6 address>
-
-
-
-## The Suggested Network Topology for the TUN Interface
-
-If you decide to run PyTCP using the TUN interface the topology will look like this.
-
+```bash
+sudo make bridge && sudo make tap7 && make venv
+sudo pytcp stack start -i tap7                                    # autoconfigure (DHCPv4)
+sudo python -m pytcp.daemon -i tap7 --ip4-address 192.168.1.77/24 # or a static address
 ```
-<INTERNET> <---> [ROUTER] <---> (eth0)-[Linux kernel]
-                                            |
-    -----------------------------------------
-    |--(tun3, 172.16.1.1/24, 2001:db8:1::1/64) <---> [PyTCP stack 1, 172.16.1.2/24, 2001:db8:1::2/64]
-    |
-    |--(tun5, 172.16.2.1/24, 2001:db8:2::1/64) <---> [PyTCP stack 2, 172.16.2.2/24, 2001:db8:2::2/64]
+
+The client programs and the daemon default to the same control socket —
+`$XDG_RUNTIME_DIR/pytcp.sock`, falling back to the system temp dir
+(typically `/tmp/pytcp.sock`) when `XDG_RUNTIME_DIR` is unset — so on a
+typical desktop no configuration is needed. Only set
+`PYTCP_DAEMON_SOCKET` if you started the daemon on a non-default path,
+and point the clients at the same value:
+
+```bash
+export PYTCP_DAEMON_SOCKET=/run/pytcp/pytcp.sock   # match the daemon's --ipc-socket
 ```
+
+## The examples
+
+| Program | What it shows | Consumption path |
+|---|---|---|
+| [`ping.py`](ping.py) | ICMP Echo (v4/v6) with hostname resolution through the daemon's DNS resolver; unprivileged ICMP datagram socket with raw-socket fallback, mirroring Linux `ping` | drop-in + `pytcp.cli.cli__ping` engine |
+| [`tcp_echo_server__async.py`](tcp_echo_server__async.py) / [`tcp_echo_client.py`](tcp_echo_client.py) | RFC 862 TCP Echo — an `asyncio` server (`start_server(sock=...)`) and a blocking client, over the daemon's stream sockets | drop-in (asyncio + blocking) |
+| [`udp_echo_server__async.py`](udp_echo_server__async.py) / [`udp_echo_client.py`](udp_echo_client.py) | RFC 862 UDP Echo — an `asyncio` datagram server and a blocking client | drop-in (asyncio + blocking) |
+| [`ftp_server__async.py`](ftp_server__async.py) / [`ftp_client__async.py`](ftp_client__async.py) | A read-only anonymous FTP server + client (RFC 959): control + PASV data connections, byte-exact binary transfer — a full real-world `asyncio` program over the daemon | drop-in (asyncio) |
+| [`mcast_announce.py`](mcast_announce.py) / [`mcast_discover.py`](mcast_discover.py) | Multicast service discovery — the shape SSDP / mDNS / cluster beacons use — exercising the IGMP group-membership API (`IP_ADD_MEMBERSHIP` / `IP_DROP_MEMBERSHIP`) end to end | drop-in (UDP multicast) |
+| [`lib/malpi.py`](lib/malpi.py) / [`mcast_proto.py`](mcast_proto.py) | Shared helpers — the ASCII-art "monkey" easter-egg payloads and echo reply selector, and the tiny text discovery wire format | (library, not run directly) |
+
+## Running them
+
+With the daemon up and `$PYTCP_DAEMON_SOCKET` exported:
+
+```bash
+# ICMP Echo to an address or a hostname (resolved through the daemon)
+./examples/ping.py 192.168.1.1
+./examples/ping.py example.com -c 3
+
+# TCP Echo — start the async server on the stack, echo from the client
+./examples/tcp_echo_server__async.py --host 192.168.1.77 &
+./examples/tcp_echo_client.py 192.168.1.77 --message malpi
+
+# UDP Echo
+./examples/udp_echo_server__async.py --host 192.168.1.77 &
+./examples/udp_echo_client.py 192.168.1.77 --message malpi
+
+# Async FTP — serve a directory, then LIST / RETR from the client
+./examples/ftp_server__async.py --host 192.168.1.77 --root /srv/ftp &
+./examples/ftp_client__async.py --host 192.168.1.77 --get blob.bin > got.bin
+
+# Multicast service discovery — announce on one stack, discover on another
+./examples/mcast_announce.py --service echo --host 192.168.1.77 --service-port 7 &
+./examples/mcast_discover.py
+```
+
+The FTP pair is verified live end to end against a real `ftplib` client and
+byte-exact against a control transfer; with the loopback interface (3.0.8)
+the server and client can even share a single daemon, traffic looping
+inside the stack over `lo`. The full reproducible recipe is in
+[`docs/refactor/daemon_socket_library_and_cli.md`](../docs/refactor/daemon_socket_library_and_cli.md)
+(§9).
+
+## See also
+
+- **The `pytcp` CLI** — `pytcp ping / host / nc / traceroute / tcpdump` are
+  batteries-included tools over the same daemon; `pytcp ss / link / address
+  / route / neighbor / sysctl` introspect and drive the control plane.
+- The main [`README.md`](../README.md) — live wire captures of the stack in
+  action (SLAAC + DAD, ARP ACD, TCP under packet loss, IP fragmentation).

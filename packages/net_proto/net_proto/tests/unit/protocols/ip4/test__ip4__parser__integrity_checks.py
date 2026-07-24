@@ -27,15 +27,14 @@ This module contains tests for the IPv4 packet integrity checks.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Ip4IntegrityError, Ip4Parser, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 20-byte IPv4 frame used by the positive boundary test.
 # ver=4, hlen=20, dscp=63, ecn=3, plen=20, id=65535, flag_df=1,
@@ -66,6 +65,17 @@ _BASELINE_FRAME = b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\xd9\x23" b"\x0a\x14
             "_frame_rx": (b"\x55\xff\x00\x14\xff\xff\x40\x00\xff\xff\xc9\x23\x0a\x14\x1e\x28" b"\x32\x3c\x46\x50"),
             "_results": {
                 "error_message": "The 'ver' field must be 4. Got: 5",
+            },
+        },
+        {
+            "_description": "Version field is below 4.",
+            # Byte 0 = 0x35 encodes ver=3, hlen=5*4=20. A version BELOW 4
+            # must be rejected just as a version above it — pinning the
+            # 'ver != 4' check against a '> 4' relaxation that would let a
+            # ver < 4 datagram through.
+            "_frame_rx": (b"\x35\xff\x00\x14\xff\xff\x40\x00\xff\xff\xe9\x23\x0a\x14\x1e\x28" b"\x32\x3c\x46\x50"),
+            "_results": {
+                "error_message": "The 'ver' field must be 4. Got: 3",
             },
         },
         {
@@ -153,6 +163,7 @@ class TestIp4ParserIntegrityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx so it can be fed to
@@ -213,4 +224,27 @@ class TestIp4ParserIntegrityBoundary(TestCase):
             parser.plen,
             20,
             msg="Baseline-frame parser must report plen=20.",
+        )
+
+    def test__ip4__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds the header 'plen' (the
+        datagram is followed by lower-layer padding) still parses: the
+        integrity bound ends in 'plen <= len(frame)', so trailing bytes
+        beyond the IP total length are tolerated, not rejected.
+
+        Reference: RFC 791 §3.1 (IPv4 header integrity — Total Length).
+        """
+
+        # Baseline 20-byte header (plen=20, valid checksum) followed by 4
+        # octets of lower-layer padding. plen=20 is strictly less than
+        # len(frame)=24.
+        frame = _BASELINE_FRAME + b"\x00\x00\x00\x00"
+
+        parser = Ip4Parser(PacketRx(frame))
+
+        self.assertEqual(
+            parser.plen,
+            20,
+            msg="Trailing-padding frame must parse with plen=20.",
         )

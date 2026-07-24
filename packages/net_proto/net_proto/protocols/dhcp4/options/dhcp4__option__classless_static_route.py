@@ -28,14 +28,13 @@ support code (option 121, RFC 3442).
 
 net_proto/protocols/dhcp4/options/dhcp4__option__classless_static_route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address, Ip4Mask, Ip4Network
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip4Mask, Ip4Network
 from net_proto.protocols.dhcp4.dhcp4__errors import Dhcp4IntegrityError
 from net_proto.protocols.dhcp4.options.dhcp4__option import (
     DHCP4__OPTION__LEN,
@@ -75,6 +74,25 @@ def _significant_octet_count(prefixlen: int, /) -> int:
     return (prefixlen + 7) // 8
 
 
+def _is_well_formed_route(route: object, /) -> bool:
+    """
+    Get whether a 'routes' element is a well-formed
+    (Ip4Network, Ip4Address) 2-tuple.
+    """
+
+    # Typed 'object' (not the field's 'tuple[Ip4Network, Ip4Address]')
+    # so these are genuine runtime checks, not statically-redundant
+    # ones: a caller may pass a mistyped tuple despite the field
+    # annotation, and it must be rejected here rather than later on
+    # 'network.prefixlen'.
+    return (
+        isinstance(route, tuple)
+        and len(route) == 2
+        and isinstance(route[0], Ip4Network)
+        and isinstance(route[1], Ip4Address)
+    )
+
+
 @dataclass(frozen=True, kw_only=False, slots=True)
 class Dhcp4OptionClasslessStaticRoute(Dhcp4Option):
     """
@@ -101,13 +119,13 @@ class Dhcp4OptionClasslessStaticRoute(Dhcp4Option):
 
         assert isinstance(self.routes, list), f"The 'routes' field must be a list. Got: {type(self.routes)!r}"
 
-        assert all(
-            isinstance(route, tuple)
-            and len(route) == 2
-            and isinstance(route[0], Ip4Network)
-            and isinstance(route[1], Ip4Address)
-            for route in self.routes
-        ), (
+        # Defensive programmer-error guard: the field is typed
+        # 'list[tuple[Ip4Network, Ip4Address]]', so mypy proves each
+        # 'isinstance' operand statically true, but the runtime check
+        # is load-bearing — a caller passing a wrong-shaped tuple (the
+        # field annotation is advisory, not enforced) must be rejected
+        # here rather than blowing up later on 'network.prefixlen'.
+        assert all(_is_well_formed_route(route) for route in self.routes), (
             f"The 'routes' field must be a list of (Ip4Network, Ip4Address) tuples. "
             f"Got: {[type(route) for route in self.routes]!r}"
         )

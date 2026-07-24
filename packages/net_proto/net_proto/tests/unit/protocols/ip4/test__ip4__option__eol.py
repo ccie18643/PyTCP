@@ -27,15 +27,14 @@ Module contains tests for the IPv4 Eol (End of Option List) option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__eol.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import IP4__OPTION__EOL__LEN, Ip4OptionEol, Ip4OptionType
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionEolAssembler(TestCase):
@@ -43,6 +42,7 @@ class TestIp4OptionEolAssembler(TestCase):
     The IPv4 Eol option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 Eol option; the option takes no constructor args.

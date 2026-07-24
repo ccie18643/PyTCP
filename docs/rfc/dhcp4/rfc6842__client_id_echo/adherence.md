@@ -31,9 +31,9 @@ PyTCP's compliance status:
   `_cid_echo_ok(...)` compares the inbound
   `client_id` against the client's locally cached
   `self._expected_client_id` and returns False on
-  mismatch; `_recv_offer` and `_recv_ack` both gate
-  on the result and silently discard mismatching
-  replies (return None). Absent CID echo is
+  mismatch; the `_recv_within_window(...)` receive
+  loop gates on the result and silently discards
+  mismatching replies. Absent CID echo is
   acceptable per RFC 6842's "if the client identifier
   option is present" framing.
 
@@ -65,14 +65,16 @@ Addresses) are omitted.
 >  to send. If the two client identifiers do not match,
 >  the client MUST silently discard the message."
 
-**Adherence:** met. `_recv_offer` and `_recv_ack` in
-`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py` both invoke
-`self._cid_echo_ok(packet)` after the message-type +
-xid checks. The helper extracts `packet.client_id`
+**Adherence:** met. The `_recv_within_window(...)`
+receive loop in
+`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py` invokes
+`self._cid_echo_ok(packet)` (lines 1645 and 1667)
+after the message-type + xid checks. The helper
+extracts `packet.client_id`
 (surfaced by the new `Dhcp4Options.client_id`
 accessor) and returns False on mismatch with the
-client's emitted CID; the calling method then logs a
-`<WARN>` line and returns None. A misdirected reply
+client's emitted CID; the loop then logs a
+`<WARN>` line and drops the packet. A misdirected reply
 echoing someone else's Client Identifier is silently
 discarded per the MUST. The same gate also fires on the
 NAK path, so a stray NAK for an unrelated transaction
@@ -90,7 +92,7 @@ commit) surfaces it on the parsed message.
 
 ### §3 — Client-side echo validation
 
-- **Unit:** `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py`
+- **Unit:** `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py`
   - `TestDhcp4ClientFetchCidEcho::test__dhcp4_client__fetch_returns_none_on_offer_cid_mismatch`
     — OFFER echoes a CID built from a different MAC;
     `fetch()` returns None.

@@ -27,7 +27,7 @@ This module contains the NameEnum class.
 
 pytcp/lib/name_enum.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from enum import IntEnum

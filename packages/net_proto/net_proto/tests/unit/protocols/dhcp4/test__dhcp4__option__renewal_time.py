@@ -28,13 +28,11 @@ option (RFC 2132 §9.7) wire-format codec.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__renewal_time.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     UINT_32__MAX,
@@ -43,6 +41,7 @@ from net_proto import (
     Dhcp4OptionRenewalTime,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionRenewalTimeAsserts(TestCase):
@@ -135,6 +134,7 @@ class TestDhcp4OptionRenewalTimeAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the SUT.

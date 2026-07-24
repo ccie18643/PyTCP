@@ -27,14 +27,14 @@ This module contains the DHCPv6 Status Code option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__status_code.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.protocols.dhcp6.dhcp6__enums import Dhcp6StatusCode
 from net_proto.protocols.dhcp6.dhcp6__errors import Dhcp6IntegrityError
 from net_proto.protocols.dhcp6.options.dhcp6__option import (

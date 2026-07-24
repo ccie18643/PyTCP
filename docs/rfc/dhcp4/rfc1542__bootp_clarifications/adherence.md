@@ -146,25 +146,26 @@ fall on the floor (`dhcp4__header.py:301`).
 >  this implies that the 'secs' field of the first
 >  BOOTREQUEST message SHOULD be set to zero."
 
-**Adherence:** met for the FIRST request (DISCOVER) —
-PyTCP always emits `secs=0`. Met for the second message
-(REQUEST) only by coincidence — since PyTCP has no
-retransmission and no timer, the inter-message delay
-between DISCOVER and REQUEST is sub-second and `secs=0`
-is technically inaccurate but within the SHOULD's spirit.
+**Adherence:** met. PyTCP emits `secs=_elapsed_secs()`
+(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1883`),
+which returns the whole seconds since the client began
+address acquisition, so the first DISCOVER carries
+`secs=0` and every later message — including
+retransmissions via `_recv_with_backoff` (:1515) —
+carries the real elapsed time.
 
 > "Clients SHOULD NOT set the 'secs' field to a value
 >  which is constant for all BOOTREQUEST messages."
 
-**Adherence:** technically met (always 0 — trivially
-"constant"). The SHOULD NOT applies to
-deliberately-wrong constants (e.g. always 60); PyTCP
-sends 0 because no time has elapsed.
+**Adherence:** met. `secs` is not a constant — it
+tracks elapsed time via `_elapsed_secs()`, so it is 0
+only on the first request and grows thereafter, exactly
+as the SHOULD NOT intends.
 
-A future fix that adds RFC 2131 §4.1 retransmission
-should also set `secs` to the elapsed time since the
-first DISCOVER — this is the natural consumer of the
-field.
+RFC 2131 §4.1 retransmission is implemented
+(`_recv_with_backoff`, :1515), and `secs` already
+reflects the elapsed time since the first DISCOVER
+across those retransmissions.
 
 ---
 
@@ -264,7 +265,7 @@ messages between subnets.
   `packages/net_proto/net_proto/tests/unit/protocols/dhcp4/test__dhcp4__header__asserts.py` (785 lines)
   Pins `flag_b: bool` round-trip and `<< 15` packing.
 - **Unit (client):**
-  `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py` (681 lines)
+  `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py` (4149 lines)
   Asserts that emitted DISCOVER/REQUEST carry
   `flag_b=True`.
 
@@ -276,7 +277,7 @@ messages between subnets.
   `test__dhcp4__header__asserts.py` pins `ciaddr` and
   `yiaddr` as `Ip4Address`-typed fields.
 - **Unit:**
-  `test__lib__dhcp4_client.py` exercises the
+  `test__dhcp4__client.py` exercises the
   ciaddr=0.0.0.0 emission and `yiaddr` adoption.
 
 **Status:** locked in.
@@ -284,7 +285,7 @@ messages between subnets.
 ### §3.4 giaddr emission
 
 - **Unit:**
-  `test__lib__dhcp4_client.py` indirectly — the emitted
+  `test__dhcp4__client.py` indirectly — the emitted
   DISCOVER/REQUEST have `giaddr=0.0.0.0` (assembler
   default).
 
@@ -310,7 +311,7 @@ messages between subnets.
 | chaddr Ethernet bit order               | locked in (MAC value-type round-trip)     |
 | secs = 0 on first BOOTREQUEST           | locked in                                 |
 | ciaddr = 0 / giaddr = 0 emission        | locked in (assembler defaults)            |
-| yiaddr adoption from BOOTREPLY          | locked in (`test__lib__dhcp4_client.py`)  |
+| yiaddr adoption from BOOTREPLY          | locked in (`test__dhcp4__client.py`)      |
 | Magic cookie value                      | locked in (parser + assembler)            |
 | Relay agent / server behaviour          | n/a (PyTCP is client only)                |
 
@@ -324,7 +325,7 @@ messages between subnets.
 | §2.3 chaddr Ethernet bit order                      | met                                             |
 | §3.1.1 BROADCAST emission when unicast pre-bind impossible | met (unconditional set — deviation from SHOULD NOT in PyTCP's reverse case) |
 | §3.1.2 MBZ flags bits zero on TX, ignored on RX     | met                                             |
-| §3.2 secs = 0 on first DISCOVER                     | met (trivially — no retransmission)             |
+| §3.2 secs = 0 on first DISCOVER                     | met (elapsed time via `_elapsed_secs()`)        |
 | §3.3 ciaddr = 0 on TX, yiaddr adoption on RX        | met                                             |
 | §3.4 giaddr = 0 on TX, ignored on RX                | met                                             |
 | §3.5 Magic cookie 99.130.83.99                      | met                                             |

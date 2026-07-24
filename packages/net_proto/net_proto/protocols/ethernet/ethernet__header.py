@@ -27,7 +27,7 @@ This module contains the Ethernet II packet header class.
 
 net_proto/protocols/ethernet/ethernet__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,8 +35,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_addr import MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, MacAddress
 from net_proto.lib.enums import EtherType
 from net_proto.lib.proto_struct import ProtoStruct
 

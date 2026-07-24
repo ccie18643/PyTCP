@@ -27,9 +27,10 @@ Module contains tests for the DHCPv4 Pad option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__pad.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import DHCP4__OPTION__PAD__LEN, Dhcp4OptionPad, Dhcp4OptionType
@@ -40,6 +41,7 @@ class TestDhcp4OptionPadAssembler(TestCase):
     The DHCPv4 Pad option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Pad option object.

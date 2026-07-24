@@ -23,9 +23,10 @@ absence: the codebase does not define ICMPv4 Source Quench
   structurally impossible.
 - RX: `Icmp4Parser._parse()`'s `match Icmp4Type.from_int(...)`
   has no arm for Type 4, so the message is constructed as
-  `Icmp4MessageUnknown` and the RX handler dispatches to
-  `__phrx_icmp4__unknown`, which logs and silently
-  discards (bumping `icmp4__unknown`).
+  `Icmp4MessageUnknown`, whose `validate_sanity` raises
+  `Icmp4SanityError`; `_phrx_icmp4` catches the resulting
+  `PacketValidationError` and silently discards (logs +
+  bumps `icmp4__failed_parse__drop`).
 - Transport-layer reaction (TCP / UDP / etc.) cannot
   occur because the ICMPv4 RX handler never reaches the
   transport demux for unknown-type frames.
@@ -34,8 +35,8 @@ This compliance is regression-pinned by the test class
 `TestIcmp4Rx__SourceQuench__Rfc6633` in
 `packages/pytcp/pytcp/tests/integration/protocols/icmp4/test__icmp4__rx.py`,
 which verifies an inbound Type 4 frame produces no TX,
-bumps only the `icmp4__unknown` counter, and never
-reaches a transport handler.
+bumps only the `icmp4__failed_parse__drop` counter, and
+never reaches a transport handler.
 
 ---
 
@@ -57,21 +58,22 @@ which exist today.
 **Adherence:** **shipped.** The IP layer hands the
 message to `Icmp4Parser`, which builds an
 `Icmp4MessageUnknown` because Type 4 is absent from the
-`Icmp4Type` enum. The RX handler routes unknown types to
-`__phrx_icmp4__unknown`, which silently discards (logs +
-counter bump). PyTCP exercises the MAY clause: it
-discards rather than passing to a transport-layer
-handler.
+`Icmp4Type` enum; that message's `validate_sanity` raises
+`Icmp4SanityError`, so `_phrx_icmp4` silently discards
+(logs + bumps `icmp4__failed_parse__drop`). PyTCP
+exercises the MAY clause: it discards rather than passing
+to a transport-layer handler.
 
 > "TCP MUST silently discard any received ICMP Source
 > Quench messages."
 
 **Adherence:** **shipped.** TCP never sees Source Quench
-because the unknown-type handler in the ICMPv4 RX path
-returns before any transport demux. The behaviour is
-verified by `test__icmp4__rx__source_quench__no_tx`
-(no TX response) and the absence of any
-`tcp__icmp4__source_quench` packet-stats counter.
+because the ICMPv4 RX path rejects the frame at parser
+sanity and returns before any transport demux. The
+behaviour is verified by
+`test__icmp4__rx__source_quench__no_tx` (no TX response)
+and the absence of any `tcp__icmp4__source_quench`
+packet-stats counter.
 
 ## §4 Updating RFC 1812
 
@@ -132,31 +134,33 @@ has no input and cannot be invoked.
 
 **Adherence:** **shipped (MUST), partial (SHOULD).** The
 silent-discard MUST is met. The SHOULD-log clause is met
-in coarse form: `__phrx_icmp4__unknown` emits a debug
-log including source IP, dest IP, and message type via
-the standard `__debug__` channel, plus increments the
-`icmp4__unknown` counter. PyTCP does not currently emit
-a structured "security fault" log channel; the existing
-debug log is informational rather than security-tagged.
-Promoting the unknown-type log to a security-tier
-channel is a Phase-2 polish item rather than a Phase-1
-gap.
+in coarse form: when parser sanity rejects the frame,
+`_phrx_icmp4` emits a debug log carrying the packet
+tracker and the sanity-error text via the standard
+`__debug__` channel, plus increments the
+`icmp4__failed_parse__drop` counter. The log does not
+include the source / destination IP addresses, and PyTCP
+does not currently emit a structured "security fault" log
+channel; the existing debug log is informational rather
+than security-tagged. Promoting the unknown-type log to a
+security-tier channel is a Phase-2 polish item rather
+than a Phase-1 gap.
 
 ---
 
 ## Test coverage audit
 
-| Aspect                                                          | Coverage |
-|-----------------------------------------------------------------|----------|
-| §3 Type 4 RX silently discarded — no TX response                | shipped — `test__icmp4__rx__source_quench__no_tx` |
-| §3 Type 4 RX increments `icmp4__unknown` counter                | shipped — `test__icmp4__rx__source_quench__packet_stats_rx` |
-| §3 Type 4 RX does not reach transport demux (no TX counters)    | shipped — `test__icmp4__rx__source_quench__packet_stats_tx` |
-| §3 host MUST NOT send Source Quench (TX-side structural)        | shipped — verified by codebase grep (`grep -r SOURCE_QUENCH packages/net_proto/net_proto/ packages/pytcp/pytcp/` returns no hits) |
-| §4 router MUST ignore Source Quench                             | n/a (Phase 1 host-stack scope) |
-| §5 UDP MUST silently discard                                    | shipped — covered by RX-side path; UDP demux unreachable |
-| §6 other transports MUST silently ignore                        | n/a (no other transports implemented) |
-| §7 RFC 1016 algorithm MUST NOT be implemented                   | shipped — codebase contains no RFC 1016 references |
-| §8 SHOULD log discard as security fault                         | partial — debug log present, not security-tier (Phase-2 polish) |
+| Aspect                                                       | Coverage |
+|--------------------------------------------------------------|----------|
+| §3 Type 4 RX silently discarded — no TX response             | shipped — `test__icmp4__rx__source_quench__no_tx` |
+| §3 Type 4 RX increments `icmp4__failed_parse__drop` counter  | shipped — `test__icmp4__rx__source_quench__packet_stats_rx` |
+| §3 Type 4 RX does not reach transport demux (no TX counters) | shipped — `test__icmp4__rx__source_quench__packet_stats_tx` |
+| §3 host MUST NOT send Source Quench (TX-side structural)     | shipped — verified by codebase grep (`grep -r SOURCE_QUENCH packages/net_proto/net_proto/ packages/pytcp/pytcp/` returns no hits) |
+| §4 router MUST ignore Source Quench                          | n/a (Phase 1 host-stack scope) |
+| §5 UDP MUST silently discard                                 | shipped — covered by RX-side path; UDP demux unreachable |
+| §6 other transports MUST silently ignore                     | n/a (no other transports implemented) |
+| §7 RFC 1016 algorithm MUST NOT be implemented                | shipped — codebase contains no RFC 1016 references |
+| §8 SHOULD log discard as security fault                      | partial — debug log present, not security-tier (Phase-2 polish) |
 
 The regression-pinning tests live at
 `packages/pytcp/pytcp/tests/integration/protocols/icmp4/test__icmp4__rx.py`,

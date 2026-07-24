@@ -34,7 +34,7 @@ semantics (no FSM mutation per RFC 5927 §6).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__icmp__time_exceeded__ip6.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip6Address
@@ -48,8 +48,8 @@ from net_proto import (
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP6_ADDRESS,
     STACK__IP6_HOST,

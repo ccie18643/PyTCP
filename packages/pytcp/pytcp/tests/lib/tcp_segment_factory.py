@@ -28,13 +28,12 @@ TCP session integration tests to synthesize ingress frames.
 
 pytcp/tests/lib/tcp_segment_factory.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Iterable
 
-from net_addr import Ip4Address, Ip6Address, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip6Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler

@@ -27,14 +27,12 @@ Module contains tests for the DHCPv4 Requested IP Address option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__req_ip_addr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
 from net_proto.protocols.dhcp4.options.dhcp4__option__req_ip_addr import (
     DHCP4__OPTION__REQ_IP_ADDR__LEN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionReqIpAddrAsserts(TestCase):
@@ -218,6 +217,7 @@ class TestDhcp4OptionReqIpAddrAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Requested IP Address option object with
@@ -539,3 +539,33 @@ class TestDhcp4OptionReqIpAddrBehavior(TestCase):
                 Ip4Address("192.0.2.1"),
                 type=Dhcp4OptionType.REQ_IP_ADDR,
             )
+
+
+class TestDhcp4OptionReqIpAddrWrongType(TestCase):
+    """
+    The DHCPv4 Requested IP Address option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__req_ip_addr__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.REQ_IP_ADDR and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.1 (Requested IP Address option code 50).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionReqIpAddr.from_buffer(b"\x00\x04\x0a\x00\x00\x05")
+
+    def test__dhcp4__option__req_ip_addr__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.REQ_IP_ADDR, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.1 (Requested IP Address option code 50).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionReqIpAddr.from_buffer(b"\xff\x04\x0a\x00\x00\x05")

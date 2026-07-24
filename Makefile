@@ -19,6 +19,14 @@ LINT_FILES := $(PYTCP_FILES) $(NET_ADDR_FILES) $(NET_PROTO_FILES) $(EXAMPLES_FIL
 # the 'venv' target), so its name is decoupled from its path here.
 MYPY_PACKAGES := pytcp net_addr net_proto examples
 
+# The entire pylint configuration — which checks fire AND which paths
+# are exempt — lives in pyproject.toml ([tool.pylint.*]: 'disable = all'
+# + a small 'enable' allowlist, and 'ignore-paths' for tests). It is the
+# single source of truth shared with ad-hoc / IDE pylint runs. The gate
+# below just hands pylint the three package roots and lets config decide
+# the rest ('--recursive=y' so pylint walks the tree; tests self-exempt
+# via 'ignore-paths').
+
 # If any recipe fails, delete its target file. Without this a
 # failed (or interrupted) 'venv' build leaves a half-populated
 # venv whose 'bin/activate' is newer than the requirements
@@ -48,31 +56,22 @@ $(VENV)/bin/activate: requirements.txt requirements_dev.txt
 
 venv: $(VENV)/bin/activate
 
-run: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py
+# Bare 'make' builds everything: the venv with all three packages
+# editable-installed (the canonical build step). It then prints the
+# short "how to start the stack" crib. Running the stack itself is NOT
+# a make target — it goes through the 'pytcp' CLI ('pytcp stack start'),
+# the single supported entry point.
+.DEFAULT_GOAL := all
 
-# Run as a daemon: the stack plus its AF_UNIX control socket, so
-# out-of-process 'pytcp.client' consumers (e.g. examples/client__*_ipc.py)
-# can open sockets and drive the control APIs against this running stack.
-# Needs the bridge + TAP first ('sudo make bridge && sudo make tap7').
-daemon: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --ipc-socket /tmp/pytcp.sock
-
-# Bind the stack to two TAP interfaces at once (multi-homed host). Needs
-# the bridge + both taps up first: 'sudo make bridge tap7 tap9'. Each NIC
-# autoconfigures (DHCPv4 / SLAAC).
-run_multi: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tap7 --stack-interface tap9
-
-# Run the stack on a point-to-point TUN interface (no bridge). Needs the
-# matching tun device first ('sudo make tun3' / 'sudo make tun5'); each is
-# created pre-addressed on the host side, so the stack takes the .2 host
-# in the same subnet.
-run_tun: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tun3 --stack-ip4-address 172.16.1.2/24 --stack-ip6-address 2001:db8:1::2/64
-
-run_tun5: venv
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python3 examples/stack.py --stack-interface tun5 --stack-ip4-address 172.16.2.2/24 --stack-ip6-address 2001:db8:2::2/64
+all: venv
+	@echo
+	@echo 'PyTCP built. To run the stack (daemon + CLI):'
+	@echo
+	@echo '  sudo make bridge && sudo make tap7        # one-time: TAP on br0 (root)'
+	@echo '  sudo venv/bin/pytcp stack start -i tap7   # start the stack daemon'
+	@echo '  sudo venv/bin/pytcp ss                    # drive it, like "ss"'
+	@echo
+	@echo 'See "sudo venv/bin/pytcp --help" for the full command set.'
 
 # Run an example-capture / e2e scenario. Needs root + the TAP/bridge
 # (sudo make bridge && sudo make tap7). Usage:
@@ -102,6 +101,12 @@ lint: venv
 	@echo '<<< MYPY'
 	@for pkg in $(MYPY_PACKAGES); do PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy -p $$pkg || exit 1; done
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/mypy $(ROOT_FILES)
+	@echo '<<< PYLINT'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pylint --score=n --recursive=y $(PYTCP_PATH) $(NET_ADDR_PATH) $(NET_PROTO_PATH)
+	@echo '<<< PYRIGHT'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/pyright
+	@echo '<<< IMPORT-LINTER'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/lint-imports --config pyproject.toml
 
 test__pytcp__integration: venv
 	@echo '<<< UNITTEST PYTCP INTEGRATION'
@@ -116,12 +121,12 @@ test__net_proto__unit: venv
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_proto/net_proto/tests/unit' -name 'test__*.py')
 
 test__examples__unit: venv
-	@echo '<<< UNITTEST EXAMPLES UNIT'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'examples/tests/unit' -name 'test__*.py')
+	@echo '<<< UNITTEST EXAMPLES'
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/pytcp/pytcp/tests/integration/examples' -name 'test__*.py')
 
 test: venv
 	@echo '<<< UNITTEST ALL'
-	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' 'examples/tests' -name 'test__*.py')
+	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' -name 'test__*.py')
 
 validate: lint test
 
@@ -160,7 +165,7 @@ benchmark: venv
 	@echo '  sudo hping3 --flood --icmp -d 1472 <stack-ip>'
 	@echo
 	@PYTCP_STATS_INTERVAL=5 PYTHONOPTIMIZE=1 PYTHONPATH=$(ROOT_PATH) \
-		./$(VENV)/bin/python3 examples/stack.py
+		./$(VENV)/bin/python3 -m pytcp.daemon -i tap7
 
 bridge:
 	@brctl addbr br0
@@ -230,7 +235,7 @@ remove_interfaces:
 	@ip tuntap del name tap7 mode tap
 	@ip tuntap del name tap9 mode tap
 
-.PHONY: venv run daemon run_multi run_tun capture clean lint \
+.PHONY: all venv capture clean lint \
 	test test__pytcp__integration test__net_addr__unit \
 	test__net_proto__unit test__examples__unit validate \
 	bench__rx_ring profile__rx_ring benchmark \

@@ -27,13 +27,13 @@ Tests for the IPC length-prefixed stream framing codec.
 
 pytcp/tests/unit/ipc/test__ipc__frame.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket
 import struct
 import threading
-from typing import override
+from typing import cast, override
 from unittest import TestCase
 
 from pytcp.ipc.ipc__errors import IpcFrameError
@@ -41,6 +41,7 @@ from pytcp.ipc.ipc__frame import (
     IPC__FRAME__LENGTH_PREFIX_LEN,
     IPC__FRAME__MAX_PAYLOAD_LEN,
     pack_frame,
+    recv_exactly,
     recv_frame,
     send_frame,
 )
@@ -298,4 +299,158 @@ class TestIpcFrameStream(TestCase):
             f"[IPC] Frame length prefix {IPC__FRAME__MAX_PAYLOAD_LEN + 1} exceeds "
             f"the maximum of {IPC__FRAME__MAX_PAYLOAD_LEN} bytes.",
             msg="An oversize length prefix must raise IpcFrameError.",
+        )
+
+
+class TestIpcFrame__WireGoldens(TestCase):
+    """
+    Exact wire-byte goldens and boundary cases that pin the frame
+    length-prefix format and the max-payload constant.
+    """
+
+    def test__frame__max_payload_constant_is_16_mib(self) -> None:
+        """
+        Ensure the maximum payload length is exactly 16 MiB, pinning the
+        '16 * 1024 * 1024' constant arithmetic.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            IPC__FRAME__MAX_PAYLOAD_LEN,
+            16777216,
+            msg="IPC__FRAME__MAX_PAYLOAD_LEN must be 16 MiB (16777216).",
+        )
+
+    def test__frame__pack_exact_wire_bytes(self) -> None:
+        """
+        Ensure pack_frame emits a 4-byte big-endian length prefix
+        followed by the payload, byte-for-byte.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            pack_frame(b"abc"),
+            bytes.fromhex("00000003616263"),
+            msg="pack_frame(b'abc') must be 0x00000003 + 'abc'.",
+        )
+        self.assertEqual(
+            pack_frame(b""),
+            bytes.fromhex("00000000"),
+            msg="pack_frame(b'') must be a 4-byte zero length prefix only.",
+        )
+
+    def test__frame__recv_clean_eof_returns_none(self) -> None:
+        """
+        Ensure recv_frame returns None on a clean EOF (peer closed with
+        no bytes), pinning the empty-prefix check against a relational
+        edit.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sender, receiver = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(receiver.close)
+        sender.close()
+
+        self.assertIsNone(
+            recv_frame(receiver),
+            msg="a clean EOF before any byte must yield None.",
+        )
+
+    def test__frame__recv_partial_prefix_rejected(self) -> None:
+        """
+        Ensure a connection that delivers fewer than the 4 prefix bytes
+        before closing is rejected, pinning the partial-prefix length
+        check.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sender, receiver = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(receiver.close)
+        sender.sendall(b"\x00\x00")
+        sender.close()
+
+        with self.assertRaises(IpcFrameError):
+            recv_frame(receiver)
+
+    def test__frame__recv_roundtrips_packed_frame(self) -> None:
+        """
+        Ensure a packed frame sent over the transport is recovered
+        exactly by recv_frame.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sender, receiver = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(receiver.close)
+        self.addCleanup(sender.close)
+        sender.sendall(pack_frame(b"hello"))
+
+        self.assertEqual(
+            recv_frame(receiver),
+            b"hello",
+            msg="a packed frame must round-trip through recv_frame.",
+        )
+
+
+class _DribbleSocket:
+    """
+    A socket double whose recv() yields exactly one byte per call,
+    forcing the recv_exactly loop to iterate (a real socket delivers a
+    small frame in a single recv).
+    """
+
+    def __init__(self, data: bytes) -> None:
+        self._data = bytearray(data)
+
+    def recv(self, _bufsize: int) -> bytes:
+        """Return a single byte, or b'' at end of stream."""
+
+        if not self._data:
+            return b""
+        head = bytes(self._data[:1])
+        del self._data[:1]
+        return head
+
+
+class TestIpcFrame__PartialDelivery(TestCase):
+    """
+    recv_exactly / recv_frame must reassemble a frame delivered in
+    single-byte dribbles, pinning the receive loop's per-iteration
+    accounting (which a same-recv delivery never exercises).
+    """
+
+    def test__frame__recv_exactly_reassembles_dribbled_bytes(self) -> None:
+        """
+        Ensure recv_exactly loops until it has the requested count when
+        the transport delivers one byte at a time.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = cast("socket.socket", _DribbleSocket(b"ABCDEFGH"))
+
+        self.assertEqual(
+            recv_exactly(sock, 5),
+            b"ABCDE",
+            msg="recv_exactly must accumulate exactly 5 bytes across single-byte recvs.",
+        )
+
+    def test__frame__recv_frame_reassembles_dribbled_frame(self) -> None:
+        """
+        Ensure recv_frame reassembles a full frame (prefix + payload)
+        when every byte arrives in a separate recv.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        sock = cast("socket.socket", _DribbleSocket(pack_frame(b"hello-dribble")))
+
+        self.assertEqual(
+            recv_frame(sock),
+            b"hello-dribble",
+            msg="recv_frame must reassemble a dribble-delivered frame byte by byte.",
         )

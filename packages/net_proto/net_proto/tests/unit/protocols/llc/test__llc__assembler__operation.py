@@ -28,14 +28,13 @@ assembler.
 
 net_proto/tests/unit/protocols/llc/test__llc__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     LLC__HEADER__LEN,
     LlcAssembler,
@@ -44,7 +43,7 @@ from net_proto import (
     LlcSap,
     Tracker,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -161,6 +160,7 @@ class TestLlcAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the LLC packet assembler from the parametrized kwargs.

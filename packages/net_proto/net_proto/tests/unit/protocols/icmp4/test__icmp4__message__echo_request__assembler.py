@@ -27,21 +27,20 @@ Module contains tests for the ICMPv4 Echo Request message assembler.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__echo_request__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp4Assembler,
     Icmp4EchoRequestCode,
     Icmp4MessageEchoRequest,
     Icmp4Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -152,6 +151,7 @@ class TestIcmp4MessageEchoRequestAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized Echo Request message.
@@ -307,4 +307,34 @@ class TestIcmp4MessageEchoRequestAssembler(TestCase):
             b"".join(buffers),
             self._results["__bytes__"],
             msg=f"Unexpected assemble() output for case: {self._description}",
+        )
+
+
+class TestIcmp4MessageEchoRequestWithData(TestCase):
+    """
+    The ICMPv4 Echo Request with-embedded-data length tests.
+    """
+
+    def test__icmp4__message__echo_request__len_with_data(self) -> None:
+        """
+        Ensure 'len()' on a Echo Request message carrying embedded data
+        equals the 8-byte message header plus the data length, pinning
+        the 'LEN + len(data)' computation against a '-' corruption that
+        the existing empty-data fixtures cannot catch.
+
+        Reference: RFC 792 (Echo Request message length is 8 octets plus embedded data).
+        """
+
+        data = bytes(range(28))
+        message = Icmp4MessageEchoRequest(id=0x1234, seq=0x5678, data=data)
+
+        self.assertEqual(
+            len(message),
+            8 + len(data),
+            msg="Echo Request length must be the 8-byte header plus the embedded data length.",
+        )
+        self.assertEqual(
+            len(bytes(Icmp4Assembler(icmp4__message=message))),
+            8 + len(data),
+            msg="Echo Request assembled wire length must be 8 + the embedded data length.",
         )

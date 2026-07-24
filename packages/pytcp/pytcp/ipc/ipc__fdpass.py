@@ -36,15 +36,14 @@ independent of the payload length.
 
 pytcp/ipc/ipc__fdpass.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import array
 import os
-import socket
 import struct
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__frame import (
     IPC__FRAME__LENGTH_PREFIX_LEN,
@@ -52,11 +51,12 @@ from pytcp.ipc.ipc__frame import (
     IPC__FRAME__MAX_PAYLOAD_LEN,
     recv_exactly,
 )
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 
 IPC__FDPASS__FD_STRUCT: str = "i"
 
 
-def send_frame_with_fd(sock: socket.socket, payload: Buffer, fd: int, /) -> None:
+def send_frame_with_fd(sock: stdlib_socket.socket, payload: Buffer, fd: int, /) -> None:
     """
     Send a length-prefixed frame with a file descriptor attached.
 
@@ -74,12 +74,12 @@ def send_frame_with_fd(sock: socket.socket, payload: Buffer, fd: int, /) -> None
     prefix = struct.pack(IPC__FRAME__LENGTH_PREFIX_STRUCT, length)
     sock.sendmsg(
         [prefix],
-        [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array(IPC__FDPASS__FD_STRUCT, [fd]))],
+        [(stdlib_socket.SOL_SOCKET, stdlib_socket.SCM_RIGHTS, array.array(IPC__FDPASS__FD_STRUCT, [fd]))],
     )
     sock.sendall(bytes(payload))
 
 
-def recv_frame_with_fd(sock: socket.socket, /) -> tuple[bytes, int | None]:
+def recv_frame_with_fd(sock: stdlib_socket.socket, /) -> tuple[bytes, int | None]:
     """
     Receive a length-prefixed frame and the descriptor attached to it.
 
@@ -115,7 +115,7 @@ def recv_frame_with_fd(sock: socket.socket, /) -> tuple[bytes, int | None]:
     return payload, fd
 
 
-def _recv_prefix_with_fd(sock: socket.socket, /) -> tuple[bytes, int | None]:
+def _recv_prefix_with_fd(sock: stdlib_socket.socket, /) -> tuple[bytes, int | None]:
     """
     Read the length prefix, capturing the SCM_RIGHTS descriptor if one is
     attached (zero or one; more than one is a protocol error).
@@ -124,7 +124,7 @@ def _recv_prefix_with_fd(sock: socket.socket, /) -> tuple[bytes, int | None]:
     chunks: list[bytes] = []
     fds = array.array(IPC__FDPASS__FD_STRUCT)
     remaining = IPC__FRAME__LENGTH_PREFIX_LEN
-    ancillary_size = socket.CMSG_SPACE(struct.calcsize(IPC__FDPASS__FD_STRUCT))
+    ancillary_size = stdlib_socket.CMSG_SPACE(struct.calcsize(IPC__FDPASS__FD_STRUCT))
 
     while remaining > 0:
         data, ancillary, _, _ = sock.recvmsg(remaining, ancillary_size)
@@ -133,7 +133,7 @@ def _recv_prefix_with_fd(sock: socket.socket, /) -> tuple[bytes, int | None]:
         chunks.append(data)
         remaining -= len(data)
         for level, ctype, cdata in ancillary:
-            if level == socket.SOL_SOCKET and ctype == socket.SCM_RIGHTS:
+            if level == stdlib_socket.SOL_SOCKET and ctype == stdlib_socket.SCM_RIGHTS:
                 fds.frombytes(cdata[: len(cdata) - (len(cdata) % fds.itemsize)])
 
     prefix = b"".join(chunks)

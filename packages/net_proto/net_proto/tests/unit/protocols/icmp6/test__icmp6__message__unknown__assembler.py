@@ -27,21 +27,20 @@ Module contains tests for the ICMPv6 unknown message assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__unknown__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import (
     Icmp6Assembler,
     Icmp6Code,
     Icmp6MessageUnknown,
     Icmp6Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -147,6 +146,7 @@ class TestIcmp6MessageUnknownAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized unknown message.

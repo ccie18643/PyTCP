@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package IPv6 address support class.
 
 net_addr/tests/unit/test__ip6_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4Address,
@@ -43,6 +41,7 @@ from net_addr import (
     IpVersion,
     MacAddress,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -626,6 +625,7 @@ class TestNetAddrIp6Address(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv6 address object with testcase arguments.
@@ -1732,6 +1732,24 @@ class TestNetAddrIp6AddressOrdering(TestCase):
         self.assertTrue(a < b <= b < c, msg="Chained Ip6Address comparisons must hold.")
         self.assertFalse(a < a, msg="An Ip6Address must not be strictly less than itself.")
         self.assertTrue(a >= a, msg="An Ip6Address must be >= itself.")
+        # Both directions / reflexivity for '<=', '>', '>=' so a
+        # weakened '<=' / '>=' (-> 'is not') or '>' (-> '==') is caught
+        # (the chained / reflexive checks above leave each reverse
+        # direction untested).
+        for left, op, right, expected in [
+            (a, "<=", b, True),
+            (b, "<=", a, False),
+            (a, "<=", a, True),
+            (c, ">", a, True),
+            (a, ">", c, False),
+            (a, ">", a, False),
+            (c, ">=", a, True),
+            (a, ">=", c, False),
+            (a, ">=", a, True),
+        ]:
+            with self.subTest(case=f"{left} {op} {right}"):
+                got = {"<=": left <= right, ">": left > right, ">=": left >= right}[op]
+                self.assertEqual(got, expected, msg=f"{left} {op} {right} must be {expected}.")
 
     def test__net_addr__ip6_address__ordering__scope_aware(self) -> None:
         """
@@ -2149,10 +2167,16 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             Ip4Address("192.0.2.1"),
             msg="ipv4_mapped must extract the embedded IPv4 address.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").ipv4_mapped,
-            msg="ipv4_mapped must be None for a non-mapped address.",
-        )
+        # Both a higher prefix (2001:db8::) and lower ones (::1, ::,
+        # which sit BELOW the ::ffff:0:0/96 prefix) must be None — the
+        # low cases pin the prefix test against a '<='-relaxation that
+        # would treat any sub-prefix address as mapped.
+        for address in ("2001:db8::1", "::1", "::", "::1:0:0"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).ipv4_mapped,
+                    msg=f"ipv4_mapped must be None for the non-mapped {address}.",
+                )
 
     def test__net_addr__ip6_address__is_ipv4_mapped_true_for_prefix(self) -> None:
         """
@@ -2251,10 +2275,16 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             Ip4Address("192.0.2.1"),
             msg="sixtofour must extract the embedded IPv4 address.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").sixtofour,
-            msg="sixtofour must be None for a non-6to4 address.",
-        )
+        # Both a lower prefix (2001:db8::) and a higher one (2003::,
+        # which sits ABOVE the 2002::/16 prefix) must be None — the high
+        # case pins the prefix test against a '>='-relaxation that would
+        # treat any super-prefix address as 6to4.
+        for address in ("2001:db8::1", "2003::"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).sixtofour,
+                    msg=f"sixtofour must be None for the non-6to4 {address}.",
+                )
 
     def test__net_addr__ip6_address__teredo(self) -> None:
         """
@@ -2269,10 +2299,52 @@ class TestNetAddrIp6AddressTransitional(TestCase):
             (Ip4Address("65.54.227.120"), Ip4Address("192.0.2.45")),
             msg="teredo must return the (server, client) IPv4 pair.",
         )
-        self.assertIsNone(
-            Ip6Address("2001:db8::1").teredo,
-            msg="teredo must be None for a non-Teredo address.",
-        )
+        # Both a higher prefix (2001:db8::) and lower ones (2000:ffff::,
+        # 1fff::, which sit BELOW the 2001:0000::/32 prefix) must be
+        # None — the low cases pin the prefix test against a
+        # '<='-relaxation that would treat any sub-prefix address as
+        # Teredo.
+        for address in ("2001:db8::1", "2000:ffff::", "1fff::"):
+            with self.subTest(address=address):
+                self.assertIsNone(
+                    Ip6Address(address).teredo,
+                    msg=f"teredo must be None for the non-Teredo {address}.",
+                )
+
+
+class TestNetAddrIp6AddressZoneable(TestCase):
+    """
+    The NetAddr IPv6 address RFC 4007 zoneable-scope predicate tests.
+    """
+
+    def test__net_addr__ip6_address__is_zoneable(self) -> None:
+        """
+        Ensure '_is_zoneable' is True exactly for link-local unicast,
+        loopback, and multicast with a non-global scope value in the
+        open range (0 < scop < 0xE), and False for the scope endpoints
+        0x0 / 0xE / 0xF and for global unicast — pinning the chained
+        scope-nibble comparison at both its bounds.
+
+        Reference: RFC 4007 §6 (zone identifiers / scope values).
+        """
+
+        for address, zoneable in [
+            ("fe80::1", True),  # link-local unicast
+            ("::1", True),  # loopback (link-local scope)
+            ("2001:db8::1", False),  # global unicast — not zoneable
+            ("ff00::", False),  # multicast scope 0x0 (reserved) — lower endpoint
+            ("ff01::", True),  # multicast scope 0x1 (interface-local) — lower edge
+            ("ff05::", True),  # multicast scope 0x5 (site-local) — mid range
+            ("ff0d::", True),  # multicast scope 0xD — upper edge (still in range)
+            ("ff0e::", False),  # multicast scope 0xE (global) — upper endpoint
+            ("ff0f::", False),  # multicast scope 0xF (reserved)
+        ]:
+            with self.subTest(address=address):
+                self.assertEqual(
+                    Ip6Address(address)._is_zoneable,
+                    zoneable,
+                    msg=f"_is_zoneable for {address} must be {zoneable}.",
+                )
 
 
 class TestNetAddrIp6AddressScopeId(TestCase):

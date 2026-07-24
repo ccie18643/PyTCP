@@ -34,7 +34,7 @@ pending-request counter) lives on 'pytcp.stack.tcp_stack'
 
 pytcp/protocols/tcp/state/tcp__state__fastopen.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

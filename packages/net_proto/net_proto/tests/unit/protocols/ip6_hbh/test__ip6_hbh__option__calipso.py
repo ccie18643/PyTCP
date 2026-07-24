@@ -27,13 +27,11 @@ This module contains tests for the IPv6 HBH CALIPSO option.
 
 net_proto/tests/unit/protocols/ip6_hbh/test__ip6_hbh__option__calipso.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.int_checks import UINT_8__MAX, UINT_16__MAX, UINT_32__MAX
 from net_proto.protocols.ip6_hbh.ip6_hbh__errors import Ip6HbhIntegrityError
@@ -46,6 +44,7 @@ from net_proto.protocols.ip6_hbh.options.ip6_hbh__option__pad1 import (
     Ip6HbhOptionPad1,
 )
 from net_proto.protocols.ip6_hbh.options.ip6_hbh__options import Ip6HbhOptions
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

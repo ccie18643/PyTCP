@@ -27,12 +27,12 @@ This module contains unit tests for the 'Icmp6RxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
 from collections.abc import Callable
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
 
@@ -200,6 +200,7 @@ class _Icmp6RxTestBase(TestCase):
     Common setUp for the ICMPv6 RX tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._if = _StubInterface()
         self._icmp6_rx = Icmp6RxHandler(interface=cast("PacketHandlerL2 | PacketHandlerL3", self._if))
@@ -211,6 +212,7 @@ class _Icmp6RxTestBase(TestCase):
         self._nd_cache = create_autospec(NdCache, spec_set=True)
         self._if._nd_cache = self._nd_cache
 
+    @override
     def tearDown(self) -> None:
         self._sockets_patch.stop()
 

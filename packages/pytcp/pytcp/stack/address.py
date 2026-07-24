@@ -33,7 +33,7 @@ unification (docs/refactor/address_api_unification.md).
 
 pytcp/stack/address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Callable
@@ -41,10 +41,20 @@ from typing import TYPE_CHECKING
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp.lib.logger import log
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+
+
+def _log_dad_conflict(address: Ip6Address, /) -> None:
+    """
+    The default DAD-conflict handler for an operator 'add(dad=True)' —
+    log that the IPv6 host failed Duplicate Address Detection and so was
+    not installed.
+    """
+
+    log("stack", f"<lg>Address API</>: IPv6 host {address} failed DAD (duplicate); not installed")
 
 
 class AddressApi:
@@ -57,14 +67,15 @@ class AddressApi:
     (docs/refactor/address_api_unification.md), so today the
     implementation handles IPv4 only.
 
-    Implementation: thin wrapper around 'PacketHandler._ip4_ifaddr'
-    mutations plus active TCP-session abort via 'SysCall.ABORT'
+    Implementation: thin wrapper around the packet handler's
+    'assign_ip4_ifaddr' / 'remove_ip4_ifaddr' (and IPv6 sibling)
+    mutators plus active TCP-session abort via 'SysCall.ABORT'
     (RFC 5227 §2.4-final SHOULD — deliberately stricter than
     Linux's "silent rot" behaviour).
 
     Consumer code — DHCPv4 client, RFC 3927 link-local client,
     future operator-config CLI — uses ONLY this surface. Never
-    reaches into 'packet_handler._ip4_ifaddr' directly. This is the
+    reaches into the packet handler's address list directly. This is the
     architectural seam the Phase-3 north-star turns into a real
     IPC channel; the wrapper internals swap from direct
     attribute mutation to RTNETLINK-equivalent message bus
@@ -106,7 +117,7 @@ class AddressApi:
             "'stack.address.interface(ifindex)' (Linux 'ip addr ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "AddressApi":
+    def interface(self, ifindex: int, /) -> AddressApi:
         """
         Return an 'AddressApi' bound to the interface registered
         under 'ifindex' — the device selector, Linux 'ip addr … dev
@@ -124,6 +135,7 @@ class AddressApi:
         *,
         ifaddr: Ip4IfAddr | Ip6IfAddr,
         dad_conflict_callback: Callable[[Ip6Address], None] | None = None,
+        dad: bool = True,
     ) -> None:
         """
         Install 'ifaddr' on the stack's address list — Linux
@@ -134,46 +146,56 @@ class AddressApi:
 
         An IPv6 host additionally joins its solicited-node multicast
         group (RFC 4291 §2.7.1; on L2 that also adds the derived
-        multicast MAC + an MLD report). By default this verb installs
-        the address directly — it does NOT run DAD; DAD is the SLAAC /
-        boot path's concern, the same way ARP ACD is the per-protocol
-        engine's concern, not an address-plane verb.
+        multicast MAC + an MLD report).
 
-        A per-protocol engine that DOES want its IPv6 address vetted
-        by Duplicate Address Detection — the DHCPv6 client, mirroring
-        the kernel's tentative install of a DHCPv6-leased address —
-        passes a 'dad_conflict_callback'. The address is then claimed
-        through the ND DAD engine (installed by the claim worker only
-        once DAD passes); on a duplicate the callback is invoked with
-        the conflicting address so the engine can react (the DHCPv6
-        client DECLINEs it). Ignored for an IPv4 'ifaddr'.
+        An IPv6 address is run through Duplicate Address Detection
+        BEFORE it is installed (RFC 4862 §5.4 — every unicast address
+        must pass DAD before use, however obtained). The canonical ND
+        DAD engine claims it asynchronously and installs it only once
+        DAD passes (the address is 'tentative' until then, like the
+        kernel); on a duplicate a conflict handler is invoked:
+
+        - by default a handler that logs the duplicate (the operator
+          'ip addr add' path);
+        - a per-protocol engine (the DHCPv6 client) instead supplies its
+          own 'dad_conflict_callback' so it can react — DECLINE the
+          lease.
+
+        Pass 'dad=False' to opt out and install directly (synchronously),
+        for a caller that has already vetted the address — e.g. 'replace'
+        renewing an address that passed DAD at first acquisition. DAD
+        never applies to an IPv4 'ifaddr' (IPv4 has no DAD; RFC 5227 ACD
+        is the per-protocol engine's concern), so the flag is ignored
+        there.
         """
 
         handler = self._resolve_handler()
-        # Atomic-rebind rather than in-place '.append', under the
-        # interface address-config lock: the TX worker iterates the
-        # address list during source-address selection on a different
-        # thread, so control-plane mutation swaps a fresh list reference
-        # (the reader sees the old or new list whole, never a
-        # mid-append state) while the lock serializes this writer
-        # against the RX / SLAAC / DAD writers. Mirrors 'remove' below.
+        # The packet handler's 'assign_*_ifaddr' mutators publish a fresh
+        # address-list reference under the interface address-config lock
+        # (copy-on-write): the TX worker iterates the address list during
+        # source-address selection on a different thread, so swapping a
+        # whole new list (the reader sees the old or new list whole,
+        # never a mid-append state) while the lock serialises this writer
+        # against the RX / SLAAC / DAD writers keeps the control plane
+        # race-free on free-threaded CPython. The lock + COW live inside
+        # the mutator, not here.
         if isinstance(ifaddr, Ip6IfAddr):
-            if dad_conflict_callback is not None:
+            on_conflict = (
+                dad_conflict_callback if dad_conflict_callback is not None else (_log_dad_conflict if dad else None)
+            )
+            if on_conflict is not None:
                 # DAD-checked install: the claim worker runs DAD and,
-                # on success, performs the '_ip6_ifaddr' + solicited-node
+                # on success, performs the IPv6 address + solicited-node
                 # multicast assignment itself; on a duplicate it invokes
                 # the callback. Reuses the canonical ND DAD engine rather
                 # than duplicating DAD in the address plane.
-                handler._claim_ip6_address_async(ip6_host=ifaddr, on_conflict=dad_conflict_callback)
+                handler.claim_ip6_address_async(ip6_host=ifaddr, on_conflict=on_conflict)
                 __debug__ and log("stack", f"<lg>Address API</>: claiming IPv6 host {ifaddr} via DAD")
                 return
-            with handler._lock__addr_config:
-                handler._ip6_ifaddr = [*handler._ip6_ifaddr, ifaddr]
-            handler._assign_ip6_multicast(ifaddr.address.solicited_node_multicast)
+            handler.assign_ip6_ifaddr(ifaddr)
             __debug__ and log("stack", f"<lg>Address API</>: added IPv6 host {ifaddr}")
             return
-        with handler._lock__addr_config:
-            handler._ip4_ifaddr = [*handler._ip4_ifaddr, ifaddr]
+        handler.assign_ip4_ifaddr(ifaddr)
         __debug__ and log("stack", f"<lg>Address API</>: added IPv4 host {ifaddr}")
 
     def remove(
@@ -202,21 +224,17 @@ class AddressApi:
 
         handler = self._resolve_handler()
         if isinstance(address, Ip6Address):
-            with handler._lock__addr_config:
-                removed_hosts = [host for host in handler._ip6_ifaddr if host.address == address]
-                handler._ip6_ifaddr = [host for host in handler._ip6_ifaddr if host.address != address]
-            for host in removed_hosts:
-                handler._remove_ip6_multicast(host.address.solicited_node_multicast)
+            # The mutator filters under the address-config lock (COW),
+            # leaves each removed host's solicited-node multicast group,
+            # and returns the removed hosts for the log line below.
+            removed_hosts = handler.remove_ip6_ifaddr(address)
             __debug__ and log(
                 "stack",
                 f"<lg>Address API</>: removed IPv6 address {address} "
                 f"({len(removed_hosts)} host(s); abort_bound_sessions={abort_bound_sessions})",
             )
             return
-        with handler._lock__addr_config:
-            before = len(handler._ip4_ifaddr)
-            handler._ip4_ifaddr = [host for host in handler._ip4_ifaddr if host.address != address]
-            removed = before - len(handler._ip4_ifaddr)
+        removed = handler.remove_ip4_ifaddr(address)
         __debug__ and log(
             "stack",
             f"<lg>Address API</>: removed IPv4 address {address} "
@@ -242,9 +260,15 @@ class AddressApi:
         'abort_bound_sessions' once the new address is installed,
         matching the RFC 5227 §2.4-final SHOULD policy 'remove'
         already applies.
+
+        'dad=False' on the install: replace is the renew path (the new
+        address is typically the same one being re-leased, already DAD-
+        vetted at first acquisition), and its atomic add-before-remove
+        ordering requires a synchronous install — async DAD would defer
+        the new address past the old one's removal.
         """
 
-        self.add(ifaddr=new_ifaddr)
+        self.add(ifaddr=new_ifaddr, dad=False)
         self.remove(
             address=old_address,
             abort_bound_sessions=abort_bound_sessions,
@@ -269,9 +293,9 @@ class AddressApi:
         handler = self._resolve_handler()
         ifaddrs: list[Ip4IfAddr | Ip6IfAddr] = []
         if family in (None, AddressFamily.INET4):
-            ifaddrs.extend(handler._ip4_ifaddr)
+            ifaddrs.extend(handler.ip4_ifaddr)
         if family in (None, AddressFamily.INET6):
-            ifaddrs.extend(handler._ip6_ifaddr)
+            ifaddrs.extend(handler.ip6_ifaddr)
         return tuple(ifaddrs)
 
     @staticmethod

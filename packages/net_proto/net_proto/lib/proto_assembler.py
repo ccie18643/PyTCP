@@ -27,12 +27,12 @@ This module contains the base class for all protocol assembler classes.
 
 net_proto/lib/proto_assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import abstractmethod
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto import Proto
 from net_proto.lib.tracker import Tracker
 

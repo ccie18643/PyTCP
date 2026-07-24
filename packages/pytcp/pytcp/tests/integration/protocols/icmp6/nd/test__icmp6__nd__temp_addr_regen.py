@@ -42,10 +42,11 @@ REGEN_ADVANCE defaults to 5 seconds (RFC 8981 §3.8 formula
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__temp_addr_regen.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
+from typing import override
 
 from net_addr import Ip6Address, Ip6Network
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6TempAddress
@@ -63,6 +64,7 @@ class TestIcmp6Nd__TempAddrRegen__SysctlRegistration(NdTestCase):
     (RFC 8981 §3.8); validator accepts non-negative ints.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -148,6 +150,7 @@ class TestIcmp6Nd__TempAddrRegen__Regenerates(NdTestCase):
             router_address=ROUTER__LINK_LOCAL,
         )
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

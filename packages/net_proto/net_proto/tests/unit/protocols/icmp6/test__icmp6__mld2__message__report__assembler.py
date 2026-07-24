@@ -27,15 +27,13 @@ Module contains tests for the ICMPv6 MLDv2 Report message assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import Ip6Address
+from net_addr import Buffer, Ip6Address
 from net_proto import (
     Icmp6Assembler,
     Icmp6Mld2MessageReport,
@@ -44,7 +42,7 @@ from net_proto import (
     Icmp6Mld2ReportCode,
     Icmp6Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -303,6 +301,7 @@ class TestIcmp6Mld2MessageReportAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an assembler wrapping the parametrized MLDv2 Report message.

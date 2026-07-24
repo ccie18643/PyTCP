@@ -27,13 +27,13 @@ Integration tests for the out-of-process route control mirror.
 
 pytcp/tests/integration/ipc/test__ipc__control__route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address, Ip4Network
 from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 

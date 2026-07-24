@@ -27,13 +27,11 @@ Module contains tests for the TCP Mss (Maximum Segment Size) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__mss.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__MSS__LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpOptionMss,
     TcpOptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionMssAsserts(TestCase):
@@ -144,6 +143,7 @@ class TestTcpOptionMssAssembler(TestCase):
     _mss: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP Mss option from the parametrized 'mss' value.
@@ -346,11 +346,29 @@ class TestTcpOptionMssParser(TestCase):
             },
         },
         {
+            "_description": "TCP Mss option, buffer 'type' byte is below TcpOptionType.MSS.",
+            "_args": [b"\x01\x04\xff\xff"],
+            "_results": {
+                "error": AssertionError,
+                "error_message": (
+                    f"The TCP Mss option type must be {TcpOptionType.MSS!r}. " f"Got: {TcpOptionType.from_int(1)!r}"
+                ),
+            },
+        },
+        {
             "_description": "TCP Mss option, declared 'len' byte differs from TCP__OPTION__MSS__LEN.",
             "_args": [b"\x02\x03\xff\xff"],
             "_results": {
                 "error": TcpIntegrityError,
                 "error_message": "[INTEGRITY ERROR][TCP] The TCP Mss option length value must be 4 bytes. Got: 3",
+            },
+        },
+        {
+            "_description": "TCP Mss option, declared 'len' over TCP__OPTION__MSS__LEN (buffer present).",
+            "_args": [b"\x02\x05\xff\xff\xff"],
+            "_results": {
+                "error": TcpIntegrityError,
+                "error_message": "[INTEGRITY ERROR][TCP] The TCP Mss option length value must be 4 bytes. Got: 5",
             },
         },
         {

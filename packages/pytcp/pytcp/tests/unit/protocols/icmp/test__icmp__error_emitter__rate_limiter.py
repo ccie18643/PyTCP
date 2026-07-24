@@ -27,14 +27,12 @@ This module contains tests for the ICMP outbound-error rate limiter.
 
 pytcp/tests/unit/protocols/icmp/test__icmp__error_emitter__rate_limiter.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from pytcp.protocols.icmp.icmp__constants import (
     ICMP__ERROR__BURST,
@@ -43,6 +41,7 @@ from pytcp.protocols.icmp.icmp__constants import (
 from pytcp.protocols.icmp.icmp__error_emitter import (
     IcmpErrorRateLimiter,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class _TrackingLock:

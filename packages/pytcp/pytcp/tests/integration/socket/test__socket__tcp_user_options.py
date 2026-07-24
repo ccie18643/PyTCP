@@ -39,7 +39,7 @@ clamp on outbound SYN and the M6 R2-abort budget reduction.
 
 pytcp/tests/integration/socket/test__socket__tcp_user_options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct

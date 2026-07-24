@@ -27,13 +27,11 @@ Module contains tests for the IPv4 Router Alert option code (RFC 2113).
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__router_alert.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     IP4__OPTION__ROUTER_ALERT__LEN,
@@ -41,6 +39,7 @@ from net_proto import (
     Ip4OptionRouterAlert,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionRouterAlertAsserts(TestCase):
@@ -138,6 +137,7 @@ class TestIp4OptionRouterAlertAssembler(TestCase):
     _value: int
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionRouterAlert from the parametrized 'value'.
@@ -293,3 +293,33 @@ class TestIp4OptionRouterAlertIntegrity(TestCase):
             str(error.exception),
             msg="Unexpected assertion message for under-min buffer.",
         )
+
+
+class TestIp4OptionRouterAlertWrongType(TestCase):
+    """
+    The IPv4 Router Alert option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__router_alert__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.ROUTER_ALERT and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2113 §2.1 (Router Alert option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionRouterAlert.from_buffer(b"\x00\x04\x00\x00")
+
+    def test__ip4__option__router_alert__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.ROUTER_ALERT, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2113 §2.1 (Router Alert option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionRouterAlert.from_buffer(b"\xff\x04\x00\x00")

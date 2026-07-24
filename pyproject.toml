@@ -31,7 +31,15 @@ ignore-words-list = "ect, ether, nd, tha, assertIn, sourc"
 
 [tool.flake8]
 max-line-length = 120
-ignore = ["E203", "E266", "E701", "E704", "W503", "E731", "E741"]
+# Only codes that conflict with black or a mandatory house style are
+# ignored: E203 (black's slice-colon spacing), E266 (the '##' copyright
+# block on every file), E704 (black's inline stub bodies, 'def f(): ...'),
+# W503 (operator-first bit-field packing, source_files.md §8). E701 /
+# E731 / E741 are deliberately NOT ignored — no one-liner compound
+# statements, no 'x = lambda: ...', no ambiguous 'l' / 'I' / 'O' names.
+ignore = ["E203", "E266", "E704", "W503"]
+# 'ip4_fib' / 'ip6_fib' are annotation-only module singletons populated
+# by 'stack.init()'; pyflakes cannot see the indirect assignment.
 per-file-ignores = [
     "packages/pytcp/pytcp/stack/__init__.py:F821",
 ]
@@ -41,47 +49,214 @@ python_version = "3.14"
 strict = true
 disallow_any_unimported = true
 show_error_codes = true
-enable_error_code = ["explicit-override"]
+# Non-incremental by design. mypy's incremental cache can MASK whole-file
+# diagnostics — most notably 'unused-ignore' (warn_unused_ignores): a module
+# loaded from a warm '.mypy_cache' is not re-analysed, so a stale
+# '# type: ignore[code]' whose underlying error code has shifted (e.g.
+# [misc] -> [call-arg] across a mypy release) is silently not re-flagged.
+# The result is a non-deterministic gate: a warm cache passes 'make lint'
+# while a cold checkout (a CI fresh clone) fails on identical source.
+# Disabling the cache makes every run — the gate, CI, and ad-hoc CLI —
+# deterministic and identical to a cold check. Full non-incremental mypy is
+# ~6 s per package here; negligible for a gate that runs occasionally.
+incremental = false
+enable_error_code = [
+    "explicit-override",
+    "ignore-without-code",
+    "truthy-iterable",
+    "redundant-self",
+    "unused-awaitable",
+    "truthy-bool",
+    "redundant-expr",
+    "possibly-undefined",
+    "mutable-override",
+]
 
-# Test modules are exempt from 'explicit-override': the
-# @override-on-setUp/tearDown expectation (unit_testing.md
-# §10b.1) stays a written convention rather than a mechanical
-# gate, so the test corpus is not forced to decorate every
-# fixture hook. Source code is enforced.
-[[tool.mypy.overrides]]
-module = ["*.tests.*"]
-disable_error_code = ["explicit-override"]
+# 'explicit-override' is enforced everywhere, tests included: a
+# fixture hook ('setUp' / 'tearDown' / 'setUpClass' / …) that
+# overrides 'unittest.TestCase' MUST carry '@override' so a
+# mistyped hook name (which would silently never run) is a
+# type error, not a latent state-leak (unit_testing.md §10b.1).
 
-[tool.pylint.master]
-max-line-length = 120
-disable = """
-    super-init-not-called,
-    no-name-in-module,
-    import-error,
-    dangerous-default-value,
-    too-many-instance-attributes,
-    too-many-public-methods,
-    too-many-arguments,
-    too-many-locals,
-    too-many-branches,
-    too-many-lines,
-    too-many-boolean-expressions,
-    too-many-positional-arguments,
-    too-many-statements,
-    too-many-return-statements,
-    too-few-public-methods,
-    import-outside-toplevel,
-    fixme,
-    multiple-statements,
-    invalid-name,
-    redefined-builtin,
-    superfluous-parens,
-    expression-not-assigned,
-    no-member,
-    too-many-ancestors,
-    redefined-outer-name,
-    global-statement,
-    wrong-import-order,
-    consider-using-with,
-    abstract-class-instantiated
-"""
+[tool.pyright]
+# VS Code's Pylance and the 'pyright' CLI both read this. It exists to
+# make the editor RESOLVE the editable-installed packages (net_addr /
+# net_proto / pytcp live under packages/<x>/<x>) and the venv, so the
+# editor stops reporting spurious "unresolved import" / "undefined
+# builtin" noise. 'make lint' now runs pyright reading this block (see
+# the Makefile '<<< PYRIGHT' step), so the CLI gate matches exactly what
+# Pylance shows in the editor. mypy strict stays the type authority;
+# pyright/mypy diverge on patterns mypy accepts, so the inference rules
+# below are dialed down to keep pyright from contradicting 'make lint'.
+pythonVersion = "3.14"
+venvPath = "."
+venv = "venv"
+extraPaths = ["packages/net_addr", "packages/net_proto", "packages/pytcp", "."]
+include = [
+    "packages/net_addr/net_addr",
+    "packages/net_proto/net_proto",
+    "packages/pytcp/pytcp",
+    "examples",
+    "tests_runner.py",
+]
+exclude = ["**/__pycache__", "**/node_modules", "venv"]
+typeCheckingMode = "basic"
+# Type-inference rules where pyright diverges from mypy (the gate's
+# authority — 'make lint' runs mypy strict) are silenced so the CLI
+# gate and the editor never contradict mypy; resolution / undefined-name
+# / syntax / reportReturnType checks stay ON.
+reportUnusedExpression = "none"      # pervasive `__debug__ and log(...)` short-circuit-logging idiom
+reportArgumentType = "none"         # mypy narrows generics/unions pyright cannot (e.g. route.py Route[A,N] isinstance-narrowing)
+reportAttributeAccessIssue = "none"  # test-side reach-throughs into base-typed sockets/handlers; mypy covers real cases
+reportCallIssue = "none"            # test-side; mypy-covered
+reportAbstractUsage = "none"        # tests deliberately instantiate abstract classes (with `# type: ignore[abstract]`)
+reportPrivateImportUsage = "none"   # net_proto re-export shape pyright disagrees with; mypy's no_implicit_reexport is authority
+
+# Single source of truth for pylint — every invocation reads this:
+# 'make lint', an ad-hoc 'pylint <file>', and the IDE/Pylance pylint
+# integration all behave identically. The Makefile gate runs 'pylint'
+# with NO check flags, so this config alone decides what fires.
+#
+# The gate is a small allowlist of checks NOT already covered by
+# flake8 / mypy / black; 'disable = all' turns off everything else
+# (pylint's many noisy / opinionated checks the project does not
+# enforce). Enabled checks:
+#   protected-access        no cross-class '_private' reach-through
+#                           (source_files.md §5.2); split-class
+#                           subpackages (protocols/tcp/fsm,
+#                           protocols/tcp/session, runtime/packet_handler)
+#                           carry their own file-level disable, honored here
+#   raise-missing-from      mandatory exception chaining 'raise X from err'
+#                           (net_proto.md §9.2, python_features.md §10a)
+#   dangerous-default-value no mutable default args ('= []' / '= {}')
+#   cell-var-from-loop      closure-over-loop-variable bug
+#   useless-super-delegation / super-with-arguments  redundant super() forms
+#   unused-import           genuinely-unused imports AND — uniquely — a
+#                           runtime import used only inside a STRING
+#                           annotation (an unnecessary quote that should
+#                           be unquoted, typing.md §20); flake8's F401
+#                           reads inside string annotations and misses
+#                           this, pylint W0611 does not. Does NOT fire on
+#                           TYPE_CHECKING imports used in string
+#                           annotations (the legit circular-import case)
+#                           or on '__all__' re-exports.
+#
+# Tests are exempt — they reach across the private boundary by design
+# (source_files.md §5.2) — via 'ignore-paths', so even a direct
+# 'pylint <test_file>' / IDE-opened test file self-exempts.
+[tool.pylint.main]
+ignore-paths = [".*/tests/.*"]
+
+[tool.pylint.messages_control]
+disable = ["all"]
+enable = [
+    # --- Primary gate: high-signal checks NOT covered by flake8 / mypy
+    # / black (see the rationale comment above).
+    "protected-access",
+    "raise-missing-from",
+    "dangerous-default-value",
+    "cell-var-from-loop",
+    "useless-super-delegation",
+    "super-with-arguments",
+    "unused-import",
+    "unspecified-encoding",
+    # --- Real-bug regression guards: each fires zero times on the
+    # current codebase, so they cost nothing today and exist purely to
+    # reject a future mistake. None overlaps mypy/flake8 (they catch
+    # logic/runtime bugs a type checker structurally cannot — mutating a
+    # container mid-iteration, an always-true 'assert (a, b)' tuple, a
+    # self-assignment, an unreachable branch, a swallowed 'finally'
+    # exception, etc.). Verified clean; if one ever fires it has found a
+    # real defect.
+    "modified-iterating-list",
+    "modified-iterating-dict",
+    "modified-iterating-set",
+    "duplicate-key",
+    "self-assigning-variable",
+    "comparison-with-itself",
+    "comparison-with-callable",
+    "nan-comparison",
+    "assert-on-tuple",
+    "assert-on-string-literal",
+    "lost-exception",
+    "unreachable",
+    "undefined-loop-variable",
+    "function-redefined",
+    "duplicate-bases",
+    "unexpected-special-method-signature",
+    "bad-staticmethod-argument",
+    "eval-used",
+    "exec-used",
+    "used-before-assignment",
+    "return-in-init",
+    "nonexistent-operator",
+    "star-needs-assignment-target",
+    "unbalanced-tuple-unpacking",
+    "bad-format-string",
+    "format-string-without-interpolation",
+    # Catches positional args whose names look swapped vs the callee's
+    # parameters. The two deliberate modular-comparison swaps in
+    # tcp__seq.py (gt32 := lt32(b, a), ge32 := le32(b, a)) carry a
+    # line-level '# pylint: disable=arguments-out-of-order'.
+    "arguments-out-of-order",
+    # The two below overlap mypy (truthy-bool / call checking) and each
+    # has one pylint-only false positive carrying a line-level disable:
+    #   using-constant-test  socket__dropin.py 'if self.closed:' — an
+    #                        inherited io.IOBase bool property pylint
+    #                        mis-reads as constant.
+    #   not-callable         ipc__remote_error.py 'builtin(...)' — a class
+    #                        verified callable by an issubclass() guard
+    #                        pylint does not narrow through.
+    "using-constant-test",
+    "not-callable",
+    # Flags every broad 'except Exception'. The legitimate uses — daemon
+    # thread-loop guards and IPC/control RPC-dispatch boundaries that
+    # must not let one failure kill the stack (the kernel/syscall-boundary
+    # model) — each carry a line-level disable with rationale; a finalizer
+    # likewise (it may not raise). This keeps broad catches confined to
+    # audited boundaries and rejects new unjustified ones.
+    "broad-exception-caught",
+    # Dead parameters — a class neither mypy nor flake8 flags. The lone
+    # exempt site is the '_phtx_ethernet' TYPE_CHECKING signature-only
+    # stub (carries a line-level disable). A genuinely-ignored param
+    # elsewhere takes a '_' prefix (pylint auto-exempts those).
+    "unused-argument",
+]
+
+# import-linter — enforces the architectural import contracts that mypy /
+# pylint / pyright do NOT check. 'make lint' runs it (see the Makefile
+# '<<< IMPORT-LINTER' step). The load-bearing invariant is the three
+# packages' dependency DIRECTION: they ship as three separate PyPI dists
+# (PyTCP-net_addr / PyTCP-net_proto / PyTCP) with a strict chain, so a
+# stray upward import would silently give a published wheel a dependency
+# it must not have. The 'layers' contract lists the packages top-to-bottom:
+# 'pytcp' may import 'net_proto' / 'net_addr'; 'net_proto' may import
+# 'net_addr' but NOT 'pytcp'; 'net_addr' may import neither.
+[tool.importlinter]
+root_packages = ["net_addr", "net_proto", "pytcp"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Package layering (net_addr < net_proto < pytcp)"
+type = "layers"
+layers = [
+    "pytcp",
+    "net_proto",
+    "net_addr",
+]
+
+# net_addr's selling point is that 'import net_addr' is stdlib-only — the
+# only third-party import is 'click', confined to the opt-in CLI helpers in
+# 'net_addr.click_types' (lazily consumed via the 'PyTCP-net_addr[cli]'
+# extra). This contract keeps it that way: no other net_addr module may
+# import click.
+[[tool.importlinter.contracts]]
+name = "net_addr stays stdlib-only (click confined to click_types)"
+type = "forbidden"
+source_modules = ["net_addr"]
+forbidden_modules = ["click"]
+ignore_imports = [
+    "net_addr.click_types -> click",
+    # Tests are dev-only / not shipped; the click_types test needs click.
+    "net_addr.tests.unit.test__click_types -> click",
+]

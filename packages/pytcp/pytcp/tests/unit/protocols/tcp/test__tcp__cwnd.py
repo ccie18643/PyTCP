@@ -49,7 +49,7 @@ The tests cover the natural edge cases of each formula:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__cwnd.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -624,3 +624,121 @@ class TestModuleConstants(TestCase):
             14600,
             msg="RFC 6928 §2 specifies a 14600-byte floor (10 * canonical 1460 MSS).",
         )
+
+
+class TestCwndMutationGoldens(TestCase):
+    """
+    Exact-value and boundary goldens closing the cwnd mutation
+    survivors: the CA per-ack increment on a non-power-of-two cwnd
+    (so '+' is distinguishable from '|' / '^'), the ECN ssthresh
+    floor division on an odd flight size (so '//' is distinguishable
+    from '/'), and the positive-argument guards at their exact
+    boundary (value 1 accepted, negative rejected).
+    """
+
+    def test__cwnd__ca_increment_non_power_of_two_cwnd_is_additive(self) -> None:
+        """
+        Ensure the CA increment adds (not bit-ORs / XORs) to cwnd: at
+        cwnd=100001 the low bits overlap the increment so '+' yields
+        100022 where '|' / '^' would not.
+
+        Reference: RFC 5681 §3.1 (cwnd += SMSS*SMSS/cwnd per ACK).
+        """
+
+        self.assertEqual(
+            cwnd_grow_per_ack(100001, 50000, 1460, 1460),
+            100022,
+            msg="CA increment at cwnd=100001 must be additive: 100001 + 21 = 100022.",
+        )
+
+    def test__cwnd__ecn_ssthresh_floor_divides_on_odd_flight(self) -> None:
+        """
+        Ensure the ECN ssthresh uses integer floor division: an odd
+        flight size that is not a multiple of 20 yields the floored
+        85000, never the true-division 85000.85.
+
+        Reference: RFC 8511 §3 (ABE: ssthresh = flight_size * 0.85).
+        """
+
+        result = compute_ecn_event_ssthresh(100001, 1460)
+        self.assertEqual(
+            result,
+            85000,
+            msg="ECN ssthresh for odd flight 100001 must floor to 85000.",
+        )
+        self.assertIsInstance(
+            result,
+            int,
+            msg="ECN ssthresh must be an int (floor division), not a float.",
+        )
+
+    def test__cwnd__loss_ssthresh_floor_divides_on_odd_flight(self) -> None:
+        """
+        Ensure the loss ssthresh uses integer floor division: an odd
+        flight size yields the floored half, never a float.
+
+        Reference: RFC 5681 §3.1 (ssthresh = flight_size / 2).
+        """
+
+        result = compute_loss_event_ssthresh(100001, 1460)
+        self.assertEqual(
+            result,
+            50000,
+            msg="Loss ssthresh for odd flight 100001 must floor to 50000.",
+        )
+        self.assertIsInstance(
+            result,
+            int,
+            msg="Loss ssthresh must be an int (floor division), not a float.",
+        )
+
+    def test__cwnd__positive_guards_accept_value_one(self) -> None:
+        """
+        Ensure every positive-argument guard accepts its exact lower
+        boundary of 1 (a guard mutated from '> 0' to '> 1' would reject
+        it).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            cwnd_grow_per_ack(1, 1, 0, 1),
+            2,
+            msg="cwnd_grow_per_ack must accept cwnd=ssthresh=smss=1.",
+        )
+        self.assertEqual(
+            compute_loss_event_ssthresh(1, 1),
+            2,
+            msg="compute_loss_event_ssthresh must accept flight_size=smss=1.",
+        )
+        self.assertEqual(
+            compute_ecn_event_ssthresh(1, 1),
+            2,
+            msg="compute_ecn_event_ssthresh must accept flight_size=smss=1.",
+        )
+        self.assertEqual(
+            initial_window(1),
+            10,
+            msg="initial_window must accept smss=1.",
+        )
+
+    def test__cwnd__positive_guards_reject_negative(self) -> None:
+        """
+        Ensure every positive-argument guard rejects a negative value
+        (a guard mutated from '> 0' to '!= 0' would wrongly accept it).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(AssertionError):
+            cwnd_grow_per_ack(-1, 50000, 1460, 1460)
+        with self.assertRaises(AssertionError):
+            cwnd_grow_per_ack(100000, -1, 1460, 1460)
+        with self.assertRaises(AssertionError):
+            cwnd_grow_per_ack(100000, 50000, 1460, -1)
+        with self.assertRaises(AssertionError):
+            compute_loss_event_ssthresh(100000, -1)
+        with self.assertRaises(AssertionError):
+            compute_ecn_event_ssthresh(100000, -1)
+        with self.assertRaises(AssertionError):
+            initial_window(-1)

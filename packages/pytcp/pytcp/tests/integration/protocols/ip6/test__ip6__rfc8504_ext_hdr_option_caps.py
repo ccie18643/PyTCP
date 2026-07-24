@@ -37,13 +37,13 @@ path drops the packet with the new
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc8504_ext_hdr_option_caps.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
+from net_addr import Buffer
 from net_proto import IpProto
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
 from net_proto.protocols.raw.raw__assembler import RawAssembler

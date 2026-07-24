@@ -27,10 +27,8 @@ This package contains the stack components and global structures.
 
 pytcp/stack/__init__.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-from __future__ import annotations
 
 import fcntl
 import os
@@ -39,33 +37,46 @@ import struct
 import sys
 import threading
 from enum import IntFlag
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-from net_addr import Ip4Address, Ip6Address, MacAddress
+from net_addr import (
+    Ip4Address,
+    Ip4IfAddr,
+    Ip4Network,
+    Ip6Address,
+    Ip6IfAddr,
+    Ip6Network,
+    MacAddress,
+)
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
+from pytcp.lib.plpmtud import PmtuSearch
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
 from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
+from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
 from pytcp.protocols.tcp.tcp__stack import TcpStack
-from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler import (
+    PacketHandlerL2,
+    PacketHandlerL3,
+    PacketHandlerLoopback,
+)
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.packet__socket_table import PacketSocketTable
+from pytcp.runtime.socket.ping__socket import PingSocket
+from pytcp.runtime.socket.socket_table import SocketTable
 from pytcp.runtime.timer import Timer
-from pytcp.socket.packet__socket_table import PacketSocketTable
-from pytcp.socket.socket_table import SocketTable
+from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
+from pytcp.stack.membership6 import Membership6Api
 from pytcp.stack.neighbor import NeighborApi
+from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi
-
-if TYPE_CHECKING:
-    from net_addr import Ip4IfAddr, Ip4Network, Ip6IfAddr, Ip6Network
-    from pytcp.lib.plpmtud import PmtuSearch
-    from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal
-    from pytcp.runtime.fib import RouteTable
-
+from pytcp.stack.socket_introspect import SocketIntrospectApi
 
 assert sys.version_info >= (
     3,
@@ -101,7 +112,7 @@ IFF_TAP = TunTapFlag.IFF_TAP
 IFF_NO_PI = TunTapFlag.IFF_NO_PI
 
 # PyTCP code metadata.
-PYTCP_VERSION = "ver 3.0.7"
+PYTCP_VERSION = "ver 3.0.8"
 GITHUB_REPO = "https://github.com/ccie18643/PyTCP"
 
 # RFC 6528 §3 Initial Sequence Number secret. Generated once at
@@ -134,7 +145,7 @@ IP6__FLOW_SECRET: bytes = secrets.token_bytes(16)
 TCP__FASTOPEN_SECRET: bytes = secrets.token_bytes(16)
 
 # RFC 6056 §3.3.3 Algorithm 3 port-selection secret. Used
-# by 'pytcp.socket.socket__bind_helpers.pick_local_port_for' to compute
+# by 'pytcp.runtime.socket.socket__bind_helpers.pick_local_port_for' to compute
 # a per-(local_ip, remote_ip, remote_port) BLAKE2s-keyed
 # offset into the ephemeral port range so the source port
 # for a TCP connect() is unpredictable to an off-path
@@ -167,13 +178,24 @@ TCP__FASTOPEN_CACHE_MAX_SIZE: int = 1024
 # Interface configuration.
 INTERFACE__TAP__MTU = 1500
 INTERFACE__TUN__MTU = 1500
+# The loopback ('lo') interface carries no wire framing, so its MTU is
+# the uint16 wire ceiling (the largest IPv4 'Total Length', RFC 791
+# §3.1; also the Link API's LINK_API__MTU__MAX). Linux's 'lo' uses
+# 65536, but PyTCP caps at 65535 so an internally-delivered datagram
+# still fits the IPv4 length field.
+INTERFACE__LOOPBACK__MTU = 65535
 
 # Addresses configuration.
 MAC_ADDRESS: str = "02:00:00:{x}{x}:{x}{x}:{x}{x}"
-IP4_ADDRESS = None
-IP4_GATEWAY = None
-IP6_ADDRESS = None
-IP6_GATEWAY = None
+# Boot-config host address: the canonical 'addr/prefix' string an
+# operator sets before 'init()'; consumed as the argument to
+# 'Ip4IfAddr(...)' / 'Ip6IfAddr(...)' in 'lifecycle.init'. Boot
+# gateway: a concrete address passed straight to
+# 'install_boot_default_routes'.
+IP4_ADDRESS: str | None = None
+IP4_GATEWAY: Ip4Address | None = None
+IP6_ADDRESS: str | None = None
+IP6_GATEWAY: Ip6Address | None = None
 
 # Protocol support configuration.
 IP6__SUPPORT = True
@@ -251,6 +273,7 @@ STACK__EPHEMERAL_PORT_RANGE__HIGH = 61000
 # per-link MTUs, hard on/off support flags, and logger config
 # are deliberately NOT registered — see §5.1 of that doc for
 # the rationale.
+from pytcp.stack import sysctl  # noqa: E402, F401
 from pytcp.stack.sysctl import get as _sysctl_get  # noqa: E402
 from pytcp.stack.sysctl import is_int_in_range as _sysctl_is_int_in_range  # noqa: E402
 from pytcp.stack.sysctl import is_positive_int as _sysctl_is_positive_int  # noqa: E402
@@ -437,6 +460,33 @@ neighbor: NeighborApi
 # 'mock__init()' alongside 'address' / 'link' / 'neighbor'; same
 # reconstruct-per-test lifecycle, so it needs no snapshot/restore.
 membership: MembershipApi
+# IPv6 Membership API — the MLDv2 analogue of 'membership' (IPv6 group
+# join / leave / source-filter / list) over each interface's multicast
+# listen set. Mirrors the Linux 'IPV6_JOIN_GROUP' / 'IPV6_LEAVE_GROUP' /
+# 'MCAST_JOIN_SOURCE_GROUP' family socket options and 'ip maddr'. Same
+# reconstruct-per-test lifecycle as 'membership', so it needs no
+# snapshot/restore.
+membership6: Membership6Api
+# Default upstream DNS server for the stub resolver. Phase B2 (the
+# 'pytcp daemon --dns-server' CLI arg) overrides this at 'init()'.
+STACK__DNS_SERVER: Ip4Address = Ip4Address("9.9.9.9")
+# Resolver API — DNS resolution control surface (the Linux
+# 'getaddrinfo' analogue) over the daemon-side 'DnsResolver'.
+# Constructed by 'init()' / 'mock__init()' alongside 'address' /
+# 'link' / 'neighbor' / 'membership'; same reconstruct-per-test
+# lifecycle, so it needs no snapshot/restore.
+resolver: ResolverApi
+# Socket introspection API — read-only socket-list observation
+# surface (the Linux 'ss' analogue) over the open-socket table.
+# Constructed by 'init()' / 'mock__init()'; stateless (it reads the
+# global socket table at call time), so it needs no snapshot/restore.
+ss: SocketIntrospectApi
+# Per-interface activity introspection API — read-only "what is the
+# stack doing right now" surface (DHCPv4 FSM state, DAD-in-progress IPv6
+# addresses). Constructed by 'init()' / 'mock__init()'; stateless (it
+# reads the live interface table at call time), so it needs no
+# snapshot/restore.
+activity: ActivityIntrospectApi
 # Host-mode routing table (FIB) — Phase 1 of
 # 'docs/refactor/routing_table_host_mode.md'. One per address
 # family. Reconstructed fresh by 'init()' / 'mock__init()'
@@ -468,7 +518,7 @@ dhcp6_client: Dhcp6Client | None = None
 # 1 lands the slot only — the subsystem is not yet instantiated
 # by 'init()'. The DHCP-fallback wiring lands in Phase 4 of the
 # RFC 3927 track (docs/refactor/rfc3927_link_local_autoconfig.md).
-link_local: "Ip4LinkLocal | None" = None
+link_local: Ip4LinkLocal | None = None
 
 # Stack shared data.
 stack_initialized: bool = False
@@ -489,6 +539,13 @@ sockets: SocketTable = SocketTable()
 # bound sockets. Module-level singleton (like 'sockets'); snapshotted /
 # cleared / restored by 'NetworkTestCase' per test.
 packet_sockets: PacketSocketTable = PacketSocketTable()
+# ICMP Echo ('ping') datagram-socket registry — Linux 'SOCK_DGRAM +
+# IPPROTO_ICMP / IPPROTO_ICMPV6'. Keyed by '(address family, ICMP id)';
+# the id is unique per family, so the ICMP Echo Reply handler demuxes a
+# reply to its owning socket by id (Linux keeps ping sockets in their own
+# 'ping_table', separate from 'sockets'). Module-level singleton;
+# snapshotted / cleared / restored by 'NetworkTestCase' per test.
+icmp_echo_sockets: dict[tuple[AddressFamily, int], PingSocket] = {}
 # RFC 1191 §3 / RFC 8201 §4 per-destination Path-MTU cache. Keyed
 # by remote IP (v4 or v6); value is the most recently learned next-
 # hop MTU. Populated by ICMP Frag-Needed / Packet-Too-Big handlers
@@ -655,6 +712,29 @@ def has_route_to(destination: Ip4Address | Ip6Address, /) -> bool:
     return _egress_handler_via_fib(destination) is not None
 
 
+def is_ip4_broadcast(destination: Ip4Address | Ip6Address, /) -> bool:
+    """
+    Return whether 'destination' is an IPv4 broadcast address the
+    SO_BROADCAST gate must guard: the limited broadcast
+    255.255.255.255, or the subnet-directed broadcast (the all-ones
+    host) of a directly-attached IPv4 network on any interface —
+    which Linux marks 'RTN_BROADCAST' in 'ip_route_output'. The UDP
+    send path consults this to raise 'EACCES' when 'SO_BROADCAST' is
+    unset (Linux 'udp_sendmsg' parity).
+
+    The limited broadcast is recognised unconditionally so the gate
+    holds even in a reduced context (no interfaces installed); the
+    directed-broadcast set is read from each interface's public
+    'ip4_broadcast' introspection surface.
+    """
+
+    if not isinstance(destination, Ip4Address):
+        return False
+    if destination.is_limited_broadcast:
+        return True
+    return any(destination in handler.ip4_broadcast for handler in interfaces.values())
+
+
 def egress_packet_handler(destination: Ip4Address | Ip6Address, /) -> PacketHandlerL2 | PacketHandlerL3:
     """
     Return the packet handler for the interface that egresses
@@ -712,7 +792,7 @@ def egress_interface_mtu(destination: Ip4Address | Ip6Address, /) -> int | None:
     if "ip4_fib" not in globals() or "ip6_fib" not in globals():
         return None
     handler = _egress_handler_via_fib(destination)
-    return handler._interface_mtu if handler is not None else None
+    return handler.interface_mtu if handler is not None else None
 
 
 def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None:
@@ -727,7 +807,7 @@ def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None
     PLPMTUD cold-start path reads this so 'TcpSession.__init__' can
     resolve the per-interface 'tcp.mtu_probing' / 'tcp.base_mss'
     sysctls through 'sysctl_iface.get_for_iface(..., ifname)' without
-    reaching into 'packet_handler._interface_name' directly — keeping
+    reaching into the packet handler's interface name directly — keeping
     the Phase-3 boundary clean.
 
     Resolution mirrors 'egress_interface_mtu' — FIB 'oif', or None.
@@ -736,7 +816,53 @@ def egress_interface_name(destination: Ip4Address | Ip6Address, /) -> str | None
     if "ip4_fib" not in globals() or "ip6_fib" not in globals():
         return None
     handler = _egress_handler_via_fib(destination)
-    return handler._interface_name if handler is not None else None
+    return handler.interface_name if handler is not None else None
+
+
+def select_local_ip6_source(destination: Ip6Address, /) -> Ip6Address:
+    """
+    Select the IPv6 source address for a stack-originated packet to
+    'destination', honoring the egress interface: resolve the egress
+    interface via the FIB, then run RFC 6724 source selection over THAT
+    interface's addresses (its 'select_ip6_source'). Returns the
+    unspecified address when the routing plane is down, no egress
+    interface resolves, or no acceptable source is found.
+
+    Egress-aware selection is what keeps a multi-homed host from sourcing
+    a packet with an address the egress interface does not own — the bug
+    where a global address from interface A was attached to a datagram
+    the FIB egresses on interface B, which B then dropped because it does
+    not own A's address.
+    """
+
+    if "ip4_fib" not in globals() or "ip6_fib" not in globals():
+        return Ip6Address()
+    handler = _egress_handler_via_fib(destination)
+    if handler is not None:
+        source = handler.select_ip6_source(destination)
+        if source is not None:
+            return source
+    return Ip6Address()
+
+
+def select_local_ip4_source(destination: Ip4Address, /) -> Ip4Address:
+    """
+    Select the IPv4 source address for a stack-originated packet to
+    'destination', honoring the egress interface (its
+    'select_ip4_source'). The IPv4 companion to 'select_local_ip6_source'
+    — see there for the multi-homed rationale. Returns the unspecified
+    address when the routing plane is down, no egress interface resolves,
+    or no acceptable source is found.
+    """
+
+    if "ip4_fib" not in globals() or "ip6_fib" not in globals():
+        return Ip4Address()
+    handler = _egress_handler_via_fib(destination)
+    if handler is not None:
+        source = handler.select_ip4_source(destination)
+        if source is not None:
+            return source
+    return Ip4Address()
 
 
 def local_ip4_hosts() -> tuple[Ip4IfAddr, ...]:
@@ -821,6 +947,23 @@ def connected_ip6_networks() -> tuple[tuple[Ip6Network, int], ...]:
         for host in handler.ip6_host:
             networks.append((host.network, ifindex))
     return tuple(networks)
+
+
+def loopback_handler() -> PacketHandlerLoopback | None:
+    """
+    Return the registered loopback ('lo') interface handler, or None if
+    no loopback interface is registered (e.g. a bare unit-test harness
+    that did not enable it). Resolves by interface layer — the loopback
+    handler is not pinned to a fixed ifindex, so consumers must not
+    assume 'interfaces[1]'. Read surface for the IP-TX loopback
+    diversion; the '_lo_ring' delivery queue stays private to the
+    handler (reach it via 'enqueue_loopback').
+    """
+
+    for handler in interfaces.values():
+        if isinstance(handler, PacketHandlerLoopback):
+            return handler
+    return None
 
 
 # RFC 1812 §4.3.2.8 / RFC 4443 §2.4(f) outbound ICMP error rate

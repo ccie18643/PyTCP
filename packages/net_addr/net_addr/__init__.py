@@ -27,11 +27,12 @@ This package contains classes used to represent network addresses.
 
 net_addr/__init__.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING
 
+from net_addr.buffer import Buffer
 from net_addr.errors import (
     IfAddrError,
     IfAddrFormatError,
@@ -156,9 +157,10 @@ def __dir__() -> list[str]:
     return sorted(__all__)
 
 
-__version__: str = "3.0.7"
+__version__: str = "3.0.8"
 
 __all__ = [
+    "Buffer",
     "ClickTypeIfAddr",
     "ClickTypeIp4Address",
     "ClickTypeIp4IfAddr",

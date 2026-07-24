@@ -27,10 +27,10 @@ Module contains tests for the ICMPv6 unknown message assembler & parser asserts.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__unknown__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -48,6 +48,7 @@ class TestIcmp6MessageUnknownAsserts(TestCase):
     The ICMPv6 unknown message constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid kwargs baseline (unknown type 255, unknown code 255)

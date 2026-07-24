@@ -43,14 +43,14 @@ structural protocol error).
 
 pytcp/ipc/ipc__message.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass
 from typing import Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__enums import IpcMessageKind
 from pytcp.ipc.ipc__errors import IpcMessageError
 

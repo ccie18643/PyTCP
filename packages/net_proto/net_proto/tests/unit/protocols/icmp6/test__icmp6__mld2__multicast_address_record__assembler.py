@@ -28,19 +28,18 @@ assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__multicast_address_record__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import (
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -399,6 +398,7 @@ class TestIcmp6Mld2MulticastAddressRecordAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the parametrized MLDv2 Multicast Address Record instance.

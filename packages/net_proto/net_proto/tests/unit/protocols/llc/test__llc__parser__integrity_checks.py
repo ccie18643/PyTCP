@@ -31,14 +31,13 @@ valid header.
 
 net_proto/tests/unit/protocols/llc/test__llc__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import LlcControl, LlcIntegrityError, LlcParser, LlcSap, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

@@ -37,14 +37,13 @@ the correct codes and pointer offsets.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rx__chain_walker.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_addr import Ip6Address
+from net_addr import Buffer, Ip6Address
 from net_proto import Icmp6MessageParameterProblem, IpProto
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
 from net_proto.protocols.ip6_hbh.ip6_hbh__assembler import Ip6HbhAssembler

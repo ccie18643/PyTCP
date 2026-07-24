@@ -27,9 +27,10 @@ Module contains operation tests for the DHCPv6 packet parser.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -77,6 +78,7 @@ class TestDhcp6ParserOperation(TestCase):
     The DHCPv6 packet parser operation tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse the reference DHCPv6 REPLY frame.
@@ -232,6 +234,7 @@ class TestDhcp6ParserOptionAccessors(TestCase):
     surface, not only on the bare container.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse a REPLY frame carrying one of every value-bearing option.

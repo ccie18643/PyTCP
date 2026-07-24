@@ -28,13 +28,11 @@ option (RFC 2132 §9.10) wire-format codec.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__max_msg_size.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     UINT_16__MAX,
@@ -42,6 +40,7 @@ from net_proto import (
     Dhcp4OptionMaxMsgSize,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionMaxMsgSizeAsserts(TestCase):
@@ -140,6 +139,7 @@ class TestDhcp4OptionMaxMsgSizeAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the SUT.

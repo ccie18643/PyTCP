@@ -31,7 +31,7 @@ path rather than 'SimpleNamespace' stand-ins.
 
 pytcp/tests/lib/dhcp4_mock_server.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections import deque
@@ -388,7 +388,7 @@ class Dhcp4MockServer:
 def autospec_dhcp4_socket() -> MagicMock:
     """
     Build a 'create_autospec'-d, 'spec_set'-locked stand-in for
-    'pytcp.socket.socket'. Returned mock is callable (mirroring the
+    'pytcp.runtime.socket.socket'. Returned mock is callable (mirroring the
     socket factory) and yields an instance-shape autospec on each
     call. Wire 'Dhcp4MockServer.wire(mock_socket)' into the
     returned-value instance.
@@ -400,7 +400,7 @@ def autospec_dhcp4_socket() -> MagicMock:
     from typing import cast
     from unittest.mock import create_autospec
 
-    from pytcp.socket import socket as _pytcp_socket
+    from pytcp.runtime.socket import socket as _pytcp_socket
 
     factory: MagicMock = cast(MagicMock, create_autospec(_pytcp_socket, spec_set=True))
     instance: MagicMock = cast(MagicMock, create_autospec(_pytcp_socket, spec_set=True, instance=True))

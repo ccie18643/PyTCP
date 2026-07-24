@@ -27,7 +27,7 @@ This module contains the IPv6 packet header.
 
 net_proto/protocols/ip6/ip6__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,8 +35,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip6Address, IpVersion
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address, IpVersion
 from net_proto.lib.enums import IpProto
 from net_proto.lib.int_checks import (
     UINT_16__MAX,

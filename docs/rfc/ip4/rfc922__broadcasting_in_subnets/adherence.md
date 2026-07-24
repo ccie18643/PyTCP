@@ -112,14 +112,14 @@ the all-subnets enumeration / forwarding logic is router work.
   `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py`
   Verifies `_ip4_src in _ip4_broadcast` → replaced with the
   matching host's primary address per the `network.broadcast`
-  lookup (`packet_handler__ip4__tx.py:310-321`).
+  lookup (`packet_handler__ip4__tx.py:411-425`).
 
 **Status:** locked in.
 
 ### TX-side subnet broadcast destination gate (`ip4.allow_broadcast`)
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc919AllowBroadcast::test__phtx_ip4__network_broadcast_dst_default_deny__dropped`
+  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestIp4TxRfc919AllowBroadcast::test__ip4__tx__network_broadcast_dst_default_deny__dropped`
   Drives an outbound datagram to the subnet-directed
   broadcast `10.0.1.255` and verifies the gate drops with
   `DROPPED__IP4__DST_BROADCAST_DISALLOWED`. The companion

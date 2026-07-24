@@ -27,13 +27,14 @@ This module contains tests for the NetProto ProtoEnum base enum class.
 
 net_proto/tests/unit/lib/test__lib__proto_enum.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import enum
 import os
 import subprocess
 import sys
+from typing import override
 from unittest import TestCase
 
 from net_proto.lib.proto_enum import ProtoEnum, ProtoEnumByte, ProtoEnumWord
@@ -169,6 +170,7 @@ class TestNetProtoLibProtoEnumByteBasics(TestCase):
     The NetProto ProtoEnumByte known-member tests.
     """
 
+    @override
     def setUp(self) -> None:
         class ByteEnum(ProtoEnumByte):
             """Test-scoped byte enum."""
@@ -246,6 +248,7 @@ class TestNetProtoLibProtoEnumByteFromInt(TestCase):
     The NetProto ProtoEnumByte from_int() tests.
     """
 
+    @override
     def setUp(self) -> None:
         class ByteEnum(ProtoEnumByte):
             KNOWN = 5
@@ -318,6 +321,7 @@ class TestNetProtoLibProtoEnumByteFromBytes(TestCase):
     The NetProto ProtoEnumByte from_bytes() tests.
     """
 
+    @override
     def setUp(self) -> None:
         class ByteEnum(ProtoEnumByte):
             A = 0x10
@@ -374,6 +378,7 @@ class TestNetProtoLibProtoEnumWordBasics(TestCase):
     The NetProto ProtoEnumWord known-member tests.
     """
 
+    @override
     def setUp(self) -> None:
         class WordEnum(ProtoEnumWord):
             HEAD = 0x1234
@@ -427,6 +432,7 @@ class TestNetProtoLibProtoEnumWordFromInt(TestCase):
     The NetProto ProtoEnumWord from_int() tests.
     """
 
+    @override
     def setUp(self) -> None:
         class WordEnum(ProtoEnumWord):
             KNOWN = 0x0800
@@ -475,6 +481,7 @@ class TestNetProtoLibProtoEnumWordFromBytes(TestCase):
     The NetProto ProtoEnumWord from_bytes() tests.
     """
 
+    @override
     def setUp(self) -> None:
         class WordEnum(ProtoEnumWord):
             A = 0x0102

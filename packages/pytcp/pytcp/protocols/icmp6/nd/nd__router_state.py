@@ -39,7 +39,7 @@ separate phase tracked outside §12.
 
 pytcp/protocols/icmp6/nd/nd__router_state.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

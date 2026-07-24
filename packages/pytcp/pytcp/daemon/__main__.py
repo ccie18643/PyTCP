@@ -32,7 +32,7 @@ to 'run_daemon'. Needs a TAP/TUN interface and the privileges to open it.
 
 pytcp/daemon/__main__.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import argparse
@@ -94,9 +94,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="AF_UNIX control-socket path (default: $XDG_RUNTIME_DIR/pytcp.sock).",
     )
     parser.add_argument(
+        "-i",
         "--interface",
-        default="tap7",
-        help="TAP/TUN interface to bind the stack to (default: tap7).",
+        action="append",
+        metavar="INTERFACE",
+        help="TAP/TUN interface to bind the stack to; repeat for a multi-homed host (default: tap7).",
     )
     parser.add_argument(
         "--mac-address",
@@ -128,6 +130,18 @@ def build_parser() -> argparse.ArgumentParser:
         dest="ip6_support",
         help="Disable IPv6 support.",
     )
+    parser.add_argument(
+        "--capture",
+        metavar="PATH",
+        default=None,
+        help="Capture frames to PATH ('-' for stdout) from the stack's own boot "
+        "(DAD / ARP ACD / DHCP). Decoded tcpdump-style text unless --capture-pcap.",
+    )
+    parser.add_argument(
+        "--capture-pcap",
+        action="store_true",
+        help="Write the --capture file as a libpcap stream ('tshark -r' decodable) " "instead of decoded text.",
+    )
     return parser
 
 
@@ -140,13 +154,15 @@ def main(argv: list[str] | None = None) -> None:
 
     run_daemon(
         socket_path=args.ipc_socket,
-        interface_name=args.interface,
+        interfaces=args.interface or ["tap7"],
         mac_address=args.mac_address,
         ip4_support=args.ip4_support,
         ip4_host=args.ip4_address,
         ip6_support=args.ip6_support,
         ip6_host=args.ip6_address,
         on_ready=lambda path: print(f"PyTCP daemon listening on {path}", flush=True),
+        capture_path=args.capture,
+        capture_pcap=args.capture_pcap,
     )
 
 

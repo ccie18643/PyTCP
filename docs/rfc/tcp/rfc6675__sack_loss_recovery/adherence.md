@@ -47,7 +47,7 @@ scoreboard supports `add_block(left, right)`,
 > ranges."
 
 **Adherence:** met. PyTCP's scoreboard stores ranges,
-not per-octet flags. The 49+ unit tests in
+not per-octet flags. The 46 unit tests in
 `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__sack.py`
 cover range-merge, range-prune, range-overlap, and
 modular-wrap correctness.
@@ -448,7 +448,7 @@ RFC 6675 §5.1 and is the modern interpretation.
 
 - **Unit:**
   `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__sack.py`
-  (49+ tests) covers `SackScoreboard.add_block`,
+  (46 tests) covers `SackScoreboard.add_block`,
   `prune_below`, `is_sacked`, `first_gap`,
   `blocks()`, `total_sacked_bytes` across the
   modular-wrap, range-merge, and edge-overlap cases.
@@ -543,7 +543,7 @@ than by negative test).
 
 | Aspect                                          | Coverage                                       |
 |-------------------------------------------------|------------------------------------------------|
-| §3 Scoreboard                                   | locked in (49+ unit tests)                     |
+| §3 Scoreboard                                   | locked in (46 unit tests)                      |
 | §4 Update                                       | locked in                                      |
 | §4 IsLost (count + byte rules)                  | locked in                                      |
 | §4 SetPipe (simplified)                         | locked in                                      |

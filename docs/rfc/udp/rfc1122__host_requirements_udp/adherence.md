@@ -18,7 +18,7 @@ performed by reading §4.1 fresh and inspecting
 `packages/net_proto/net_proto/protocols/udp/`,
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py`,
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__tx.py`,
-and `packages/pytcp/pytcp/socket/udp__socket.py` directly. Sections
+and `packages/pytcp/pytcp/runtime/socket/udp__socket.py` directly. Sections
 without normative content (§4.1.1 Introduction, §4.1.2
 Protocol Walk-Through — "There are no known errors in the
 specification of UDP", §4.1.5 Requirements Summary table)
@@ -111,7 +111,7 @@ suppression).
 through the UDP socket API in both directions:
 
 - **RX pass-through.** `UdpMetadata.ip4__options`
-  (`packages/pytcp/pytcp/socket/udp__metadata.py`) carries the inbound
+  (`packages/pytcp/pytcp/runtime/socket/udp__metadata.py`) carries the inbound
   IPv4 options object; the UDP RX handler populates it
   from `packet_rx.ip4.options` at
   `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py`.
@@ -123,7 +123,7 @@ through the UDP socket API in both directions:
   for IP_OPTIONS.
 
 - **TX pass-through.** `setsockopt(IPPROTO_IP, IP_OPTIONS, bytes)`
-  (`packages/pytcp/pytcp/socket/__init__.py::_ipproto_ip_setsockopt`)
+  (`packages/pytcp/pytcp/runtime/socket/__init__.py::_ipproto_ip_setsockopt`)
   validates the bytes block (≤ 40 bytes, 4-byte aligned,
   parseable as IPv4 options) and stores it on the socket
   as `_ip_options`. Subsequent `send()` / `sendto()` calls
@@ -155,12 +155,12 @@ off transport-layer-targeted errors to the socket via the
 `notify_*` callbacks:
 
 - `notify_unreachable()` at
-  `packages/pytcp/pytcp/socket/udp__socket.py:519`
+  `packages/pytcp/pytcp/runtime/socket/udp__socket.py:1033`
 - `notify_time_exceeded(icmp_type, icmp_code)` at
-  `udp__socket.py:526`
+  `udp__socket.py:1065`
 - `notify_parameter_problem(icmp_type, icmp_code)` at
-  `udp__socket.py:540`
-- `notify_pmtu(next_hop_mtu)` at `udp__socket.py:550`
+  `udp__socket.py:1093`
+- `notify_pmtu(next_hop_mtu)` at `udp__socket.py:1213`
 
 The classification happens in
 `packages/pytcp/pytcp/protocols/icmp/icmp__inbound_classifier.py` and
@@ -175,7 +175,7 @@ where the cmsg payload is the packed Linux
 `ee_type`, `ee_code`, `ee_info` carrying next-hop MTU on
 PMTU errors) followed by the offender's `sockaddr_in` /
 `sockaddr_in6`. The errno is mapped per Linux's
-`icmp_err_convert` table (`packages/pytcp/pytcp/socket/error_queue.py`).
+`icmp_err_convert` table (`packages/pytcp/pytcp/runtime/socket/error_queue.py`).
 
 The legacy BSD single-error surface
 (`ConnectionRefusedError` on next `recv()` after a
@@ -245,11 +245,13 @@ task.
 >  zero, it must transmit the checksum as all 1's
 >  (65535)."
 
-**Adherence:** **not met.** Documented at length in the
+**Adherence:** met. Documented at length in the
 [RFC 768 audit](../rfc768__udp/adherence.md) §"Fields —
-Checksum"; the assembler writes raw `inet_cksum` output
-without substituting `0xFFFF` for a computed-zero.
-Fix is mechanical (one-line `or 0xFFFF`).
+Checksum"; both UDP serialization paths substitute
+`0xFFFF` for a computed-zero checksum via the idiomatic
+`(cksum or 0xFFFF)` short-circuit —
+`udp__assembler.py:103` (multi-buffer `assemble`) and
+`udp__base.py:104` (single-buffer `__buffer__`).
 
 ---
 
@@ -260,11 +262,11 @@ Fix is mechanical (one-line `or 0xFFFF`).
 >  layer."
 
 **Adherence:** met. `UdpMetadata`
-(`packages/pytcp/pytcp/socket/udp__metadata.py`) carries
+(`packages/pytcp/pytcp/runtime/socket/udp__metadata.py`) carries
 `ip__local_address` populated from `packet_rx.ip.dst`
-(`packet_handler__udp__rx.py:131`). `recvfrom()` at
-`udp__socket.py:448` and the BSD `getsockname()` at
-`packages/pytcp/pytcp/socket/__init__.py:640` expose the
+(`packet_handler__udp__rx.py:188`). `recvfrom()` at
+`udp__socket.py:745` and the BSD `getsockname()` at
+`packages/pytcp/pytcp/runtime/socket/__init__.py:2107` expose the
 specific-destination address to the application.
 
 > "An application program MUST be able to specify the IP
@@ -349,12 +351,12 @@ socket dispatch never fires, and the
   succeeds:
 
   ```python
-  if packet_rx.ip4.src in self._ip4_broadcast:
-      self._packet_stats_rx.ip4__src_directed_broadcast__drop += 1
+  if packet_rx.ip4.src in self._if._ip4_broadcast:
+      self._if._packet_stats_rx.ip4__src_directed_broadcast__drop += 1
       return
   ```
 
-  See `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__rx.py:145-157`.
+  See `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__rx.py:166-167`.
   The check uses the `_ip4_broadcast` property which
   walks `_ip4_ifaddr[].network.broadcast` for every
   configured subnet. Per-subnet awareness can't live
@@ -385,7 +387,7 @@ invariant holds by construction.
 abstract RFC 1122 §3.4 routine to a concrete call:
 
 - **GET_SRCADDR** → `getsockname()` at
-  `packages/pytcp/pytcp/socket/__init__.py:640` returns the local
+  `packages/pytcp/pytcp/runtime/socket/__init__.py:2107` returns the local
   address (after wildcard bind, the picked source).
 - **GET_MAXSIZES** → `getsockopt(IPPROTO_IP, IP_MTU)` and
   `getsockopt(IPPROTO_IPV6, IPV6_MTU)` return the effective
@@ -413,7 +415,9 @@ options.
 
 - **TTL** → `setsockopt(IPPROTO_IP, IP_TTL, value)` /
   `setsockopt(IPPROTO_IPV6, IPV6_UNICAST_HOPS, value)`
-  wired at `packages/pytcp/pytcp/socket/__init__.py:286-313`. The TX
+  wired at `packages/pytcp/pytcp/runtime/socket/__init__.py` (IP_TTL in
+  `_ipproto_ip_setsockopt:856`; IPV6_UNICAST_HOPS in
+  `_ipproto_ipv6_setsockopt:1156`). The TX
   path threads the per-socket override down to
   `_phtx_ip4(ip4__ttl=...)` / `_phtx_ip6(ip6__hop=...)`
   (`packet_handler__udp__tx.py:119-138`).
@@ -442,13 +446,13 @@ delivered as a 4-byte big-endian integer matching
 Linux's `ipv6(7)` wire shape.
 
 - TOS byte plumbing:
-  `packages/pytcp/pytcp/socket/udp__metadata.py::UdpMetadata.ip__tos`,
+  `packages/pytcp/pytcp/runtime/socket/udp__metadata.py::UdpMetadata.ip__tos`,
   populated in the UDP RX handler from
   `packet_rx.ip.dscp` and `packet_rx.ip.ecn`.
 - Socket flags: `_ip_recvtos` (IPv4),
   `_ipv6_recvtclass` (IPv6) on
-  `packages/pytcp/pytcp/socket/__init__.py::socket`.
-- Cmsg emission: `packages/pytcp/pytcp/socket/udp__socket.py::UdpSocket.recvmsg`
+  `packages/pytcp/pytcp/runtime/socket/__init__.py::socket`.
+- Cmsg emission: `packages/pytcp/pytcp/runtime/socket/udp__socket.py::UdpSocket.recvmsg`
   alongside the existing IP_OPTIONS branch.
 
 Linux socket-option numeric values are mirrored:

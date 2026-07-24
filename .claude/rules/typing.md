@@ -57,6 +57,29 @@ You don't need to remember the flag names — `make lint` is
 the authoritative gate. The list above explains *why* a
 particular rule from this file is enforced.
 
+### 2.1 Extra `enable_error_code` codes
+
+On top of the strict bundle, `pyproject.toml` opts into
+nine extra error codes via `enable_error_code` — each one
+upgrades a latent footgun from silent-pass to build-break:
+
+| Error code | Effect |
+|---|---|
+| `explicit-override` | A method overriding a parent MUST carry `@override` (§11) — enforced everywhere, tests included |
+| `ignore-without-code` | A bare `# type: ignore` is a hard error; the narrow `# type: ignore[code]` form is mandatory (§21) |
+| `truthy-bool` | An object with no `__bool__` / `__len__` used in a boolean context (e.g. `if socket :=` where the type can't be falsy) is flagged |
+| `truthy-iterable` | An always-truthy iterable used as a plain boolean condition is flagged |
+| `redundant-expr` | An `and` / `or` operand that mypy proves constant (always-true / always-false) is flagged |
+| `redundant-self` | A redundant `Self`-typed `self` annotation is flagged |
+| `possibly-undefined` | A name that may be unbound on some control-flow path (e.g. a `match` with no `case _:` default leaving a variable unset) is flagged |
+| `unused-awaitable` | An awaitable whose result is discarded without `await` is flagged |
+| `mutable-override` | A subclass narrowing a mutable base attribute's type (covariant override of a settable field) is flagged — applies to test classes too |
+
+`warn_unreachable` and `disallow_any_decorated` are
+deliberately **not** enabled: they produce false positives
+against the `ProtoEnum` dynamic-`_missing_` `case _:` pattern
+and stdlib decorator machinery.
+
 ## 3. Annotation discipline — what MUST be annotated
 
 | Construct | Annotation requirement |
@@ -1011,6 +1034,46 @@ Half-converted files (some annotations quoted, some not)
 are the worst state — they hide which annotations actually
 need lazy evaluation.
 
+### 20.4 Unnecessary string-quoted annotations are FORBIDDEN
+
+A string-quoted annotation — `-> "Foo"`, `x: "Foo"`,
+`class C[T: "Foo"]`, `type X = "Foo | Bar"` — is permitted
+**only** when the name is genuinely unavailable at runtime,
+i.e. it is imported *solely* under `if TYPE_CHECKING:` to
+break a real circular import (§20.1). In **every** other case
+the quotes are **forbidden**:
+
+- If the name is imported at module top (runtime-available),
+  the quotes are pure cruft. PEP 649 (3.14) evaluates
+  annotations lazily, so the forward reference is never
+  needed — **unquote it.** A name being defined later in the
+  same file is *not* a reason to quote either (lazy
+  evaluation handles it).
+- Do not quote "to be safe" or "to match the line above."
+  Quote *only* the names that genuinely cannot be imported at
+  runtime; bare everything else.
+
+```python
+# Forbidden — 'Ip4Wildcard' is a module-top runtime import; the
+# quotes are gratuitous (this was a real bug: it also made pylint's
+# unused-import flag the import as unused — see below).
+def hostmask(self) -> "Ip4Wildcard | Ip6Wildcard": ...
+
+# Good
+def hostmask(self) -> Ip4Wildcard | Ip6Wildcard: ...
+```
+
+**Enforced by `make lint`.** The pylint gate runs
+`unused-import` (W0611), which flags a runtime import used
+**only** inside a string annotation — pylint does not read
+names inside quoted annotations, so such an import reads as
+"unused." flake8's `F401` *does* read string annotations and
+therefore silently misses this; pylint is the backstop. A
+`TYPE_CHECKING`-guarded import used in a string annotation is
+**not** flagged (the legitimate circular-import case), so the
+gate distinguishes the two cleanly and a gratuitous quote
+fails CI.
+
 ## 21. `# type: ignore` policy
 
 `# type: ignore` is **strongly discouraged**. Every
@@ -1028,7 +1091,10 @@ Acceptable uses:
   ```
   The narrow form `# type: ignore[error-code]` is mandatory
   — bare `# type: ignore` is forbidden because it suppresses
-  every error on the line, not just the intended one.
+  every error on the line, not just the intended one. This is
+  now **mechanically enforced**: the `ignore-without-code`
+  error code (§2.1) makes a bare `# type: ignore` a hard
+  build error, not just a convention.
 
 - **Mypy strict false-positive that has a known issue
   upstream.** Cite the issue:

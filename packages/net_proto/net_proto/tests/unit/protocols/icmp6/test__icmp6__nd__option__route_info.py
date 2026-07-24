@@ -27,13 +27,11 @@ Module contains tests for the ICMPv6 ND Route Information option (RFC 4191 §2.3
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__route_info.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address, Ip6Mask, Ip6Network
 from net_proto import (
@@ -42,6 +40,7 @@ from net_proto import (
     Icmp6NdOptionType,
     Icmp6NdRoutePreference,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIcmp6NdOptionRouteInfoAsserts(TestCase):
@@ -231,6 +230,7 @@ class TestIcmp6NdOptionRouteInfoAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the option from the parametrized kwargs.

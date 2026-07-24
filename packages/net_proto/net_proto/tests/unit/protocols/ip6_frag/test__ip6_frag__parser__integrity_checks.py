@@ -27,16 +27,15 @@ This module contains tests for the IPv6 Frag packet integrity checks.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import Ip6FragIntegrityError, Ip6FragParser, IpProto, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 8-byte IPv6 Frag header used by the positive boundary test.
 # The parametrized negative fixtures are derived from it by truncation.
@@ -87,6 +86,7 @@ class TestIp6FragParserIntegrityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx and stub the IPv6

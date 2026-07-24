@@ -27,16 +27,15 @@ This module contains tests for the Raw protocol packet assembler operation.
 
 net_proto/tests/unit/protocols/raw/test__raw__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import EtherType, IpProto, RawAssembler, Tracker
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -252,6 +251,7 @@ class TestRawAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the Raw assembler from the parametrized kwargs.

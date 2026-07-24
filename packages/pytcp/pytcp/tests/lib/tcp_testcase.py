@@ -33,12 +33,12 @@ probe helpers on top of 'NetworkTestCase'.
 
 pytcp/tests/lib/tcp_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest.mock import _patch, patch
 
 from net_addr import Ip4Address, Ip6Address
@@ -53,9 +53,9 @@ from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import CcMode, FsmState, SysCall
 from pytcp.protocols.tcp.tcp__stack import TcpStack
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.timer import Timer
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.fake_timer import FakeTimer
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
@@ -162,6 +162,7 @@ class TcpTestCase(NetworkTestCase):
     # class level so every session built via the harness pins Reno.
     _DEFAULT_CC_MODE: CcMode | None = None
 
+    @override
     def setUp(self) -> None:
         """
         Install a 'FakeTimer' over 'stack.timer' on top of the parent
@@ -219,6 +220,7 @@ class TcpTestCase(NetworkTestCase):
 
         self._patches = []
 
+    @override
     def tearDown(self) -> None:
         """
         Stop any 'mock.patch' handle started by '_start_patch', restore
@@ -280,6 +282,7 @@ class TcpTestCase(NetworkTestCase):
         local_port: int = _DEFAULT_LOCAL_PORT,
         remote_ip: Ip4Address | Ip6Address | None = None,
         remote_port: int = _DEFAULT_REMOTE_PORT,
+        so_rcvbuf: int | None = None,
     ) -> TcpSession:
         """
         Build a 'TcpSocket' / 'TcpSession' pair on the canonical
@@ -308,6 +311,10 @@ class TcpTestCase(NetworkTestCase):
         sock._local_port = local_port
         sock._remote_ip_address = remote_ip
         sock._remote_port = remote_port
+        # Set SO_RCVBUF before the session is built so its rcv_wnd_max
+        # (advertised-receive-window cap) derives from it.
+        if so_rcvbuf is not None:
+            sock._so_rcvbuf = so_rcvbuf
         session = TcpSession(
             local_ip_address=local_ip,
             local_port=local_port,

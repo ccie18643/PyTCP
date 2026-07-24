@@ -35,16 +35,15 @@ build on.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__sack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto.lib.int_checks import UINT_32__MAX
-from pytcp.protocols.tcp.tcp__sack import SackScoreboard
+from pytcp.protocols.tcp.tcp__sack import SackScoreboard, _overlaps_or_touches
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 class TestSackScoreboard__Init(TestCase):
@@ -852,4 +851,87 @@ class TestSackScoreboard__InsertSequenceMatrix(TestCase):
             sorted(scoreboard.blocks()),
             sorted(self._expected_blocks),
             msg=f"Unexpected post-insert block set for case: {self._description}",
+        )
+
+
+class TestSackMutationGoldens(TestCase):
+    """
+    Branch and arithmetic goldens closing the remaining SACK
+    scoreboard mutation survivors: the first_gap modular sort key,
+    the exclusive right edge of is_sacked, and the
+    overlap-or-touches adjacency / inclusive-edge logic.
+    """
+
+    def test__sack__first_gap_sort_key_orders_blocks(self) -> None:
+        """
+        Ensure first_gap sorts its blocks by modular forward distance
+        from snd_una before walking: two contiguous blocks stored in
+        reverse order must still walk to the true gap at 2000.
+
+        Reference: RFC 6675 §3 (gap walk over ordered SACK blocks).
+        """
+
+        scoreboard = SackScoreboard()
+        # Stored reverse so an un-sorted walk would stop at 1000.
+        scoreboard._blocks = [(1500, 2000), (1000, 1500)]
+        self.assertEqual(
+            scoreboard.first_gap(1000),
+            2000,
+            msg="reverse-stored contiguous blocks must walk to gap 2000 (kills the sort key).",
+        )
+
+    def test__sack__is_sacked_right_edge_is_exclusive(self) -> None:
+        """
+        Ensure is_sacked treats the block's right edge as exclusive
+        (the inclusive bound is right - 1): the right edge itself is
+        not sacked, but right-1 and left are.
+
+        Reference: RFC 2018 §3 ([left, right) half-open SACK blocks).
+        """
+
+        scoreboard = SackScoreboard()
+        scoreboard.add_block(1000, 1100)
+        self.assertFalse(
+            scoreboard.is_sacked(1100),
+            msg="the exclusive right edge must NOT be sacked (kills 'right-1'→'right').",
+        )
+        self.assertTrue(scoreboard.is_sacked(1099), msg="right-1 must be sacked.")
+        self.assertTrue(scoreboard.is_sacked(1000), msg="left edge must be sacked.")
+
+    def test__sack__overlaps_or_touches_adjacency_and_overlap(self) -> None:
+        """
+        Ensure _overlaps_or_touches recognizes exact adjacency (one
+        right edge equals the other's left edge), disjoint blocks, and
+        containment overlap, using large values so the equality is by
+        value not identity.
+
+        Reference: RFC 2018 §4 (SACK block coalescing).
+        """
+
+        self.assertTrue(
+            _overlaps_or_touches(100000, 200000, 200000, 300000),
+            msg="adjacent blocks (a_right == b_left) must touch.",
+        )
+        self.assertFalse(
+            _overlaps_or_touches(100000, 150000, 200000, 300000),
+            msg="disjoint blocks must not overlap.",
+        )
+        self.assertTrue(
+            _overlaps_or_touches(100000, 300000, 150000, 400000),
+            msg="containment overlap (b_left inside a) must be detected.",
+        )
+
+    def test__sack__overlaps_inclusive_edge(self) -> None:
+        """
+        Ensure the overlap test uses the inclusive right edge
+        (right - 1): a block whose left edge is exactly one below the
+        other's right edge overlaps, where a 'right-2' edit would miss
+        it.
+
+        Reference: RFC 2018 §4 (inclusive overlap boundary).
+        """
+
+        self.assertTrue(
+            _overlaps_or_touches(100000, 200000, 199999, 300000),
+            msg="b_left == a_right - 1 must overlap (kills the inclusive-edge offset).",
         )

@@ -27,12 +27,12 @@ This module contains the IPv6 packet parser.
 
 net_proto/protocols/ip6/ip6__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.lib.proto_parser import ProtoParser
 from net_proto.protocols.ip6.ip6__base import Ip6
@@ -61,6 +61,10 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
         """
 
         self._frame = packet_rx.frame
+        # Whether this packet was looped internally by the loopback
+        # interface — used by '_validate_sanity' to skip the
+        # loopback-source martian check (a wire-ingress-only policy).
+        self._from_loopback = packet_rx.from_loopback
 
         self._validate_integrity()
         self._parse()
@@ -146,8 +150,11 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
         # IPv4 §3.2.1.3(g) loopback ban; Linux enforces the same
         # rule. The unspecified address (::) is deliberately not
         # rejected here so DAD-style NS messages (RFC 4861 §4.3)
-        # can reach the ICMPv6 RX path.
-        if (src := self.src).is_loopback:
+        # can reach the ICMPv6 RX path. The check is skipped when the
+        # RX consumer marked the packet 'from_loopback' — a packet
+        # looped internally by the loopback interface legitimately
+        # carries a ::1 source.
+        if not self._from_loopback and (src := self.src).is_loopback:
             raise Ip6SanityError(
                 f"The 'src' field must not be a loopback address. Got: {src!r}",
                 pointer=IP6__POINTER__SRC,
@@ -162,6 +169,17 @@ class Ip6Parser(Ip6[Buffer], ProtoParser):
                 f"The 'src' field must not be a multicast address. Got: {src!r}",
                 pointer=IP6__POINTER__SRC,
             )
+
+    def reanchor_payload(self, frame: Buffer, /) -> None:
+        """
+        Re-anchor the IPv6 payload onto the post-extension-header frame.
+        """
+
+        # RX-path mutation: after the IPv6 RX handler walks the
+        # extension-header chain it re-anchors the payload onto the
+        # post-chain frame so the downstream transport parser sees the
+        # correct 'payload_len' / 'dlen' for ITS header.
+        self._payload = frame
 
     @property
     def header_bytes(self) -> Buffer:

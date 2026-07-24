@@ -353,7 +353,8 @@ the modern RFC's record:
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__icmp__dest_unreachable.py`,
   `test__tcp__session__icmp__time_exceeded.py`,
   `test__tcp__session__icmp__param_problem.py`,
-  `test__tcp__session__icmp__pmtu.py` (+ the `__ip6`
+  `test__tcp__session__icmp__pmtu.py` (+ the
+  `param_problem__ip6` / `time_exceeded__ip6`
   parallels) lock the FSM-event path — per-code
   routing, RFC 5927 §4 sequence-in-window guard, PMTU
   cache update, ConnError surfacing.

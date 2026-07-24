@@ -27,14 +27,13 @@ This module contains the ICMPv6 message base class.
 
 net_proto/protocols/icmp6/message/icmp6__message.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import abstractmethod
 from dataclasses import dataclass
 
-from net_addr import Ip6Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip6Address
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_struct import ProtoStruct
 

@@ -43,8 +43,10 @@ PyTCP's surface:
 
 pytcp/tests/integration/protocols/udp/test__udp__ip_options.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import Ip4Address, Ip6Address, IpVersion, MacAddress
 from net_proto import (
@@ -57,7 +59,7 @@ from net_proto import (
     UdpAssembler,
 )
 from net_proto.lib.packet_rx import PacketRx
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_OPTIONS,
     IP_RECVOPTS,
     IP_RECVTOS,
@@ -133,6 +135,7 @@ class TestUdpIpOptionsRecvmsgPassThrough(UdpTestCase):
     Inbound IPv4 options surface via 'recvmsg' as IP_OPTIONS cmsg.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind an IPv4 UdpSocket on the canonical fixture address so
@@ -249,6 +252,7 @@ class TestUdpIpOptionsSendto(UdpTestCase):
     Outbound UDP datagrams carry the per-socket IP_OPTIONS block.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind an IPv4 UdpSocket so 'sendto' has a stack-known
@@ -397,6 +401,7 @@ class TestUdpIpRecvTos(UdpTestCase):
     Inbound IPv4 TOS byte surfaces via 'recvmsg' as IP_TOS cmsg.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind an IPv4 UdpSocket on the canonical fixture address.
@@ -472,6 +477,7 @@ class TestUdpIpV6RecvTClass(UdpTestCase):
     IPV6_TCLASS cmsg.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind an IPv6 UdpSocket on the canonical fixture address.

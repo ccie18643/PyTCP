@@ -27,13 +27,11 @@ Module contains tests for the IPv4 Timestamp option code (RFC 791 §3.1).
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__timestamp.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto import (
@@ -44,6 +42,7 @@ from net_proto import (
     Ip4TimestampEntry,
 )
 from net_proto.lib.proto_enum import ProtoEnumByte
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionTimestampFlagEnum(TestCase):
@@ -407,6 +406,7 @@ class TestIp4OptionTimestampAssembler(TestCase):
     _entries: list[Ip4TimestampEntry]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionTimestamp from the parametrized fields.
@@ -624,4 +624,72 @@ class TestIp4OptionTimestampIntegrity(TestCase):
                 "to the 4-byte entry boundary for flag=0. Got: 6"
             ),
             msg="Unexpected integrity-error message for misaligned pointer (flag=0).",
+        )
+
+
+class TestIp4OptionTimestampWrongType(TestCase):
+    """
+    The IPv4 Timestamp option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__timestamp__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.TIMESTAMP and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 791 §3.1 (Internet Timestamp option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionTimestamp.from_buffer(b"\x00\x08\x05\x00\x11\x22\x33\x44")
+
+    def test__ip4__option__timestamp__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.TIMESTAMP, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 791 §3.1 (Internet Timestamp option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionTimestamp.from_buffer(b"\xff\x08\x05\x00\x11\x22\x33\x44")
+
+
+class TestIp4OptionTimestampWithAddrExtraction(TestCase):
+    """
+    The IPv4 Timestamp option flag=1 (addr+timestamp) field-extraction
+    tests, pinning the per-entry slice offsets with non-degenerate
+    values.
+    """
+
+    def test__ip4__option__timestamp__from_buffer_with_addr_timestamp_high_byte(self) -> None:
+        """
+        Ensure 'from_buffer()' decodes a flag=1 entry's 4-byte timestamp
+        from the correct slice, using a timestamp whose most-significant
+        byte is non-zero so a slice-offset shift cannot pass unnoticed.
+
+        Reference: RFC 791 §3.1 (flag=1 entry is 4-byte address + 4-byte timestamp).
+        """
+
+        # IPv4 Timestamp option, flag=1 (TS_AND_ADDR), one entry:
+        #   Byte 0     : 0x44       -> type=TIMESTAMP (68)
+        #   Byte 1     : 0x0c       -> len=12 (4 header + 8 entry)
+        #   Byte 2     : 0x05       -> pointer=5
+        #   Byte 3     : 0x01       -> overflow=0, flag=1 (TS_AND_ADDR)
+        #   Bytes 4-7  : 0x0a141e28 -> entry[0].address=10.20.30.40
+        #   Bytes 8-11 : 0x11223344 -> entry[0].timestamp=0x11223344
+        decoded = Ip4OptionTimestamp.from_buffer(b"\x44\x0c\x05\x01\x0a\x14\x1e\x28\x11\x22\x33\x44")
+
+        entry = decoded.entries[0]
+        self.assertEqual(
+            entry.timestamp,
+            0x11223344,
+            msg=f"flag=1 entry timestamp must decode from bytes 8-11. Got {entry.timestamp!r}.",
+        )
+        self.assertEqual(
+            entry.address,
+            Ip4Address("10.20.30.40"),
+            msg=f"flag=1 entry address must decode from bytes 4-7. Got {entry.address!r}.",
         )

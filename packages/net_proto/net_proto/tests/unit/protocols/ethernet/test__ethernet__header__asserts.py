@@ -27,11 +27,11 @@ This module contains tests for the Ethernet II header fields and asserts.
 
 net_proto/tests/unit/protocols/ethernet/test__ethernet__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import MacAddress
@@ -48,6 +48,7 @@ class TestEthernetHeaderAsserts(TestCase):
     The Ethernet header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the Ethernet header constructor.
@@ -344,7 +345,7 @@ class TestEthernetHeaderOperation(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            EthernetHeader(  # type: ignore[misc]
+            EthernetHeader(  # type: ignore[call-arg]
                 MacAddress(),
                 MacAddress(),
                 EtherType.RAW,
@@ -369,6 +370,7 @@ class TestEthernetHeaderProperties(TestCase):
     The EthernetHeaderProperties mixin accessors and setters tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a fresh host with a known-good Ethernet header per test case.

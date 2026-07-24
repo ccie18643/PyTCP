@@ -27,9 +27,10 @@ This module contains tests for the DHCPv6 Preference option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__preference.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -90,6 +91,7 @@ class TestDhcp6OptionPreferenceAssembler(TestCase):
     The DHCPv6 Preference option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 Preference option (255 — the
@@ -157,3 +159,33 @@ class TestDhcp6OptionPreferenceParser(TestCase):
 
         with self.assertRaises(Dhcp6IntegrityError):
             Dhcp6OptionPreference.from_buffer(memoryview(b"\x00\x07\x00\x02\x80\x00"))
+
+
+class TestDhcp6OptionPreferenceWrongType(TestCase):
+    """
+    The DHCPv6 Preference option wrong-code-word parser tests.
+    """
+
+    def test__dhcp6__option__preference__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code word equals
+        Dhcp6OptionType.PREFERENCE and rejects a code below it, pinning the
+        equality check against a '<=' relaxation.
+
+        Reference: RFC 8415 §21.8 (Preference option code 7).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionPreference.from_buffer(b"\x00\x00\x00\x01\xff")
+
+    def test__dhcp6__option__preference__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code word above
+        Dhcp6OptionType.PREFERENCE, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 8415 §21.8 (Preference option code 7).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionPreference.from_buffer(b"\xff\xff\x00\x01\xff")

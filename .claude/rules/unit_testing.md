@@ -1113,15 +1113,29 @@ class TestUdpParser(TestCase):
         super().tearDown()
 ```
 
-This is a written convention, not a mechanical gate: the
+This is a **mechanical gate, enforced in tests too**: the
 `explicit-override` error code is enabled repo-wide in
-`pyproject.toml` but disabled for `*.tests.*` modules (a
-`[[tool.mypy.overrides]]` stanza), so mypy strict enforces
-`@override` in source but does NOT flag a missing decorator
-on a test `setUp` / `tearDown`. Decorate them anyway — the
-decorator documents that the method is part of the unittest
-contract, and the convention keeps test and source code
-uniform.
+`pyproject.toml` with **no `*.tests.*` exemption**, so mypy
+strict flags any `setUp` / `tearDown` / `setUpClass` /
+`tearDownClass` (or any other method overriding a parent)
+that is missing `@override`. The decorator is not just
+documentation — it turns a mistyped hook name (e.g.
+`def tearDwon`, which would silently never run and leak
+state) into a type error rather than a latent bug.
+
+Two corollaries the gate enforces:
+
+- **Module-level `setUpModule` / `tearDownModule` are NOT
+  decorated.** They are plain module functions that override
+  nothing; `@override` on them is itself a type error
+  (`misc`). Only `unittest.TestCase` *method* hooks take the
+  decorator.
+- **A fake / stub class in a test that subclasses a real
+  base** (a `ProtoStruct` test double, a `dict` subclass, a
+  parser stand-in) carries `@override` on every method that
+  overrides the base — `__len__`, `__str__`, `from_buffer`,
+  `_validate_integrity`, etc. — exactly as production code
+  does.
 
 ### 10b.2 `enterContext` / `enterClassContext` / `enterModuleContext` (3.11+)
 

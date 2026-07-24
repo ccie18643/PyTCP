@@ -34,7 +34,7 @@ across the boundary. 'connect()' is the entry point.
 
 pytcp/client/client_stack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
@@ -42,18 +42,21 @@ from types import TracebackType
 from typing import Self
 
 from net_proto.lib.enums import EtherType, IpProto
+from pytcp.client.client__activity_introspect import ClientActivityIntrospect
 from pytcp.client.client__address import ClientAddress
-from pytcp.client.client__datagram_socket import ClientRawSocket, ClientUdpSocket
+from pytcp.client.client__datagram_socket import ClientPingSocket, ClientRawSocket, ClientUdpSocket
 from pytcp.client.client__link import ClientLink
 from pytcp.client.client__membership import ClientMembership
 from pytcp.client.client__neighbor import ClientNeighbor
 from pytcp.client.client__packet_socket import ClientPacketSocket
+from pytcp.client.client__resolver import ClientResolver
 from pytcp.client.client__route import ClientRoute
+from pytcp.client.client__socket_introspect import ClientSocketIntrospect
 from pytcp.client.client__sysctl import ClientSysctl
 from pytcp.client.client__tcp_socket import ClientTcpSocket
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__errors import IpcConnectionError
-from pytcp.socket import ETH_P_ALL, AddressFamily, SocketType
+from pytcp.runtime.socket import ETH_P_ALL, AddressFamily, SocketType
 
 IPC__CLIENT__READINESS_POLL__SEC: float = 0.05
 
@@ -75,13 +78,16 @@ class ClientStack:
         self.address = ClientAddress(self._client)
         self.neighbor = ClientNeighbor(self._client)
         self.membership = ClientMembership(self._client)
+        self.resolver = ClientResolver(self._client)
+        self.ss = ClientSocketIntrospect(self._client)
+        self.activity = ClientActivityIntrospect(self._client)
 
     def socket(
         self,
         family: AddressFamily = AddressFamily.INET4,
         type: SocketType = SocketType.STREAM,
         protocol: IpProto | EtherType | int | None = None,
-    ) -> ClientTcpSocket | ClientUdpSocket | ClientRawSocket | ClientPacketSocket:
+    ) -> ClientTcpSocket | ClientUdpSocket | ClientRawSocket | ClientPacketSocket | ClientPingSocket:
         """
         Open a socket on the daemon, returning a client shim whose data
         path is a real selectable descriptor. Mirrors the in-process
@@ -96,6 +102,9 @@ class ClientStack:
             case SocketType.STREAM:
                 return ClientTcpSocket(self._client, family=family)
             case SocketType.DGRAM:
+                if protocol in (IpProto.ICMP4, IpProto.ICMP6):
+                    assert isinstance(protocol, IpProto)
+                    return ClientPingSocket(self._client, family=family, protocol=protocol)
                 return ClientUdpSocket(self._client, family=family)
             case SocketType.RAW:
                 if family is AddressFamily.PACKET:

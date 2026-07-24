@@ -35,9 +35,10 @@ surface ('ip4_address=', 'mac_address=',
 
 pytcp/tests/unit/protocols/arp/test__arp__cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec, patch
 
@@ -56,6 +57,7 @@ class _ArpCacheFixture(TestCase):
     sysctl defaults on tearDown.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Construct cache + log patches.
@@ -67,6 +69,7 @@ class _ArpCacheFixture(TestCase):
         self._subsystem_log_patch.start()
         self._cache = ArpCache()
 
+    @override
     def tearDown(self) -> None:
         """
         Stop log patches and reset sysctl state.
@@ -296,7 +299,7 @@ class TestArpCacheFlushCallback(_ArpCacheFixture):
 
         handler = MagicMock(spec=PacketHandlerL2)
         tx_ring = create_autospec(TxRing, spec_set=True)
-        handler._tx_ring = tx_ring
+        handler.tx_ring = tx_ring
         self._cache._owner = handler
         self._cache._flush_packet(eth, mac)
 
@@ -306,6 +309,26 @@ class TestArpCacheFlushCallback(_ArpCacheFixture):
             msg="_flush_packet must rewrite the Ethernet destination MAC.",
         )
         tx_ring.enqueue.assert_called_once_with(eth)
+
+    def test__arp_cache__flush_taps_packet_sockets(self) -> None:
+        """
+        Ensure '_flush_packet' fans the queued-then-flushed frame to bound
+        AF_PACKET sockets (via the owner's egress tap) so a frame queued
+        pending ARP resolution — e.g. a TCP SYN-ACK to an unresolved peer —
+        is still observed on egress, matching Linux 'dev_queue_xmit_nit'.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        eth = EthernetAssembler()
+        mac = MacAddress("02:00:00:00:00:01")
+
+        handler = MagicMock(spec=PacketHandlerL2)
+        handler.tx_ring = create_autospec(TxRing, spec_set=True)
+        self._cache._owner = handler
+        self._cache._flush_packet(eth, mac)
+
+        handler.deliver_tx_to_packet_sockets.assert_called_once_with(eth)
 
 
 class TestArpCacheConstruction(_ArpCacheFixture):

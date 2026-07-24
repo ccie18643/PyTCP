@@ -27,7 +27,7 @@ Tests for the IPC control-plane tagged value codec.
 
 pytcp/tests/unit/ipc/test__ipc__values.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json
@@ -51,7 +51,7 @@ from pytcp.ipc.ipc__values import decode_value, encode_value
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TTL,
     IPPROTO_TCP,
     IPV6_UNICAST_HOPS,
@@ -62,7 +62,8 @@ from pytcp.socket import (
     PacketType,
     SocketType,
 )
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
 
@@ -369,6 +370,31 @@ class TestIpcValuesRoundTrip(TestCase):
             value,
             msg="Encoded values must survive a JSON serialise/parse cycle.",
         )
+
+    def test__ipc__values__interface_activity_snapshot(self) -> None:
+        """
+        Ensure an InterfaceActivity round-trips field-by-field, including
+        the tuple-of-Ip6Address tentative-address field in both its
+        populated and empty forms.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        for activity in [
+            InterfaceActivity(
+                ifindex=2,
+                name="tap9",
+                dhcp4_state="SELECTING",
+                tentative_ip6=(Ip6Address("2603:808c::5"), Ip6Address("fe80::1")),
+            ),
+            InterfaceActivity(ifindex=3, name="tun3", dhcp4_state=None, tentative_ip6=()),
+        ]:
+            with self.subTest(activity=activity):
+                self.assertEqual(
+                    decode_value(encode_value(activity)),
+                    activity,
+                    msg=f"InterfaceActivity {activity!r} must round-trip.",
+                )
 
 
 class TestIpcValuesErrors(TestCase):

@@ -52,7 +52,7 @@ Design + per-phase migration plan: docs/refactor/nud_state_machine.md
 
 pytcp/lib/neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
@@ -313,7 +313,7 @@ class NeighborCache[A: Ip4Address | Ip6Address, P = object](Subsystem):
                 f"NUD: {address} → {mac_address} (PERMANENT)",
             )
 
-    def _remove_entry(self, address: A) -> bool:
+    def remove_entry(self, address: A) -> bool:
         """
         Remove the cache entry for 'address' if present. Returns
         True when an entry was removed, False when none existed.
@@ -325,7 +325,7 @@ class NeighborCache[A: Ip4Address | Ip6Address, P = object](Subsystem):
         with self._lock:
             return self._entries.pop(address, None) is not None
 
-    def _flush(self) -> int:
+    def flush(self) -> int:
         """
         Drop every cache entry — the control-plane Neighbor API
         ('ip neighbor flush') consumes this. Returns the number of
@@ -337,7 +337,7 @@ class NeighborCache[A: Ip4Address | Ip6Address, P = object](Subsystem):
             self._entries = {}
             return count
 
-    def _snapshot(self) -> tuple[NeighborEntry[A, P], ...]:
+    def snapshot(self) -> tuple[NeighborEntry[A, P], ...]:
         """
         Return an immutable point-in-time copy of the cache
         entries — the read side of the Neighbor introspection API

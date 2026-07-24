@@ -39,7 +39,7 @@ attribute off a stack object.
 
 pytcp/ipc/ipc__control.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
@@ -83,6 +83,9 @@ _ALLOWED_METHODS: dict[str, frozenset[str]] = {
     "address": frozenset({"add", "remove", "replace", "list_ifaddrs"}),
     "neighbor": frozenset({"add", "remove", "flush", "list_neighbors"}),
     "membership": frozenset({"join", "leave", "list_memberships"}),
+    "resolver": frozenset({"resolve", "get_dns_server"}),
+    "socket_introspect": frozenset({"list_sockets"}),
+    "activity_introspect": frozenset({"list_activity"}),
 }
 
 
@@ -108,6 +111,12 @@ def _resolve_api(name: str, /) -> Any:
             return stack.neighbor
         case "membership":
             return stack.membership
+        case "resolver":
+            return stack.resolver
+        case "socket_introspect":
+            return stack.ss
+        case "activity_introspect":
+            return stack.activity
 
     raise KeyError(f"Unknown control API {name!r}.")
 
@@ -146,7 +155,7 @@ def handle_control_call(request: IpcMessage, /) -> IpcMessage:
 
     try:
         value = _invoke(decode_control_request(request.body))
-    except Exception as error:
+    except Exception as error:  # pylint: disable=broad-exception-caught
         # The control boundary forwards any API failure faithfully as a
         # structured RESPONSE_ERROR; the client turns it back into an
         # 'IpcRemoteError'. This is translation, not silent swallowing.

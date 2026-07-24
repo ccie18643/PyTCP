@@ -28,19 +28,18 @@ helpers.
 
 pytcp/tests/unit/protocols/ip6/test__ip6__source_selection.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from pytcp.protocols.ip6.ip6__source_selection import (
     common_prefix_len,
     ip6_address_scope,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

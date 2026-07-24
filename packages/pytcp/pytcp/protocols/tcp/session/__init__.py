@@ -26,14 +26,16 @@
 This package contains the per-session TCP machinery.
 
 The 'session/' subpackage is an encapsulated unit: 'TcpSession'
-is the sole public API. The five collaborator modules
-('tcp__session__timers' / '_tx' / '_ack' / '_validate' /
-'_retransmit') and the 'tcp__session' module that holds the
-class are PRIVATE to this subpackage. Production code outside
-'session/' MUST import only 'TcpSession' and MUST do so via
-this '__init__' shim:
+and the read-only 'TcpInfoSnapshot' it returns from
+'TcpSession.tcp_info()' are the public API. The five
+collaborator modules ('tcp__session__timers' / '_tx' / '_ack' /
+'_validate' / '_retransmit'), the 'tcp__session__info' snapshot
+module, and the 'tcp__session' module that holds the class are
+otherwise PRIVATE to this subpackage. Production code outside
+'session/' MUST import only 'TcpSession' / 'TcpInfoSnapshot' and
+MUST do so via this '__init__' shim:
 
-    from pytcp.protocols.tcp.session import TcpSession
+    from pytcp.protocols.tcp.session import TcpSession, TcpInfoSnapshot
 
 NEVER:
 
@@ -52,9 +54,10 @@ by the encapsulation contract above.
 
 pytcp/protocols/tcp/session/__init__.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from pytcp.protocols.tcp.session.tcp__session import TcpSession
+from pytcp.protocols.tcp.session.tcp__session__info import TcpInfoSnapshot
 
-__all__ = ["TcpSession"]
+__all__ = ["TcpInfoSnapshot", "TcpSession"]

@@ -27,14 +27,12 @@ Module contains tests for the DHCPv4 Subnet Mask option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__subnet_mask.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Mask
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
 from net_proto.protocols.dhcp4.options.dhcp4__option__subnet_mask import (
     DHCP4__OPTION__SUBNET_MASK__LEN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionSubnetMaskAsserts(TestCase):
@@ -218,6 +217,7 @@ class TestDhcp4OptionSubnetMaskAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Subnet Mask option object with testcase
@@ -539,3 +539,33 @@ class TestDhcp4OptionSubnetMaskBehavior(TestCase):
                 Ip4Mask("255.255.255.0"),
                 type=Dhcp4OptionType.SUBNET_MASK,
             )
+
+
+class TestDhcp4OptionSubnetMaskWrongType(TestCase):
+    """
+    The DHCPv4 Subnet Mask option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__subnet_mask__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.SUBNET_MASK and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §3.3 (Subnet Mask option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionSubnetMask.from_buffer(b"\x00\x04\xff\xff\xff\x00")
+
+    def test__dhcp4__option__subnet_mask__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.SUBNET_MASK, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §3.3 (Subnet Mask option code 1).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionSubnetMask.from_buffer(b"\xff\x04\xff\xff\xff\x00")

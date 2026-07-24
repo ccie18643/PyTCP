@@ -31,13 +31,14 @@ This module contains integration tests for the UDP RX packet-handler path.
 
 pytcp/tests/integration/protocols/udp/test__udp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import override
 
 from net_proto.lib.packet_rx import PacketRx
 from pytcp.lib.packet_stats import PacketStatsRx, PacketStatsTx
+from pytcp.tests.lib.parameterized import parameterized_class
 from pytcp.tests.lib.udp_testcase import UdpTestCase
 
 
@@ -486,6 +487,7 @@ class TestUdpRxEchoNativeDisabled(UdpTestCase):
     branch for port-7 traffic.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard mock stack, then disable native UDP echo.

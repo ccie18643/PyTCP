@@ -28,14 +28,13 @@ monkeys echoed over IPv4 TCP with a graceful service-side close.
 
 tools/capture/scenarios/ip4_tcp_monkeys.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import SERVICE_LOG_RE, Harness, common_options, make_config
 
 
@@ -61,50 +60,20 @@ def command(*, payload: str, graceful: bool, **kwargs: Any) -> None:
 
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
-        harness.start_capture(f"arp or host {cfg.ip4_addr}")
-        harness.start_example(
-            "examples.service__tcp_echo",
-            "--local-port",
+        harness.start_stack(ip4="static", ip6="off")
+        harness.wait_for(f"Successfully claimed IPv4 address {cfg.ip4_addr}", cfg.claim_timeout)
+        harness.start_service(
+            "examples.tcp_echo_server__async",
+            "--host",
+            cfg.ip4_addr,
+            "--port",
             str(cfg.port),
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip4-address",
-            cfg.ip4,
-            "--stack-ip4-gateway",
-            cfg.gw4,
-            "--stack-no-ip6",
         )
-        harness.wait_for(f"Socket created, bound to {cfg.ip4_addr}, port {cfg.port}", cfg.bind_timeout)
-        harness.wait_for("Socket set to listening mode", 10)
-        time.sleep(1)
+        harness.wait_for(f"async TCP echo server on {cfg.ip4_addr}:{cfg.port}", cfg.bind_timeout)
+        time.sleep(2)
         harness.drive_monkeys(cfg.ip4_addr, ipv6=False, udp=False, payload=payload, graceful=graceful)
         time.sleep(2)
-        harness.stop_example()
+        harness.stop_all()
         harness.print_client_output("client output (banner + echoed monkeys)")
         harness.log_highlights(SERVICE_LOG_RE, 20)
-        harness.wire(
-            "-Y",
-            f"arp || ip.addr=={cfg.ip4_addr}",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "ip.src",
-            "-e",
-            "ip.dst",
-            "-e",
-            "arp.src.proto_ipv4",
-            "-e",
-            "arp.dst.proto_ipv4",
-            "-e",
-            "ip.id",
-            "-e",
-            "ip.flags.mf",
-            "-e",
-            "ip.frag_offset",
-            "-e",
-            "tcp.flags.str",
-            "-e",
-            "_ws.col.Info",
-        )
+        harness.wire(f"arp or ip.addr == {cfg.ip4_addr}")

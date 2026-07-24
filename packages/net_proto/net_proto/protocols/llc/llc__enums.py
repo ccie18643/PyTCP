@@ -31,7 +31,7 @@ commands).
 
 net_proto/protocols/llc/llc__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -97,8 +97,10 @@ class LlcSap(ProtoEnumByte):
                 name = "ISO-Network"
             case LlcSap.GLOBAL:
                 name = "Global"
+            case _:
+                name = f"0x{self.value:02x}"
 
-        return f"0x{self.value:02x}" if self.is_unknown else name
+        return name
 
 
 class LlcControl(ProtoEnumByte):
@@ -135,5 +137,7 @@ class LlcControl(ProtoEnumByte):
                 name = "TEST"
             case LlcControl.TEST_POLL_ON:
                 name = "TEST/P"
+            case _:
+                name = f"0x{self.value:02x}"
 
-        return f"0x{self.value:02x}" if self.is_unknown else name
+        return name

@@ -27,14 +27,14 @@ This module contains the IGMPv3 Membership Report message support class.
 
 net_proto/protocols/igmp/message/igmp__message__v3_report.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.int_checks import is_uint16
 from net_proto.protocols.igmp.igmp__errors import IgmpIntegrityError
 from net_proto.protocols.igmp.message.igmp__message import (

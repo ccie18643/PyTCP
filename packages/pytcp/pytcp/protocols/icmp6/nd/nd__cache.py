@@ -37,17 +37,15 @@ escape hatch, sysctl-driven knobs) from the parent class.
 
 pytcp/protocols/icmp6/nd/nd__cache.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, override
+from typing import override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from pytcp.lib.neighbor import NeighborCache
-
-if TYPE_CHECKING:
-    from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler_api import NdCacheOwner
 
 
 class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
@@ -77,7 +75,7 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
     # Class-level 'None' default (rather than an '__init__'
     # assignment) so 'create_autospec' exposes the attribute as
     # settable for the test harness.
-    _owner: "PacketHandlerL2 | PacketHandlerL3 | None" = None
+    _owner: NdCacheOwner | None = None
 
     @override
     def __init__(self) -> None:
@@ -92,6 +90,18 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
             solicit_callback=self._solicit_ns,
             flush_callback=self._flush_packet,
         )
+
+    def attach_owner(self, owner: NdCacheOwner, /, *, iface_name: str | None) -> None:
+        """
+        Bind this cache to its owning interface handler (the
+        bidirectional cache <-> handler link) and record the interface
+        name for the 'neighbor.<ifname>.*' sysctl namespace. Called by
+        the stack lifecycle at construction time; the solicit / flush
+        callbacks route through 'owner'.
+        """
+
+        self._owner = owner
+        self._iface_name = iface_name
 
     # ------------------------------------------------------------
     # Public API — kw-only methods preserve the established ND
@@ -203,9 +213,14 @@ class NdCache(NeighborCache[Ip6Address, EthernetAssembler]):
         """
 
         assert self._owner is not None, "ND cache must be bound to an interface handler before flushing."
-        assert self._owner._tx_ring is not None, "Owning interface handler must have a TX ring to flush."
+        assert self._owner.tx_ring is not None, "Owning interface handler must have a TX ring to flush."
         packet.dst = mac_address
+        # AF_PACKET egress tap: the flush bypasses '__send_out_packet'
+        # (it enqueues to the TX ring directly), so re-invoke the tap here
+        # or a queued-then-flushed frame would never be observed on egress
+        # (Linux 'dev_queue_xmit_nit' taps neighbor-queued frames too).
+        self._owner.deliver_tx_to_packet_sockets(packet)
         # Phase 4: this direct enqueue becomes a ring-handoff TX
         # request once the per-interface TX worker owns the
         # send-out pipeline.
-        self._owner._tx_ring.enqueue(packet)
+        self._owner.tx_ring.enqueue(packet)

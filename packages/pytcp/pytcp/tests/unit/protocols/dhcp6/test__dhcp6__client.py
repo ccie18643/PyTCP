@@ -28,9 +28,11 @@ This module contains tests for the DHCPv6 stateless client in
 
 pytcp/tests/unit/protocols/dhcp6/test__dhcp6__client.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import threading
+import time
 from typing import override
 from unittest import TestCase
 from unittest.mock import create_autospec, patch
@@ -43,7 +45,7 @@ from pytcp.protocols.dhcp6.dhcp6__client import (
     Dhcp6StatelessConfig,
 )
 from pytcp.protocols.dhcp6.dhcp6__uid import get_client_duid
-from pytcp.socket import SO_BINDTODEVICE, SOL_SOCKET
+from pytcp.runtime.socket import SO_BINDTODEVICE, SOL_SOCKET
 from pytcp.stack import sysctl
 from pytcp.stack.address import AddressApi
 from pytcp.tests.lib.dhcp6_mock_server import Dhcp6MockServer, autospec_dhcp6_socket
@@ -88,7 +90,7 @@ class TestDhcp6ClientInit(TestCase):
         """
 
         with self.assertRaises(TypeError):
-            Dhcp6Client(_DEFAULT_MAC)  # type: ignore[misc]
+            Dhcp6Client(_DEFAULT_MAC)  # type: ignore[call-arg]
 
 
 class TestDhcp6ClientFetch(TestCase):
@@ -1158,8 +1160,8 @@ class TestDhcp6ClientSolicitDelay(TestCase):
     def setUp(self) -> None:
         """
         Wire a mock server into an autospec'd socket, pin the
-        transaction-ids, and install a controllable clock whose 'sleep'
-        is an assertable mock.
+        transaction-ids, install a controllable clock, and spy on the
+        stop-event wait used for the interruptible first-SOLICIT delay.
         """
 
         self._socket_factory = self.enterContext(
@@ -1181,6 +1183,13 @@ class TestDhcp6ClientSolicitDelay(TestCase):
         self._server.wire(self._sock)
         self._client = Dhcp6Client(mac_address=_DEFAULT_MAC)
 
+        # The first-SOLICIT jitter waits on the stop event (interruptible
+        # for prompt teardown) rather than 'time.sleep'; spy on it so the
+        # delay is assertable without engaging the real event.
+        self._delay_wait = self.enterContext(
+            patch.object(self._client._event__stop_subsystem, "wait", return_value=False),
+        )
+
     @override
     def tearDown(self) -> None:
         """
@@ -1190,7 +1199,7 @@ class TestDhcp6ClientSolicitDelay(TestCase):
         sysctl.reset_to_defaults()
         super().tearDown()
 
-    def test__dhcp6_client__solicit_delay_sleeps_random_interval(self) -> None:
+    def test__dhcp6_client__solicit_delay_waits_random_interval(self) -> None:
         """
         Ensure the first SOLICIT is preceded by a random delay drawn from
         [0, SOL_MAX_DELAY] before transmission.
@@ -1204,12 +1213,12 @@ class TestDhcp6ClientSolicitDelay(TestCase):
 
         self._client.acquire_lease()
 
-        self._mock_time.sleep.assert_called_once_with(0.25)
+        self._delay_wait.assert_called_once_with(timeout=0.25)
 
-    def test__dhcp6_client__solicit_delay_zero_does_not_sleep(self) -> None:
+    def test__dhcp6_client__solicit_delay_zero_does_not_wait(self) -> None:
         """
         Ensure a drawn delay of 0 transmits the first SOLICIT immediately
-        without sleeping.
+        without waiting.
 
         Reference: RFC 8415 §18.2.1 (a 0 delay transmits immediately).
         """
@@ -1220,7 +1229,7 @@ class TestDhcp6ClientSolicitDelay(TestCase):
 
         self._client.acquire_lease()
 
-        self._mock_time.sleep.assert_not_called()
+        self._delay_wait.assert_not_called()
 
 
 class TestDhcp6ClientLifecycle(TestCase):
@@ -1884,3 +1893,86 @@ class TestDhcp6ClientTrigger(TestCase):
         self._client._stop()
 
         self.assertTrue(self._client._event__trigger.is_set(), msg="_stop() must set the trigger event.")
+
+
+class TestDhcp6ClientShutdown(TestCase):
+    """
+    The 'Dhcp6Client' worker stop-responsiveness tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Wire a fake socket whose 'recv__mv' blocks for the requested
+        timeout (modelling a silent network) and start a real worker so a
+        Managed trigger drives the SOLICIT retransmission inside it. The
+        blocking recv is released on cleanup so a failing run cannot leave
+        a worker dangling in a long retransmission window.
+        """
+
+        self.enterContext(patch("pytcp.protocols.dhcp6.dhcp6__client.log"))
+        self.enterContext(patch("pytcp.runtime.subsystem.log"))
+
+        self._random = self.enterContext(patch("pytcp.protocols.dhcp6.dhcp6__client.random"))
+        self._random.randint.return_value = _PINNED_XID
+        self._random.uniform.return_value = 0.0
+
+        self._socket_factory = self.enterContext(
+            patch("pytcp.protocols.dhcp6.dhcp6__client.socket", new=autospec_dhcp6_socket()),
+        )
+        self._sock = self._socket_factory.return_value
+
+        self._recv_entered = threading.Event()
+        self._unblock_recv = threading.Event()
+
+        def _blocking_recv(bufsize: int | None = None, timeout: float | None = None) -> memoryview:
+            del bufsize
+            self._recv_entered.set()
+            # Wait the requested window unless released, then report a
+            # silent server (no reply ever arrives).
+            self._unblock_recv.wait(timeout=timeout if timeout else 0.0)
+            raise TimeoutError
+
+        self._sock.recv__mv.side_effect = _blocking_recv
+
+        self._client = Dhcp6Client(mac_address=_DEFAULT_MAC)
+        self.addCleanup(self._release_worker)
+
+    def _release_worker(self) -> None:
+        """
+        Unblock any in-flight recv and stop the worker so a dangling
+        thread (e.g. from a pre-fix failing run) is reaped promptly.
+        """
+
+        self._unblock_recv.set()
+        self._client.stop()
+
+    def test__dhcp6_client__stop_exits_worker_blocked_in_solicit(self) -> None:
+        """
+        Ensure stop() exits the worker thread promptly even while it is
+        blocked in the SOLICIT retransmission recv, rather than leaving it
+        dangling for the full §15 retransmission budget.
+
+        Reference: RFC 8415 §15 (Reliability of Client-Initiated Message Exchanges).
+        """
+
+        self._client.start()
+        self._client.trigger(managed=True, other=False)
+
+        self.assertTrue(
+            self._recv_entered.wait(timeout=2.0),
+            msg="The worker must reach the blocking SOLICIT recv.",
+        )
+
+        started = time.monotonic()
+        self._client.stop()
+        elapsed = time.monotonic() - started
+
+        thread = self._client._thread
+        assert thread is not None
+        self.assertFalse(thread.is_alive(), msg="stop() must exit the worker thread, not leave it dangling.")
+        self.assertLess(
+            elapsed,
+            1.0,
+            msg=f"stop() must not block for the retransmission window; took {elapsed:.2f}s.",
+        )

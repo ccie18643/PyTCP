@@ -28,13 +28,11 @@ Option) shallow option code (FIPS-188 / Linux NetLabel).
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__cipso.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     IP4__OPTION__CIPSO__DOI_LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     Ip4OptionCipso,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionCipsoAsserts(TestCase):
@@ -177,6 +176,7 @@ class TestIp4OptionCipsoAssembler(TestCase):
     _tags: list[bytes]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionCipso from the parametrized 'doi' / 'tags'.
@@ -324,4 +324,64 @@ class TestIp4OptionCipsoIntegrity(TestCase):
             "tag's length byte must not extend past the option boundary",
             str(error.exception),
             msg="Unexpected integrity-error message for tag-length-overrun.",
+        )
+
+
+class TestIp4OptionCipsoWrongType(TestCase):
+    """
+    The IPv4 CIPSO option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__cipso__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.CIPSO and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: FIPS-188 §A.1 (CIPSO option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionCipso.from_buffer(b"\x00\x0e\xde\xad\xbe\xef\x01\x08\x00\x00\x10\x20\x30\x40")
+
+    def test__ip4__option__cipso__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.CIPSO, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: FIPS-188 §A.1 (CIPSO option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionCipso.from_buffer(b"\xff\x0e\xde\xad\xbe\xef\x01\x08\x00\x00\x10\x20\x30\x40")
+
+
+class TestIp4OptionCipsoMinimalTag(TestCase):
+    """
+    The IPv4 CIPSO option minimal-tag boundary parser tests.
+    """
+
+    def test__ip4__option__cipso__from_buffer_minimal_tag_accepted(self) -> None:
+        """
+        Ensure 'from_buffer()' accepts a tag occupying exactly
+        TAG_HDR_LEN (2) bytes — a type+length header with no tag data —
+        pinning both the walker's 'remaining < TAG_HDR_LEN' check and
+        the per-tag 'tag_len < TAG_HDR_LEN' check against a '<='
+        over-rejection of the inclusive minimum.
+
+        Reference: FIPS-188 §A.3 (a CIPSO tag is at least 2 octets: type + length).
+        """
+
+        # IPv4 CIPSO option, one 2-byte tag (the inclusive minimum):
+        #   Byte 0     : 0x86       -> type=CIPSO (134)
+        #   Byte 1     : 0x08       -> len=8 (2 header + 4 DOI + 2 tag)
+        #   Bytes 2-5  : 0x01020304 -> doi
+        #   Bytes 6-7  : 0x05 0x02  -> tag: type=5, length=2 (no data)
+        decoded = Ip4OptionCipso.from_buffer(b"\x86\x08\x01\x02\x03\x04\x05\x02")
+
+        self.assertEqual(
+            [bytes(tag) for tag in decoded.tags],
+            [b"\x05\x02"],
+            msg=f"A minimal 2-byte CIPSO tag must round-trip intact. Got {decoded.tags!r}.",
         )

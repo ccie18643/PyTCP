@@ -27,14 +27,12 @@ Module contains tests for the ICMPv4 unknown message parser.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__unknown__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Icmp4Parser,
@@ -42,6 +40,7 @@ from net_proto import (
     Ip4Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes) -> PacketRx:
@@ -112,6 +111,7 @@ class TestIcmp4MessageUnknownParser(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx for the parametrized frame.

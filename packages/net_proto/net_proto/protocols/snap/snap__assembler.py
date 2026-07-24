@@ -30,12 +30,12 @@ round-trip testing.
 
 net_proto/protocols/snap/snap__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_assembler import ProtoAssembler
 from net_proto.lib.tracker import Tracker
 from net_proto.protocols.snap.snap__base import Snap

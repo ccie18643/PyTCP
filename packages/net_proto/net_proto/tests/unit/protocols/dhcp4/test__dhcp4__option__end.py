@@ -27,9 +27,10 @@ Module contains tests for the DHCPv4 End option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__end.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import DHCP4__OPTION__END__LEN, Dhcp4OptionEnd, Dhcp4OptionType
@@ -40,6 +41,7 @@ class TestDhcp4OptionEndAssembler(TestCase):
     The DHCPv4 End option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 End option object.

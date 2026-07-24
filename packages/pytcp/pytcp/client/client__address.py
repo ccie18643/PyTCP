@@ -33,14 +33,14 @@ the add with the callback defaulted to None.
 
 pytcp/client/client__address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr
 from pytcp.client.client__base import _DeviceScopedProxy
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 type _AnyIfAddr = Ip4IfAddr | Ip6IfAddr
 
@@ -52,12 +52,15 @@ class ClientAddress(_DeviceScopedProxy):
 
     _api_name = "address"
 
-    def add(self, *, ifaddr: _AnyIfAddr) -> None:
+    def add(self, *, ifaddr: _AnyIfAddr, dad: bool = True) -> None:
         """
-        Assign an interface address to the bound interface.
+        Assign an interface address to the bound interface. An IPv6
+        address is run through Duplicate Address Detection before it is
+        installed (RFC 4862 §5.4); pass 'dad=False' to install directly.
+        Ignored for IPv4.
         """
 
-        self._call("add", {"ifaddr": ifaddr})
+        self._call("add", {"ifaddr": ifaddr, "dad": dad})
 
     def remove(self, *, address: Ip4Address | Ip6Address, abort_bound_sessions: bool = True) -> None:
         """

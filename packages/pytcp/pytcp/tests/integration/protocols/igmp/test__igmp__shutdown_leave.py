@@ -30,7 +30,7 @@ the memberships immediately instead of waiting for a query timeout.
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__shutdown_leave.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
@@ -84,7 +84,7 @@ class TestIgmpShutdownLeave(NetworkTestCase):
         self._packet_handler._assign_ip4_multicast(Ip4Address("239.2.2.2"))
 
         before = len(self._frames_tx)
-        self._packet_handler._send_igmp_leave_all()
+        self._packet_handler.send_igmp_leave_all()
 
         reports = _igmp_report_frames(self._frames_tx[before:])
         self.assertEqual(len(reports), 1, msg="The shutdown Leave is a single combined Report.")
@@ -108,7 +108,7 @@ class TestIgmpShutdownLeave(NetworkTestCase):
         """
 
         before = len(self._frames_tx)
-        self._packet_handler._send_igmp_leave_all()
+        self._packet_handler.send_igmp_leave_all()
 
         self.assertEqual(
             len(_igmp_report_frames(self._frames_tx[before:])),

@@ -32,14 +32,14 @@ path needs a driven TCP wire and lands in the echo test.
 
 pytcp/tests/integration/ipc/test__ipc__client_tcp_socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import errno
 from typing import cast
 
 from pytcp.client import ClientTcpSocket
-from pytcp.ipc.ipc__errors import IpcRemoteError
-from pytcp.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
+from pytcp.runtime.socket import SO_KEEPALIVE, SOL_SOCKET, AddressFamily, SocketType
 from pytcp.tests.lib.ipc_control_testcase import IpcControlTestCase
 
 
@@ -79,11 +79,11 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
         sock = cast(ClientTcpSocket, client.socket(AddressFamily.INET4, SocketType.STREAM))
         self.addCleanup(sock.close)
 
-        sock.bind(("0.0.0.0", 40010))
+        sock.bind(("0.0.0.0", 18010))
 
         self.assertEqual(
             sock.getsockname(),
-            ("0.0.0.0", 40010),
+            ("0.0.0.0", 18010),
             msg="getsockname must reflect the address bound through the client shim.",
         )
 
@@ -110,7 +110,8 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
     def test__client_socket__close_releases_daemon_handle(self) -> None:
         """
         Ensure closing the client socket releases the daemon handle, so a
-        later control call over it surfaces a remote error.
+        later call over the stale handle surfaces OSError(EBADF) — the
+        same error the stdlib reports for a call on a closed descriptor.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -120,5 +121,11 @@ class TestIpcClientTcpSocket(IpcControlTestCase):
 
         sock.close()
 
-        with self.assertRaises(IpcRemoteError):
+        with self.assertRaises(OSError) as raised:
             sock.getsockname()
+
+        self.assertEqual(
+            raised.exception.errno,
+            errno.EBADF,
+            msg="A call over a released daemon handle must surface OSError(EBADF), as for a closed fd.",
+        )

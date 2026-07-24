@@ -228,9 +228,9 @@ The clamp is applied both in `update()` (via
 ### Requirement (1) — Initial RTO = 1 s
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__rto.py::TestInitialState::test__rto__initial_state_rto_ms_is_initial_rto_ms`
+  `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__rto.py::TestRtoInitialState::test__rto__initial_state__rto_is_initial_rto_ms`
   pins `initial_state().rto_ms == INITIAL_RTO_MS`.
-- **Unit:** `test__rto__initial_rto_ms_is_one_second`
+- **Unit:** `test__rto__initial_rto_is_1_second`
   pins the constant value.
 - **Integration:** every handshake test that fires the
   first SYN-ack RTT sample asserts the post-sample
@@ -240,10 +240,11 @@ The clamp is applied both in `update()` (via
 
 ### Requirement (2)(a) — Multiple FT samples / EWMA
 
-- **Unit:** `test__tcp__rto.py::TestUpdate` contains
-  parameterised tests covering first-sample case,
-  subsequent-sample EWMA with various sample-vs-SRTT
-  deltas, and the variance term contribution.
+- **Unit:** `test__tcp__rto.py::TestRtoUpdateFirstSample`
+  and `TestRtoUpdateSubsequentSample` contain tests
+  covering the first-sample case, subsequent-sample EWMA
+  with various sample-vs-SRTT deltas, and the variance
+  term contribution.
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rto.py`
   exercises the EWMA across multiple ACKs.
@@ -266,10 +267,10 @@ The MAY is permissive, so absence is conformant.
 
 ### Requirement (2)(d) — Karn's algorithm (no ambiguous samples)
 
-- **Unit:** `test__tcp__rto.py::TestUpdate` includes
-  cases where the helper is called only with
-  non-tainted samples (the function itself is
-  unconditional).
+- **Unit:** `test__tcp__rto.py::TestRtoUpdateFirstSample`
+  and `TestRtoUpdateSubsequentSample` include cases
+  where the helper is called only with non-tainted
+  samples (the function itself is unconditional).
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rto.py::TestTcpRtoSampling::test__rto__retransmit_marks_pending_sample_as_karn_tainted`
   and
@@ -283,10 +284,9 @@ The MAY is permissive, so absence is conformant.
 ### Requirement (3) — RTO triggers CC adaptation
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__cwnd.py::TestTcpCwndPhase2::test__cwnd__rto_resets_cwnd_to_loss_window`
-  and
-  `test__cwnd__rto_sets_ssthresh_to_half_flight_size`
-  pin the cwnd → 1 SMSS and ssthresh halving on RTO.
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__cwnd.py::TestTcpCwndPhase2::test__cwnd__rto_sets_ssthresh_to_half_flight_size`
+  pins both the cwnd → 1 SMSS collapse and the ssthresh
+  halving on RTO.
 - **Integration (CUBIC):**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__cubic.py::TestTcpCubicPhase3::test__cubic__rto_uses_beta_cubic`
   pins the CUBIC mode's beta_cubic = 0.7 ssthresh
@@ -296,7 +296,7 @@ The MAY is permissive, so absence is conformant.
 
 ### Requirement (4) — Exponential backoff
 
-- **Unit:** `test__tcp__rto.py::TestBackOff` covers
+- **Unit:** `test__tcp__rto.py::TestRtoBackOff` covers
   the doubling logic and the MAX_RTO_MS clamp.
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__rto.py::TestTcpRtoRetransmitTimer::test__rto__retransmit_timeout_backs_off_rto_state`
@@ -318,9 +318,9 @@ The MAY is permissive, so absence is conformant.
 
 ### Requirement (4) — Max RTO ≥ 60 s
 
-- **Unit:** `test__tcp__rto.py::test__rto__max_rto_ms_is_sixty_seconds`
+- **Unit:** `test__tcp__rto.py::test__rto__max_rto_is_at_least_60_seconds`
   pins the constant.
-- **Unit:** `TestBackOff::test__rto__back_off_clamps_at_max_rto`
+- **Unit:** `TestRtoBackOff::test__rto__back_off__caps_at_max_rto`
   pins the clamp behaviour.
 
 **Status:** locked in.

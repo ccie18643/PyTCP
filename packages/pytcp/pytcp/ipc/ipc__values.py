@@ -47,7 +47,7 @@ core (see docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__values.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import base64
@@ -70,8 +70,9 @@ from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__errors import IpcValueError
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
+from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AddressFamily,
     IpOption,
     IpV6Option,
@@ -82,9 +83,11 @@ from pytcp.socket import (
     SolLevel,
     SolSocketOption,
 )
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
+from pytcp.stack.activity_introspect import InterfaceActivity
 from pytcp.stack.link import LinkFlag, LinkStats
 from pytcp.stack.neighbor import NeighborSnapshot
+from pytcp.stack.socket_introspect import SocketSnapshot
 
 _TAG_KEY: str = "__t__"
 _VAL_KEY: str = "v"
@@ -126,6 +129,7 @@ _ENUM_TYPES: tuple[type[Enum], ...] = (
     IpOption,
     IpV6Option,
     MsgFlag,
+    FsmState,
 )
 _ENUM_TYPE_BY_TAG: dict[str, type[Enum]] = {t.__name__: t for t in _ENUM_TYPES}
 
@@ -136,6 +140,8 @@ _DATACLASS_TYPES: tuple[type[Any], ...] = (
     NeighborSnapshot,
     LinkStats,
     SockAddrLl,
+    SocketSnapshot,
+    InterfaceActivity,
 )
 _DATACLASS_TYPE_BY_TAG: dict[str, type[Any]] = {t.__name__: t for t in _DATACLASS_TYPES}
 

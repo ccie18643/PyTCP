@@ -27,7 +27,7 @@ This module contains the shared IPv4/IPv6 fragment-reassembly flow table.
 
 pytcp/protocols/ip/ip_frag_table.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from enum import Enum
 from time import time
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.protocols.ip.ip_frag import IpFragData, IpFragFlowId, aggregate_ecn
 
 

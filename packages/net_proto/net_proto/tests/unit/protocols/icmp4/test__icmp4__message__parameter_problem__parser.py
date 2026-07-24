@@ -28,14 +28,12 @@ parser operation.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__parameter_problem__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Icmp4MessageParameterProblem,
@@ -44,16 +42,21 @@ from net_proto import (
     Ip4Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
-def _packet_rx_with_ip4(frame: bytes) -> PacketRx:
+def _packet_rx_with_ip4(frame: bytes, *, ip4__payload_len: int | None = None) -> PacketRx:
     """
     Build a PacketRx with a minimal IPv4 stub whose 'payload_len'
-    matches the full frame.
+    defaults to the full frame length, or is overridden to model a frame
+    followed by lower-layer padding.
     """
 
     packet_rx = PacketRx(frame)
-    packet_rx.ip4 = cast(Ip4Parser, SimpleNamespace(payload_len=len(frame)))
+    packet_rx.ip4 = cast(
+        Ip4Parser,
+        SimpleNamespace(payload_len=len(frame) if ip4__payload_len is None else ip4__payload_len),
+    )
     return packet_rx
 
 
@@ -143,3 +146,45 @@ class TestIcmp4MessageParameterProblemParser(TestCase):
             self._results["message"],
             msg=f"Unexpected decoded Parameter Problem message for case: {self._description}",
         )
+
+
+class TestIcmp4MessageParameterProblemParserIntegrityBoundary(TestCase):
+    """
+    Boundary tests for the ICMPv4 Parameter Problem integrity validator.
+    """
+
+    def test__icmp4__message__parameter_problem__parser__integrity__minimum_length_accepted(self) -> None:
+        """
+        Ensure the shortest valid Parameter Problem frame (exactly
+        8 bytes — type, code, checksum, pointer + unused) parses without
+        raising an integrity error.
+
+        Reference: RFC 792 (ICMPv4 Parameter Problem type 12 integrity).
+        """
+
+        # ICMPv4 Parameter Problem at minimum length (8 bytes, valid cksum)
+        #   Type     : 12 (Parameter Problem)
+        #   Code     : 0 (Default)
+        #   Checksum : 0xf3ff
+        #   Pointer  : 0 / unused 0x000000
+        frame = b"\x0c\x00\xf3\xff\x00\x00\x00\x00"
+
+        Icmp4Parser(_packet_rx_with_ip4(frame))
+
+    def test__icmp4__message__parameter_problem__parser__integrity__trailing_bytes_accepted(self) -> None:
+        """
+        Ensure a frame whose raw length exceeds 'ip4__payload_len' (the
+        ICMPv4 message is followed by lower-layer padding) still parses:
+        the integrity bound is 'ip4__payload_len <= len(frame)', so
+        trailing bytes beyond the declared payload are tolerated, not
+        rejected.
+
+        Reference: RFC 792 (ICMPv4 Parameter Problem type 12 integrity).
+        """
+
+        # Minimum 8-byte Parameter Problem (valid checksum over the 8
+        # octets) followed by 4 octets of lower-layer padding.
+        # ip4__payload_len=8 is strictly less than len(frame)=12.
+        frame = b"\x0c\x00\xf3\xff\x00\x00\x00\x00" + b"\x00\x00\x00\x00"
+
+        Icmp4Parser(_packet_rx_with_ip4(frame, ip4__payload_len=8))

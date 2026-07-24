@@ -99,7 +99,7 @@ contention concern.
 
 | Clause | Test file / class |
 |--------|-------------------|
-| Per-burst randomization (not monotonic +1) | `packages/pytcp/pytcp/tests/unit/stack/packet_handler/test__stack__packet_handler__ip6_frag__tx.py::TestPacketHandlerIp6FragTx::test__stack__packet_handler__ip6_frag__tx__frag_id_is_randomized_per_burst` |
+| Per-burst randomization (not monotonic +1) | `packages/pytcp/pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6_frag__tx.py::TestPacketHandlerIp6FragTx::test__stack__packet_handler__ip6_frag__tx__frag_id_is_randomized_per_burst` |
 | ID stable within a burst (all fragments share one ID) | Same class :: `test__stack__packet_handler__ip6_frag__tx__id_shared_within_burst` |
 | Existing fixture-driven tests retain known IDs via `NetworkTestCase` patch | `packages/pytcp/pytcp/tests/lib/network_testcase.py::NetworkTestCase.setUp` (patches `_generate_ip6_frag_id` with a deterministic counter) |
 

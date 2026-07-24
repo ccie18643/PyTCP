@@ -25,7 +25,10 @@ the RFC 5227 probe / announce / defense audit lives at
 [`../rfc5227__ipv4_acd/adherence.md`](../rfc5227__ipv4_acd/adherence.md).
 
 The audit was performed by reading the RFC text fresh and
-inspecting the codebase under `packages/pytcp/pytcp/stack/arp_cache.py` and
+inspecting the codebase under
+`packages/pytcp/pytcp/protocols/arp/arp__cache.py` (the IPv4
+adapter), `packages/pytcp/pytcp/lib/neighbor.py` (the generic
+`NeighborCache[A, P]` NUD state machine it inherits) and
 `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__arp__{rx,tx}.py`
 directly. Adherence levels use the canonical descriptive
 language: **met**, **not met**, **partial**, **not implemented**,
@@ -46,79 +49,81 @@ as MUST NOT default-on, MAY support — PyTCP's choice of
 > (ARP) [LINK:2] MUST provide a mechanism to flush
 > out-of-date cache entries."
 
-**Adherence:** **met**. PyTCP's `ArpCache._subsystem_loop`
-runs a periodic age-based eviction
-(`packages/pytcp/pytcp/stack/arp_cache.py:106-142`): every 100 ms (the
-shared `SUBSYSTEM_SLEEP_TIME__SEC = 0.1`) the loop walks
-every cached entry and discards any non-permanent entry
-whose age exceeds `stack.ARP__CACHE__ENTRY_MAX_AGE = 3600`
-seconds. The discard log line is at
-`packages/pytcp/pytcp/stack/arp_cache.py:118-122`. The `permanent`
-sentinel on `CacheEntry` is the lone exception
-(`packages/pytcp/pytcp/stack/arp_cache.py:55,113-114`); RFC 1122 §2.3.2.1
-mentions "manual flush" as a non-mandatory implementation
-detail and PyTCP's approach is consistent.
+**Adherence:** **met**. `ArpCache` inherits the generic
+`NeighborCache._subsystem_loop`
+(`packages/pytcp/pytcp/lib/neighbor.py:406-501`): every 100 ms
+(the shared `SUBSYSTEM_SLEEP_TIME__SEC = 0.1`) the loop ages
+each entry through the RFC 4861 NUD states — a confirmed
+`REACHABLE` entry that has not been reconfirmed for
+`neighbor.reachable_time` seconds transitions to `STALE`
+(`neighbor.py:453-454`), and the three-tier GC pass
+(`neighbor.py:503-585`) evicts `FAILED` and aged-out `STALE`
+entries once the cache crosses `neighbor.gc_thresh1`. The
+`PERMANENT` state is the lone eviction exception
+(`neighbor.py:542`); RFC 1122 §2.3.2.1 mentions "manual
+flush" as a non-mandatory implementation detail and PyTCP's
+approach is consistent.
 
 > "If this mechanism involves a timeout, it SHOULD be
 > possible to configure the timeout value."
 
-**Adherence:** **met**. The two timeout values
-(`ARP__CACHE__ENTRY_MAX_AGE`,
-`ARP__CACHE__ENTRY_REFRESH_TIME`) live in
-`packages/pytcp/pytcp/protocols/arp/arp__constants.py` as the compile-time
-defaults (3600 s / 300 s). `pytcp.stack.init()` accepts
-`arp_cache_max_age=` and `arp_cache_refresh_time=` kwargs
-that override the live constants in place — sysctl-style
-mutation of the module attributes — so the cache loop reads
-the user value at runtime. The Linux equivalents are
+**Adherence:** **met**. The NUD timing knobs
+(`neighbor.reachable_time`, `neighbor.retrans_timer`,
+`neighbor.gc_stale_time`, and the solicit-count / GC-threshold
+family) live in
+`packages/pytcp/pytcp/lib/neighbor__constants.py` and are
+registered with the sysctl registry under the `neighbor.*`
+namespace. An operator tunes them at boot via the
+`stack.init(sysctls={...})` bag or at runtime via
+`pytcp.stack.sysctl["neighbor.reachable_time"] = ...`; the
+cache loop resolves each knob through
+`sysctl_iface.get_for_iface(...)` once per iteration
+(`packages/pytcp/pytcp/lib/neighbor.py:425-429`), so a mutation
+is picked up on the next pass. The Linux equivalents are
 `net.ipv4.neigh.default.base_reachable_time` and
-`net.ipv4.neigh.default.gc_stale_time`. The cache loop reads
-both via qualified access on `arp__constants` so a mutation
-through `stack.init()` is picked up by the next iteration.
-A REFRESH_TIME < MAX_AGE invariant is enforced at init
-time; configurations that violate it raise `ValueError`.
+`net.ipv4.neigh.default.gc_stale_time`.
 
 For RFC 1122 §2.3.2.1's proxy-ARP-on-the-order-of-a-minute
 guidance, an operator running on a proxy-ARP-heavy LAN can
-now run `stack.init(arp_cache_max_age=60,
-arp_cache_refresh_time=15)` to dial in the appropriate
-timeout without editing the source.
+dial in a short reachability lifetime — e.g.
+`pytcp.stack.sysctl["neighbor.reachable_time"] = 60` — to
+tune the appropriate timeout without editing the source.
 
-Per-interface timeouts (Linux's
-`net.ipv4.neigh.<iface>.*` namespace) are out of scope
-until multi-interface support lands (Phase 2).
+Per-interface timeouts (Linux's `net.ipv4.neigh.<iface>.*`
+namespace) are already modelled by the knobs'
+`interface_scope=True` storage: the operator addresses
+`neighbor.<ifname>.<field>` or the `neighbor.default.<field>`
+template. Binding more than one cache to a non-default
+interface name lands with multi-interface support (Phase 2).
 
 > "A mechanism to prevent ARP flooding (repeatedly sending
 > an ARP Request for the same IP address, at a high rate)
 > MUST be included. The recommended maximum rate is 1 per
 > second per destination."
 
-**Adherence:** **not met**. PyTCP's
-`ArpCache.find_entry()` issues an ARP Request on every
-cache miss (`packages/pytcp/pytcp/stack/arp_cache.py:161-181`) without
-any rate limit, deduplication, or in-flight-resolution
-tracking. A burst of TX attempts to an unresolved IP
-produces a burst of ARP Requests at the same rate.
-Likewise the cache-refresh path
-(`packages/pytcp/pytcp/stack/arp_cache.py:127-139`) fires from the
-100 ms subsystem loop with no per-destination rate limit
-beyond the loop cadence (which is stricter than 1 / sec
-but not by design — it's incidental to the loop period).
+**Adherence:** **met**. The NUD state machine gates ARP
+Requests exactly as RFC 1122 requires — one solicit per
+in-flight resolution, then a bounded retransmit schedule.
+On the first cache miss `NeighborCache._find_entry`
+(`packages/pytcp/pytcp/lib/neighbor.py:201-231`) creates a
+single `INCOMPLETE` entry and fires one broadcast solicit;
+every subsequent `find_entry` while the entry is still
+`INCOMPLETE` returns `None` **without** re-soliciting
+(`neighbor.py:243-244`), so a burst of TX attempts to an
+unresolved IP produces exactly one Request, not one per
+packet. Retransmits are driven only by the subsystem loop,
+gated by `neighbor.retrans_timer` (default 1 s —
+`neighbor.py:469`) and hard-capped at
+`neighbor.max_multicast_solicit` (default 3) probes before
+the entry transitions to `FAILED` (`neighbor.py:465-467`).
+The refresh / probe path (`PROBE` state) is likewise gated
+by `retrans_timer` and capped at
+`neighbor.max_unicast_solicit` (`neighbor.py:475-478`).
 
-This is the **most consequential RFC 1122 §2.3.2 gap** in
-PyTCP. A misbehaving local-app sending 100 packets / sec
-to an unresolved IP would emit 100 ARP Requests / sec on
-the wire. The fix is a per-destination "last sent at"
-timestamp on either the in-progress-resolution table (which
-PyTCP doesn't have today either — see RFC 1122 §2.3.2.2
-below) or directly in the cache as a sentinel "resolution
-in progress" entry with a 1-second guard.
-
-Linux's implementation lives in `net/core/neighbour.c` and
-gates new probes via `NUD_INCOMPLETE` state, the
-`unres_qlen` queue, and the `mcast_solicit` /
-`ucast_solicit` per-entry counters; PyTCP has none of
-these primitives.
+This mirrors Linux's `net/core/neighbour.c`, which gates new
+probes via the `NUD_INCOMPLETE` state, the `unres_qlen`
+queue, and the `mcast_solicit` / `ucast_solicit` per-entry
+counters; PyTCP implements the same primitives.
 
 > "DISCUSSION: The ARP specification [LINK:2] suggests but
 > does not require a timeout mechanism to invalidate cache
@@ -128,9 +133,10 @@ these primitives.
 > invalid, and therefore some ARP-cache invalidation
 > mechanism is now required for hosts."
 
-**Adherence:** **met**. The timeout mechanism described in
-the previous paragraph satisfies this. The 1-hour default
-is generous for a non-proxy-ARP environment.
+**Adherence:** **met**. The NUD aging mechanism described
+above satisfies this — a stale mapping is reconfirmed by a
+unicast probe (or aged out to `FAILED`) rather than trusted
+indefinitely.
 
 > "IMPLEMENTATION: Four mechanisms have been used,
 > sometimes in combination, to flush out-of-date cache
@@ -138,57 +144,59 @@ is generous for a non-proxy-ARP environment.
 > entries, even if they are in use."
 
 **Adherence:** **met**. Implementation (1) is what PyTCP
-does
-(`packages/pytcp/pytcp/stack/arp_cache.py:117-122`). The "even if they
-are in use" wording is satisfied by the absence of a hit-
-count-based reprieve from expiry — the only effect of a
-non-zero `hit_count` is to **trigger a refresh attempt**
-when the entry crosses the `MAX_AGE - REFRESH_TIME`
-threshold (`packages/pytcp/pytcp/stack/arp_cache.py:127-139`), not to
-postpone expiry.
+does: a `REACHABLE` entry transitions to `STALE` after
+`neighbor.reachable_time` seconds
+(`packages/pytcp/pytcp/lib/neighbor.py:453-454`) and is then
+reconfirmed by a unicast probe. The "even if they are in
+use" wording is satisfied because the age check keys on the
+entry's `state_changed_at`, not `last_used_at`: recent use
+does not postpone the `REACHABLE → STALE` transition
+(`last_used_at` only influences the LRU order of the
+hard-cap GC tier — `neighbor.py:585-589`).
 
 > "(1) ... Note that this timeout should be restarted when
 > the cache entry is 'refreshed' (by observing the source
 > fields, regardless of target address, of an ARP
 > broadcast from the system in question)."
 
-**Adherence:** **met**. `ArpCache.add_entry()` overwrites
-the existing entry with a fresh `CacheEntry(...)` whose
-`create_time` defaults to `int(time.time())`
-(`packages/pytcp/pytcp/stack/arp_cache.py:144-159`,
-`packages/pytcp/pytcp/stack/arp_cache.py:55-59`). The
-`__update_arp_cache` helper in the RX handler runs this
-path on every RFC-826-compliant ARP packet (Request **or**
-Reply) whose SPA falls in our subnet
-(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__arp__rx.py:120-152,244-247,324`),
-which is the "regardless of target address" requirement
-satisfied.
+**Adherence:** **met**. `ArpCache.add_entry()` delegates to
+`NeighborCache._add_entry`
+(`packages/pytcp/pytcp/lib/neighbor.py:246-293`), which
+transitions the named entry to `REACHABLE` with a fresh
+`state_changed_at` timestamp (`neighbor.py:285,604-613`),
+restarting the aging clock. The `__update_arp_cache` helper
+in the RX handler runs this path on every RFC-826-compliant
+ARP packet (Request **or** Reply) whose SPA falls in our
+subnet
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__arp__rx.py:91-129,244,288`),
+which satisfies the "regardless of target address"
+requirement.
 
 > "(2) Unicast Poll — Actively poll the remote host by
 > periodically sending a point-to-point ARP Request to it,
 > and delete the entry if no ARP Reply is received from N
 > successive polls."
 
-**Adherence:** **partial — unicast refresh implemented;
-no failed-poll counter**. PyTCP's near-expiry refresh path
-now sends the poll as a **unicast** ARP Request via
-`stack.packet_handler.send_arp_unicast_request(arp__tpa=...,
+**Adherence:** **met**. PyTCP's `PROBE`-state refresh path
+sends the poll as a **unicast** ARP Request. The
+`_solicit_arp` callback routes the `cached_mac is not None`
+case to
+`self._owner.send_arp_unicast_request(arp__tpa=...,
 ethernet__dst=cached_mac)`
-(`packages/pytcp/pytcp/protocols/arp/arp__cache.py` refresh branch →
-`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__arp__tx.py::send_arp_unicast_request`).
-RFC 1122 §2.3.2.1 IMPLEMENTATION (2) calls for the
-"point-to-point" form so that only the actual cached
-neighbour wakes up to reply rather than every host on the
-segment; this is what PyTCP does today.
+(`packages/pytcp/pytcp/protocols/arp/arp__cache.py:167-186` →
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__arp__tx.py:195`
+`send_arp_unicast_request`). RFC 1122 §2.3.2.1
+IMPLEMENTATION (2) calls for the "point-to-point" form so
+that only the actual cached neighbour wakes up to reply
+rather than every host on the segment; this is what PyTCP
+does today.
 
-PyTCP still has no "delete after N successive failed polls"
-counter; expiry is purely age-driven. The entry is
-discarded once `create_time + MAX_AGE` is crossed,
-regardless of how many refresh attempts have failed in the
-preceding `REFRESH_TIME` window. The complete IMPLEMENTATION
-(2) form would add the failure counter; that work folds
-naturally into the NUD state machine (FAILED state). The
-unicast wire-form half is met.
+The "delete after N successive failed polls" counter is
+present too: an entry in `PROBE` that reaches
+`neighbor.max_unicast_solicit` unanswered unicast probes
+transitions to `FAILED` and is then GC-evicted
+(`packages/pytcp/pytcp/lib/neighbor.py:475-478`), which is the
+complete IMPLEMENTATION (2) form.
 
 > "(3) Link-Layer Advice — If the link-layer driver
 > detects a delivery problem, flush the corresponding ARP
@@ -290,15 +298,16 @@ requirements; pasting it here for traceability:
 | Requirement                                  | RFC ref     | MUST | SHOULD | MAY | PyTCP status                |
 |----------------------------------------------|-------------|------|--------|-----|-----------------------------|
 | Flush out-of-date ARP cache entries          | 2.3.2.1     | x    |        |     | met                         |
-| Prevent ARP floods                           | 2.3.2.1     | x    |        |     | **not met** — see §2.3.2.1  |
-| Cache timeout configurable                   | 2.3.2.1     |      | x      |     | met (stack.init kwargs)     |
+| Prevent ARP floods                           | 2.3.2.1     | x    |        |     | met — see §2.3.2.1          |
+| Cache timeout configurable                   | 2.3.2.1     |      | x      |     | met (neighbor.* sysctls)    |
 | Save at least one (latest) unresolved pkt    | 2.3.2.2     |      | x      |     | met (exceeds — bounded queue) |
 
-One of the four requirements (the MUST "Prevent ARP
-floods") is not met today; the §2.3.2.2 SHOULD is now met
-and exceeded. The MUST ("Prevent ARP floods") is the
-priority blocker; the SHOULD ("Save at least one ...")
-is the highest-leverage user-visible improvement.
+All four requirements are now met: both MUSTs (flush
+out-of-date entries, prevent ARP floods) via the NUD state
+machine, the timeout-configurable SHOULD via the
+`neighbor.*` sysctls, and the §2.3.2.2 SHOULD (save the
+latest unresolved packet) met and exceeded by the bounded
+per-neighbour queue.
 
 ---
 
@@ -307,68 +316,65 @@ is the highest-leverage user-visible improvement.
 ### §2.3.2.1 — Timeout-based eviction
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/stack/test__stack__arp_cache.py::TestArpCacheSubsystemLoop::test__arp_cache__loop_skips_permanent_entry`
-  — pins that permanent entries are never aged.
+  `packages/pytcp/pytcp/tests/unit/lib/test__lib__neighbor.py::TestNeighborCachePermanent::test__lib__neighbor__permanent_skips_all_aging`
+  — pins that `PERMANENT` entries are never aged.
 - **Unit:**
-  `..::test__arp_cache__loop_expires_old_entry` — pins the
-  `MAX_AGE` threshold (`stack.ARP__CACHE__ENTRY_MAX_AGE =
-  3600`); an entry with `create_time` more than the max
-  age in the past is removed.
+  `..::TestNeighborCacheReachableToStale::test__lib__neighbor__reachable_transitions_to_stale_after_reachable_time`
+  — pins the `neighbor.reachable_time` threshold: a
+  `REACHABLE` entry aged past it transitions to `STALE`.
 - **Unit:**
-  `..::test__arp_cache__loop_refreshes_near_expiry_used_entry`
-  — pins the near-expiry refresh path: an entry with
-  `hit_count > 0` and age past the
-  `MAX_AGE - REFRESH_TIME` threshold triggers a
-  `send_arp_request(arp__tpa=...)` call.
+  `..::TestNeighborCacheGcPass::test__lib__neighbor__gc_evicts_failed_above_thresh1`
+  — pins the GC eviction of aged-out entries once the cache
+  crosses `neighbor.gc_thresh1`.
 
 **Status:** **locked in**.
 
 ### §2.3.2.1 — "Timeout restarted on refresh"
 
 - **Unit:**
-  `packages/pytcp/pytcp/tests/unit/stack/test__stack__arp_cache.py::TestArpCacheAddFind::test__arp_cache__add_entry_overwrites`
-  — pins that re-calling `add_entry` for the same IP
-  produces a fresh `CacheEntry` (and therefore a fresh
-  `create_time`).
+  `packages/pytcp/pytcp/tests/unit/lib/test__lib__neighbor.py::TestNeighborCacheProbeToReachable::test__lib__neighbor__add_entry_in_probe_returns_to_reachable`
+  — pins that `add_entry` for a probed IP transitions the
+  entry back to `REACHABLE`, which restarts the aging clock
+  via a fresh `state_changed_at`.
 
-**Status:** **locked in indirectly** (the test asserts
-overwrite happened, which implies a fresh `create_time`,
-but doesn't directly read `create_time`).
+**Status:** **locked in**.
 
-### §2.3.2.1 — ARP flood prevention (MUST, NOT MET)
+### §2.3.2.1 — ARP flood prevention (MUST, MET)
 
-**No test surface — gap not yet closed.** When the gap is
-closed, the natural test is one that:
+**Locked in.** Pinned at both layers:
 
-1. constructs an `ArpCache` with no entry for IP `X`;
-2. calls `find_entry(ip4_address=X)` 10 times in rapid
-   succession with `time.time()` patched to `t`,
-   `t+0.1`, `t+0.2`, ..., `t+0.9`;
-3. asserts `send_arp_request` was called at most once
-   (or twice with a 1-second boundary), not 10 times.
+- **Unit:**
+  `packages/pytcp/pytcp/tests/unit/lib/test__lib__neighbor.py::TestNeighborCacheFindMiss::test__lib__neighbor__find_repeated_within_retrans_no_new_solicit`
+  — repeated `find_entry` on an `INCOMPLETE` entry fires no
+  additional solicit; and
+  `TestNeighborCacheIncompleteRetransmits::test__lib__neighbor__incomplete_transitions_to_failed_after_max_multicast_solicit`
+  — retransmits are capped at
+  `neighbor.max_multicast_solicit`.
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/arp/test__arp__resolution_flow.py::TestArpResolutionFlow::test__arp__resolution__rate_limit_at_wire_level`
+  — a burst of outbound packets to an unresolved IP emits
+  exactly one ARP Request on the wire; and
+  `..::test__arp__resolution__per_ip_independence` covers
+  per-destination granularity (IP `X` and `Y` do not
+  throttle each other).
 
-A second test should cover the per-destination granularity
-(IP `X` and `Y` should not throttle each other).
+### §2.3.2.1 — Configurable timeout (SHOULD, MET)
 
-### §2.3.2.1 — Configurable timeout (SHOULD, partial)
-
-**No test surface — gap not yet closed (compile-time only
-today).** When the gap is closed, the natural test is one
-that confirms the timeout values can be passed via
-`stack.init(arp_cache_max_age=...)` (or whichever surface
-is chosen) and observes the eviction at the new threshold.
+**Locked in.**
+`packages/pytcp/pytcp/tests/unit/lib/test__lib__neighbor.py::TestNeighborCacheSysctlOverrides::test__lib__neighbor__reachable_time_sysctl_override_honoured`
+confirms that overriding `neighbor.reachable_time` through
+the sysctl registry drives the `REACHABLE → STALE`
+transition at the new threshold.
 
 ### §2.3.2.1 — Unicast vs broadcast refresh poll
 
-The unicast-refresh behaviour is captured by the
-`..._loop_refreshes_near_expiry_used_entry` test (it
-asserts `send_arp_unicast_request` is called with
-`ethernet__dst=cached_mac`, and that the broadcast
-`send_arp_request` is **not** called) and by
-`..._unicast_request_targets_cached_mac` in the TX-side
-unit tests (which pins the wire-format invariants:
-Ethernet dst = cached MAC, ARP REQUEST oper, our SHA/SPA,
-target IP as TPA).
+The unicast-refresh behaviour is captured by
+`packages/pytcp/pytcp/tests/unit/protocols/arp/test__arp__cache.py::TestArpCacheSolicitCallback::test__arp_cache__solicit_probe_fires_unicast_request`
+(the `cached_mac is not None` solicit path calls
+`send_arp_unicast_request(ethernet__dst=cached_mac)`) and by
+`..::test__arp_cache__solicit_incomplete_fires_broadcast_request`
+(the `cached_mac is None` path fires the broadcast
+`send_arp_request`).
 
 **Status:** **locked in**.
 
@@ -401,11 +407,11 @@ unresolved neighbour survives resolution intact.
 | §         | Aspect                                                | Coverage                                                   |
 |-----------|-------------------------------------------------------|------------------------------------------------------------|
 | §2.3.2.1  | Flush out-of-date entries via timeout                 | locked in                                                  |
-| §2.3.2.1  | Timeout restarted on refresh                          | locked in indirectly                                       |
-| §2.3.2.1  | ARP flood prevention                                  | n/a (gap not closed; add test with fix — see §2.3.2.1)     |
-| §2.3.2.1  | Timeout configurable                                  | locked in (unit: TestStackInitArpCacheConfig)              |
-| §2.3.2.1  | Refresh-poll form (unicast IMPL (2))                  | locked in (unit: cache loop + arp__tx helper)              |
-| §2.3.2.2  | Save at least one unresolved packet                   | n/a (gap not closed; add test with fix — see §2.3.2.2)     |
+| §2.3.2.1  | Timeout restarted on refresh                          | locked in                                                  |
+| §2.3.2.1  | ARP flood prevention                                  | locked in (unit + integration)                             |
+| §2.3.2.1  | Timeout configurable                                  | locked in (unit: TestNeighborCacheSysctlOverrides)         |
+| §2.3.2.1  | Refresh-poll form (unicast IMPL (2))                  | locked in (unit: TestArpCacheSolicitCallback)              |
+| §2.3.2.2  | Save at least one unresolved packet                   | locked in (unit + integration)                             |
 
 ---
 
@@ -414,49 +420,37 @@ unresolved neighbour survives resolution intact.
 | Aspect                                 | Status                                              |
 |----------------------------------------|-----------------------------------------------------|
 | Flush out-of-date entries (MUST)       | met                                                 |
-| Configurable timeout (SHOULD)          | met (stack.init kwargs; per-interface deferred to Phase 2) |
-| Prevent ARP floods (MUST)              | **not met**                                         |
+| Configurable timeout (SHOULD)          | met (neighbor.* sysctls; per-interface deferred to Phase 2) |
+| Prevent ARP floods (MUST)              | met                                                 |
 | Timeout restarted on refresh           | met                                                 |
-| Refresh-poll form                      | met (unicast IMPL (2)); failed-poll counter deferred to NUD work |
-| Save unresolved packet (SHOULD)        | **not met**                                         |
+| Refresh-poll form                      | met (unicast IMPL (2)) + failed-poll counter        |
+| Save unresolved packet (SHOULD)        | met (exceeds — bounded queue)                       |
 | Trailer encapsulation                  | met (deliberate non-implementation; allowed)        |
 
 ### Principal compliance gaps
 
-1. **MUST: ARP flood prevention.** A per-destination 1-second
-   rate-limit on outbound ARP Requests would satisfy this.
-   Two viable architectures:
-   - **In-progress-resolution table:** a
-     `dict[Ip4Address, float]` on `ArpCache` recording the
-     last-request timestamp, checked at the top of
-     `find_entry()` before issuing a new Request. Naturally
-     extends to the §2.3.2.2 packet-queue: the "in
-     progress" entry can also hold the queued packet.
-   - **Cache-state extension:** add an `INCOMPLETE` /
-     `RESOLVING` state to `CacheEntry` and gate new probes
-     by inspecting that state. Closer to Linux's
-     `NUD_INCOMPLETE` model and lays groundwork for the
-     larger NUD-state-machine refactor that the ARP / ND
-     cache redesign is heading toward.
+None outstanding. The three requirements this record
+previously tracked as open are all closed by the NUD state
+machine (`packages/pytcp/pytcp/lib/neighbor.py`) that replaced
+the flat ARP cache:
 
-2. **SHOULD: Save the latest unresolved packet.** Naturally
-   pairs with the in-progress-resolution table from (1).
-   On resolution, drain the queued packet through the TX
-   path. Significant TCP and DNS performance win for the
-   first connection to a fresh peer.
+1. **MUST: ARP flood prevention** — the `INCOMPLETE` state
+   fires one solicit per resolution and retransmits are
+   gated by `neighbor.retrans_timer` / capped by
+   `neighbor.max_multicast_solicit`.
 
-3. **SHOULD: Configurable timeout.** Either thread the two
-   timeouts through `stack.init()` as kwargs, or expose
-   them via a sysctl-like API at the `stack` module. Cheap
-   and useful for proxy-ARP environments.
+2. **SHOULD: Save the latest unresolved packet** — the
+   bounded per-neighbour `queued_packets` deque saves every
+   packet within `neighbor.unres_qlen` and flushes them in
+   FIFO order on resolution (exceeds the "at least one"
+   floor).
 
-4. **(IMPLEMENTATION (2) suggestion, not normative): Unicast
-   refresh poll.** Switch the cache-refresh path from
-   broadcast Request to unicast Request directed at the
-   cached MAC. Reduces broadcast load when the cache is
-   large.
+3. **SHOULD: Configurable timeout** — the NUD timing knobs
+   are `neighbor.*` sysctls, tunable at boot
+   (`stack.init(sysctls={...})`) and at runtime
+   (`pytcp.stack.sysctl[...] = ...`).
 
-The fixes for (1) and (2) are tightly coupled and natural
-to ship together; both are blockers for any reasonable
-ARP / ND cache redesign and should be the first
-implementation phase that follows this audit.
+The one remaining non-normative item is IMPLEMENTATION (3) /
+(4) — link-layer / higher-layer delivery-failure advice —
+which RFC 1122 lists as optional alternatives; PyTCP relies
+on the Timeout mechanism (IMPLEMENTATION (1)) exclusively.

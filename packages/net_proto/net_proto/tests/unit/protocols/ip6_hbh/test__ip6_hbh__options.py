@@ -27,7 +27,7 @@ This module contains tests for the IPv6 HBH options container.
 
 net_proto/tests/unit/protocols/ip6_hbh/test__ip6_hbh__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase

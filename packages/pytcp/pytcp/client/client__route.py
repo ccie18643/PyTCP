@@ -32,7 +32,7 @@ in-process 'RouteApi'.
 
 pytcp/client/client__route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
@@ -40,7 +40,7 @@ from typing import cast
 from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
 from pytcp.client.client__base import _ClientApiProxy
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 type _AnyRoute = Route[Ip4Address, Ip4Network] | Route[Ip6Address, Ip6Network]
 
@@ -78,12 +78,20 @@ class ClientRoute(_ClientApiProxy):
 
         return cast(int, self._call("remove_route", {"destination": destination, "gateway": gateway}))
 
-    def replace_default(self, *, gateway: Ip4Address | Ip6Address, protocol: RouteProtocol) -> None:
+    def replace_default(
+        self,
+        *,
+        gateway: Ip4Address | Ip6Address,
+        protocol: RouteProtocol,
+        oif: int | None = None,
+    ) -> None:
         """
         Replace the default route for the gateway's address family.
+        'oif' is the egress interface index the gateway is reachable
+        on (rendered as the default's 'dev'); 'None' leaves it unset.
         """
 
-        self._call("replace_default", {"gateway": gateway, "protocol": protocol})
+        self._call("replace_default", {"gateway": gateway, "protocol": protocol, "oif": oif})
 
     def remove_default(self, *, family: AddressFamily) -> int:
         """

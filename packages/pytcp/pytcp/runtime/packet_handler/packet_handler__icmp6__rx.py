@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the inbound ICMPv6 packets.
 
 pytcp/runtime/packet_handler/packet_handler__icmp6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import random
@@ -64,29 +66,21 @@ from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__message__query import (
 from pytcp import stack
 from pytcp.lib.dad_slot_registry import DadSignalResult
 from pytcp.lib.logger import log
+from pytcp.protocols.icmp6 import mld__constants
 from pytcp.protocols.icmp6.icmp6__echo_gate import should_emit_echo_reply
 from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.error_queue import SoEeOrigin
-from pytcp.socket.raw__metadata import RawMetadata
-from pytcp.socket.raw__socket import RawSocket
-from pytcp.socket.socket_id import SocketId
-from pytcp.socket.tcp__socket import TcpSocket
-from pytcp.socket.udp__metadata import UdpMetadata
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.error_queue import SoEeOrigin
+from pytcp.runtime.socket.ping__metadata import PingMetadata
+from pytcp.runtime.socket.socket_id import SocketId
+from pytcp.runtime.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
-
-
-# RFC 3810 §9.1 / §9.2 — MLD Robustness Variable and Query Interval
-# defaults, used to compute the §9.12 Older Version Querier Present
-# Timeout = [Robustness Variable] x [Query Interval] + [Query Response
-# Interval] when an MLDv1 Query arms the compatibility timer.
-MLD__ROBUSTNESS_VARIABLE = 2
-MLD__QUERY_INTERVAL__MS = 125_000
 
 
 def _mld2_mrc_to_mrd_ms(mrc: int) -> int:
@@ -263,10 +257,11 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(
-                UdpSocket,
+            socket = cast(
+                UdpSocket | None,
                 stack.sockets.get(socket_id, None),
-            ):
+            )
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching "
@@ -310,7 +305,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -402,7 +397,8 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -446,7 +442,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -536,7 +532,8 @@ class Icmp6RxHandler:
         )
 
         for socket_id in packet.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+            socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+            if socket is not None:
                 __debug__ and log(
                     "icmp6",
                     f"{packet_rx.tracker} - <INFO>Found matching UDP socket "
@@ -580,7 +577,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -645,7 +642,8 @@ class Icmp6RxHandler:
             )
 
             for socket_id in packet.socket_ids:
-                if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
+                socket = cast(UdpSocket | None, stack.sockets.get(socket_id, None))
+                if socket is not None:
                     stack.record_classical_pmtu(cast(Ip6Address, embedded.remote_ip), message.mtu)
                     socket.notify_pmtu(
                         next_hop_mtu=message.mtu,
@@ -688,7 +686,7 @@ class Icmp6RxHandler:
             remote_port=embedded.remote_port,
         )
 
-        socket = cast(TcpSocket, stack.sockets.get(socket_id, None))
+        socket = cast(TcpSocket | None, stack.sockets.get(socket_id, None))
         if socket is None or (session := socket.tcp_session) is None:
             return
 
@@ -771,26 +769,25 @@ class Icmp6RxHandler:
             f"{packet_rx.tracker} - Received ICMPv6 Echo Reply packet " f"from {packet_rx.ip6.src}",
         )
 
-        # Create RawMetadata object and try to find matching RAW socket.
-        # The serialized ICMP message bytes are what 'RawSocket' consumes
-        # via its 'raw__data: bytes' field.
-        packet_rx_md = RawMetadata(
-            ip__ver=packet_rx.ip.ver,
-            ip__local_address=packet_rx.ip.dst,
-            ip__remote_address=packet_rx.ip.src,
-            ip__proto=IpProto.ICMP6,
-            raw__data=bytes(packet_rx.icmp6.message),
-        )
-
-        for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(RawSocket, stack.sockets.get(socket_id, None)):
-                self._if._packet_stats_rx.raw__socket_match += 1
-                __debug__ and log(
-                    "raw",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+        # Demux to a ping socket (Linux 'SOCK_DGRAM' / 'IPPROTO_ICMPV6') by
+        # the Echo Reply's ICMP id. The owning socket receives the ICMP
+        # message bytes (no IP header) plus the reply's Hop Limit for an
+        # 'IPV6_HOPLIMIT' cmsg.
+        message = packet_rx.icmp6.message
+        ping_socket = stack.icmp_echo_sockets.get((AddressFamily.INET6, message.id))
+        if ping_socket is not None and ping_socket.accepts_reply_to(packet_rx.ip6.dst):
+            ping_socket.process_echo_reply(
+                PingMetadata(
+                    ip__ver=packet_rx.ip.ver,
+                    ip__remote_address=packet_rx.ip6.src,
+                    ip__ttl=packet_rx.ip6.hop,
+                    icmp__data=bytes(message),
                 )
-                socket.process_raw_packet(packet_rx_md)
-                return
+            )
+
+        # An inbound Echo Reply is also delivered to matching RAW sockets
+        # by the IPv6 RX path ('packet_handler__ip6__rx'), which clones the
+        # datagram to every matching raw socket (Linux 'raw6_local_deliver').
 
     def __phrx_icmp6__nd_router_solicitation(self, packet_rx: PacketRx) -> None:
         """
@@ -1229,9 +1226,16 @@ class Icmp6RxHandler:
         arming.
         """
 
-        timeout_ms = MLD__ROBUSTNESS_VARIABLE * MLD__QUERY_INTERVAL__MS + max_response_delay_ms
+        timeout_ms = (
+            mld__constants.MLD__ROBUSTNESS_VARIABLE * mld__constants.MLD__QUERY_INTERVAL__MS + max_response_delay_ms
+        )
         with self._if._lock__multicast:
+            old_mode = self._if._mld_host_compatibility_mode()
             self._if._mld__v1_querier_present_until_ms = stack.timer.now_ms + timeout_ms
+            # RFC 3810 §8.2.1 — a compatibility-mode change (MLDv2→MLDv1)
+            # cancels every pending state-change retransmission.
+            if self._if._mld_host_compatibility_mode() is not old_mode:
+                self._if._icmp6_tx._cancel_mld_state_change_retransmits()
 
     def _mld_query__schedule_response(self, mrd_ms: int, /) -> None:
         """

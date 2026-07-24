@@ -27,13 +27,13 @@ This module contains the IPv4 packet option classes.
 
 net_proto/protocols/ip4/options/ip4__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.ip4.ip4__errors import Ip4IntegrityError
 from net_proto.protocols.ip4.ip4__header import IP4__HEADER__LEN
@@ -165,7 +165,7 @@ class Ip4Options(ProtoOptions):
                     f"The IPv4 option length must not extend past the header length. Got: {offset=}, {hlen=}",
                 )
 
-    def with_copy_flag(self, copy_flag: bool, /) -> "Ip4Options":
+    def with_copy_flag(self, copy_flag: bool, /) -> Ip4Options:
         """
         Return a new 'Ip4Options' containing only the options whose
         RFC 791 §3.1 copy-on-fragmentation flag matches the supplied

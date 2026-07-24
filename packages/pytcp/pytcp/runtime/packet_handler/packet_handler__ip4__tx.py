@@ -21,15 +21,18 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the outbound IPv4 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip4__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip4Address, MacAddress
@@ -45,6 +48,8 @@ from net_proto import (
     Tracker,
     UdpAssembler,
 )
+from net_proto.lib.packet_rx import PacketRx
+from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -203,6 +208,25 @@ class Ip4TxHandler:
             ip4__options=ip4__options,
             ip4__payload=ip4__payload,
         )
+
+        # Loopback diversion: a locally-destined packet — one to
+        # 127.0.0.0/8 or to one of THIS host's own unicast addresses — is
+        # delivered internally through the loopback interface, never on
+        # the wire. This is the PyTCP analogue of Linux routing local
+        # traffic through 'lo'; it also fixes the own-IP path, which used
+        # to ARP-resolve the host's own address and drop on the cache
+        # miss. Enqueue the assembled packet onto the loopback ring; its
+        # consumer thread drains it into the RX path, so a whole exchange
+        # never nests TX -> RX -> TX in one call stack.
+        # Phase 2: a FIB HOST-scope local route supersedes this membership
+        # shortcut (activating the currently-dead 'RouteScope.HOST').
+        if (loopback := stack.loopback_handler()) is not None and (
+            ip4__dst.is_loopback or ip4__dst in stack.local_ip4_unicast()
+        ):
+            self._if._packet_stats_tx.ip4__loopback__send += 1
+            __debug__ and log("ip4", f"{ip4_packet_tx.tracker} - Loopback delivery of {ip4_packet_tx}")
+            loopback.enqueue_loopback(PacketRx(bytes(ip4_packet_tx)))
+            return TxStatus.PASSED__IP4__LOOPBACK
 
         # Send packet out if it's size doesn't exceed mtu.
         if len(ip4_packet_tx) <= self._if._interface_mtu:
@@ -527,12 +551,19 @@ class Ip4TxHandler:
         ip4__ttl: int | None = None,
         ip4__ecn: int = 0,
         ip4__dscp: int = 0,
+        ip4__options: Ip4Options | None = None,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Interface method for RAW Socket -> Packet Assembler
         communication. Handed to the TX worker fire-and-forget via
         '_marshal_tx_async' (Phase 4b): the calling app thread does
         not block for the 'TxStatus'.
+
+        'ip4__options' threads the socket's IP_OPTIONS block (RFC
+        1122 §4.1.3.2) onto the outbound header; 'None' emits a
+        plain header. 'on_complete' (if given) fires once after the
+        datagram leaves the send queue — the SO_SNDBUF release hook.
         """
 
         kwargs: dict[str, Any] = {
@@ -547,7 +578,9 @@ class Ip4TxHandler:
         }
         if ip4__ttl is not None:
             kwargs["ip4__ttl"] = ip4__ttl
-        self._if._marshal_tx_async(lambda: self._phtx_ip4(**kwargs))
+        if ip4__options is not None:
+            kwargs["ip4__options"] = ip4__options
+        self._if._marshal_tx_async(lambda: self._phtx_ip4(**kwargs), on_complete=on_complete)
 
     def __send_out_packet(
         self,

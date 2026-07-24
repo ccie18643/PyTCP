@@ -27,7 +27,7 @@ This module contains the DHCPv4 client (RFC 2131 §4.4 FSM).
 
 pytcp/protocols/dhcp4/dhcp4__client.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import random
@@ -35,14 +35,9 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, override
+from typing import Callable, override
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, MacAddress
-
-if TYPE_CHECKING:
-    from pytcp.stack.address import AddressApi
-    from pytcp.stack.route import RouteApi
-
 from net_proto.protocols.dhcp4.dhcp4__assembler import Dhcp4Assembler
 from net_proto.protocols.dhcp4.dhcp4__enums import (
     Dhcp4MessageType,
@@ -95,8 +90,7 @@ from pytcp.protocols.dhcp4.dhcp4__lease_cache import (
 from pytcp.protocols.dhcp4.dhcp4__uid import build_client_id
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.runtime.subsystem import Subsystem
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET4,
     SO_BINDTODEVICE,
     SO_BROADCAST,
@@ -105,11 +99,19 @@ from pytcp.socket import (
     AddressFamily,
     socket,
 )
+from pytcp.runtime.subsystem import SUBSYSTEM_SLEEP_TIME__SEC, Subsystem
+from pytcp.stack.address import AddressApi
+from pytcp.stack.route import RouteApi
 
 # 'secs' is a 16-bit field in the DHCP header; cap the elapsed-
 # since-acquisition seconds at UINT16_MAX so a long-lived restart
 # loop cannot overflow.
 _DHCP4__SECS_MAX: int = 0xFFFF
+
+# On the subsystem worker thread, each blocking recv is capped to this
+# slice so a stack stop() is observed within one poll interval rather
+# than after the full (up to multi-second) retransmission window.
+_DHCP4__STOP_POLL_INTERVAL_S: float = SUBSYSTEM_SLEEP_TIME__SEC
 
 
 class Dhcp4State(Enum):
@@ -219,9 +221,10 @@ class Dhcp4Client(Subsystem):
         *,
         mac_address: MacAddress,
         acd: Ip4Acd | None = None,
-        address_api: "AddressApi | None" = None,
-        route_api: "RouteApi | None" = None,
+        address_api: AddressApi | None = None,
+        route_api: RouteApi | None = None,
         interface_name: str | None = None,
+        ifindex: int | None = None,
     ) -> None:
         """
         Initialize the DHCPv4 client.
@@ -262,6 +265,11 @@ class Dhcp4Client(Subsystem):
         # limited-broadcast (255.255.255.255) DISCOVER / REQUEST egress
         # is unambiguous on a multi-homed host (Linux dhclient model).
         self._interface_name = interface_name
+        # Egress interface index this client leases on; stamped as the
+        # 'oif' of the DHCP-installed default route so 'ip route'-style
+        # introspection renders the default's 'dev'. None outside the
+        # daemon multi-interface path (sync 'fetch()' / unit tests).
+        self._ifindex = ifindex
         # Set at the top of '_do_init_to_bound'; reused by every
         # outbound TX in this acquisition cycle to populate the
         # DHCP header 'secs' field per RFC 1542 §3.2.
@@ -380,7 +388,8 @@ class Dhcp4Client(Subsystem):
                     # FSM never observes them as separate states.
                     # Idle on stop event so 'stop()' is responsive.
                     self._event__stop_subsystem.wait(timeout=1.0)
-        except Exception as error:  # noqa: BLE001 — daemon-loop guard must not let the worker thread die
+        # Daemon-loop guard: must not let the worker thread die.
+        except Exception as error:  # pylint: disable=broad-exception-caught
             __debug__ and log(
                 "dhcp4",
                 f"<WARN>DHCPv4 client loop raised {type(error).__name__}: {error}; "
@@ -449,7 +458,7 @@ class Dhcp4Client(Subsystem):
                     # index in the FIB.
                     continue
                 if destination == Ip4Network("0.0.0.0/0"):
-                    self._route_api.replace_default(gateway=router, protocol=RouteProtocol.DHCP)
+                    self._route_api.replace_default(gateway=router, protocol=RouteProtocol.DHCP, oif=self._ifindex)
                     continue
                 self._route_api.add_route(
                     route=Route(destination=destination, gateway=router, protocol=RouteProtocol.DHCP),
@@ -457,7 +466,7 @@ class Dhcp4Client(Subsystem):
             return
 
         if lease.gateway is not None:
-            self._route_api.replace_default(gateway=lease.gateway, protocol=RouteProtocol.DHCP)
+            self._route_api.replace_default(gateway=lease.gateway, protocol=RouteProtocol.DHCP, oif=self._ifindex)
 
     def _remove_lease_routes(self, lease: Dhcp4Lease, /) -> None:
         """
@@ -672,7 +681,7 @@ class Dhcp4Client(Subsystem):
         *,
         lease: Dhcp4Lease,
         broadcast: bool,
-    ) -> "Dhcp4Lease | _NakRestart | None":
+    ) -> Dhcp4Lease | _NakRestart | None:
         """
         Open a one-shot socket, send one unicast (RENEW) or
         broadcast (REBIND) REQUEST, wait for an ACK / NAK / no
@@ -743,7 +752,7 @@ class Dhcp4Client(Subsystem):
 
     def _consume_renew_or_rebind_outcome(
         self,
-        outcome: "Dhcp4Lease | _NakRestart | None",
+        outcome: Dhcp4Lease | _NakRestart | None,
         /,
     ) -> None:
         """
@@ -1347,6 +1356,10 @@ class Dhcp4Client(Subsystem):
         """
 
         self._initial_delay()
+        # A daemon-mode 'stop()' during the desync delay returns here
+        # without opening a socket or emitting any wire traffic.
+        if self._event__stop_subsystem.is_set():
+            return None
         self._fetch_started_at_monotonic = time.monotonic()
         __debug__ and log(
             "dhcp4",
@@ -1359,6 +1372,8 @@ class Dhcp4Client(Subsystem):
             client_socket.connect(("255.255.255.255", 67))
 
             for _ in range(dhcp4__constants.DHCP4__NAK_MAX_RESTARTS + 1):
+                if self._event__stop_subsystem.is_set():
+                    return None
                 outcome = self._discover_request_once(client_socket)
                 if not isinstance(outcome, _NakRestart):
                     if isinstance(outcome, Dhcp4Lease):
@@ -1480,7 +1495,9 @@ class Dhcp4Client(Subsystem):
             )
             backoff_s = dhcp4__constants.DHCP4__DECLINE_BACKOFF_MS / 1000.0
             if backoff_s > 0:
-                time.sleep(backoff_s)
+                # Interruptible wait so a daemon-mode 'stop()' during the
+                # post-DECLINE backoff is not wedged for the full window.
+                self._event__stop_subsystem.wait(timeout=backoff_s)
             return _NAK_RESTART
 
         t1_override, t2_override = self._extract_t1_t2_overrides(ack, ack.lease_time)
@@ -1503,7 +1520,7 @@ class Dhcp4Client(Subsystem):
         xid: int,
         resend: "Callable[[], None]",  # noqa: F821 — typing alias defined below
         allow_nak: bool = False,
-    ) -> "Dhcp4Parser | _NakRestart | None":
+    ) -> Dhcp4Parser | _NakRestart | None:
         """
         Wait for an inbound DHCP message of 'expected_type' using the
         RFC 2131 §4.1 retransmission backoff. On each per-attempt
@@ -1525,6 +1542,12 @@ class Dhcp4Client(Subsystem):
         jitter_ms = dhcp4__constants.DHCP4__RETRANS_JITTER_MS
 
         for attempt in range(max_attempts):
+            # Bail between attempts so a daemon-mode 'stop()' halts the
+            # retransmission storm promptly instead of running the full
+            # backoff budget (which can span minutes against a silent
+            # server). The event is never set in sync 'fetch()'.
+            if self._event__stop_subsystem.is_set():
+                return None
             jitter_s = random.uniform(-jitter_ms / 1000.0, jitter_ms / 1000.0)
             timeout_s = max(0.001, delay_ms / 1000.0 + jitter_s)
             result = self._recv_within_window(
@@ -1546,6 +1569,16 @@ class Dhcp4Client(Subsystem):
                 delay_ms = min(delay_ms * 2, max_ms)
         return None
 
+    def _on_worker_thread(self) -> bool:
+        """
+        Whether the current call is running on the subsystem worker
+        thread. The stop-responsive recv slicing engages only here; a
+        sync-mode caller (CLI / tests calling 'fetch()' inline) keeps the
+        single-recv-per-window wait.
+        """
+
+        return self._thread is not None and threading.current_thread() is self._thread
+
     def _recv_within_window(
         self,
         client_socket: socket,
@@ -1554,7 +1587,7 @@ class Dhcp4Client(Subsystem):
         xid: int,
         timeout_s: float,
         allow_nak: bool,
-    ) -> "Dhcp4Parser | _NakRestart | None":
+    ) -> Dhcp4Parser | _NakRestart | None:
         """
         Wait up to 'timeout_s' seconds for a valid DHCP message,
         silently dropping bogus packets (malformed, wrong type, bad
@@ -1563,25 +1596,42 @@ class Dhcp4Client(Subsystem):
         valid NAK if 'allow_nak' is True, or None if the deadline
         elapses with no valid response.
 
-        The first 'recv__mv' call uses 'timeout_s' directly so the
-        caller's intended window value reaches the socket layer
-        verbatim; subsequent iterations (only entered after dropping
-        a bogus packet) compute the remaining budget against a
-        monotonic deadline anchored at the start of the window.
+        On the subsystem worker thread each blocking recv is capped to a
+        short poll slice and the stop event is re-checked each slice, so
+        a stack stop() is observed within one slice rather than after the
+        full (up to multi-second) retransmission window. A sync-mode
+        caller waits the whole window in a single recv so a server reply
+        is awaited in one wait (and the unit-test mock socket is driven
+        one-recv-per-window).
         """
 
         deadline = time.monotonic() + timeout_s
-        remaining = timeout_s
+        on_worker = self._on_worker_thread()
         first_iter = True
         while True:
-            if not first_iter:
+            if first_iter and not on_worker:
+                # Off-worker (sync 'fetch()' / tests): the first recv uses
+                # 'timeout_s' verbatim so the caller's intended window
+                # reaches the socket layer exactly (the backoff sequence
+                # stays exact, and the mock socket is driven one-recv-per-
+                # window). Subsequent iterations (after dropping a bogus
+                # packet) compute the remaining budget.
+                recv_timeout = timeout_s
+            else:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     return None
+                if on_worker and self._event__stop_subsystem.is_set():
+                    return None
+                recv_timeout = min(remaining, _DHCP4__STOP_POLL_INTERVAL_S) if on_worker else remaining
             first_iter = False
             try:
-                packet = Dhcp4Parser(client_socket.recv__mv(timeout=remaining))
+                packet = Dhcp4Parser(client_socket.recv__mv(timeout=recv_timeout))
             except TimeoutError:
+                if on_worker:
+                    # Slice expired with no reply — re-check the window /
+                    # stop event and keep waiting until the deadline.
+                    continue
                 return None
             except Dhcp4IntegrityError, Dhcp4SanityError:
                 __debug__ and log(
@@ -1824,7 +1874,11 @@ class Dhcp4Client(Subsystem):
         min_ms = dhcp4__constants.DHCP4__INIT_DELAY_MIN_MS
         delay_s = random.uniform(min_ms / 1000.0, max_ms / 1000.0)
         __debug__ and log("dhcp4", f"Initial desync delay: {delay_s:.2f}s")
-        time.sleep(delay_s)
+        # Interruptible wait, not 'time.sleep': in daemon mode a 'stop()'
+        # during the desync window must wake the worker immediately so
+        # 'stack.stop()' is not wedged for the full delay. In sync
+        # 'fetch()' the event is never set, so this behaves as a sleep.
+        self._event__stop_subsystem.wait(timeout=delay_s)
 
     def _elapsed_secs(self) -> int:
         """

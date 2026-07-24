@@ -27,20 +27,19 @@ Module contains tests for the DHCPv4 Host Name option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__host_name.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Dhcp4IntegrityError,
     Dhcp4OptionHostName,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionHostNameAsserts(TestCase):
@@ -157,6 +156,7 @@ class TestDhcp4OptionHostNameAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Host Name option object with testcase arguments.
@@ -597,3 +597,33 @@ class TestDhcp4OptionHostNameWireConsistency(TestCase):
             str(error.exception),
             msg="AssertionError must cite the uint8 length-byte ceiling.",
         )
+
+
+class TestDhcp4OptionHostNameWrongType(TestCase):
+    """
+    The DHCPv4 Host Name option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__host_name__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.HOST_NAME and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §3.14 (Host Name option code 12).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionHostName.from_buffer(b"\x00\x04\x68\x6f\x73\x74")
+
+    def test__dhcp4__option__host_name__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.HOST_NAME, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §3.14 (Host Name option code 12).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionHostName.from_buffer(b"\xff\x04\x68\x6f\x73\x74")

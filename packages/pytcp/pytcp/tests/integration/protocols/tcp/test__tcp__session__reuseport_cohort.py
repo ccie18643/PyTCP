@@ -36,15 +36,15 @@ the end-to-end behaviour through the real RX handler.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__reuseport_cohort.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import SysCall
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import STACK__IP4_HOST
 from pytcp.tests.lib.tcp_segment_factory import build_tcp4
 from pytcp.tests.lib.tcp_testcase import TcpTestCase

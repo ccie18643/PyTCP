@@ -27,15 +27,14 @@ This module contains the IGMPv3 Group Record support class.
 
 net_proto/protocols/igmp/message/igmp__v3_group_record.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import IP4__ADDRESS_LEN, Ip4Address
-from net_proto.lib.buffer import Buffer
+from net_addr import IP4__ADDRESS_LEN, Buffer, Ip4Address
 from net_proto.lib.int_checks import is_4_byte_alligned
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_struct import ProtoStruct

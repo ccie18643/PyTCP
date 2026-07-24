@@ -14,7 +14,11 @@ RFC 4941 was obsoleted by **RFC 8981** in February 2021.
 PyTCP tracks the modern spec at
 [`docs/rfc/icmp6/rfc8981__temp_addresses/adherence.md`](../rfc8981__temp_addresses/adherence.md);
 that is where temporary-address-related implementation work
-will land (currently deferred per nd_linux_parity §18).
+lands. Per nd_linux_parity §18, the generation (§18a,
+`from_rfc8981_temp`) and RA-driven maintenance (§18b,
+`_update_icmp6_temp_address`) halves have shipped; only the
+§18c regeneration timer and §18d source-selection preference
+remain deferred.
 
 This record is retained for historical reference. The
 two specs share the same overall mechanism (random per-prefix

@@ -27,13 +27,11 @@ Module contains tests for the TCP AccECN1 (kind=174) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__accecn1.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     TCP__OPTION__ACCECN1__LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     TcpOptionType,
 )
 from net_proto.protocols.tcp.tcp__errors import TcpIntegrityError
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestTcpOptionAccecn1Asserts(TestCase):
@@ -50,6 +49,7 @@ class TestTcpOptionAccecn1Asserts(TestCase):
     The TCP AccECN1 option constructor argument assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP AccECN1 option
@@ -265,6 +265,7 @@ class TestTcpOptionAccecn1Assembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP AccECN1 option from the parametrized kwargs.
@@ -598,3 +599,70 @@ class TestTcpOptionAccecn1AbbreviatedForms(TestCase):
                 original = TcpOptionAccecn1(**kwargs)
                 decoded = TcpOptionAccecn1.from_buffer(bytes(original))
                 self.assertEqual(decoded, original, msg=f"Round-trip mismatch for kwargs={kwargs}.")
+
+
+class TestTcpOptionAccecn1IntegrityAndOrdering(TestCase):
+    """
+    The TCP AccECN1 option field-ordering and parser-integrity tests.
+    """
+
+    def test__tcp__option__accecn1__ordering_requires_preceding_fields(self) -> None:
+        """
+        Ensure setting a trailing counter while a required preceding
+        counter is absent is rejected, pinning the field-presence
+        ordering invariant ('and' must not relax to 'or').
+
+        Reference: RFC 9768 §3.2.3 (a present field implies all preceding fields present).
+        """
+
+        with self.assertRaises(AssertionError) as error:
+            TcpOptionAccecn1(ee0b=1, ee1b=3)
+
+        self.assertEqual(
+            str(error.exception),
+            "AccECN1 Length=11 (ee0b set) requires ee1b and eceb to also be set.",
+            msg="Unexpected ordering-invariant assertion message for AccECN1.",
+        )
+
+    def test__tcp__option__accecn1__from_buffer_valid_len_short_buffer_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a frame whose Length byte is a
+        valid AccECN1 length (11) but exceeds the bytes actually
+        provided, pinning the 'buffer[1] > len(buffer)' bound.
+
+        Reference: RFC 9293 §3.2 (option length must not exceed the buffer).
+        """
+
+        # Length byte declares 11 octets, but only 9 are present.
+        with self.assertRaises(TcpIntegrityError) as error:
+            TcpOptionAccecn1.from_buffer(b"\xae\x0b" + b"\x00" * 7)
+
+        self.assertEqual(
+            str(error.exception),
+            "[INTEGRITY ERROR][TCP] The TCP AccECN1 option length value must be less than or "
+            "equal to the length of provided bytes (9). Got: 11",
+            msg="Unexpected integrity-error message for a valid-length byte over a short buffer.",
+        )
+
+    def test__tcp__option__accecn1__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals ACCECN1
+        and rejects a kind byte below it, pinning the equality check
+        against a '<=' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (AccECN1 option kind).
+        """
+
+        with self.assertRaises(AssertionError):
+            TcpOptionAccecn1.from_buffer(b"\x00\x02")
+
+    def test__tcp__option__accecn1__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above ACCECN1,
+        pinning the equality check against a '>=' relaxation.
+
+        Reference: RFC 9768 §3.2.3 (AccECN1 option kind).
+        """
+
+        with self.assertRaises(AssertionError):
+            TcpOptionAccecn1.from_buffer(b"\xff\x02")

@@ -37,16 +37,20 @@ socket and closes the TCP window.
 
 pytcp/ipc/ipc__socket_bridge.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import socket
 import threading
+import time
 from typing import Protocol
 
 IPC__BRIDGE__POLL_TIMEOUT__SEC: float = 0.2
 IPC__BRIDGE__CHUNK_SIZE: int = 65536
 IPC__BRIDGE__JOIN_TIMEOUT__SEC: float = 2.0
+# Wall-clock bound on draining the non-blocking-connect priming filler so
+# a client that under-fills its send buffer cannot wedge the connect worker.
+IPC__BRIDGE__PRIME_DRAIN_DEADLINE__SEC: float = 2.0
 
 
 class BridgedSocket(Protocol):
@@ -59,10 +63,14 @@ class BridgedSocket(Protocol):
         Receive up to 'bufsize' bytes, blocking up to 'timeout' seconds.
         """
 
+        ...
+
     def send(self, data: bytes) -> int:
         """
         Send some of 'data', returning the number of bytes accepted.
         """
+
+        ...
 
     def shutdown(self, how: int, /) -> None:
         """
@@ -97,6 +105,32 @@ class SocketBridge:
         self._thread__tx = threading.Thread(target=self._pump_tx, name="IPC-Bridge-TX")
         self._thread__rx.start()
         self._thread__tx.start()
+
+    def prime_drain(self, byte_count: int, /) -> None:
+        """
+        Read and discard exactly 'byte_count' non-blocking-connect priming
+        bytes from the client socketpair end, flipping the client fd
+        writable on connect resolution. Bounded by a wall-clock deadline so
+        a client that under-fills its send buffer cannot wedge the worker;
+        swallows a closed-socket error so a connect cancelled by teardown
+        unwinds cleanly.
+        """
+
+        if byte_count <= 0:
+            return
+
+        deadline = time.monotonic() + IPC__BRIDGE__PRIME_DRAIN_DEADLINE__SEC
+        drained = 0
+        while drained < byte_count and time.monotonic() < deadline:
+            try:
+                chunk = self._data_end.recv(min(IPC__BRIDGE__CHUNK_SIZE, byte_count - drained))
+            except TimeoutError:
+                continue
+            except OSError:
+                return
+            if not chunk:
+                return
+            drained += len(chunk)
 
     def _pump_rx(self) -> None:
         """

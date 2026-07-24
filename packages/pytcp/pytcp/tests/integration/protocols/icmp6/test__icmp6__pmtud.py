@@ -35,8 +35,10 @@ bumps observable on the packet handler.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__pmtud.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_proto import (
     Icmp6Assembler,
@@ -46,8 +48,8 @@ from net_proto import (
 )
 from net_proto.lib.enums import IpProto
 from pytcp import stack
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP6_ADDRESS,
@@ -99,6 +101,7 @@ class TestIcmp6Pmtud__PtbWithMatchingUdpSocket(IcmpTestCase):
     the embedded 4-tuple.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UdpSocket on the stack so the embedded 4-tuple matches.

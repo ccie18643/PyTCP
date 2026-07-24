@@ -27,7 +27,7 @@ This module contains the DHCPv6 header class.
 
 net_proto/protocols/dhcp6/dhcp6__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,7 +35,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.int_checks import is_uint24
 from net_proto.lib.proto_struct import ProtoStruct
 from net_proto.protocols.dhcp6.dhcp6__enums import Dhcp6MessageType

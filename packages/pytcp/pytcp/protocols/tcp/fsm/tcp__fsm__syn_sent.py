@@ -29,10 +29,8 @@ This module contains the TCP FSM SYN_SENT state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__syn_sent.py
 
-ver 3.0.7
+ver 3.0.8
 """
-
-from __future__ import annotations
 
 from dataclasses import replace
 from typing import TYPE_CHECKING
@@ -42,12 +40,12 @@ from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.tcp.tcp__cwnd import initial_window
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
+from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
 from pytcp.protocols.tcp.tcp__seq import add32, le32, lt32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpMetadata
-    from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 # RFC 5927 §5.2 hard-error code set: ICMPv4 Type 3 codes

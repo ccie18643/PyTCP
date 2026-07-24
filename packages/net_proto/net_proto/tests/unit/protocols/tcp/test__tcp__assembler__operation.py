@@ -27,16 +27,15 @@ This module contains tests for the TCP protocol packet assembling functionality.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Buffer
 from net_proto import TcpAssembler, TcpHeader, TcpOptionNop, TcpOptions, Tracker
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -579,6 +578,7 @@ class TestTcpAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the TCP packet assembler from the parametrized kwargs.

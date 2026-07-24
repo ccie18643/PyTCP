@@ -80,9 +80,16 @@ the Early Retransmit short-flight relaxation.
 > previously unsent data on the first two duplicate
 > ACKs to induce additional duplicate ACKs."
 
-**Adherence:** Limited Transmit is also not
-implemented in PyTCP. The dup-ACK path passes through
-without sending fresh data on the 1st / 2nd duplicate.
+**Adherence:** met (Limited Transmit itself). Limited
+Transmit IS implemented in PyTCP at
+`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__retransmit.py:465-482`:
+the first two duplicate ACKs each emit one previously-
+unsent segment (bounded by `cwnd + count * SMSS` and
+the peer's advertised window). See the RFC 3042
+adherence record, which marks Limited Transmit met.
+Only Early Retransmit's own use of Limited Transmit as
+a companion trigger is absent, because ER itself is
+not implemented.
 
 ---
 
@@ -112,16 +119,20 @@ in
 | §3.1 byte-based Early Retransmit      | not implemented |
 | §3.1 SACK-aware ER                    | not implemented |
 | §3.2 segment-based Early Retransmit   | not implemented |
-| §6.1 Limited Transmit                 | not implemented |
+| §6.1 Limited Transmit                 | met (RFC 3042)  |
 
 PyTCP does not implement Early Retransmit. This
 matters most for short-flight workloads (final few
 segments of a transfer, application-limited flows,
 small-cwnd connections) where standard fast retransmit
 cannot fire because there are too few outstanding
-segments to generate three duplicate ACKs. Without ER
-or Limited Transmit, such losses fall through to the
-RTO timer, adding ≥1 second of stalled time.
+segments to generate three duplicate ACKs. Limited
+Transmit (RFC 3042) is implemented and helps when the
+sender has fresh data to send on the 1st / 2nd dup-ACK;
+but when there is no unsent data (the application-
+limited tail case ER specifically targets), the loss
+still falls through to the RTO timer, adding ≥1 second
+of stalled time.
 
 PyTCP's RACK-TLP implementation (RFC 8985) provides
 a related mitigation: TLP probes elicit dup-ACKs

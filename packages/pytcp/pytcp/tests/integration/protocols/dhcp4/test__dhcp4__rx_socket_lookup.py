@@ -49,13 +49,12 @@ socket layer wholesale.
 
 pytcp/tests/integration/protocols/dhcp4/test__dhcp4__rx_socket_lookup.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4Mask, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, Ip4Mask, MacAddress
 from net_proto.protocols.dhcp4.dhcp4__assembler import Dhcp4Assembler
 from net_proto.protocols.dhcp4.dhcp4__enums import (
     Dhcp4MessageType,
@@ -80,7 +79,7 @@ from net_proto.protocols.dhcp4.options.dhcp4__options import Dhcp4Options
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
-from pytcp.socket import AF_INET4, SOCK_DGRAM, socket
+from pytcp.runtime.socket import AF_INET4, SOCK_DGRAM, socket
 from pytcp.tests.lib.network_testcase import (
     STACK__IP4_GATEWAY,
     STACK__IP4_GATEWAY_MAC_ADDRESS,

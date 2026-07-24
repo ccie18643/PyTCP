@@ -34,16 +34,19 @@ the 'IcmpTestCase' harness.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import Any, override
 
 from net_addr import Ip6Address, MacAddress
 from net_proto import Icmp6Type
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
+)
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # 64-byte echo data — timestamp prefix + 0x10..0x3f pattern.
 _ECHO_DATA: bytes = (
@@ -922,6 +925,7 @@ class TestIcmp6Rx__RouterSolicitation(IcmpTestCase):
     _ALL_ROUTERS__IP6 = Ip6Address("ff02::2")
     _ALL_ROUTERS__MAC = MacAddress("33:33:00:00:00:02")
 
+    @override
     def setUp(self) -> None:
         """
         Join the all-routers IPv6 and Ethernet multicast groups so the
@@ -930,7 +934,9 @@ class TestIcmp6Rx__RouterSolicitation(IcmpTestCase):
 
         super().setUp()
         self._packet_handler._mac_multicast.append(self._ALL_ROUTERS__MAC)
-        self._packet_handler._ip6_multicast.append(self._ALL_ROUTERS__IP6)
+        self._packet_handler._ip6_multicast_filters[self._ALL_ROUTERS__IP6] = Ip6MulticastFilter(
+            Ip6MulticastFilterMode.EXCLUDE
+        )
 
     def test__icmp6__rx__router_solicitation__no_tx(self) -> None:
         """
@@ -983,6 +989,7 @@ class TestIcmp6Rx__Mld2Report(IcmpTestCase):
     _MLD2_ROUTERS__IP6 = Ip6Address("ff02::16")
     _MLD2_ROUTERS__MAC = MacAddress("33:33:00:00:00:16")
 
+    @override
     def setUp(self) -> None:
         """
         Join the MLDv2-routers IPv6 and Ethernet multicast groups.
@@ -990,7 +997,9 @@ class TestIcmp6Rx__Mld2Report(IcmpTestCase):
 
         super().setUp()
         self._packet_handler._mac_multicast.append(self._MLD2_ROUTERS__MAC)
-        self._packet_handler._ip6_multicast.append(self._MLD2_ROUTERS__IP6)
+        self._packet_handler._ip6_multicast_filters[self._MLD2_ROUTERS__IP6] = Ip6MulticastFilter(
+            Ip6MulticastFilterMode.EXCLUDE
+        )
 
     def test__icmp6__rx__mld2_report__no_tx(self) -> None:
         """
@@ -1043,6 +1052,7 @@ class TestIcmp6Rx__NaDadMatch(IcmpTestCase):
 
     _CANDIDATE__IP6 = Ip6Address("2001:db8:0:1::5")
 
+    @override
     def setUp(self) -> None:
         """
         Install a DAD candidate on the packet handler so the NA target

@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package IPv6 network support class.
 
 net_addr/tests/unit/test__ip6_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     Ip4Address,
@@ -52,6 +50,7 @@ from net_addr import (
     IpNetworkSanityError,
     IpVersion,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -170,6 +169,7 @@ class TestNetAddrIp6Network(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the IPv6 network object with testcase arguments.
@@ -354,6 +354,18 @@ class TestNetAddrIp6Network(TestCase):
             "_network": "2001:db8::/64",
             "_object": Ip6IfAddr("2001:db9::50/64"),
             "_result": False,
+        },
+        {
+            "_description": "Ip6IfAddr at network address (lower boundary)",
+            "_network": "2001:db8::/64",
+            "_object": Ip6IfAddr("2001:db8::/64"),
+            "_result": True,
+        },
+        {
+            "_description": "Ip6IfAddr at last address (upper boundary)",
+            "_network": "2001:db8::/64",
+            "_object": Ip6IfAddr("2001:db8::ffff:ffff:ffff:ffff/64"),
+            "_result": True,
         },
         {
             "_description": "Unsupported type returns False",
@@ -794,6 +806,7 @@ class TestNetAddrIp6NetworkEnumeration(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -897,6 +910,17 @@ class TestNetAddrIp6NetworkRelations(TestCase):
             ("inner subnet_of outer", inner.subnet_of(outer), True),
             ("outer supernet_of inner", outer.supernet_of(inner), True),
             ("cross-version overlaps", outer.overlaps(Ip4Network("0.0.0.0/0")), False),
+            # Single-address overlap exactly at a block edge: the /128
+            # sits on the last address of the /126. Pins both
+            # 'self.address <= other.last' and 'other.address <=
+            # self.last' at the boundary (a strict '<' would miss it).
+            ("edge /128 overlaps /126", Ip6Network("2001:db8::3/128").overlaps(Ip6Network("2001:db8::/126")), True),
+            ("edge /126 overlaps /128", Ip6Network("2001:db8::/126").overlaps(Ip6Network("2001:db8::3/128")), True),
+            (
+                "adjacent /128 disjoint /126",
+                Ip6Network("2001:db8::4/128").overlaps(Ip6Network("2001:db8::/126")),
+                False,
+            ),
         ]:
             with self.subTest(relation=label):
                 self.assertEqual(
@@ -930,6 +954,42 @@ class TestNetAddrIp6NetworkOrdering(TestCase):
         )
         self.assertTrue(a < b < c, msg="Chained Ip6Network ordering must hold.")
         self.assertEqual(max(c, b, a), c, msg="max() must return the highest Ip6Network.")
+
+    def test__net_addr__ip6_network__ordering__total_order_relations(self) -> None:
+        """
+        Ensure every ordering operator is pinned in both directions
+        and reflexively, including the prefix-length tiebreak between
+        two networks that share a network address — so a flipped or
+        weakened comparison in any of '<', '<=', '>', '>=' is caught.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        # Same network address, different prefix length: the shorter
+        # prefix (/32) sorts before the longer (/48) via the mask
+        # tiebreak.
+        a = Ip6Network("2001:db8::/32")
+        b = Ip6Network("2001:db8::/48")
+
+        # '<' — true direction, false direction, irreflexive.
+        self.assertLess(a, b, msg="Same network, shorter prefix must be strictly less.")
+        self.assertFalse(b < a, msg="'<' must be False in the reverse direction.")
+        self.assertFalse(a < a, msg="'<' must be irreflexive.")
+
+        # '<=' — true direction, false direction, reflexive.
+        self.assertLessEqual(a, b, msg="'<=' must hold in the forward direction.")
+        self.assertFalse(b <= a, msg="'<=' must be False in the reverse direction.")
+        self.assertLessEqual(a, a, msg="'<=' must be reflexive.")
+
+        # '>' — true direction, false direction, irreflexive.
+        self.assertGreater(b, a, msg="Same network, longer prefix must be strictly greater.")
+        self.assertFalse(a > b, msg="'>' must be False in the reverse direction.")
+        self.assertFalse(a > a, msg="'>' must be irreflexive.")
+
+        # '>=' — true direction, false direction, reflexive.
+        self.assertGreaterEqual(b, a, msg="'>=' must hold in the forward direction.")
+        self.assertFalse(a >= b, msg="'>=' must be False in the reverse direction.")
+        self.assertGreaterEqual(a, a, msg="'>=' must be reflexive.")
 
     def test__net_addr__ip6_network__ordering__cross_version_raises(self) -> None:
         """
@@ -986,6 +1046,7 @@ class TestNetAddrIp6NetworkWithForms(TestCase):
     _network: str
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the network under test from its CIDR string.
@@ -1034,8 +1095,30 @@ class TestNetAddrIp6NetworkWithForms(TestCase):
             msg=f"Default format must equal the prefixlen form for: {self._description}",
         )
 
-        with self.assertRaises(Ip6NetworkSanityError, msg="An unknown format spec must raise Ip6NetworkSanityError."):
-            format(self._net, "zz")
+        # A spec ending in 's' routes through Python's str formatting
+        # for width / alignment, applied to the default (prefixlen)
+        # rendering. A multi-character width spec also pins that only
+        # the final character selects this branch (not the whole spec
+        # or a wrong slice position).
+        for spec in ("s", ">20s", "<20s", "^18s"):
+            with self.subTest(spec=spec):
+                self.assertEqual(
+                    format(self._net, spec),
+                    format(self._results["with_prefixlen"], spec),
+                    msg=f"Width/alignment spec {spec!r} must format the prefixlen string for: {self._description}",
+                )
+
+        # Unknown specs must raise the sanity error — including ones
+        # whose final character sorts at or below 's' (e.g. 'zq'), which
+        # a '<='-relaxation of the width-branch test ('[-1:] == "s"')
+        # would mis-route to str formatting (leaking a ValueError).
+        for spec in ("zz", "zq", "qa"):
+            with self.subTest(spec=spec):
+                with self.assertRaises(
+                    Ip6NetworkSanityError,
+                    msg=f"Unknown format spec {spec!r} must raise Ip6NetworkSanityError.",
+                ):
+                    format(self._net, spec)
 
 
 class TestNetAddrIp6NetworkPrefixlen(TestCase):
@@ -1082,10 +1165,59 @@ class TestNetAddrIp6NetworkGetitem(TestCase):
             with self.subTest(index=index):
                 self.assertEqual(net[index], expected, msg=f"net[{index}] must be {expected}.")
 
-        for bad in (4, -5):
+        # 4 == count (the first invalid index); 5 / 100 are strictly
+        # past the end so a '<'-vs-'!='/'is not' weakening of the upper
+        # bound is caught.
+        for bad in (4, 5, 100, -5):
             with self.subTest(index=bad):
                 with self.assertRaises(Ip6NetworkSanityError, msg=f"net[{bad}] must raise Ip6NetworkSanityError."):
                     _ = net[bad]
+
+
+class TestNetAddrIp6NetworkNumAddressesEdge(TestCase):
+    """
+    The NetAddr IPv6 network num_addresses default-route edge test.
+    """
+
+    def test__net_addr__ip6_network__num_addresses__default_route(self) -> None:
+        """
+        Ensure 'num_addresses' counts the whole IPv6 space for the
+        ::/0 default route, where the network address is 0 — pinning
+        the subtraction form against a modulo (which would divide by
+        the zero network address).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(
+            Ip6Network("::/0").num_addresses,
+            2**128,
+            msg="num_addresses of ::/0 must be the full 2**128 address space.",
+        )
+
+    def test__net_addr__ip6_network__subnetting_arg_boundaries(self) -> None:
+        """
+        Ensure the subnets / supernet prefix-length boundary
+        arguments raise or succeed exactly at the equal / one-step
+        edges — a subnet must be strictly longer, a supernet strictly
+        shorter, and a positive prefixlen_diff greater than one is
+        honoured.
+
+        Reference: RFC 4632 (Classless Inter-domain Routing).
+        """
+
+        net = Ip6Network("2001:db8::/48")
+        with self.assertRaises(Ip6NetworkSanityError, msg="subnets(new_prefix == prefixlen) must raise."):
+            list(net.subnets(new_prefix=48))
+        with self.assertRaises(Ip6NetworkSanityError, msg="supernet(new_prefix == prefixlen) must raise."):
+            net.supernet(new_prefix=48)
+        with self.assertRaises(Ip6NetworkSanityError, msg="supernet(new_prefix > prefixlen) must raise."):
+            net.supernet(new_prefix=64)
+        self.assertEqual(
+            [str(s) for s in Ip6Network("2001:db8::/48").subnets(prefixlen_diff=2)],
+            ["2001:db8::/50", "2001:db8:0:4000::/50", "2001:db8:0:8000::/50", "2001:db8:0:c000::/50"],
+            msg="subnets(prefixlen_diff=2) must tile a /48 into four /50 blocks.",
+        )
 
 
 class TestNetAddrIp6NetworkAddressExclude(TestCase):
@@ -1166,6 +1298,45 @@ class TestNetAddrIp6NetworkSummarize(TestCase):
                 ["2001:db8::/126"],
             ),
             ([Ip6Network("2001:db8::/64"), Ip6Network("2001:db8:0:2::/64")], ["2001:db8::/64", "2001:db8:0:2::/64"]),
+            # Greedy multi-CIDR descent: a non-aligned, non-power-of-two
+            # range forces _summarize_ints to emit decreasing-size
+            # blocks, exercising both the align-limited and span-limited
+            # min() branches.
+            (
+                [Ip6Address(f"2001:db8::{nibble}") for nibble in range(1, 7)],
+                ["2001:db8::1/128", "2001:db8::2/127", "2001:db8::4/127", "2001:db8::6/128"],
+            ),
+            # A range starting at 2001:db8:: exercises the 'lo == 0'
+            # alignment branch (align := bits) relative to the merged
+            # span origin.
+            (
+                [Ip6Address(f"2001:db8::{nibble}") for nibble in range(0, 7)],
+                ["2001:db8::/126", "2001:db8::4/127", "2001:db8::6/128"],
+            ),
+            # A one-address GAP (::1 missing) must NOT merge — pins the
+            # '+ 1' adjacency tolerance in _merge_spans against widening.
+            (
+                [Ip6Address("2001:db8::"), Ip6Address("2001:db8::2")],
+                ["2001:db8::/128", "2001:db8::2/128"],
+            ),
+            # A block contained in the MIDDLE of a wider one (a /90 not
+            # at the /64's start) must keep the wider span — pins the
+            # 'max(prev_hi, hi)' merge against collapsing to the
+            # narrower contained endpoint (a contained-at-start block
+            # would let 'hi' dominate and hide the bug).
+            (
+                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8::40:0:0:0/90")],
+                ["2001:db8::/64"],
+            ),
+            # A separate block, a gap, then two adjacent-and-alignable
+            # blocks that merge into a wider aggregate (/63). With the
+            # earlier block already in the merged list, this pins the
+            # merge against the LAST span ('merged[-1]') rather than the
+            # first — and the /63 only forms if the merge happens at all.
+            (
+                [Ip6Network("2001:db8::/64"), Ip6Network("2001:db8:0:2::/64"), Ip6Network("2001:db8:0:3::/64")],
+                ["2001:db8::/64", "2001:db8:0:2::/63"],
+            ),
             ([], []),
         ]
         for items, expected in cases:

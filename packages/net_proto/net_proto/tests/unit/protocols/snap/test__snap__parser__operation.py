@@ -27,11 +27,12 @@ Operation unit tests for the SNAP packet parser.
 
 net_proto/tests/unit/protocols/snap/test__snap__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
 
+from net_addr import Buffer
 from net_proto import (
     PacketRx,
     SnapCiscoProtocol,
@@ -39,7 +40,6 @@ from net_proto import (
     SnapOui,
     SnapParser,
 )
-from net_proto.lib.buffer import Buffer
 
 
 class TestSnapParserOperation(TestCase):

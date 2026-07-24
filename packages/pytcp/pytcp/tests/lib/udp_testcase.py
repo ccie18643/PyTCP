@@ -33,11 +33,11 @@ on top of 'NetworkTestCase'.
 
 pytcp/tests/lib/udp_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, override
 
 from net_addr import Ip4Address, Ip6Address, IpVersion
 from net_proto.lib.enums import EtherType, IpProto
@@ -48,8 +48,8 @@ from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.udp.udp__parser import UdpParser
 from pytcp import stack
 from pytcp.protocols.icmp.icmp__error_emitter import IcmpErrorRateLimiter
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__IP6_ADDRESS,
@@ -108,6 +108,7 @@ class UdpTestCase(NetworkTestCase):
     _icmp4_error_rate_limiter_prior: IcmpErrorRateLimiter
     _icmp6_error_rate_limiter_prior: IcmpErrorRateLimiter
 
+    @override
     def setUp(self) -> None:
         """
         Snapshot the stack-global mutable state UDP tests routinely
@@ -156,6 +157,7 @@ class UdpTestCase(NetworkTestCase):
         self._icmp6_error_rate_limiter_prior = stack.icmp6_error_rate_limiter
         stack.icmp6_error_rate_limiter = IcmpErrorRateLimiter()
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the stack-global state captured in 'setUp', then
@@ -213,7 +215,7 @@ class UdpTestCase(NetworkTestCase):
             sock._remote_port = remote_port
 
         stack.sockets[sock.socket_id] = sock
-        return sock
+        return sock  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def _drive_udp_rx(self, *, frame: bytes) -> list[bytes]:
         """

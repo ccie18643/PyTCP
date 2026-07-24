@@ -37,7 +37,7 @@ the test harness uses for snapshot/restore.
 
 pytcp/stack/lifecycle.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
@@ -57,20 +57,29 @@ from pytcp.lib.packet_stats import LinkStatsCounters, PacketStatsRx, PacketStats
 from pytcp.protocols.arp.arp__cache import ArpCache
 from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4Client
 from pytcp.protocols.dhcp6.dhcp6__client import Dhcp6Client
+from pytcp.protocols.dns.dns__resolver import DnsResolver
 from pytcp.protocols.icmp6.nd.nd__cache import NdCache
 from pytcp.protocols.ip4.acd.ip4_acd import Ip4Acd
 from pytcp.runtime.fib import RouteTable
 from pytcp.runtime.interface_table import InterfaceTable
-from pytcp.runtime.packet_handler import PacketHandlerL2, PacketHandlerL3
+from pytcp.runtime.packet_handler import (
+    PacketHandlerL2,
+    PacketHandlerL3,
+    PacketHandlerLoopback,
+)
 from pytcp.runtime.rx_ring import RxRing
+from pytcp.runtime.socket import AddressFamily
 from pytcp.runtime.timer import Timer
 from pytcp.runtime.tx_ring import TxRing
-from pytcp.socket import AddressFamily
+from pytcp.stack.activity_introspect import ActivityIntrospectApi
 from pytcp.stack.address import AddressApi
 from pytcp.stack.link import LinkApi
 from pytcp.stack.membership import MembershipApi
+from pytcp.stack.membership6 import Membership6Api
 from pytcp.stack.neighbor import NeighborApi
+from pytcp.stack.resolver import ResolverApi
 from pytcp.stack.route import RouteApi, install_boot_default_routes
+from pytcp.stack.socket_introspect import SocketIntrospectApi
 
 
 def mock__init(
@@ -86,9 +95,17 @@ def mock__init(
     mock__route: RouteApi | None = None,
     mock__dhcp4_client: Dhcp4Client | None = None,
     mock__dhcp6_client: Dhcp6Client | None = None,
+    mock__loopback: bool = False,
 ) -> None:
     """
     Initialize stack components for unit testing.
+
+    'mock__loopback' opts a test into a real loopback interface
+    registered in 'stack.interfaces' alongside the mocked boot handler —
+    off by default so the broad harness suite is unaffected by the extra
+    interface. The integration harness registers 'lo' via its own
+    '_register_loopback' helper instead (after snapshotting the registry
+    so tearDown removes it).
     """
 
     import pytcp.stack as _stack
@@ -110,30 +127,31 @@ def mock__init(
         # '_phrx_ethernet' directly don't pass 'mock__rx_ring' and leave
         # that None; the TX harness passes 'mock__tx_ring' and asserts on
         # its recorded frames.
-        if mock__rx_ring is not None:
-            mock__packet_handler._rx_ring = mock__rx_ring
-        if mock__tx_ring is not None:
-            mock__packet_handler._tx_ring = mock__tx_ring
+        mock__packet_handler.attach_rings(rx_ring=mock__rx_ring, tx_ring=mock__tx_ring)
         # Bind the per-interface neighbor caches to the handler the
         # same way 'init()' does (both directions), so the RX/TX
-        # cache lookups go through 'self._{arp,nd}_cache' and the
+        # cache lookups go through the handler's own caches and the
         # caches' solicit / flush callbacks route back through the
-        # owning handler rather than the global shims.
-        if mock__arp_cache is not None:
-            mock__packet_handler._arp_cache = mock__arp_cache
-            mock__arp_cache._owner = mock__packet_handler
+        # owning handler rather than the global shims. 'attach_caches'
+        # requires the ND cache (always present in production); when a
+        # narrow test passes only the ARP cache, bind it on its own.
         if mock__nd_cache is not None:
-            mock__packet_handler._nd_cache = mock__nd_cache
-            mock__nd_cache._owner = mock__packet_handler
+            mock__packet_handler.attach_caches(
+                arp_cache=mock__arp_cache,
+                nd_cache=mock__nd_cache,
+                iface_name=None,
+            )
+        elif mock__arp_cache is not None:
+            mock__packet_handler.attach_arp_cache(mock__arp_cache)
         # Register the handler in the per-ifindex interface registry
-        # keyed by its own '_ifindex' (default 1 for the harness's
-        # sole interface). Only when a handler is passed — a
-        # timer-only 'mock__init' (e.g. IcmpTestCase's second call)
-        # must NOT wipe the registry the first call populated. Rebuild
-        # the table fresh (same reconstruct-per-test lifecycle as the
-        # FIBs below) and place the handler at its own ifindex.
+        # keyed by its own ifindex (default 1 for the harness's sole
+        # interface). Only when a handler is passed — a timer-only
+        # 'mock__init' (e.g. IcmpTestCase's second call) must NOT wipe
+        # the registry the first call populated. Rebuild the table fresh
+        # (same reconstruct-per-test lifecycle as the FIBs below) and
+        # place the handler at its own ifindex.
         _interfaces = InterfaceTable(first_ifindex=_stack.STACK__DEFAULT_IFINDEX)
-        _interfaces[mock__packet_handler._ifindex] = mock__packet_handler
+        _interfaces[mock__packet_handler.ifindex] = mock__packet_handler
         _stack.interfaces = _interfaces
 
     # Phase 4 commit A — the Address API. If the test harness
@@ -168,6 +186,24 @@ def mock__init(
     if mock__packet_handler is not None:
         _stack.membership = MembershipApi(packet_handler=mock__packet_handler)
 
+    # IPv6 Membership API — same pattern as 'membership'. A default
+    # 'Membership6Api' bound to the mocked handler lets consumer code
+    # reading 'stack.membership6.*' work in isolation.
+    if mock__packet_handler is not None:
+        _stack.membership6 = Membership6Api(packet_handler=mock__packet_handler)
+
+    # Resolver API — DNS resolution control surface. Created
+    # unconditionally (it needs no packet handler, only an upstream
+    # server) and rebuilt every 'mock__init', so it needs no
+    # snapshot/restore; tests exercising resolution inject a fake
+    # resolver into 'stack.resolver'.
+    _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
+
+    # Socket introspection API — stateless, reads the global socket table
+    # at call time; rebuilt every 'mock__init'.
+    _stack.ss = SocketIntrospectApi()
+    _stack.activity = ActivityIntrospectApi()
+
     # Host-mode routing table — Phase 1. Rebuild the two FIBs
     # fresh every 'mock__init' (i.e. every harness 'setUp') so
     # route state cannot leak across the suite; same reconstruct-
@@ -186,13 +222,13 @@ def mock__init(
 
     # Inject the routing-control API into every registered interface the
     # same way 'init()' does, so the RX RA path drives the default route
-    # through 'self._route_api'. 'mock__init' rebuilds 'stack.route' on
-    # EVERY call (e.g. 'IcmpTestCase' calls it a second time, timer-only),
-    # so re-inject into whatever interfaces are currently registered — not
-    # just the one passed this call — otherwise a handler keeps a stale
-    # RouteApi wrapping the previous FIBs.
+    # through it. 'mock__init' rebuilds 'stack.route' on EVERY call (e.g.
+    # 'IcmpTestCase' calls it a second time, timer-only), so re-inject
+    # into whatever interfaces are currently registered — not just the
+    # one passed this call — otherwise a handler keeps a stale RouteApi
+    # wrapping the previous FIBs.
     for _registered_handler in _stack.interfaces.values():
-        _registered_handler._route_api = _stack.route
+        _registered_handler.attach_route_api(_stack.route)
 
     # Phase 4 commit B — DHCPv4 lifecycle. Default to None unless
     # the harness explicitly opts in; existing tests (NetworkTestCase
@@ -208,6 +244,14 @@ def mock__init(
     # through its own unit tests, not through the integration
     # harness in Phase 1.
     _stack.link_local = None
+
+    # Opt-in loopback interface (off by default so the broad harness
+    # suite is unaffected). Build a fresh registry first when no boot
+    # handler was passed, so 'lo' is not appended to a stale table.
+    if mock__loopback:
+        if mock__packet_handler is None:
+            _stack.interfaces = InterfaceTable(first_ifindex=_stack.STACK__DEFAULT_IFINDEX)
+        _add_loopback()
 
 
 def add_interface(
@@ -280,18 +324,13 @@ def add_interface(
                 packet_stats_tx=packet_stats_tx,
                 link_stats=link_stats,
             )
-            # Bind the per-interface neighbor caches to this handler
-            # and the reverse owner back-reference so the caches'
-            # solicit / flush callbacks route through this interface.
-            # ARP is L2-only; ND is used by both layers. '_iface_name'
-            # plumbs the interface name into the per-iface
-            # 'neighbor.<ifname>.*' sysctl resolution path.
-            packet_handler._arp_cache = arp_cache
-            packet_handler._nd_cache = nd_cache
-            arp_cache._owner = packet_handler
-            arp_cache._iface_name = interface_name
-            nd_cache._owner = packet_handler
-            nd_cache._iface_name = interface_name
+            # Bind the per-interface neighbor caches to this handler and
+            # the reverse owner back-reference so the caches' solicit /
+            # flush callbacks route through this interface. ARP is
+            # L2-only; ND is used by both layers. The interface name
+            # plumbs into each cache's per-iface 'neighbor.<ifname>.*'
+            # sysctl resolution path.
+            packet_handler.attach_caches(arp_cache=arp_cache, nd_cache=nd_cache, iface_name=interface_name)
         case InterfaceLayer.L3:
             assert mac_address is None, "MAC address must NOT be provided for Layer 3 (TUN) interface."
             packet_handler = PacketHandlerL3(
@@ -308,9 +347,18 @@ def add_interface(
                 link_stats=link_stats,
             )
             # L3 (TUN) has no ARP; bind only the ND cache + its owner.
-            packet_handler._nd_cache = nd_cache
-            nd_cache._owner = packet_handler
-            nd_cache._iface_name = interface_name
+            packet_handler.attach_caches(arp_cache=None, nd_cache=nd_cache, iface_name=interface_name)
+
+    # Tag each per-interface subsystem's worker thread with the interface
+    # name, so every message it logs while processing this NIC's traffic
+    # carries the interface in the log's interface column.
+    if interface_name is not None:
+        rx_ring.set_log_interface(interface_name)
+        tx_ring.set_log_interface(interface_name)
+        nd_cache.set_log_interface(interface_name)
+        packet_handler.set_log_interface(interface_name)
+        if arp_cache is not None:
+            arp_cache.set_log_interface(interface_name)
 
     # The table allocates the next ifindex (first_ifindex when empty,
     # else max+1) and stamps it onto the handler, atomically under its
@@ -323,7 +371,7 @@ def add_interface(
     # returns and injects the Route API itself.
     route = getattr(_stack, "route", None)
     if route is not None:
-        packet_handler._route_api = route
+        packet_handler.attach_route_api(route)
 
     # Per-interface DHCPv4 / RFC 3927 link-local subsystems (L2-only;
     # both depend on Ethernet/ARP). Built HERE so the interface owns its
@@ -349,19 +397,22 @@ def add_interface(
         # Address API stays only for the BOUND-transition address
         # install (RTM_NEWADDR).
         assert isinstance(packet_handler, PacketHandlerL2)
-        packet_handler._dhcp4_client = Dhcp4Client(
+        dhcp4_client = Dhcp4Client(
             mac_address=dhcp_mac,
             acd=Ip4Acd(mac_address=dhcp_mac, ifindex=ifindex),
             address_api=address_view,
             route_api=_stack.route,
             interface_name=interface_name,
+            ifindex=ifindex,
         )
+        dhcp4_client.set_log_interface(interface_name)
+        packet_handler.attach_dhcp4_client(dhcp4_client)
         # N=1 back-compat: 'stack.dhcp4_client' aliases the FIRST (boot)
         # DHCPv4 interface's client for single-interface consumers; real
         # ownership is per-interface on the handler so a multi-homed host
         # runs one DHCP lifecycle per NIC.
         if _stack.dhcp4_client is None:
-            _stack.dhcp4_client = packet_handler._dhcp4_client
+            _stack.dhcp4_client = dhcp4_client
 
     # Per-interface DHCPv6 client (RFC 8415; L2-only — needs link-scoped
     # multicast). Unlike DHCPv4 there is no opt-in flag: DHCPv6 is
@@ -385,14 +436,16 @@ def add_interface(
         dhcp6_address_view = _stack.address.interface(ifindex)
         dhcp6_mac = _stack.link.interface(ifindex).mac_address
         assert dhcp6_mac is not None, "L2 interface must expose a unicast MAC via the link tool."
-        packet_handler._dhcp6_client = Dhcp6Client(
+        dhcp6_client = Dhcp6Client(
             mac_address=dhcp6_mac,
             interface_name=interface_name,
             address_api=dhcp6_address_view,
         )
+        dhcp6_client.set_log_interface(interface_name)
+        packet_handler.attach_dhcp6_client(dhcp6_client)
         # N=1 back-compat alias, parallel to 'stack.dhcp4_client'.
         if _stack.dhcp6_client is None:
-            _stack.dhcp6_client = packet_handler._dhcp6_client
+            _stack.dhcp6_client = dhcp6_client
 
     if layer is InterfaceLayer.L2 and ip4_link_local:
         assert isinstance(packet_handler, PacketHandlerL2)
@@ -403,7 +456,7 @@ def add_interface(
         from pytcp.protocols.dhcp4.dhcp4__client import Dhcp4State
 
         def _is_dhcp_bound() -> bool:
-            client = ll_handler._dhcp4_client
+            client = ll_handler.dhcp4_client
             return client is not None and client.state is Dhcp4State.BOUND
 
         from pytcp.protocols.ip4.link_local.link_local__client import Ip4LinkLocal as _Ip4LinkLocal
@@ -423,6 +476,31 @@ def add_interface(
         _start_interface(packet_handler)
 
     return ifindex
+
+
+def _add_loopback() -> int:
+    """
+    Construct the loopback ('lo') interface and register it in
+    'stack.interfaces', returning its allocated ifindex. Like Linux,
+    'lo' is always present: 'init()' calls this so every stack — even
+    the daemon's zero-physical-device resting state — has an interface
+    for local delivery of 127.0.0.0/8 + ::1 (and own-IP) traffic.
+
+    'lo' has no fd, no rings, no neighbour caches and no MAC; it owns
+    its own in-process 'LoopbackRing' and delivers on its own subsystem
+    thread. Registered AFTER any boot interface so a physical interface
+    keeps 'STACK__DEFAULT_IFINDEX'; in the zero-device path 'lo' takes
+    that index itself (Linux 'lo' == ifindex 1).
+    """
+
+    import pytcp.stack as _stack
+
+    handler = PacketHandlerLoopback(
+        interface_mtu=_stack.INTERFACE__LOOPBACK__MTU,
+        interface_name="lo",
+    )
+    handler.set_log_interface("lo")
+    return _stack.interfaces.add(handler)
 
 
 def _purge_interface_state(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
@@ -450,26 +528,26 @@ def _purge_interface_state(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     import pytcp.stack as _stack
 
     address_api = AddressApi(packet_handler=iface)
-    ifaddrs: list[Ip4IfAddr | Ip6IfAddr] = [*iface._ip4_ifaddr, *iface._ip6_ifaddr]
+    ifaddrs: list[Ip4IfAddr | Ip6IfAddr] = [*iface.ip4_ifaddr, *iface.ip6_ifaddr]
     for ifaddr in ifaddrs:
         address_api.remove(address=ifaddr.address)
 
     neighbor_api = NeighborApi(packet_handler=iface)
-    if iface._arp_cache is not None:
+    if iface.arp_cache is not None:
         neighbor_api.flush(family=AddressFamily.INET4)
     neighbor_api.flush(family=AddressFamily.INET6)
 
     ip4_fib = getattr(_stack, "ip4_fib", None)
     if ip4_fib is not None:
-        ip4_fib.remove_by_oif(oif=iface._ifindex)
+        ip4_fib.remove_by_oif(oif=iface.ifindex)
     ip6_fib = getattr(_stack, "ip6_fib", None)
     if ip6_fib is not None:
-        ip6_fib.remove_by_oif(oif=iface._ifindex)
+        ip6_fib.remove_by_oif(oif=iface.ifindex)
 
-    if isinstance(iface, PacketHandlerL2) and iface._dhcp4_client is not None:
-        iface._dhcp4_client.stop()
-    if isinstance(iface, PacketHandlerL2) and iface._dhcp6_client is not None:
-        iface._dhcp6_client.stop()
+    if isinstance(iface, PacketHandlerL2) and iface.dhcp4_client is not None:
+        iface.dhcp4_client.stop()
+    if isinstance(iface, PacketHandlerL2) and iface.dhcp6_client is not None:
+        iface.dhcp6_client.stop()
 
 
 def remove_interface(ifindex: int, /) -> PacketHandlerL2 | PacketHandlerL3 | None:
@@ -596,6 +674,10 @@ def init(
     _stack.link = LinkApi()
     _stack.neighbor = NeighborApi()
     _stack.membership = MembershipApi()
+    _stack.membership6 = Membership6Api()
+    _stack.resolver = ResolverApi(resolver=DnsResolver(server=_stack.STACK__DNS_SERVER))
+    _stack.ss = SocketIntrospectApi()
+    _stack.activity = ActivityIntrospectApi()
 
     # Host-mode routing table — Phase 3 of
     # 'docs/refactor/routing_table_host_mode.md'. Build the two FIBs and
@@ -651,6 +733,12 @@ def init(
             ip6_lla_autoconfig=ip6_lla_autoconfig,
         )
 
+    # Loopback interface — always present (Linux 'lo'). Registered AFTER
+    # the boot interface so a physical device keeps 'STACK__DEFAULT_IFINDEX';
+    # in the zero-device daemon path 'lo' takes that index. Enables local
+    # delivery of 127.0.0.0/8 + ::1 (and own-IP) traffic.
+    _add_loopback()
+
     _stack.stack_initialized = True
 
 
@@ -663,13 +751,19 @@ def _start_interface(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     'add_interface' (runtime add to an already-running stack).
     """
 
-    if iface._arp_cache is not None:
-        iface._arp_cache.start()
-    assert iface._nd_cache is not None
-    iface._nd_cache.start()
-    assert iface._tx_ring is not None and iface._rx_ring is not None
-    iface._tx_ring.start()
-    iface._rx_ring.start()
+    # The loopback interface has no fd-bound rings and no neighbour
+    # caches — only its own consumer thread. Start the handler and stop.
+    if iface.interface_layer is InterfaceLayer.LOOPBACK:
+        iface.start()
+        return
+
+    if iface.arp_cache is not None:
+        iface.arp_cache.start()
+    assert iface.nd_cache is not None
+    iface.nd_cache.start()
+    assert iface.tx_ring is not None and iface.rx_ring is not None
+    iface.tx_ring.start()
+    iface.rx_ring.start()
     iface.start()
 
 
@@ -683,19 +777,33 @@ def _stop_interface(iface: PacketHandlerL2 | PacketHandlerL3, /) -> None:
     all rings/caches — so it does not call this per-interface helper.)
     """
 
+    # The loopback interface has no rings or neighbour caches to stop —
+    # only its own consumer thread (which 'iface.stop()' winds down,
+    # closing the LoopbackRing eventfd via its '_stop').
+    if iface.interface_layer is InterfaceLayer.LOOPBACK:
+        iface.stop()
+        return
+
     iface.stop()
-    assert iface._rx_ring is not None and iface._tx_ring is not None
-    iface._rx_ring.stop()
-    iface._tx_ring.stop()
-    if iface._arp_cache is not None:
-        iface._arp_cache.stop()
-    assert iface._nd_cache is not None
-    iface._nd_cache.stop()
+    assert iface.rx_ring is not None and iface.tx_ring is not None
+    iface.rx_ring.stop()
+    iface.tx_ring.stop()
+    if iface.arp_cache is not None:
+        iface.arp_cache.stop()
+    assert iface.nd_cache is not None
+    iface.nd_cache.stop()
 
 
-def start() -> None:
+def start(*, wait_for_dhcp_bind: bool = True) -> None:
     """
     Start stack components.
+
+    'wait_for_dhcp_bind' (default True) preserves the in-process boot
+    semantics: 'start()' blocks up to 'dhcp.boot_wait_ms' for the DHCPv4
+    FSM to reach BOUND so a synchronous consumer has an IPv4 address in
+    hand when it returns. A daemon passes False — the DHCPv4 lifecycle is
+    started but not waited on, so the control plane comes up immediately
+    and the lease lands in the background (clients poll the address state).
     """
 
     import pytcp.stack as _stack
@@ -720,16 +828,21 @@ def start() -> None:
         _stack.link_local.start()
 
     # Phase 4 commit B — DHCPv4 lifecycle. Start AFTER the packet
-    # handler so the TX/RX/socket plumbing is live; block up to
-    # 'dhcp.boot_wait_ms' for the FSM to reach BOUND. On timeout
-    # the lifecycle keeps trying in the background; boot proceeds
-    # without IPv4 for now.
+    # handler so the TX/RX/socket plumbing is live. By default block up to
+    # 'dhcp.boot_wait_ms' for the FSM to reach BOUND (on timeout the
+    # lifecycle keeps trying in the background; boot proceeds without IPv4
+    # for now). A daemon ('wait_for_dhcp_bind=False') starts the lifecycle
+    # but does not block — its control plane must come up immediately.
     dhcp4_clients = [
-        handler._dhcp4_client
+        handler.dhcp4_client
         for handler in _stack.interfaces.values()
-        if isinstance(handler, PacketHandlerL2) and handler._dhcp4_client is not None
+        if isinstance(handler, PacketHandlerL2) and handler.dhcp4_client is not None
     ]
-    if dhcp4_clients:
+    if dhcp4_clients and not wait_for_dhcp_bind:
+        for dhcp4_client in dhcp4_clients:
+            dhcp4_client.start()
+        __debug__ and log("stack", "DHCPv4 lifecycle started; not blocking boot on the lease")
+    elif dhcp4_clients:
         from pytcp.protocols.dhcp4 import dhcp4__constants
 
         boot_wait_s = dhcp4__constants.DHCP4__BOOT_WAIT_MS / 1000.0
@@ -751,8 +864,8 @@ def start() -> None:
     # the RA RX handler triggers it on an inbound RA's Managed /
     # Other-config flags.
     for handler in _stack.interfaces.values():
-        if isinstance(handler, PacketHandlerL2) and handler._dhcp6_client is not None:
-            handler._dhcp6_client.start()
+        if isinstance(handler, PacketHandlerL2) and handler.dhcp6_client is not None:
+            handler.dhcp6_client.start()
 
 
 def stop() -> None:
@@ -770,7 +883,8 @@ def stop() -> None:
     # memberships immediately instead of waiting for a query timeout
     # (RFC 3376 §5.1; Linux 'ip_mc_down').
     for iface in _stack.interfaces.values():
-        iface._send_igmp_leave_all()
+        iface.send_igmp_leave_all()
+        iface.send_mld_leave_all()
 
     _stack.stack_running = False
 
@@ -786,10 +900,10 @@ def stop() -> None:
     #   4. tx_ring         — drain anything still queued + stop.
     #   5. arp_cache / nd_cache — stop cache-refresh threads.
     for handler in _stack.interfaces.values():
-        if isinstance(handler, PacketHandlerL2) and handler._dhcp4_client is not None:
-            handler._dhcp4_client.stop()
-        if isinstance(handler, PacketHandlerL2) and handler._dhcp6_client is not None:
-            handler._dhcp6_client.stop()
+        if isinstance(handler, PacketHandlerL2) and handler.dhcp4_client is not None:
+            handler.dhcp4_client.stop()
+        if isinstance(handler, PacketHandlerL2) and handler.dhcp6_client is not None:
+            handler.dhcp6_client.stop()
     if _stack.link_local is not None:
         _stack.link_local.stop()
     # Per-interface handlers first (stop application-side TX
@@ -800,13 +914,18 @@ def stop() -> None:
         iface.stop()
     _stack.timer.stop()
     for iface in _stack.interfaces.values():
-        assert iface._rx_ring is not None and iface._tx_ring is not None
-        iface._rx_ring.stop()
-        iface._tx_ring.stop()
-        if iface._arp_cache is not None:
-            iface._arp_cache.stop()
-        assert iface._nd_cache is not None
-        iface._nd_cache.stop()
+        # The loopback interface has no rings or neighbour caches — its
+        # consumer thread and LoopbackRing eventfd were wound down by
+        # 'iface.stop()' above.
+        if iface.interface_layer is InterfaceLayer.LOOPBACK:
+            continue
+        assert iface.rx_ring is not None and iface.tx_ring is not None
+        iface.rx_ring.stop()
+        iface.tx_ring.stop()
+        if iface.arp_cache is not None:
+            iface.arp_cache.stop()
+        assert iface.nd_cache is not None
+        iface.nd_cache.stop()
 
     # Restore every registered sysctl to its compile-time default
     # so a follow-up 'stack.init()' (typical in long-running test

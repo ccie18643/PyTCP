@@ -27,20 +27,19 @@ Module contains tests for the DHCPv4 Client Identifier option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__client_id.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Dhcp4IntegrityError,
     Dhcp4OptionClientId,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionClientIdAsserts(TestCase):
@@ -155,6 +154,7 @@ class TestDhcp4OptionClientIdAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Client Identifier option object with testcase
@@ -550,3 +550,33 @@ class TestDhcp4OptionClientIdBehavior(TestCase):
                 type=Dhcp4OptionType.CLIENT_ID,
                 client_id=b"\x01\x02\x03",
             )
+
+
+class TestDhcp4OptionClientIdWrongType(TestCase):
+    """
+    The DHCPv4 Client Identifier option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__client_id__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.CLIENT_ID and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §9.14 (Client-identifier option code 61).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClientId.from_buffer(b"\x00\x07\x01\x02\x03\x04\x05\x06\x07")
+
+    def test__dhcp4__option__client_id__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.CLIENT_ID, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §9.14 (Client-identifier option code 61).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionClientId.from_buffer(b"\xff\x07\x01\x02\x03\x04\x05\x06\x07")

@@ -59,10 +59,12 @@ The §6 gateway broadcast-forwarding rules are Phase 2.
 > but also against the possible broadcast addresses for that
 > host."
 
-**Adherence:** met. The RX handler
-(`packet_handler__ip4__rx.py:149-153`) tests the destination
-against the union of `_ip4_unicast ∪ _ip4_multicast ∪
-_ip4_broadcast` — admitting any of the three. The
+**Adherence:** met. The RX handler admits a locally-addressed
+datagram via `_forward_or_deliver_ip4`
+(`packet_handler__ip4__rx.py:180`), then tests the destination
+separately against `_if._ip4_unicast` (`:183`),
+`_if._ip4_multicast` (`:186`), and `_if._ip4_broadcast`
+(`:189`) — admitting any of the three. The
 `_ip4_broadcast` set is populated at boot from each
 `Ip4IfAddr.network.broadcast` (`Ip4Network.broadcast` is the
 {net, subnet, -1} address) plus the limited broadcast
@@ -164,7 +166,7 @@ lands, these rules become relevant. See RFC 1812 audit (Phase
   validator's {0, 1} acceptance, and the rejection of
   out-of-range / non-int / bool values.
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestPacketHandlerIp4TxRfc919AllowBroadcast`
+  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__ip4__tx.py::TestIp4TxRfc919AllowBroadcast`
   Drives the gate: default-deny drops both
   255.255.255.255 and the subnet-directed broadcast with
   the new TxStatus and counter bump; override-on permits

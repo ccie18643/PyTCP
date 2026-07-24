@@ -28,14 +28,12 @@ operation.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__time_exceeded__parser.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
 from typing import Any, cast
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     Icmp4MessageTimeExceeded,
@@ -44,6 +42,7 @@ from net_proto import (
     Ip4Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _packet_rx_with_ip4(frame: bytes) -> PacketRx:

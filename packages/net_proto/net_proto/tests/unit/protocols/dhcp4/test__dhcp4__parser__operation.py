@@ -28,14 +28,12 @@ round-trip, plus all exposed accessor properties).
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address, Ip4Mask, MacAddress
 from net_proto import (
@@ -58,6 +56,7 @@ from net_proto import (
 )
 from net_proto.protocols.dhcp4.dhcp4__enums import Dhcp4HardwareType, Dhcp4Operation
 from net_proto.protocols.dhcp4.dhcp4__header import DHCP4__HEADER__MAGIC_COOKIE
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 def _dhcp4_header(
@@ -228,6 +227,7 @@ class TestDhcp4ParserOperation(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Parse the test frame once per testcase.
@@ -296,6 +296,7 @@ class TestDhcp4ParserHeaderProperties(TestCase):
     a fully-populated DHCPv4 frame.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse a frame with every header field set to a distinct non-default
@@ -526,6 +527,7 @@ class TestDhcp4ParserOptionsProperties(TestCase):
     Exercise every Dhcp4OptionsProperties accessor exposed on the parser.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Parse a frame carrying one instance of each option whose value is

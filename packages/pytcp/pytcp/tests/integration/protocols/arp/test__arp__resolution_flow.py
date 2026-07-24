@@ -39,8 +39,10 @@ exercise the rate-limit / queue logic in isolation.
 
 pytcp/tests/integration/protocols/arp/test__arp__resolution_flow.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import Ip4Address, MacAddress
 from net_proto import ArpOperation, ArpParser, Ip4Assembler
@@ -74,6 +76,7 @@ class TestArpResolutionFlow(ArpTestCase):
     behaviour at the wire level.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the standard ARP harness, then replace the mock

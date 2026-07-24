@@ -27,7 +27,7 @@ This module contains the SNAP protocol error classes.
 
 net_proto/protocols/snap/snap__errors.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

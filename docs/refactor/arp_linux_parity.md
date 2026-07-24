@@ -390,13 +390,14 @@ classification.
 
 - **RFC 1027 Proxy ARP** — router-grade. Audit at
   `docs/rfc/arp/rfc1027__proxy_arp/adherence.md`.
-- **RFC 3927 IPv4 link-local autoconfiguration** — out of
-  default Linux scope (only enabled via NetworkManager /
-  `avahi-autoipd`). Audit at
-  `docs/rfc/arp/rfc3927__ipv4_lla/adherence.md`.
-- **§2.6.2 / §2.7 LLA forwarding gate** — silent risk only.
-  Audit at `docs/rfc/arp/rfc3927__ipv4_lla/adherence.md`
-  §2.6.2.
+- **§2.6.2 / §2.7 LLA forwarding gate** — router-grade
+  (forwarding plane); silent risk only. Audit at
+  `docs/rfc/arp/rfc3927__ipv4_lla/adherence.md` §2.6.2.
+
+> **RFC 3927 IPv4 link-local autoconfiguration itself has since
+> SHIPPED** (Phases 0–5) — see
+> `docs/refactor/rfc3927_link_local_autoconfig.md` and §3 above.
+> Only the forwarding gate above remains Phase-2.
 
 ---
 

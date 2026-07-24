@@ -117,11 +117,11 @@ integer arithmetic is usually used... If the above
 formula yields 0, the result SHOULD be rounded up to
 1 byte."
 
-(Note: when `_cc_mode == CcMode.CUBIC`, this CA
-formula is replaced by RFC 9438's cubic growth per
-the CUBIC audit. The Reno path remains the default
-for opt-in via `setsockopt(IPPROTO_TCP,
-TCP_CONGESTION, "reno")`.)
+(Note: `cc_mode` defaults to `CcMode.CUBIC`
+(`state/tcp__state__cc.py`), so this CA formula is
+replaced by RFC 9438's cubic growth per the CUBIC
+audit unless the application opts into the Reno path
+via `setsockopt(IPPROTO_TCP, TCP_CONGESTION, "reno")`.)
 
 ### Eq 4 — ssthresh on RTO
 
@@ -394,7 +394,9 @@ Already covered above in §3.2 audit.
 ### §3.1 LW = 1 SMSS
 
 - **Integration:**
-  `test__tcp__session__cwnd.py::TestTcpCwndPhase2::test__cwnd__rto_resets_cwnd_to_loss_window`.
+  `test__tcp__session__cwnd.py::TestTcpCwndPhase2::test__cwnd__rto_sets_ssthresh_to_half_flight_size`
+  (its final assertion pins the cwnd collapse to
+  1 SMSS on RTO).
 
 **Status:** locked in.
 

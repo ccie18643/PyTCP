@@ -45,7 +45,14 @@ membership changes, wraps Reports in a Hop-by-Hop header
 carrying the RFC 2711 Router Alert option (value = MLD),
 sets Hop Limit = 1 per §5.2.13, sources from a link-local
 address per §5.2.13, and sends to the all-MLDv2-routers
-group `ff02::16`.
+group `ff02::16`. Full **source-specific multicast (SSM)**
+is implemented on the listener side: per-socket INCLUDE /
+EXCLUDE source filters (the `MCAST_JOIN_SOURCE_GROUP` family
+via `stack.membership6`), the §6.1 merge into per-interface
+reception state, source-bearing state-change Reports
+(`ALLOW_NEW_SOURCES` / `BLOCK_OLD_SOURCES` / `CHANGE_TO_*`)
+with §9.1 robustness retransmission, and the §4.1 data-plane
+source-delivery gate for UDP and RAW receive.
 
 The querier role (§5 Querier processing of inbound Reports;
 §7 Querier-side timers and General / Multicast-Address-
@@ -60,14 +67,14 @@ fall into `__phrx_icmp6__unknown`.
 | §4 wire | Query (type 130) wire format                   | met (parser via `Icmp6Mld2MessageQuery` — codec + RX dispatch; assembly is Phase-2 router) |
 | §4 wire | Report (type 143) wire format                  | met (codec + assembler + parser) |
 | §4 wire | Multicast Address Record wire format           | met |
-| §5      | Listener-side state machine                    | met (group join/leave triggers `CHANGE_TO_EXCLUDE` Report) |
+| §5      | Listener-side state machine                    | met (source-bearing state-change Reports — `ALLOW`/`BLOCK`/`CHANGE_TO_*` per the §6.1 difference table — with §9.1 robustness retransmission; §5.2.12 / §6.1, tested by `test__icmp6__mld__source_state_change.py` + `test__icmp6__mld2_leave.py`) |
 | §5      | Querier-side state machine                     | deferred (Phase-2 router role) |
 | §5.1.10 | Listener responds to Query with Report         | met (MRC random-delay window, `stack.timer`-scheduled) |
 | §5.2.13 | Hop Limit = 1 on outbound MLDv2 messages       | met |
 | §5.2.13 | Source = link-local address                    | met |
 | §5.2.14 | Destination = `ff02::16` (all-MLDv2-routers)   | met (for Reports) |
 | §5.2.14 | Router Alert option (RFC 2711) in HBH          | met |
-| §6      | Multicast Listener Discovery state transitions | met for the host (CHANGE_TO_EXCLUDE on join) |
+| §6      | Multicast Listener Discovery state transitions | met for the host (full INCLUDE / EXCLUDE source filters via `MCAST_*` socket options + data-plane source-delivery gate for UDP / RAW) |
 | §7      | Timers and constants (querier-side)            | deferred (Phase-2 router role) |
 | §8      | Action on reception (querier processing)       | deferred (Phase-2 router role) |
 
@@ -91,14 +98,15 @@ the ICMPv6 demux:
   methods raise NotImplementedError because Phase-1 PyTCP
   is a host listener and never emits Queries — querier-
   side emission lands in the Phase-2 router track). The
-  RX path at `packet_handler__icmp6__rx.py:220-221`
-  dispatches to `__phrx_icmp6__mld2_query` per §5.1.10.
+  RX path at `packet_handler__icmp6__rx.py:194`
+  dispatches to `__phrx_icmp6__mld_query` (definition at
+  `:1174`) per §5.1.10.
 - Type 143 (`MULTICAST_LISTENER_REPORT_V2`) — full codec
   at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__report.py`
   (Header / Base / Parser / Assembler + multi-record
   payload). The RX path at
-  `packet_handler__icmp6__rx.py:218` dispatches to
+  `packet_handler__icmp6__rx.py:192` dispatches to
   `__phrx_icmp6__mld2_report` which counts the Report but
   takes no state-update action (host-side; querier role
   deferred).
@@ -127,19 +135,24 @@ record types (`MODE_IS_INCLUDE = 1` through
 >  changes, the listener immediately transmits a State
 >  Change Report from that interface."
 
-**Adherence:** met. PyTCP triggers Report emission whenever
-the stack's IPv6 multicast group membership changes —
-specifically on `add_ip6_host` (joins the solicited-node
-multicast for the new address) and on `remove_ip6_host`
-(future cleanup). The current implementation emits
-`CHANGE_TO_EXCLUDE` records — the MLDv2 legacy-
-compatibility shape that joins each listed group in
-EXCLUDE-source mode — for every group in `_ip6_multicast`
-EXCEPT the all-nodes multicast (`ff02::1`), which is a
-permanent group that does not need to be reported per
-§5.1.10. Implementation at
-`packet_handler__icmp6__tx.py:210-289`
-(`_send_icmp6_multicast_listener_report`).
+**Adherence:** met. A per-interface reception-state change
+emits a source-bearing MLDv2 State Change Report via
+`_send_mld_state_change` (`packet_handler__icmp6__tx.py`),
+computed from the §6.1 difference table: a filter-mode
+change yields one `CHANGE_TO_INCLUDE` / `CHANGE_TO_EXCLUDE`
+record carrying the new source list, and a within-mode
+source change yields `ALLOW_NEW_SOURCES` and/or
+`BLOCK_OLD_SOURCES` records. The Report is retransmitted
+`[Robustness Variable] - 1` times (§9.1, `mld.robustness`)
+at intervals drawn uniformly at random from (0,
+`mld.unsolicited_report_interval`] (§9.11); a compat-mode
+change cancels the train (§8.2.1). While in MLDv1 Host
+Compatibility Mode the change degrades to the coarse MLDv1
+Report / Done. The all-nodes multicast (`ff02::1`) is never
+reported (a permanent group per §6). The three reception
+edges — join, leave, and a mid-membership filter delta —
+all route through this path. Tested by
+`test__icmp6__mld__source_state_change.py`.
 
 ### §5.1.10 Switching from an Older Version of MLD
 
@@ -221,28 +234,40 @@ multicast group.
 >  the interface ... The MLDv2 state for each multicast
 >  address is one of two filter modes: INCLUDE or EXCLUDE."
 
-**Adherence:** met (host-side simplification). PyTCP
-maintains per-interface multicast membership in
-`self._ip6_multicast: list[Ip6Address]` on the L2
-packet handler. The current implementation uses
-EXCLUDE-source-list-empty (i.e. "interested in this
-multicast group from any source") for all entries —
-covering the common SLAAC and solicited-node case. The
-INCLUDE / explicit-source filter mode is not consumed by
-any current application code; PyTCP would add it when an
-application needs source-specific multicast (SSM)
-filtering, which is an application-layer feature.
+**Adherence:** met. PyTCP maintains per-interface multicast
+reception state as
+`_ip6_multicast_filters: dict[Ip6Address, Ip6MulticastFilter]`
+on the packet handler — one merged INCLUDE / EXCLUDE source
+filter per group (the §4.2 merge of the per-socket
+contributors, guarded by `_lock__multicast`);
+`_ip6_multicast` is a derived read-only view over its keys.
+Source-specific multicast (SSM) is fully consumed: the
+protocol-independent BSD socket options
+`MCAST_JOIN_SOURCE_GROUP` / `MCAST_LEAVE_SOURCE_GROUP` /
+`MCAST_BLOCK_SOURCE` / `MCAST_UNBLOCK_SOURCE` (dispatched
+through the `stack.membership6` API) build per-socket
+INCLUDE / EXCLUDE-with-sources filters; the data-plane RX
+gate `Socket.ip6_multicast_source_admits` (Linux
+`ip_mc_sf_allow`) delivers an inbound multicast datagram to
+a socket only if its filter admits the datagram's source
+(UDP + RAW); and a filter change emits the §6.1 source-
+bearing state-change Report. Any-source joins (SLAAC /
+solicited-node / `IPV6_JOIN_GROUP`) remain EXCLUDE{}. Tested
+by `test__icmp6__mld__source_filter_model.py`,
+`test__socket__ipv6_source_membership.py`,
+`test__icmp6__mld__source_state_change.py`, and
+`test__icmp6__mld__source_data_filter{,__raw}.py`.
 
 > "When a multicast address listener change happens, the
 >  listener responds with a State Change Report."
 
-**Adherence:** met. Address-list mutations through
-`add_ip6_host` / `remove_ip6_host` trigger
-`_send_icmp6_multicast_listener_report` so the local
-querier sees the updated membership immediately. The
-solicited-node multicast for the new address is included
-automatically (it's appended to `_ip6_multicast` by
-`add_ip6_host`).
+**Adherence:** met. Every reception-state edge —
+`assign_ip6_multicast` (join), `remove_ip6_multicast`
+(leave), and a mid-membership filter delta in
+`_mc6_recompute` — emits a `_send_mld_state_change` State
+Change Report so the local querier sees the updated
+membership immediately. The solicited-node multicast for a
+new address is joined automatically by `_assign_ip6_host`.
 
 ---
 
@@ -268,8 +293,8 @@ of the Phase-2 forwarding plane. A Phase-2 querier would:
    `ALLOW_NEW_SOURCES` / `BLOCK_OLD_SOURCES`).
 
 The Phase-2 RX path will replace the current
-"counter-only" handler at
-`packet_handler__icmp6__rx.py:1057` with a state-machine
+"counter-only" handler `__phrx_icmp6__mld2_report` at
+`packet_handler__icmp6__rx.py:1146` with a state-machine
 that consults / updates a per-group dictionary.
 
 ---
@@ -282,7 +307,7 @@ that consults / updates a per-group dictionary.
 >  multicast address listened on."
 
 **Adherence:** met. The RX handler at
-`__phrx_icmp6__mld2_query` in `packet_handler__icmp6__rx.py`
+`__phrx_icmp6__mld_query` in `packet_handler__icmp6__rx.py`
 emits the same `CHANGE_TO_EXCLUDE` Report PyTCP sends on
 spontaneous group-membership changes; the wire form is
 identical and the querier merges the on-Query Report with
@@ -342,11 +367,11 @@ processing) remain Phase-2 router work.
 ### §4 Report wire format
 
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/message/mld2/test__icmp6__mld2__message__report__assembler__operation.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__assembler.py`
   — pins the type-143 wire form, multi-record payload,
   per-record-type encoding (1-6).
 - **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/message/mld2/test__icmp6__mld2__message__report__parser__operation.py`
+  `packages/net_proto/net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__parser.py`
   — pins the RX-side parse path.
 
 **Status:** locked in.
@@ -354,7 +379,9 @@ processing) remain Phase-2 router work.
 ### §5 Listener-side Report emission
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/<proto>/test__<proto>__icmp6__tx.py`
+  `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py`
+  (plus `..test__icmp6__mld2_query_response.py` for the
+  on-Query Report)
   — MLDv2 Report cases verify: Hop Limit = 1, source =
   link-local, destination = `ff02::16`, HBH RA-option
   carrier with value = MLD, `CHANGE_TO_EXCLUDE` record

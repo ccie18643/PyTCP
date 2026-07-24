@@ -82,8 +82,10 @@ symmetric and hash-consistent only for non-subclassable leaves.
 
 ## Public API
 
-`from net_addr import …` exposes the concrete value types, the ABCs
-(for typing), the `IpVersion` enum, the length constants
+`from net_addr import …` exposes the concrete value types, the family
+ABCs `IpAddress` / `IfAddr` / `IpMask` / `IpNetwork` / `IpWildcard` (for
+typing — the `Base` / `Ip` / `Address` roots stay internal to their
+submodules), the `IpVersion` enum, the length constants
 (`IP4__ADDRESS_LEN`, `IP6__ADDRESS_LEN`, `MAC__ADDRESS_LEN`), and the
 full `*Error` tree. The opt-in `ClickType*` argument types
 (`ClickTypeIp4Address`, `ClickTypeIp6IfAddr`, …) are re-exported
@@ -118,7 +120,7 @@ construction. PyTCP does **not** mirror stdlib `ipaddress`'s
 `ValueError` / `IndexError`: catch `NetAddrError` (or a precise
 subclass) instead.
 
-## Installation
+## Install
 
 ```bash
 pip install PyTCP-net_addr
@@ -135,9 +137,9 @@ pip install "PyTCP-net_addr[cli]"   # adds click; exposes the net_addr ClickType
 Python **3.14+** (the library uses PEP 695 generics and modern
 typing).
 
-## Current state (3.0.7)
+## Current state (3.0.8)
 
-- 23 source modules; **2610 unit tests**, ~99% source coverage (the
+- 24 source modules; **2636 unit tests**, ~99% source coverage (the
   remaining lines are `@abstractmethod` stub bodies, a documented
   unreachable `NoReturn` guard, and the lazy-`click` `__getattr__`
   exercised in subprocess probes).
@@ -147,6 +149,10 @@ typing).
   since this is a value-type library, not a wire protocol. The
   authoring contract lives in
   [`.claude/rules/net_addr.md`](https://github.com/ccie18643/PyTCP/blob/master/.claude/rules/net_addr.md).
+
+## Changelog
+
+See [`CHANGELOG.md`](https://github.com/ccie18643/PyTCP/blob/master/packages/net_addr/CHANGELOG.md).
 
 ## License
 

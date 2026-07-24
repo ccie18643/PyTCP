@@ -28,19 +28,18 @@ option per RFC 8106 §5.1.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__rdnss.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import (
     Icmp6IntegrityError,
     Icmp6NdOptionRdnss,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -107,6 +106,7 @@ class TestIcmp6NdOptionRdnssAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the option from _kwargs.

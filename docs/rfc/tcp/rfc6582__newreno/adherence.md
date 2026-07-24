@@ -93,14 +93,13 @@ fast recovery.
 > does not enter fast retransmit and does not reset
 > ssthresh."
 
-**Adherence:** met for the in-recovery case; deviates
-for the post-RTO case. The
+**Adherence:** met. The
 `_retransmit_packet_request` handler at
-`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:2750-2751`
+`packages/pytcp/pytcp/protocols/tcp/session/tcp__session__retransmit.py:431`
 implements:
 
 ```python
-if self._recovery_point != 0:
+if self._cc.recovery_point != 0:
     return
 ```
 
@@ -110,19 +109,18 @@ to "ack_number - 1 > recover" being false during
 recovery (cum-ACK has not yet crossed the prior
 recovery point).
 
-The post-RTO branch
-(`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:2683`) clears
-`_recovery_point = 0` rather than recording
-SND.MAX-at-RTO into it (per §3.2 step 4 below). This
-means three subsequent dup-ACKs after the RTO WILL
-trigger a fresh fast retransmit even if they cover
-seq-space already retransmitted by the RTO — exactly
-the false-fast-retransmit scenario §4 warns about.
-PyTCP does not implement either §4 heuristic to filter
-this out. In practice the RFC 8985 RACK-TLP path
-(time-based loss detection) supplements the dup-ACK
-trigger, but does not strictly substitute for the §3.2
-step 2 / §3.2 step 4 / §4 interaction.
+The post-RTO branch clears `_cc.recovery_point = 0`
+(`session/tcp__session__retransmit.py:341`) AND records
+SND.MAX-at-RTO into `_cc.recover_seq` (`:361`), per
+§3.2 step 4 below. The fast-retransmit entry gate
+refuses re-entry while `lt32(SND.UNA, _cc.recover_seq)`
+(`:444`), so post-RTO dup-ACKs covering seq-space the
+RTO already retransmitted do NOT re-trigger a fresh
+fast retransmit — the false-fast-retransmit scenario
+§4 warns about is prevented by the step-4 marker rather
+than by either §4 heuristic. The marker decays on
+cum-ACK once SND.UNA reaches it
+(`session/tcp__session__ack.py:244-245`).
 
 ### Step 3 (Full ACK): Cwnd deflation on recovery exit
 
@@ -413,14 +411,13 @@ trigger logic with time-based loss detection. The §3.2
 preamble explicitly disclaims RFC 2119 keyword
 strength, so these substitutions are permitted.
 
-The one substantive gap that would matter under a
-strict RFC 6582 reading is §3.2 step 4 — PyTCP
-clears `_recovery_point` on RTO instead of recording
-SND.MAX-at-RTO into it, which means post-RTO dup-ACKs
-can re-trigger fast retransmit without the §4
-heuristic filters. In practice the RACK-TLP time-based
-loss detection mitigates the spurious-fast-retransmit
-scenario this would otherwise cause; without RACK-TLP
-the session would be more vulnerable to spurious
-recovery cascades. The deviation is documented but not
-flagged as actionable.
+§3.2 step 4 is also met: on RTO PyTCP records
+SND.MAX-at-RTO into `_cc.recover_seq` (in addition to
+clearing `_cc.recovery_point`), and the fast-retransmit
+entry gate refuses re-entry while `SND.UNA` has not
+reached that marker. Post-RTO dup-ACKs echoing the
+retransmit storm therefore cannot re-trigger fast
+retransmit, so PyTCP does not need either §4 heuristic
+filter for correctness here; the RACK-TLP time-based
+loss detection supplements the dup-ACK trigger on top.
+No substantive RFC 6582 gap remains.

@@ -27,12 +27,12 @@ This module contains the Raw protocol assembler.
 
 net_proto/protocols/raw/raw__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import EtherType, IpProto
 from net_proto.lib.proto_assembler import ProtoAssembler
 from net_proto.lib.tracker import Tracker

@@ -27,15 +27,14 @@ This module contains the IGMPv2 Leave Group message support class.
 
 net_proto/protocols/igmp/message/igmp__message__v2_leave.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address
 from net_proto.lib.int_checks import is_uint16
 from net_proto.protocols.igmp.igmp__errors import (
     IgmpIntegrityError,

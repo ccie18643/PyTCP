@@ -27,7 +27,7 @@ This module contains class supporting stack RX Ring operations.
 
 pytcp/runtime/rx_ring.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import collections
@@ -119,6 +119,16 @@ class RxRing(Subsystem):
         # mirrors the 'packet_stats' pattern above and gives the
         # Link API a single source of truth for 'stats.rx_bytes'.
         self._link_stats = link_stats
+
+    def set_mtu(self, mtu: int, /) -> None:
+        """
+        Set the read-size MTU bound for this RX ring — the Link API's
+        'set_mtu' mutator resizes the bound interface's own ring through
+        this. Validation (RFC 791 floor, uint16 ceiling) is the Link
+        API's responsibility.
+        """
+
+        self._mtu = mtu
 
     @property
     def queue_full_drop_count(self) -> int:

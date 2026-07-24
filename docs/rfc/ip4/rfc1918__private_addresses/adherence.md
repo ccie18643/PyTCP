@@ -51,7 +51,7 @@ guidance is out of scope for a stack-level audit.
 > 192.168.0.0 - 192.168.255.255 (192.168/16 prefix)"
 
 **Adherence:** met. `Ip4Address.is_private` predicate at
-`packages/net_addr/net_addr/ip4_address.py:173-185`:
+`packages/net_addr/net_addr/ip4_address.py:214-223`:
 
 ```python
 @property
@@ -64,9 +64,11 @@ def is_private(self) -> bool:
 ```
 
 All three RFC 1918 blocks are recognised. The predicate is
-exposed on every `Ip4Address` instance; callers (currently
-none in PyTCP source — the predicate is reserved for future
-sysctl / firewall / DHCP-classify code) can branch on it.
+exposed on every `Ip4Address` instance and is consumed by the
+`is_global` classifier (`ip4_address.py:180` — an address is
+global only if it is not private/loopback/link-local/etc.) and
+by the shared `IpAddress.is_unicast` classifier
+(`ip_address.py:80`).
 
 > "Routing information about private networks shall not be
 > propagated on inter-enterprise links, and packets with

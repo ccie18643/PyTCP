@@ -32,7 +32,7 @@ ARP / ND cache.
 
 pytcp/stack/neighbor.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass
@@ -41,7 +41,7 @@ from typing import TYPE_CHECKING, cast
 from net_addr import Ip4Address, Ip6Address, MacAddress
 from pytcp.lib.logger import log
 from pytcp.lib.neighbor import NudState
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 
 if TYPE_CHECKING:
     from pytcp.protocols.arp.arp__cache import ArpCache
@@ -122,7 +122,7 @@ class NeighborApi:
             "'stack.neighbor.interface(ifindex)' (Linux 'ip neighbor ... dev <ifX>')."
         )
 
-    def interface(self, ifindex: int, /) -> "NeighborApi":
+    def interface(self, ifindex: int, /) -> NeighborApi:
         """
         Return a 'NeighborApi' bound to the interface registered under
         'ifindex' — the device selector, Linux 'ip neighbor … dev <ifX>'
@@ -134,24 +134,40 @@ class NeighborApi:
 
         return NeighborApi(packet_handler=stack.interfaces[ifindex])
 
-    def _arp_cache(self) -> "ArpCache":
+    def _arp_cache_if_any(self) -> "ArpCache | None":
         """
-        Resolve the bound interface's ARP cache. The 'cast' encodes the
-        L2-only precondition; the 'assert' narrows the handler's
-        'ArpCache | None' attribute (an L2 interface always has one).
+        The bound interface's ARP cache, or 'None' when the interface is
+        L3 (a TUN device has no ARP cache).
         """
 
-        cache = cast("PacketHandlerL2", self._resolve_handler())._arp_cache
+        return cast("PacketHandlerL2", self._resolve_handler()).arp_cache
+
+    def _nd_cache_if_any(self) -> "NdCache | None":
+        """
+        The bound interface's ND cache, or 'None' when the interface is
+        L3 — the IPv6 sibling of '_arp_cache_if_any'.
+        """
+
+        return cast("PacketHandlerL2", self._resolve_handler()).nd_cache
+
+    def _arp_cache(self) -> "ArpCache":
+        """
+        Resolve the bound interface's ARP cache for a mutation. The
+        'assert' encodes the L2-only precondition — adding / removing /
+        flushing an ARP entry on an L3 interface is invalid.
+        """
+
+        cache = self._arp_cache_if_any()
         assert cache is not None, "ARP cache unavailable — the bound interface is not L2."
         return cache
 
     def _nd_cache(self) -> "NdCache":
         """
-        Resolve the bound interface's ND cache — the IPv6 sibling of
-        '_arp_cache'.
+        Resolve the bound interface's ND cache for a mutation — the IPv6
+        sibling of '_arp_cache'.
         """
 
-        cache = cast("PacketHandlerL2", self._resolve_handler())._nd_cache
+        cache = self._nd_cache_if_any()
         assert cache is not None, "ND cache unavailable — the bound interface is not L2."
         return cache
 
@@ -165,10 +181,10 @@ class NeighborApi:
         """
 
         if isinstance(ip, Ip6Address):
-            self._nd_cache()._add_permanent_entry(ip, mac)
+            self._nd_cache().add_permanent_entry(ip6_address=ip, mac_address=mac)
             __debug__ and log("stack", f"<lg>Neighbor API</>: added static ND {ip} -> {mac}")
             return
-        self._arp_cache()._add_permanent_entry(ip, mac)
+        self._arp_cache().add_permanent_entry(ip4_address=ip, mac_address=mac)
         __debug__ and log("stack", f"<lg>Neighbor API</>: added static ARP {ip} -> {mac}")
 
     def remove(self, *, ip: Ip4Address | Ip6Address) -> None:
@@ -179,18 +195,21 @@ class NeighborApi:
         """
 
         removed = (
-            self._arp_cache()._remove_entry(ip) if isinstance(ip, Ip4Address) else self._nd_cache()._remove_entry(ip)
+            self._arp_cache().remove_entry(ip) if isinstance(ip, Ip4Address) else self._nd_cache().remove_entry(ip)
         )
         __debug__ and log("stack", f"<lg>Neighbor API</>: removed neighbour {ip} (matched={removed})")
 
     def flush(self, *, family: AddressFamily) -> None:
         """
         Drop every entry from the interface's ARP cache (family INET4)
-        or ND cache (family INET6) — Linux 'ip neighbor flush'.
+        or ND cache (family INET6) — Linux 'ip neighbor flush'. A no-op on
+        an L3 interface (a TUN device has no cache to flush).
         """
 
-        cache = self._arp_cache() if family is AddressFamily.INET4 else self._nd_cache()
-        count = cache._flush()
+        cache = self._arp_cache_if_any() if family is AddressFamily.INET4 else self._nd_cache_if_any()
+        if cache is None:
+            return
+        count = cache.flush()
         __debug__ and log("stack", f"<lg>Neighbor API</>: flushed {count} {family.name} neighbour(s)")
 
     def list_neighbors(
@@ -203,18 +222,21 @@ class NeighborApi:
         neighbour caches — Linux 'ip neighbor show'. With no 'family'
         the snapshot covers both caches (ARP first, then ND); pass
         'AddressFamily.INET4' / 'INET6' to filter (the Linux 'ip -4' /
-        'ip -6' selectors).
+        'ip -6' selectors). An L3 interface (a TUN device, with no ARP /
+        ND cache) contributes no neighbours rather than erroring.
         """
 
+        arp_cache = self._arp_cache_if_any()
+        nd_cache = self._nd_cache_if_any()
         snapshots: list[NeighborSnapshot] = []
-        if family in (None, AddressFamily.INET4):
+        if family in (None, AddressFamily.INET4) and arp_cache is not None:
             snapshots.extend(
                 NeighborSnapshot(address=entry.address, mac_address=entry.mac_address, state=entry.state)
-                for entry in self._arp_cache()._snapshot()
+                for entry in arp_cache.snapshot()
             )
-        if family in (None, AddressFamily.INET6):
+        if family in (None, AddressFamily.INET6) and nd_cache is not None:
             snapshots.extend(
                 NeighborSnapshot(address=entry.address, mac_address=entry.mac_address, state=entry.state)
-                for entry in self._nd_cache()._snapshot()
+                for entry in nd_cache.snapshot()
             )
         return tuple(snapshots)

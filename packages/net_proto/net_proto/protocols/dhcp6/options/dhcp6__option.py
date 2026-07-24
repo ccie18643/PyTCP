@@ -31,13 +31,13 @@ Host Configuration Protocol for IPv6 (DHCPv6) > Option Codes".
 
 net_proto/protocols/dhcp6/options/dhcp6__option.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOption, ProtoOptionType
 
 # RFC 8415 §21.1 — DHCPv6 option TLV fixed prefix. Unlike DHCPv4,

@@ -45,7 +45,7 @@ callers continue to call it unchanged.
 
 packages/pytcp/pytcp/protocols/tcp/session/tcp__session__ack.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
@@ -67,10 +67,10 @@ from pytcp.protocols.tcp.tcp__loss_recovery import pipe
 from pytcp.protocols.tcp.tcp__rack import tlp_process_ack
 from pytcp.protocols.tcp.tcp__rto import update
 from pytcp.protocols.tcp.tcp__seq import add32, ge32, gt32, le32, lt32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 class TcpAckProcessor:
@@ -92,7 +92,7 @@ class TcpAckProcessor:
     # delegator from 'fsm/' state handlers.
     # ------------------------------------------------------------------
 
-    def process_ack_packet(self, packet_rx_md: "TcpMetadata") -> None:
+    def process_ack_packet(self, packet_rx_md: TcpMetadata) -> None:
         """
         Process regular data/ACK packet.
         """
@@ -127,7 +127,7 @@ class TcpAckProcessor:
     # Private processor helpers — phases of 'process_ack_packet'.
     # ------------------------------------------------------------------
 
-    def _phase1_cum_ack_side_effects(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase1_cum_ack_side_effects(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 1 of the inbound-ACK pipeline. Process the side-
         effects of a cum-ACK that advances SND.UNA: bytes_acked
@@ -480,7 +480,7 @@ class TcpAckProcessor:
                 f"K_ms={session._cc.cubic_K_ms}",
             )
 
-    def _phase3_harvest_rtt_samples(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase3_harvest_rtt_samples(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 3 of the inbound-ACK pipeline. Harvest an RTT sample
         from the inbound ACK via either the RFC 7323 §4 TSecr path
@@ -563,7 +563,7 @@ class TcpAckProcessor:
                 )
             session._rtt.clear()
 
-    def _phase4_loss_detection_and_recovery_exit(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase4_loss_detection_and_recovery_exit(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 4 of the inbound-ACK pipeline. Fold the inbound ACK
         + SACK info into the RACK reorder-window state, prune the
@@ -636,7 +636,7 @@ class TcpAckProcessor:
             # without DSACK.
             session._rack_tlp.decay_reo_wnd_persist()
 
-    def _phase5_consume_segment_and_postprocess(self, packet_rx_md: "TcpMetadata") -> None:
+    def _phase5_consume_segment_and_postprocess(self, packet_rx_md: TcpMetadata) -> None:
         """
         Phase 5 of the inbound-ACK pipeline. Consume the inbound
         segment's data + window field, fire the delayed-ACK side-
@@ -715,6 +715,36 @@ class TcpAckProcessor:
         if packet_rx_md.tcp__data and overlap_prefix < len(packet_rx_md.tcp__data):
             new_data = packet_rx_md.tcp__data[overlap_prefix:]
             session._enqueue_rx_buffer(new_data)
+            # Receiver-side RTT measurement for DRS (Tier-3 Track R).
+            # Fires on new-data segments; unlike the phase-3 sender
+            # sample (which needs our data to be acked) it works on a
+            # pure download where we only send ACKs.
+            now_ms = stack.timer.now_ms
+            if session._ts.send_ts:
+                # RFC 7323 §4 / Linux 'tcp_rcv_rtt_measure_ts': sample
+                # from the echoed TSecr. Deduped on TSecr inside
+                # 'observe' so a burst within one RTT yields a single
+                # sample. A truthy 'tcp__tsecr' covers both the None and
+                # the no-echo 0 cases.
+                if packet_rx_md.tcp__tsecr:
+                    session._rcv_rtt.observe(
+                        sample_ms=(now_ms - packet_rx_md.tcp__tsecr) & 0xFFFF_FFFF,
+                        tsecr=packet_rx_md.tcp__tsecr,
+                    )
+            else:
+                # No timestamps — Linux 'tcp_rcv_rtt_measure': measure
+                # the wall-time to receive one advertised window of
+                # data. Anchor at 'rcv_nxt + rcv_wnd'; once 'rcv_nxt'
+                # reaches it, one window (≈ one RTT, since the sender
+                # cannot outrun a window per round trip) has arrived.
+                rcv_rtt = session._rcv_rtt
+                if rcv_rtt.fallback_active and not lt32(session._rcv_seq.nxt, rcv_rtt.fallback_seq):
+                    rcv_rtt.observe_window(sample_ms=(now_ms - rcv_rtt.fallback_time_ms) & 0xFFFF_FFFF)
+                    rcv_rtt.fallback_active = False
+                if not rcv_rtt.fallback_active:
+                    rcv_rtt.fallback_seq = add32(session._rcv_seq.nxt, session._rcv_wnd)
+                    rcv_rtt.fallback_time_ms = now_ms
+                    rcv_rtt.fallback_active = True
             __debug__ and log(
                 "tcp-ss",
                 f"[{session}] - Enqueued {len(new_data)} bytes starting at "
@@ -739,6 +769,16 @@ class TcpAckProcessor:
         # Purge acked data from TX buffer.
         with session._lock__tx_buffer:
             session._tx.drain(bytes_count=session._tx_buffer_una)
+        # RFC 9293 §3.9 SEND backpressure: the cum-ACK just freed
+        # send-buffer space, so wake any writer blocked in the
+        # SO_SNDBUF gate. The notify is independent of '_lock__fsm' /
+        # '_lock__tx_buffer' (both released here), so it cannot invert
+        # the lock order.
+        session._socket._wake_sndbuf_waiters()
+        # Linux 'tcp_sndbuf_expand': phase 1 may have grown cwnd, so
+        # grow the auto-tuning send-buffer bound to track it (Tier-3
+        # Track S). No-op when SO_SNDBUF is set (SOCK_SNDBUF_LOCK).
+        session._maybe_expand_sndbuf()
         __debug__ and log(
             "tcp-ss",
             f"[{session}] - Purged TX buffer up to SEQ {session._snd_seq.una}",

@@ -37,14 +37,14 @@ partitioned per interface (the handler instance IS the interface).
 
 pytcp/tests/integration/multi_interface/test__multi_interface__rx_reply_isolation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
-from net_addr import Ip4Address, Ip4IfAddr, Ip6IfAddr, MacAddress
+from net_addr import Buffer, Ip4Address, Ip4IfAddr, Ip6IfAddr, MacAddress
 from net_proto import Icmp4MessageEchoRequest
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.icmp4.icmp4__assembler import Icmp4Assembler
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
@@ -99,6 +99,7 @@ class TestMultiInterfaceRxReplyIsolation(IcmpTestCase, TestCase):
     The multi-homed-host per-interface RX→reply isolation tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Add a second L2 interface on a distinct subnet on top of the ICMP

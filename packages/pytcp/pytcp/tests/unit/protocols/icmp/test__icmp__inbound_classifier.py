@@ -27,17 +27,16 @@ This module contains tests for the ICMP inbound classifier.
 
 pytcp/tests/unit/protocols/icmp/test__icmp__inbound_classifier.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_addr import Ip4Address, Ip6Address, IpVersion
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
+from pytcp.tests.lib.parameterized import parameterized_class
 
 
 def _ip4_packet_rx(

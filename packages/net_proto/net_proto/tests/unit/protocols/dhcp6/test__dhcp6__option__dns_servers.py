@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 DNS Recursive Name Server option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__dns_servers.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -104,6 +105,7 @@ class TestDhcp6OptionDnsServersAssembler(TestCase):
     The DHCPv6 DNS Recursive Name Server option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 DNS Recursive Name Server option.
@@ -224,6 +226,19 @@ class TestDhcp6OptionDnsServersParserErrors(TestCase):
             f"Got: {Dhcp6OptionType.ORO!r}",
             msg="Unexpected wrong-type assert message.",
         )
+
+    def test__dhcp6__option__dns_servers__wrong_type_above(self) -> None:
+        """
+        Ensure 'from_buffer()' also rejects an option code word ABOVE
+        OPTION_DNS_SERVERS, pinning the code-equality assert against a
+        '>=' relaxation (the existing wrong-type case only exercises a
+        code below it).
+
+        Reference: RFC 3646 §3 (DNS Recursive Name Server option).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionDnsServers.from_buffer(b"\xff\xff\x00\x02\x00\x17")
 
     def test__dhcp6__option__dns_servers__short_length(self) -> None:
         """

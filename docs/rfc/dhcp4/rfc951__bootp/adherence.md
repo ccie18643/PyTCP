@@ -86,9 +86,9 @@ so the source IP is zero, and connects to
 | op      | 1     | 1 = BOOTREQUEST, 2 = BOOTREPLY          | `Dhcp4Operation` enum (`dhcp4__enums.py:38-44`); REQUEST always emitted |
 | htype   | 1     | hardware address type (1 = Ethernet)    | `Dhcp4HardwareType.ETHERNET = 0x01` (`dhcp4__enums.py:47-52`)      |
 | hlen    | 1     | hardware address length (6 for Ethernet)| `DHCP4__HARDWARE_LEN__ETHERNET = 6` (`dhcp4__enums.py:55`)         |
-| hops    | 1     | client sets to zero                     | `hops: int` field; defaulted to 0 (`dhcp4__header.py:153`)         |
+| hops    | 1     | client sets to zero                     | `hops: int` field; assembler-defaults 0 (`dhcp4__assembler.py:61`) |
 | xid     | 4     | random transaction ID                   | `xid: int` field; client randomises (`dhcp4_client.py:87`)         |
-| secs    | 2     | seconds elapsed since boot start        | `secs: int` field; PyTCP always sends 0                            |
+| secs    | 2     | seconds elapsed since boot start        | `secs: int` field; sends `_elapsed_secs()`                         |
 | —       | 2     | unused (in RFC 951; later: 'flags')     | `flag_b: bool` + 15 MBZ bits (RFC 2131 reuse — see below)          |
 | ciaddr  | 4     | client IP if known                      | `ciaddr: Ip4Address` field; client always sends 0.0.0.0            |
 | yiaddr  | 4     | 'your' (client) IP from server          | `yiaddr: Ip4Address` field                                         |
@@ -166,7 +166,7 @@ so the server emits replies to
 255.255.255.255 / link-layer broadcast. PyTCP's UDP RX
 gate accepts unicast and broadcast destinations on the
 bound port equivalently
-(see `packages/pytcp/pytcp/socket/udp__socket.py`).
+(see `packages/pytcp/pytcp/runtime/socket/udp__socket.py`).
 
 ---
 
@@ -288,7 +288,7 @@ htype defaulted to ETHERNET in the dataclass
 ### §4 BROADCAST reply path
 
 - **Unit (DHCP client):**
-  `packages/pytcp/pytcp/tests/unit/lib/test__lib__dhcp4_client.py` (681 lines)
+  `packages/pytcp/pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py` (4149 lines)
   Pins that the emitted DISCOVER/REQUEST carry
   `flag_b=True`.
 

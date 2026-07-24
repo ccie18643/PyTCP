@@ -27,14 +27,13 @@ This module contains operation tests for the IGMP packet parser.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__parser__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
 from unittest import TestCase
 
-from net_addr import Ip4Address
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.igmp.igmp__assembler import IgmpAssembler

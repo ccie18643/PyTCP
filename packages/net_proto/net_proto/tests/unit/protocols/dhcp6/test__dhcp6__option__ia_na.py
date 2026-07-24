@@ -27,10 +27,11 @@ Module contains tests for the DHCPv6 IA_NA option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__ia_na.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
+from typing import override
 from unittest import TestCase
 
 from net_addr import Ip6Address
@@ -127,6 +128,7 @@ class TestDhcp6OptionIaNaAssembler(TestCase):
     The DHCPv6 IA_NA option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 IA_NA option (no sub-options).
@@ -337,3 +339,33 @@ class TestDhcp6OptionIaNaBehavior(TestCase):
 
         with self.assertRaises(FrozenInstanceError):
             option.iaid = 99  # type: ignore[misc]
+
+
+class TestDhcp6OptionIaNaWrongType(TestCase):
+    """
+    The DHCPv6 Identity Association for Non-temporary Addresses option wrong-code-word parser tests.
+    """
+
+    def test__dhcp6__option__ia_na__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code word equals
+        Dhcp6OptionType.IA_NA and rejects a code below it, pinning the
+        equality check against a '<=' relaxation.
+
+        Reference: RFC 8415 §21.4 (IA_NA option code 3).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionIaNa.from_buffer(b"\x00\x00\x00\x0c\x11\x22\x33\x44\x00\x00\x03\xe8\x00\x00\x07\xd0")
+
+    def test__dhcp6__option__ia_na__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code word above
+        Dhcp6OptionType.IA_NA, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 8415 §21.4 (IA_NA option code 3).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp6OptionIaNa.from_buffer(b"\xff\xff\x00\x0c\x11\x22\x33\x44\x00\x00\x03\xe8\x00\x00\x07\xd0")

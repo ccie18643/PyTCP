@@ -31,7 +31,7 @@ leave edge with the same observable state-change Reports as before.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_filter_model.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
@@ -102,7 +102,7 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
         Reference: RFC 3376 §3.2 (an EXCLUDE{} record represents an any-source join).
         """
 
-        self._packet_handler._mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
+        self._packet_handler.mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
 
         self.assertEqual(
             self._packet_handler._ip4_multicast_filters[_GROUP],
@@ -123,7 +123,7 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
         Reference: RFC 3376 §3.2 (per-interface reception state is the source of truth).
         """
 
-        self._packet_handler._mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
+        self._packet_handler.mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
 
         self.assertEqual(
             self._packet_handler._ip4_multicast,
@@ -146,7 +146,7 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
         """
 
         before = len(self._frames_tx)
-        self._packet_handler._mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
+        self._packet_handler.mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
         tx = self._frames_tx[before:]
 
         self.assertEqual(len(tx), 1, msg="A join must emit exactly one state-change Report.")
@@ -170,14 +170,14 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
 
         # First socket join crosses into reception — one CHANGE_TO_EXCLUDE.
         before = len(self._frames_tx)
-        self._packet_handler._mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
+        self._packet_handler.mc_set_socket_filter(_GROUP, token=_TOKEN_A, source_filter=_EXCLUDE_ANY)
         self.assertEqual(len(self._frames_tx[before:]), 1, msg="The first join must emit a Report.")
 
         # A second socket and the operator hold merge to the same
         # EXCLUDE{} reception state — no edge crossed, so no further Report.
         before = len(self._frames_tx)
-        self._packet_handler._mc_set_socket_filter(_GROUP, token=_TOKEN_B, source_filter=_EXCLUDE_ANY)
-        self._packet_handler._mc_ref_acquire(_GROUP)
+        self._packet_handler.mc_set_socket_filter(_GROUP, token=_TOKEN_B, source_filter=_EXCLUDE_ANY)
+        self._packet_handler.mc_ref_acquire(_GROUP)
         self.assertEqual(
             len(self._frames_tx[before:]),
             0,
@@ -187,8 +187,8 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
 
         # Releasing all but the last reference keeps reception — no Report.
         before = len(self._frames_tx)
-        self._packet_handler._mc_clear_socket_filter(_GROUP, token=_TOKEN_A)
-        self._packet_handler._mc_ref_release(_GROUP)
+        self._packet_handler.mc_clear_socket_filter(_GROUP, token=_TOKEN_A)
+        self._packet_handler.mc_ref_release(_GROUP)
         self.assertEqual(
             len(self._frames_tx[before:]),
             0,
@@ -198,7 +198,7 @@ class TestIgmpSourceFilterModel(NetworkTestCase):
 
         # The final release drops reception — one CHANGE_TO_INCLUDE leave.
         before = len(self._frames_tx)
-        self._packet_handler._mc_clear_socket_filter(_GROUP, token=_TOKEN_B)
+        self._packet_handler.mc_clear_socket_filter(_GROUP, token=_TOKEN_B)
         tx = self._frames_tx[before:]
         self.assertEqual(len(tx), 1, msg="The final release must emit one Leave Report.")
         report = _parse_igmp_from_ethernet(tx[0])

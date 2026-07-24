@@ -24,8 +24,8 @@ beyond the table.
 PyTCP's DHCP option catalogue lives in
 `packages/net_proto/net_proto/protocols/dhcp4/options/`. The
 `Dhcp4OptionType` enum at
-`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py:43-54`
-declares 11 codepoints; any inbound option not in this
+`packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py:56-76`
+declares 16 codepoints; any inbound option not in this
 set parses into a `Dhcp4OptionUnknown` (preserving the
 wire bytes for retransmission but not interpreting the
 value).
@@ -48,7 +48,7 @@ byte + value bytes) is the canonical option wire shape;
 PyTCP's option base class at
 `packages/net_proto/net_proto/protocols/dhcp4/options/dhcp4__option.py`
 uses `DHCP4__OPTION__STRUCT = "! BB"`
-(`dhcp4__option.py:39-40`) for the
+(`dhcp4__option.py:52`) for the
 common type+length header. Per-option subclasses append
 their typed payload.
 
@@ -275,15 +275,18 @@ for DISCOVER, so omission is compliant. The
 >  (DHCPOFFER), a DHCP server uses this option to
 >  specify the lease time it is willing to offer."
 
-**Adherence:** wire-only. `Dhcp4OptionLeaseTime` at
+**Adherence:** met. `Dhcp4OptionLeaseTime` at
 `options/dhcp4__option__lease_time.py` parses 4-byte
-uint32 lease time. The client does NOT emit a
-lease-time hint (the option is absent from DISCOVER and
-REQUEST), and it does NOT consume the lease-time from
-ACK — `packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:111-125`
-reads only `yiaddr`, `subnet_mask`, and `router[0]`.
-The lease is therefore effectively infinite from the
-client's perspective.
+uint32 lease time. The client emits a lease-time hint
+in DISCOVER (`Dhcp4OptionLeaseTime(lease_time_hint)` in
+`_send_discover`,
+`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1776`)
+and consumes `ack.lease_time` from the ACK (:1469, :1508;
+the INIT path at :734/:746), storing it as
+`Dhcp4Lease.lease_time__sec` and deriving the T1/T2
+renew/rebind deadlines and the hard expiry from it. An
+ACK without option 51 is rejected (:1469) since there is
+no lease time to schedule against.
 
 ---
 
@@ -324,9 +327,13 @@ and accepts OFFER and ACK on RX
 (`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:167-172`,
 `:222-227`).
 
-DECLINE, NAK, RELEASE, INFORM message types are not
-emitted by PyTCP and not handled on RX (the type filter
-treats non-OFFER and non-ACK as errors).
+DECLINE (`_send_decline`,
+`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1828`)
+and RELEASE (`_send_release`, :1216) are emitted, and NAK
+is handled on RX (the receive loop returns the
+`_NAK_RESTART` sentinel and the FSM falls back to INIT,
+`_recv_within_window` :1644). Only INFORM is neither
+emitted nor handled.
 
 **Presence requirement (parser sanity):** RFC 2131 §3
 mandates "DHCP messages MUST contain a 'DHCP message
@@ -398,8 +405,9 @@ includes `Dhcp4OptionServerId(srv_id)` in REQUEST
 (`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:201`) sourced
 from the OFFER's `srv_id` field
 (`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:108`). The
-"destination address for unicast" clause is vacuous —
-PyTCP never unicasts (no RENEWING state).
+"destination address for unicast" clause is honoured —
+in the RENEWING state the client sends a unicast REQUEST
+to the recorded Server Identifier (`_do_renewing`, :629).
 
 ---
 
@@ -411,13 +419,13 @@ PyTCP never unicasts (no RENEWING state).
 >  parameters, but is encouraged to do so."
 
 **Adherence:** met. The client emits
-`Dhcp4OptionParamReqList([SUBNET_MASK, ROUTER])` in
-both DISCOVER and REQUEST
-(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:142-147`,
-`:195-200`). Only those two parameters are requested
-because they are the only two the client consumes; a
-richer client (with DNS / NTP / domain-name support)
-would extend the list.
+`Dhcp4OptionParamReqList([CLASSLESS_STATIC_ROUTE,
+SUBNET_MASK, ROUTER])` in both DISCOVER and REQUEST
+(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1763`
+DISCOVER, `:1811` REQUEST). Only those three parameters
+are requested because they are the ones the client
+consumes; a richer client (with DNS / NTP / domain-name
+support) would extend the list.
 
 **Wire-format bounds (assembler + parser):** the §9.8
 "minimum length 1" rule is now enforced at both ends:
@@ -451,26 +459,21 @@ case at
 >  administrative domain. ... The code for this option
 >  is 61, and its minimum length is 2."
 
-**Adherence:** partial. The client emits the option in
-DISCOVER only
-(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:141`) using
-the RFC 2131 legacy form
-`b"\x01" + bytes(self._mac_address)` — type byte 0x01
-(hardware type Ethernet) followed by the 6-byte MAC.
-RFC 4361 mandates a DUID-based form for new clients;
-PyTCP uses the older form. See
+**Adherence:** met. The client emits the option in every
+DHCPv4 message it sends — DISCOVER
+(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:1762`),
+REQUEST (:1810), INIT-REBOOT (:1090), RENEW (:1200),
+RELEASE (:1238), and DECLINE (:1853) — via the
+`_expected_client_id` property. The wire form is the
+RFC 4361 §6.1 layout (type byte 0xff + 4-byte IAID +
+DUID), built by `build_client_id`; the RFC 2131 legacy
+`b"\x01" + bytes(mac)` form is no longer used. RFC 2131
+§2 ("use the same identifier in all subsequent messages")
+is therefore satisfied. See
 [`rfc4361__node_specific_client_id`](../rfc4361__node_specific_client_id/adherence.md)
-for the dedicated audit.
-
-The option is OMITTED from REQUEST
-(`packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:188-205`),
-which violates RFC 2131 §2 ("If the client uses a
-'client identifier' in one message, it MUST use that
-same identifier in all subsequent messages"). The
-`Dhcp4OptionClientId` codec at
-`options/dhcp4__option__client_id.py` is fully
-implemented; the MUST gap is in the client's
-emit path, not the wire-format library.
+for the dedicated audit. The `Dhcp4OptionClientId` codec
+at `options/dhcp4__option__client_id.py` carries the
+identifier bytes.
 
 **Wire-format bounds (assembler + parser):** the
 2-byte minimum from RFC 2132 §9.14 is enforced at
@@ -613,7 +616,7 @@ Plus header-level fixes:
 
 The following RFC 2132 options are not in PyTCP's
 catalogue (`Dhcp4OptionType` at
-`options/dhcp4__option.py:43-54`). Inbound options
+`options/dhcp4__option.py:56-76`). Inbound options
 carrying any of these codes parse into a
 `Dhcp4OptionUnknown` wrapper that preserves the wire
 bytes but exposes no typed accessor.
@@ -779,9 +782,11 @@ missing length byte) at
 - **Unit:**
   `packages/net_proto/net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__lease_time.py` (432 lines)
 
-**Status:** locked in (wire format). Note: Lease Time
-is parsed but unused — the client does not consume the
-value (RFC 2131 §3.3 gap).
+**Status:** locked in (wire format). The client consumes
+the ACK's lease-time value to drive T1/T2 and lease
+expiry, pinned by
+`test__dhcp4_client__fetch_returns_lease_time_from_ack`
+in `test__dhcp4__client.py`.
 
 ### §9.6 / §9.7 / §9.8 / §9.14 Message Type / Server ID / Param Req List / Client ID
 
@@ -827,13 +832,13 @@ value (RFC 2131 §3.3 gap).
 
 | Aspect                                          | Coverage                          |
 |-------------------------------------------------|-----------------------------------|
-| Implemented option wire format (11 codecs)      | locked in (~5 200 unit lines)     |
+| Implemented option wire format (16 codecs)      | locked in (~5 200 unit lines)     |
 | Unknown option fallthrough                      | locked in                         |
 | Options container ordering / lookup             | locked in                         |
 | Option Overload (code 52) parsing               | locked in (16 unit tests)         |
 | Maximum DHCP Message Size (57) emission         | locked in (Phase 8.1; 9 codec tests + emit tests) |
 | RFC 3396 long-option concatenation              | locked in (Phase 8.3 client/receive side; same-code merge before codec) |
-| Lease-time consumption by client                | n/a (parsed, not consumed)        |
+| Lease-time consumption by client                | locked in (drives T1/T2 in FSM)   |
 
 ---
 
@@ -847,7 +852,7 @@ value (RFC 2131 §3.3 gap).
 | §3.5 Router (3)                              | met (parsed + first router consumed)                            |
 | §3.14 Host Name (12)                         | met (emitted as "PyTCP")                                        |
 | §9.1 Requested IP Address (50)               | met (emitted in REQUEST)                                        |
-| §9.2 IP Address Lease Time (51)              | wire-only (parsed but unused)                                   |
+| §9.2 IP Address Lease Time (51)              | met (emitted hint + consumed; drives T1/T2)                     |
 | §9.3 Option Overload (52)                    | met (parsing — `Dhcp4Parser._apply_option_overload` + hostile-blob preflight) |
 | §9.6 DHCP Message Type (53)                  | met (all 8 codepoints declared; DISCOVER/REQUEST emitted)       |
 | §9.7 Server Identifier (54)                  | met (echoed in REQUEST)                                         |
@@ -855,26 +860,23 @@ value (RFC 2131 §3.3 gap).
 | §9.10 Maximum DHCP Message Size (57)         | met (emitted in DISCOVER + REQUEST; sysctl-tunable `DHCP4__MAX_MSG_SIZE`; Phase 8.1) |
 | §9.11 / §9.12 T1 / T2 (58, 59)               | not consumed (no FSM)                                           |
 | §9.13 Vendor class identifier (60)           | not implemented                                                 |
-| §9.14 Client Identifier (61)                 | partial — emitted in DISCOVER only, missing in REQUEST          |
+| §9.14 Client Identifier (61)                 | met (RFC 4361 form in every message)                            |
 | RFC 3396 long-option concatenation           | met (client / receive — same-code merge in `Dhcp4Options.from_buffer`; Phase 8.3). Server-side splitting deferred to Phase-2 DHCP server. |
 | All other 60+ options (DNS, NTP, NIS, ...)   | not implemented (out of host-parity scope)                      |
 
-**Principal compliance gap.** Two real issues, both
-client-side rather than wire-format:
+**Principal compliance note.** Both formerly-open
+client-side gaps are now closed:
 
-1. **Client Identifier not echoed in REQUEST**
-   (RFC 2131 §2 MUST). Single-line fix at
-   `packages/pytcp/pytcp/protocols/dhcp4/dhcp4__client.py:193-205`:
-   add `Dhcp4OptionClientId(b"\x01" +
-   bytes(self._mac_address))` to the REQUEST options.
+1. **Client Identifier in every message**
+   (RFC 2131 §2 MUST). The client emits the RFC 4361
+   form via `_expected_client_id` in DISCOVER, REQUEST,
+   INIT-REBOOT, RENEW, RELEASE, and DECLINE — see §9.14
+   above.
 
-2. **Lease-time option parsed but unused.** The client
-   reads `ack.subnet_mask` and `ack.router` from the
-   ACK but ignores `ack.lease_time`. Phase-1 host
-   parity with Linux dhcpcd requires plumbing
-   `lease_time` into the planned RFC 2131 §4.4.5 FSM
-   so T1/T2 timers can drive RENEW/REBIND. The wire
-   codec is ready; the consumer is the missing piece.
+2. **Lease-time consumed.** The client reads
+   `ack.lease_time` from the ACK and plumbs it into the
+   RFC 2131 §4.4.5 FSM so the T1/T2 timers drive
+   RENEW/REBIND and the hard expiry — see §9.2 above.
 
 Everything else in this RFC is either out of host
 scope (NIS, NetBIOS, X11) or wire-format-only with the

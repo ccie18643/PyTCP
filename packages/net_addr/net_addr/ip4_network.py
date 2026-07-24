@@ -27,7 +27,7 @@ This module contains IPv4 network support class.
 
 net_addr/ip4_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from collections.abc import Iterator
@@ -92,7 +92,15 @@ class Ip4Network(IpNetwork[Ip4Address, Ip4Mask]):
             if len(network) != 2:
                 raise Ip4NetworkFormatError(network)
             tuple_address, tuple_mask = network
-            if not (isinstance(tuple_address, Ip4Address) and isinstance(tuple_mask, Ip4Mask)):
+            # Defensive runtime guard: the parameter is typed
+            # 'tuple[Ip4Address, Ip4Mask]', so mypy proves the first
+            # 'isinstance' operand statically true, but the check is
+            # load-bearing — a mistyped tuple must raise the net_addr
+            # error here rather than blowing up later on 'int(...)'.
+            if not (
+                isinstance(tuple_address, Ip4Address)  # type: ignore[redundant-expr]
+                and isinstance(tuple_mask, Ip4Mask)
+            ):
                 raise Ip4NetworkFormatError(network)
             if strict and int(tuple_address) & ~int(tuple_mask) & IP4__MASK:
                 raise Ip4NetworkFormatError(network)

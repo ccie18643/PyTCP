@@ -27,7 +27,7 @@ This module contains tests for the heap-based 'Timer' subsystem.
 
 pytcp/tests/unit/runtime/test__runtime__timer.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading

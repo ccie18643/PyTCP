@@ -248,7 +248,7 @@ audited in the same TIME-WAIT FSM handler and
 referenced from the RFC 1337 test class:
 
 - **Integration:**
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__close__time_wait.py::TestTcpClose__TimeWaitRfc1337::test__rfc1337__syn_in_time_wait_elicits_challenge_ack_without_state_change`
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__close__time_wait.py::TestTcpClose__TimeWaitRfc1337::test__rfc1337__no_evidence_syn_in_time_wait_elicits_challenge_ack`
 
 **Status:** locked in. Cross-referenced in the RFC
 9293 audit when written.

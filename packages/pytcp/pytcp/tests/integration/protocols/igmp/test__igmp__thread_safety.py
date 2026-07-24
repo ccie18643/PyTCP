@@ -30,15 +30,14 @@ thread membership changes cannot corrupt it on a free-threaded build.
 
 packages/pytcp/pytcp/tests/integration/protocols/igmp/test__igmp__thread_safety.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
 from typing import override
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto import IpProto
-from net_proto.lib.buffer import Buffer
 from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
@@ -48,7 +47,7 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_SOURCE_MEMBERSHIP,
     IPPROTO_IP,
@@ -409,7 +408,7 @@ class TestSocketSourceFilterLocking(IcmpTestCase):
         tracking = _TrackingRLock()
         setattr(sock, "_lock__ip4_source_filters", tracking)
 
-        sock._ip4_multicast_source_admits(ifindex=1, group=_GROUP, source=_SOURCE)
+        sock.ip4_multicast_source_admits(ifindex=1, group=_GROUP, source=_SOURCE)
 
         self.assertGreaterEqual(
             tracking.max_depth,

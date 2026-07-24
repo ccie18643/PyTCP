@@ -22,13 +22,13 @@ PyTCP has **zero New CWV support**. A grep across
 references to CWV, pipeACK, NVP, validated capacity,
 or any RFC 7661 identifier.
 
-PyTCP also does not implement RFC 6298 §5.7 idle
-reset (which is implemented and audited under
-`rfc6298__rto/adherence.md`) — the closest mechanism
-in PyTCP that handles the "idle then resume" case.
-PyTCP's idle behaviour is the conservative RFC 6298
-§5.7 reset to initial RTO state on idle longer than
-RTO; it does NOT preserve cwnd across rate-limited
+PyTCP does implement RFC 6298 §5.7 idle reset (audited
+under `rfc6298__rto_computation/adherence.md`) — the
+closest mechanism in PyTCP that handles the "idle then
+resume" case. PyTCP's idle behaviour is the
+conservative RFC 6298 §5.7 reset to initial RTO state
+on idle longer than RTO; what it does NOT implement is
+the RFC 7661 CWV cwnd-preservation across rate-limited
 periods.
 
 ---

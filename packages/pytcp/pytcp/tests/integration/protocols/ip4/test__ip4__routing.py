@@ -29,7 +29,7 @@ Phases 2 / 5 add the next-hop and static-route scenarios.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__routing.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
@@ -39,7 +39,7 @@ from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Network, MacAddress
 from pytcp import stack
 from pytcp.lib.tx_status import TxStatus
 from pytcp.runtime.fib import Route, RouteProtocol
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,
@@ -87,18 +87,29 @@ class TestIp4RoutingHarnessWiring(NetworkTestCase):
         """
         Ensure the integration harness exposes the read-only
         Route API and that it reports exactly the fixture
-        default routes the topology pre-installs.
+        default routes the topology pre-installs. The
+        auto-synthesized on-link connected routes (protocol
+        KERNEL) are filtered out so the assertion stays focused
+        on the FIB-installed default.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
 
         self.assertEqual(
-            stack.route.list_routes(family=AddressFamily.INET4),
+            tuple(
+                route
+                for route in stack.route.list_routes(family=AddressFamily.INET4)
+                if route.protocol is not RouteProtocol.KERNEL
+            ),
             (_FIXTURE_IP4_DEFAULT,),
             msg="Harness must pre-install exactly the IPv4 fixture default route.",
         )
         self.assertEqual(
-            stack.route.list_routes(family=AddressFamily.INET6),
+            tuple(
+                route
+                for route in stack.route.list_routes(family=AddressFamily.INET6)
+                if route.protocol is not RouteProtocol.KERNEL
+            ),
             (_FIXTURE_IP6_DEFAULT,),
             msg="Harness must pre-install exactly the IPv6 fixture default route.",
         )

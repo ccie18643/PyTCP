@@ -380,6 +380,35 @@ Cross-cut with RFC 1122 §4.2.3.2 (audited).
 
 **Adherence:** met.
 
+#### §3.8.6.4 Advertised-window sizing (receive-buffer auto-tuning)
+
+RFC 9293 §3.8.6 leaves the *size* of the advertised
+receive window to the implementation. PyTCP sizes it
+dynamically, mirroring Linux receive-buffer Dynamic
+Right-Sizing (`tcp_rcv_space_adjust`).
+
+**Adherence:** met (Linux-parity extension). The
+advertised window is `max(0, rcv_wnd_max -
+len(rx_buffer))` (`session/tcp__session.py` `_rcv_wnd`
+property), scaled by `rcv_wsc` (RFC 7323). `rcv_wnd_max`
+is seeded from the socket's `SO_RCVBUF`, else
+`tcp.rmem.default`, and grown at runtime by DRS
+(`_maybe_adjust_rcv_space`, run from `receive()`): once
+per receiver-RTT, when the application has drained more
+than the previous per-RTT measurement, `rcv_wnd_max`
+grows toward `2*copied + 16*advmss` plus a sender-rate
+term, clamped at `min(tcp.rmem.max, 0xFFFF << rcv_wsc)`.
+DRS is gated on the `tcp.moderate_rcvbuf` sysctl and
+disabled when `SO_RCVBUF` is set explicitly
+(SOCK_RCVBUF_LOCK), so an explicit option pins the
+window. The receiver RTT it needs comes from the RFC
+7323 TSecr echo on inbound data, or — without negotiated
+timestamps — from the wall-time to receive one
+advertised window (Linux `tcp_rcv_rtt_measure`). The
+offered `rcv_wsc` is derived at SYN from `tcp.rmem.max`
+(RFC 7323 §2.2) so the negotiated scaling can express
+the whole grown window.
+
 ---
 
 ## §3.9 Interfaces
@@ -418,16 +447,21 @@ encapsulated and routed via the IP layer.
 > "TCP MUST act on an ICMP error message passed up
 > from the IP layer."
 
-**Adherence:** met (minimal interpretation; cross-cut
-RFC 1122 §4.2.3.9 audit). PyTCP "acts on" ICMP errors
-indirectly: the offending segment's RTO eventually
-triggers the RFC 1122 §4.2.3.5 R2 abort threshold,
-terminating the connection. The TCP layer does not
-crash, the connection does not hang indefinitely, and
-unrecoverable destinations are recovered via R2.
-Stronger interpretations (per-error early abort,
-socket-level error propagation) cross-cut the
-gap-reported RFC 1191 / RFC 4821 PMTUD records.
+**Adherence:** met. The IP layer builds an
+`IcmpMetadata` for each inbound ICMP error and passes
+it to the owning session via
+`TcpSession.tcp_fsm(icmp=...)`
+(`session/tcp__session.py:2136`), which dispatches to
+the per-state ICMP handlers
+(`fsm__listen__icmp` / `fsm__syn_sent__icmp` /
+`fsm__icmp__synchronized` in `fsm/tcp__fsm.py`). PMTU-
+category errors drive the RFC 1191 / RFC 4821 PMTUD
+paths; the error is additionally surfaced to the
+application through the Linux-style `IP_RECVERR` /
+`IPV6_RECVERR` error queue
+(`runtime/socket/tcp__socket.py`). The RFC 1122
+§4.2.3.5 R2 abort threshold remains the backstop for
+any category that does not early-abort.
 
 ### §3.9.2.3 Source Address Validation
 
@@ -454,6 +488,28 @@ concatenates the scatter-gather buffer list and
 feeds the same `_tx_buffer` path; a non-`None`
 `address` is rejected with `EISCONN` (a destination
 is invalid on a connected stream socket).
+
+**Send-buffer flow control (SO_SNDBUF backpressure).**
+`TcpSession._charge_tx_buffer` bounds the TX-buffer
+occupancy (`len(_tx.buffer)`) by the owning socket's
+effective `SO_SNDBUF` before appending, with TCP
+byte-stream (partial-write) semantics rather than the
+datagram all-or-nothing rule: a write into an empty
+buffer is accepted whole (a single send larger than
+`SO_SNDBUF` still proceeds); a write into a partly-full
+buffer accepts only the fitting prefix and returns that
+short count; a full buffer blocks a blocking socket on
+the socket's send-buffer condition (up to `SO_SNDTIMEO`)
+or raises `BlockingIOError(EAGAIN)` on a non-blocking
+socket. Occupancy is measured directly from the TX
+buffer — the same buffer the cum-ACK drain
+(`tcp__session__ack.py`) shrinks — so a cumulative ACK
+that frees space wakes a blocked writer via
+`_wake_sndbuf_waiters()`; `close()` / `shutdown(SHUT_WR)`
+and the terminal CLOSED transition wake it too, so it
+surfaces a closing error instead of hanging. Mirrors
+Linux `tcp_sendmsg` send-buffer backpressure; `getsockopt
+(SO_SNDBUF)` reports the effective bound.
 
 ### §3.10.3 RECEIVE Call
 
@@ -556,7 +612,10 @@ locations:
 | §3.8.6.1 Persist timer              | data_transfer__send / window persist tests              |
 | §3.8.6.2 SWS                        | window tests                                             |
 | §3.8.6.3 Delayed ACK                | data_transfer__recv tests                                |
-| §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
+| §3.8.6.4 Advertised-window DRS      | `test__tcp__session__so_rcvbuf.py` (SO_RCVBUF sizing); `test__tcp__session__drs.py` (grow toward BDP, cadence gate, rmem.max clamp, moderate_rcvbuf/SO_RCVBUF lock, receive()-path trigger); `test__tcp__session__rcv_rtt.py` / `test__tcp__session__rcv_rtt_no_ts.py` (RTT source); `test__tcp__session__rcv_wscale.py` (WSCALE ceiling) |
+| §3.9 Interfaces                     | socket tests + harness_smoke; `sendmsg` in `test__runtime__socket__tcp__socket.py::TestTcpSocketSendmsg`; SO_LINGER setsockopt/getsockopt in `::TestTcpSocketSoLinger` + close-path in `test__tcp__session__so_linger.py` |
+| §3.10.2 SEND / SO_SNDBUF autotune   | `test__tcp__session__sndbuf_autotune.py` (grows with cwnd, wmem.max clamp, grow-only, SO_SNDBUF lock); `test__tcp__session__buffer_defaults.py` (wmem.default floor) |
+| §3.10.2 SEND / SO_SNDBUF backpressure | `test__tcp__session__so_sndbuf.py` (partial-write, non-blocking EAGAIN, oversized-into-empty, getsockopt parity, ACK-drain wake, close wake) |
 | §3.10.7 Per-state SEGMENT ARRIVES   | per-state test files                                     |
 | §3.10.8 Timeouts                    | RTO + persist + keep-alive + TIME-WAIT tests             |
 
@@ -594,7 +653,7 @@ records for the detailed coverage claims.
 | §3.8.6.2 SWS avoidance                          | met                                     |
 | §3.8.6.3 Delayed ACK                            | met                                     |
 | §3.9.1 User/TCP interface (OPEN-FLUSH)          | met (FLUSH application-discretionary)   |
-| §3.9.2.2 ICMP messages                          | met (R2 abort fallback; PMTUD via RFC 1191/4821) |
+| §3.9.2.2 ICMP messages                          | met (FSM dispatch + IP_RECVERR; PMTUD via RFC 1191/4821) |
 | §3.9.2.3 Source validation                      | met (via RFC 5961)                      |
 | §3.10 Event processing (per-state)              | met                                     |
 
@@ -613,10 +672,7 @@ remaining gaps are:
 4. **§3.9.1.7 FLUSH** — rarely-used user-API call
    not implemented. The semantics are application-
    discretionary.
-5. **§3.9.2.2 ICMP error propagation** — partial;
-   PyTCP silently drops ICMP errors rather than
-   propagating them to TCP sessions.
-6. **TIME_WAIT_DELAY = 30s** — documented deviation
+5. **TIME_WAIT_DELAY = 30s** — documented deviation
    from RFC's recommended 2*MSL ≈ 240s, kept as a
    pragmatic engineering choice and noted in source
    comments.

@@ -33,20 +33,20 @@ reach-in (see docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__client.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-import socket
 import threading
 from types import TracebackType
 from typing import Self
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__errors import IpcConnectionError
 from pytcp.ipc.ipc__fdpass import recv_frame_with_fd
 from pytcp.ipc.ipc__frame import recv_frame, send_frame
 from pytcp.ipc.ipc__message import IpcMessage
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 
 IPC__CLIENT__DEFAULT_TIMEOUT__SEC: float = 5.0
 IPC__CLIENT__REQ_ID_MASK: int = 0xFFFFFFFF
@@ -64,13 +64,13 @@ class IpcClient:
         timeout: float = IPC__CLIENT__DEFAULT_TIMEOUT__SEC,
     ) -> None:
         """
-        Open an AF_UNIX stream connection to the daemon control socket.
+        Open an AF_UNIX stream connection to the daemon control stdlib_socket.
         """
 
         self._lock = threading.Lock()
         self._next_req_id = 0
         self._timeout = timeout
-        self._socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_STREAM)
         self._socket.settimeout(timeout)
         try:
             self._socket.connect(socket_path)

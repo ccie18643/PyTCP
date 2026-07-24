@@ -36,7 +36,7 @@ against the in-process result.
 
 pytcp/tests/lib/ipc_control_testcase.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os

@@ -27,9 +27,10 @@ Module contains operation tests for the DHCPv6 packet assembler.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+from typing import override
 from unittest import TestCase
 
 from net_proto import (
@@ -51,6 +52,7 @@ class TestDhcp6AssemblerOperation(TestCase):
     The DHCPv6 packet assembler operation tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a reference DHCPv6 SOLICIT assembler.

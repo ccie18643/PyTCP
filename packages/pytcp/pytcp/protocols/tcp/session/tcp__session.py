@@ -29,11 +29,13 @@ This module contains the class supporting TCP finite state machine.
 
 pytcp/protocols/tcp/session/tcp__session.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from __future__ import annotations
 
+import errno
+import os
 import threading
 import time
 from typing import TYPE_CHECKING, override
@@ -47,6 +49,7 @@ from pytcp.protocols.tcp.fsm import dispatch_packet as tcp_fsm_dispatch_packet
 from pytcp.protocols.tcp.fsm import dispatch_syscall as tcp_fsm_dispatch_syscall
 from pytcp.protocols.tcp.fsm import dispatch_timer as tcp_fsm_dispatch_timer
 from pytcp.protocols.tcp.session.tcp__session__ack import TcpAckProcessor
+from pytcp.protocols.tcp.session.tcp__session__info import TcpInfoSnapshot
 from pytcp.protocols.tcp.session.tcp__session__retransmit import TcpRetransmitter
 from pytcp.protocols.tcp.session.tcp__session__timers import TcpTimerService
 from pytcp.protocols.tcp.session.tcp__session__tx import TcpTxEngine
@@ -59,14 +62,16 @@ from pytcp.protocols.tcp.state.tcp__state__fastopen import FastOpenState
 from pytcp.protocols.tcp.state.tcp__state__keepalive import KeepaliveState
 from pytcp.protocols.tcp.state.tcp__state__persist import PersistState
 from pytcp.protocols.tcp.state.tcp__state__rack_tlp import RackTlpState
+from pytcp.protocols.tcp.state.tcp__state__rcv_rtt import RcvRttState
+from pytcp.protocols.tcp.state.tcp__state__rcv_space import RcvSpaceState
 from pytcp.protocols.tcp.state.tcp__state__recv_seq import RecvSeqState
 from pytcp.protocols.tcp.state.tcp__state__rtt_sample import RttSampleState
 from pytcp.protocols.tcp.state.tcp__state__send_seq import SendSeqState
 from pytcp.protocols.tcp.state.tcp__state__shutdown import ShutdownState
 from pytcp.protocols.tcp.state.tcp__state__timestamps import TimestampsState
 from pytcp.protocols.tcp.state.tcp__state__tx_buffer import TxBufferState
-from pytcp.protocols.tcp.state.tcp__state__window import WindowState
-from pytcp.protocols.tcp.tcp__cwnd import compute_ecn_event_ssthresh
+from pytcp.protocols.tcp.state.tcp__state__window import WindowState, derive_rcv_wscale
+from pytcp.protocols.tcp.tcp__cwnd import INITIAL_WINDOW_FACTOR, compute_ecn_event_ssthresh
 from pytcp.protocols.tcp.tcp__enums import (
     CcMode,
     ConnError,
@@ -87,13 +92,11 @@ from pytcp.protocols.tcp.tcp__rack import RackSegment
 from pytcp.protocols.tcp.tcp__rto import RtoState, initial_state
 from pytcp.protocols.tcp.tcp__sack import SackScoreboard
 from pytcp.protocols.tcp.tcp__seq import Seq32, le32, lt32, sub32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
-    from threading import Event, Lock, RLock, Semaphore
-
-    from pytcp.socket.tcp__metadata import TcpMetadata
-    from pytcp.socket.tcp__socket import TcpSocket
+    from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 
 # Name of the per-session 'tx_pump' FSM-pump logical timer
@@ -166,6 +169,20 @@ class TcpSession:
         # See 'state/tcp__state__window.py'.
         self._win: WindowState = WindowState()
         self._win.rcv_mss = self._egress_interface_mtu() - self._ip_tcp_overhead
+        # SO_RCVBUF sizes the advertised receive window: the window is
+        # 'max(0, rcv_wnd_max - len(rx_buffer))' (RFC 9293 §3.8.6),
+        # advertised scaled by 'rcv_wsc' (RFC 7323 §2.2). Derive the cap
+        # from the owning socket's SO_RCVBUF so an application can size
+        # the window; unset keeps the conservative 65535 default. Set
+        # before the SYN so the negotiated scale (rcv_wsc) covers it.
+        self._win.rcv_wnd_max = self._socket._effective_rcvbuf()
+        # RFC 7323 §2.2 window scale: size the offered receive-scale
+        # shift for the DRS ceiling ('tcp.rmem.max'), not the initial
+        # window, so a raised ceiling stays advertisable once DRS grows
+        # the window past 65535 << 7 (Linux 'tcp_select_initial_window').
+        # The default 6 MiB rmem.max derives shift 7 — no behaviour
+        # change. Set before the SYN emits the WSCALE option.
+        self._win.rcv_wsc = derive_rcv_wscale(tcp__constants.TCP__RMEM__MAX)
 
         # RFC 4821 / RFC 8899 per-session PLPMTUD adapter.
         # Wraps a PmtuSearch engine bound to the remote
@@ -331,6 +348,17 @@ class TcpSession:
         # §5.7 idle-baseline 'last_send_time_ms'. See
         # 'state/tcp__state__rtt_sample.py'.
         self._rtt: RttSampleState = RttSampleState()
+        # RFC 7323 §4 receiver-side RTT estimator (Tier-3 Track R DRS
+        # cadence). Fed from the inbound TSecr echo, so it produces an
+        # RTT even on a pure receiver. See 'state/tcp__state__rcv_rtt.py'.
+        self._rcv_rtt: RcvRttState = RcvRttState()
+        # Tier-3 Track R DRS measurement window. 'space' seeds from the
+        # initial 'rcv_wnd_max' (set above from SO_RCVBUF) so the first
+        # grow fires only once per-RTT throughput exceeds the start
+        # window. '_rcv_copied_total' is the cumulative count of bytes
+        # the application has drained via 'receive()'.
+        self._rcv_space: RcvSpaceState = RcvSpaceState(space=self._win.rcv_wnd_max)
+        self._rcv_copied_total: int = 0
         self._retransmit_count: int = 0
         # RFC 6298 §5.7 second-clause SYN-retransmit counter.
         # Decoupled from '_retransmit_count' (which
@@ -498,11 +526,11 @@ class TcpSession:
         # call: 'Event' stays set, so a second CONNECT would
         # observe a stale signal; 'Semaphore' counts releases and
         # acquires, naturally consuming the signal.
-        self._event__connect: Semaphore = threading.Semaphore(0)
+        self._event__connect: threading.Semaphore = threading.Semaphore(0)
 
         # Used to inform RECV syscall that there is new data in buffer ready
         # to be picked up.
-        self._event__rx_buffer: Event = threading.Event()
+        self._event__rx_buffer: threading.Event = threading.Event()
 
         # Set when the FSM reaches CLOSED so a blocking lingering
         # close() (SO_LINGER {l_onoff=1, l_linger>0}) wakes as soon as
@@ -515,16 +543,16 @@ class TcpSession:
         # set on the terminal CLOSED state and never cleared, so no
         # lock and no lost/stale-wakeup window. See
         # no_gil_thread_safety_audit.md §5.
-        self._event__closed: Event = threading.Event()
+        self._event__closed: threading.Event = threading.Event()
 
         # Used to ensure that only single event can run FSM at given time.
-        self._lock__fsm: RLock = threading.RLock()
+        self._lock__fsm: threading.RLock = threading.RLock()
 
         # Used to ensure only single event has access to RX buffer at given time.
-        self._lock__rx_buffer: Lock = threading.Lock()
+        self._lock__rx_buffer: threading.Lock = threading.Lock()
 
         # Used to ensure only single event has access to TX buffer at given time.
-        self._lock__tx_buffer: Lock = threading.Lock()
+        self._lock__tx_buffer: threading.Lock = threading.Lock()
 
         # Indicates that CLOSE syscall is in progress, this lets to finish
         # sending data before FIN packet is transmitted.
@@ -823,6 +851,272 @@ class TcpSession:
         return self._state
 
     @property
+    def snd_una(self) -> int:
+        """
+        Get the SND.UNA send-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_snd_seq' collaborator stays the
+        storage.
+        """
+
+        return self._snd_seq.una
+
+    @property
+    def snd_nxt(self) -> int:
+        """
+        Get the SND.NXT send-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_snd_seq' collaborator stays the
+        storage.
+        """
+
+        return self._snd_seq.nxt
+
+    @property
+    def rcv_nxt(self) -> int:
+        """
+        Get the RCV.NXT receive-sequence number (RFC 9293 §3.3.1).
+        Read surface for the 'TcpSocket.status()' introspection
+        path; the '_rcv_seq' collaborator stays the storage.
+        """
+
+        return self._rcv_seq.nxt
+
+    @property
+    def snd_wnd(self) -> int:
+        """
+        Get the current SND.WND send window (RFC 9293 §3.3.1). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.snd_wnd
+
+    @property
+    def rcv_wnd(self) -> int:
+        """
+        Get the current receive-window advertisement (RFC 9293
+        §3.8.6). Public read surface for the 'TcpSocket.status()'
+        introspection path; delegates to the '_rcv_wnd' helper that
+        subtracts buffered bytes from the configured ceiling.
+        """
+
+        return self._rcv_wnd
+
+    @property
+    def rcv_wnd_max(self) -> int:
+        """
+        Get the configured receive-window ceiling (RFC 9293
+        §3.8.6). Read surface for the TCP_INFO introspection path;
+        the '_win' collaborator stays the storage.
+        """
+
+        return self._win.rcv_wnd_max
+
+    @property
+    def snd_mss(self) -> int:
+        """
+        Get the send-side MSS (RFC 9293 §3.7.1 / RFC 6691). Read
+        surface for the 'TcpSocket.status()' / getsockopt(TCP_MAXSEG)
+        / TCP_INFO introspection path; the '_win' collaborator stays
+        the storage.
+        """
+
+        return self._win.snd_mss
+
+    @property
+    def rcv_mss(self) -> int:
+        """
+        Get the receive-side MSS (RFC 9293 §3.7.1). Read surface for
+        the 'TcpSocket.status()' / TCP_INFO introspection path; the
+        '_win' collaborator stays the storage.
+        """
+
+        return self._win.rcv_mss
+
+    @property
+    def snd_wsc(self) -> int:
+        """
+        Get the send-side window scale factor (RFC 7323 §2). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.snd_wsc
+
+    @property
+    def rcv_wsc(self) -> int:
+        """
+        Get the receive-side window scale factor (RFC 7323 §2). Read
+        surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_win' collaborator stays the
+        storage.
+        """
+
+        return self._win.rcv_wsc
+
+    @property
+    def tx_buffer_len(self) -> int:
+        """
+        Get the number of bytes currently queued in the send
+        buffer. Read surface for the 'TcpSocket.status()' / TCP_INFO
+        introspection path; the '_tx' collaborator stays the
+        storage.
+        """
+
+        return len(self._tx.buffer)
+
+    @property
+    def rx_buffer_len(self) -> int:
+        """
+        Get the number of bytes currently queued in the receive
+        buffer. Read surface for the 'TcpSocket.status()'
+        introspection path; the '_rx_buffer' attribute stays the
+        storage.
+        """
+
+        return len(self._rx_buffer)
+
+    def tcp_info(self) -> TcpInfoSnapshot:
+        """
+        Take an immutable, copy-by-value snapshot of the per-session
+        scalars the Linux-shaped 'struct tcp_info' packer needs.
+
+        Per the CLAUDE.md Phase-3 design implications, this is the
+        read-only introspection surface the TCP_INFO packer
+        ('pytcp/runtime/socket/tcp__info.py') consumes instead of
+        reaching into the session's private collaborator objects.
+        """
+
+        return TcpInfoSnapshot(
+            state=self._state,
+            cc_mode=self._cc.cc_mode,
+            retransmit_count=self._retransmit_count,
+            send_ts=self._ts.send_ts,
+            send_sack=self._advertise.send_sack,
+            snd_wsc=self._win.snd_wsc,
+            rcv_wsc=self._win.rcv_wsc,
+            ecn_enabled=self._ecn.enabled,
+            accecn_enabled=self._accecn.enabled,
+            rto_ms=self._rto_state.rto_ms,
+            srtt_ms=self._rto_state.srtt_ms,
+            rttvar_ms=self._rto_state.rttvar_ms,
+            snd_mss=self._win.snd_mss,
+            rcv_mss=self._win.rcv_mss,
+            snd_una=self._snd_seq.una,
+            snd_nxt=self._snd_seq.nxt,
+            snd_wnd=self._win.snd_wnd,
+            rcv_wnd_max=self._win.rcv_wnd_max,
+            cwnd=self._cc.cwnd,
+            ssthresh=self._cc.ssthresh,
+            pmtu=self._plpmtud_adapter.engine.current_mtu,
+            tx_buffer_len=len(self._tx.buffer),
+            dsack_received=self._dsack_received,
+        )
+
+    def set_congestion_control(self, cc_mode: CcMode, /) -> None:
+        """
+        Set the RFC 9438 §1 congestion-control algorithm selector on
+        the live session. Mutator surface for
+        'setsockopt(IPPROTO_TCP, TCP_CONGESTION)' and the
+        listener-fork inheritance path; the '_cc' collaborator stays
+        the storage.
+        """
+
+        self._cc.cc_mode = cc_mode
+
+    def set_nodelay(self, nodelay: bool, /) -> None:
+        """
+        Set the RFC 1122 §4.2.3.4 Nagle-disable flag on the live
+        session. Mutator surface for 'setsockopt(IPPROTO_TCP,
+        TCP_NODELAY)' and the listener-fork inheritance path; the
+        next '_transmit_data' tick reads the new flag.
+        """
+
+        self._tcp_nodelay = nodelay
+
+    def grow_rcv_wnd_max(self, new_max: int, /) -> None:
+        """
+        Raise the advertised-receive-window cap when SO_RCVBUF is
+        enlarged on the live session. Mutator surface for a
+        mid-connection 'setsockopt(SOL_SOCKET, SO_RCVBUF)'; the next
+        outbound segment reads the new cap.
+
+        Grow-only: a lowered SO_RCVBUF does not shrink the cap, so the
+        advertised window's right edge is never retracted (RFC 9293
+        §3.8.6.2.1 — a receiver SHOULD NOT shrink the window). The
+        monotonic update is lockless like the sibling 'set_*' mutators
+        — the FSM thread only reads 'rcv_wnd_max', never writes it.
+        """
+
+        self._win.rcv_wnd_max = max(self._win.rcv_wnd_max, new_max)
+
+    def set_user_timeout_ms(self, user_timeout_ms: int, /) -> None:
+        """
+        Set the TCP_USER_TIMEOUT R2-abort budget (milliseconds; 0 =
+        no override) on the live session. Mutator surface for
+        'setsockopt(IPPROTO_TCP, TCP_USER_TIMEOUT)' and the
+        listener-fork inheritance path; the next R2 check reads the
+        new budget.
+        """
+
+        self._user_timeout_ms = user_timeout_ms
+
+    def set_maxseg_override(self, maxseg_override: int, /) -> None:
+        """
+        Set the TCP_MAXSEG send-MSS clamp (bytes; 0 = no clamp) on
+        the live session. Mutator surface for 'setsockopt(IPPROTO_TCP,
+        TCP_MAXSEG)' and the listener-fork inheritance path; consulted
+        by any future SYN-options MSS clamp.
+        """
+
+        self._maxseg_override = maxseg_override
+
+    def set_keepalive(
+        self,
+        *,
+        enabled: bool,
+        idle_override: int | None,
+        interval_override: int | None,
+        max_count_override: int | None,
+    ) -> None:
+        """
+        Set the RFC 1122 §4.2.3.6 keep-alive flag and the Linux-style
+        per-connection probe overrides on the live session. Mutator
+        surface for the 'TcpSocket.connect()' / 'listen()'
+        propagation path (and the listener-fork inheritance); the
+        '_keepalive' collaborator stays the storage.
+        """
+
+        self._keepalive.enabled = enabled
+        self._keepalive.idle_override = idle_override
+        self._keepalive.interval_override = interval_override
+        self._keepalive.max_count_override = max_count_override
+
+    def preload_tx_buffer(self, data: bytes, /) -> None:
+        """
+        Pre-load the send buffer with caller-supplied bytes before
+        the FSM is driven into SYN_SENT. Mutator surface for the RFC
+        7413 §3.1 connect-with-data (TCP Fast Open) path; the '_tx'
+        collaborator stays the storage.
+        """
+
+        self._tx.buffer.extend(data)
+
+    def wait_closed(self, *, timeout: float) -> None:
+        """
+        Block until the session reaches CLOSED or 'timeout' seconds
+        elapse, whichever comes first. The RX / timer threads advance
+        the FSM and set the close event while this call waits.
+        Read-side surface for the SO_LINGER close path; the
+        '_event__closed' attribute stays the storage.
+        """
+
+        self._event__closed.wait(timeout=timeout)
+
+    @property
     def _rcv_wnd(self) -> int:
         """
         Get the current receive-window advertisement: the configured
@@ -906,18 +1200,98 @@ class TcpSession:
         if self._closing or self._shut.wr:
             raise TcpSessionError("TCP session is closing")
 
-        if self._state in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
-            with self._lock__tx_buffer:
-                self._tx.buffer.extend(data)
-            # Kick the FSM pump OUTSIDE '_lock__tx_buffer' (the
-            # 'tcp_fsm' lock order is _lock__fsm -> _lock__tx_buffer;
-            # taking _lock__fsm while holding _lock__tx_buffer here
-            # would invert it and deadlock).
-            self._kick_pump()
-            return len(data)
+        if self._state not in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+            # This error should be raised when session is locally or fully closed.
+            raise TcpSessionError("TCP session not in ESTABLISHED or CLOSE_WAIT state")
 
-        # This error should be raised when session is locally or fully closed.
-        raise TcpSessionError("TCP session not in ESTABLISHED or CLOSE_WAIT state")
+        if not data:
+            return 0
+
+        accepted = self._charge_tx_buffer(data)
+        # Kick the FSM pump OUTSIDE '_lock__tx_buffer' / the
+        # send-buffer condition (the 'tcp_fsm' lock order is
+        # _lock__fsm -> _lock__tx_buffer; taking _lock__fsm while
+        # holding _lock__tx_buffer here would invert it and deadlock).
+        self._kick_pump()
+        return accepted
+
+    def _charge_tx_buffer(self, data: bytes, /) -> int:
+        """
+        Charge 'data' against the owning socket's SO_SNDBUF and append
+        the accepted prefix to the TX buffer, returning the number of
+        bytes accepted. Bounds the send buffer's occupancy by SO_SNDBUF
+        with TCP byte-stream (partial-write) semantics (RFC 9293 §3.9
+        SEND; Linux 'tcp_sendmsg' send-buffer backpressure):
+
+        - buffer empty -> the whole write is accepted, so a single
+          send() larger than SO_SNDBUF still goes out (mirrors the
+          datagram 'nothing-outstanding-is-always-allowed' rule);
+        - room available -> the fitting prefix is accepted (partial
+          write) and the caller re-sends the remainder;
+        - buffer full -> a non-blocking socket (and no SO_SNDTIMEO)
+          raises 'BlockingIOError(EAGAIN)'; a blocking socket waits on
+          the send-buffer condition (woken by the cum-ACK drain or the
+          close path) up to SO_SNDTIMEO, raising 'BlockingIOError(EAGAIN)'
+          on timeout.
+
+        Occupancy is measured directly from 'len(self._tx.buffer)' —
+        the authoritative send-buffer size the ACK drain and the TFO
+        pre-load both update — so there is no parallel counter to
+        reconcile; only the socket's send-buffer condition machinery is
+        reused. The writer holds the condition across the occupancy
+        read and the atomic 'wait()', so a concurrent drain/close notify
+        (which also takes the condition) cannot slip in between and be
+        lost.
+        """
+
+        socket = self._socket
+        cond = socket._snd_buf_cond
+        with cond:
+            while True:
+                # Re-validate on every wake: a close / shutdown / reset
+                # that fired while the writer was parked must surface as
+                # a closing error rather than queue late data.
+                if self._closing or self._shut.wr or self._state not in {FsmState.ESTABLISHED, FsmState.CLOSE_WAIT}:
+                    raise TcpSessionError("TCP session is closing")
+                bound = socket._effective_sndbuf()
+                with self._lock__tx_buffer:
+                    occupancy = len(self._tx.buffer)
+                    room = bound - occupancy
+                    if occupancy == 0 or room > 0:
+                        accepted = len(data) if occupancy == 0 else min(len(data), room)
+                        self._tx.buffer.extend(data[:accepted])
+                        return accepted
+                if socket._so_sndtimeo is None and not socket._blocking:
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+                if not cond.wait(timeout=socket._so_sndtimeo):
+                    raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+
+    def _maybe_expand_sndbuf(self) -> None:
+        """
+        Grow the auto-tuning send-buffer bound to track the congestion
+        window (Tier-3 Track S, mirroring Linux 'tcp_sndbuf_expand').
+        Called from the inbound-ACK path after cwnd growth: the target
+        is two windows of data — '2 * max(IW, cwnd)' — floored at the
+        RFC 6928 initial window so a small-cwnd connection still queues
+        usefully, and clamped at 'tcp.wmem.max'. 'per_mss' is the bare
+        MSS (no skb-truesize overhead — the same no-2x / no-overhead
+        deviation locked for Tier-1); the Linux 'reordering + 1' term is
+        omitted (dominated by IW = 10 in practice).
+
+        A no-op when the application set SO_SNDBUF explicitly
+        (SOCK_SNDBUF_LOCK disables auto-tuning) or before the MSS is
+        known. The grow-only store lives on the socket; only the RX/ACK
+        thread writes it, so no lock is taken.
+        """
+
+        socket = self._socket
+        if socket._so_sndbuf is not None:
+            return
+        smss = self._win.snd_mss
+        if smss <= 0:
+            return
+        target = 2 * max(INITIAL_WINDOW_FACTOR * smss, self._cc.cwnd)
+        socket._grow_sndbuf_auto(min(target, tcp__constants.TCP__WMEM__MAX))
 
     def receive(self, *, byte_count: int | None = None, timeout: float | None = None) -> bytes:
         """
@@ -945,6 +1319,9 @@ class TcpSession:
 
             rx_buffer = self._rx_buffer[:byte_count]
             del self._rx_buffer[:byte_count]
+            # Tier-3 Track R: count bytes the application copies out so
+            # the DRS measurement can compute per-RTT throughput.
+            self._rcv_copied_total += byte_count
 
             # Clear the event only when the buffer is fully drained
             # AND the remote end is still open. When the remote
@@ -966,7 +1343,60 @@ class TcpSession:
                 # half (matches BSD select-on-read-EOF semantics).
                 self._socket._drain_readable()
 
+        # Tier-3 Track R DRS: the app just drained the buffer, so run
+        # the once-per-RTT receive-window adjust (Linux calls
+        # 'tcp_rcv_space_adjust' from 'tcp_recvmsg'). Outside the
+        # rx-buffer lock — it touches only app-thread DRS state and the
+        # lockless grow-only 'grow_rcv_wnd_max'.
+        self._maybe_adjust_rcv_space()
+
         return bytes(rx_buffer)
+
+    def _maybe_adjust_rcv_space(self) -> None:
+        """
+        Receive-buffer Dynamic Right-Sizing (Tier-3 Track R, mirroring
+        Linux 'tcp_rcv_space_adjust'). At most once per receiver-RTT,
+        when the application has drained more than the previously
+        measured per-RTT bytes ('space'), grow 'rcv_wnd_max' toward the
+        estimated bandwidth-delay product:
+
+            rcvwin = 2 * copied + 16 * advmss          # BDP + loss slack
+            rcvwin += 2 * rcvwin * (copied - space) // space   # sender-rate headroom
+            target = min(rcvwin, tcp.rmem.max, 0xFFFF << rcv_wsc)
+
+        'per_mss' is the bare advertised MSS (no skb-truesize / no
+        'tcp_adv_win_scale' overhead — the same deviation locked for
+        Tier-1), so the window value maps directly to the buffer size.
+        The WSCALE-ceiling clamp keeps the grown window expressible under
+        the shift negotiated at handshake (RFC 7323).
+
+        A no-op until the receiver RTT estimate exists, before one RTT
+        has elapsed since the last measurement, when 'tcp.moderate_rcvbuf'
+        is off, or when SO_RCVBUF is set (SOCK_RCVBUF_LOCK). Runs on the
+        application thread; the actuator 'grow_rcv_wnd_max' is grow-only
+        and lockless.
+        """
+
+        rtt_ms = self._rcv_rtt.rtt_ms
+        if rtt_ms is None:
+            return
+        now_ms = stack.timer.now_ms
+        if now_ms - self._rcv_space.time_ms < rtt_ms:
+            return
+
+        copied = self._rcv_copied_total - self._rcv_space.copied_anchor
+        if copied > self._rcv_space.space:
+            if self._socket._so_rcvbuf is None and tcp__constants.TCP__MODERATE_RCVBUF:
+                advmss = self._win.rcv_mss
+                rcvwin = 2 * copied + 16 * advmss
+                rcvwin += 2 * (rcvwin * (copied - self._rcv_space.space) // self._rcv_space.space)
+                target = min(rcvwin, tcp__constants.TCP__RMEM__MAX, 0xFFFF << self._win.rcv_wsc)
+                if target > self._win.rcv_wnd_max:
+                    self.grow_rcv_wnd_max(target)
+            self._rcv_space.space = copied
+
+        self._rcv_space.copied_anchor = self._rcv_copied_total
+        self._rcv_space.time_ms = now_ms
 
     def close(self) -> None:
         """
@@ -979,13 +1409,17 @@ class TcpSession:
         )
 
         self.tcp_fsm(syscall=SysCall.CLOSE)
+        # RFC 9293 §3.10.6: a CLOSE forbids further SEND. Wake any
+        # writer blocked in the SO_SNDBUF gate so it observes the
+        # closing state and errors rather than queueing late data.
+        self._socket._wake_sndbuf_waiters()
 
     def shutdown(self, *, how: int) -> None:
         """
         BSD 'shutdown(how)' half-close per RFC 9293 §3.9.1
         + POSIX shutdown semantics.
 
-        'how' values (matching pytcp.socket.SHUT_*):
+        'how' values (matching pytcp.runtime.socket.SHUT_*):
             SHUT_RD   (0): no further reads. Inbound data is
                            silently discarded; recv() returns 0
                            after the buffer drains.
@@ -1202,6 +1636,11 @@ class TcpSession:
             # close-complete event (SO_LINGER {l_onoff=1,
             # l_linger>0}).
             self._event__closed.set()
+            # RFC 9293 §3.9 SEND backpressure: the connection is gone,
+            # so release any writer blocked in the SO_SNDBUF gate; it
+            # re-checks the (now non-writable) state and surfaces a
+            # closing error instead of hanging on a dead session.
+            self._socket._wake_sndbuf_waiters()
             stack.sockets.unregister(self._socket)
             # Cancel every per-session logical timer and release
             # the coalesced service handle so nothing fires

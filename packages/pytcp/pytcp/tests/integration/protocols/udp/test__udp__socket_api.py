@@ -42,8 +42,10 @@ Covers:
 
 pytcp/tests/integration/protocols/udp/test__udp__socket_api.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import MacAddress
 from net_proto import (
@@ -54,7 +56,7 @@ from net_proto import (
     Ip4Assembler,
     UdpAssembler,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_MTU,
     IP_TOS,
     IP_TTL,
@@ -136,6 +138,7 @@ class TestUdpSocketApiBindRx(UdpTestCase):
     A bound UdpSocket receives inbound datagrams via the RX path.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UDP socket on STACK:4444 so the RX demux delivers
@@ -182,6 +185,7 @@ class TestUdpSocketApiSendto(UdpTestCase):
     sendto() emits a well-formed UDP datagram on the wire.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UDP socket on STACK:4444 with no remote so
@@ -256,6 +260,7 @@ class TestUdpSocketApiSend(UdpTestCase):
     taking the destination as an argument.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind + connect a UDP socket to HOST_A:5555 so the
@@ -315,6 +320,7 @@ class TestUdpSocketApiSendmsg(UdpTestCase):
     datagram that lands on the wire intact.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UDP socket on STACK:4444 with no remote so the
@@ -380,6 +386,7 @@ class TestUdpSocketApiIpTtlOnWire(UdpTestCase):
     actually appears on the wire.
     """
 
+    @override
     def setUp(self) -> None:
         """Bind an IPv4 UDP socket on the canonical fixture."""
 
@@ -490,6 +497,7 @@ class TestUdpSocketApiIpMtuGetsockopt(UdpTestCase):
     update → getsockopt readback.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind + connect a UDP socket to HOST_A:5555 so the
@@ -581,6 +589,7 @@ class TestUdpSocketApiIcmpUnreachable(UdpTestCase):
     semantics on a connected socket.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind a UDP socket on STACK:4444 and connect it to
@@ -654,6 +663,7 @@ class TestUdpSocketApiIpRecverr(UdpTestCase):
     embedded datagram + Linux-shape cmsg.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bind + connect a UDP socket so the ICMPv4 demux can
@@ -685,7 +695,7 @@ class TestUdpSocketApiIpRecverr(UdpTestCase):
         Reference: Linux 'ip(7)' (IP_RECVERR cmsg wire shape).
         """
 
-        from pytcp.socket import IP_RECVERR, IPPROTO_IP, MSG_ERRQUEUE
+        from pytcp.runtime.socket import IP_RECVERR, IPPROTO_IP, MSG_ERRQUEUE
 
         self._socket.setsockopt(IPPROTO_IP, IP_RECVERR, 1)
 
@@ -766,7 +776,7 @@ class TestUdpSocketApiIpRecverr(UdpTestCase):
         the error-queue surface).
         """
 
-        from pytcp.socket import MSG_ERRQUEUE
+        from pytcp.runtime.socket import MSG_ERRQUEUE
 
         self._socket.sendto(b"probe", (str(HOST_A__IP4_ADDRESS), _REMOTE_PORT))
         embedded_ip4_and_udp = self._frames_tx[-1][14:]

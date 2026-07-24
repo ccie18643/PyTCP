@@ -27,15 +27,14 @@ This module contains the ICMPv6 ND Slla (Source Link Layer Address) option suppo
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__slla.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, MacAddress
 from net_proto.protocols.icmp6.icmp6__errors import Icmp6IntegrityError
 from net_proto.protocols.icmp6.message.nd.option.icmp6__nd__option import (
     ICMP6__ND__OPTION__LEN,

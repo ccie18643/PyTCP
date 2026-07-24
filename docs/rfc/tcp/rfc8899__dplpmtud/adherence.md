@@ -80,9 +80,11 @@ fragments (IPv4 DF=0) or fails with EMSGSIZE
 datagram exceeds the cached PMTU. TCP TX recomputes
 MSS via `_apply_pmtu_update`
 (`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:802-814`) so
-subsequent segments respect the cached PMTU. Active
-probe-vs-data distinction not yet present (deferred to
-plan Phase 3 / 4).
+subsequent segments respect the cached PMTU. The
+probe-vs-data distinction is present: probe segments are
+emitted through the dedicated `tcp.mtu_probing` TX path
+sized above the current MSS, while ordinary data stays
+within the current PLPMTU.
 
 ### §3 #2 Probe packets
 
@@ -91,12 +93,17 @@ plan Phase 3 / 4).
 > network layer endpoint fragmentation. In IPv6, a probe
 > packet is always sent without source fragmentation."
 
-**Adherence:** the DF=1 default landed in Phase 8 of
+**Adherence:** met. The DF=1 default landed in Phase 8 of
 the prior refactor (see commit history for
-`packet_handler__ip4__tx.py`). The "without
-fragmentation" property is naturally satisfied by
-PyTCP's send paths (no kernel-style auto-fragmentation
-on TX). Active probe construction is not yet present.
+`packet_handler__ip4__tx.py`); the TCP probe segment is
+emitted through the same `_phtx_tcp` TX path as every other
+IPv4 TCP segment, which sets `ip4__flag_df=True`
+unconditionally, so the probe inherits DF=1. The "without
+fragmentation" property is naturally satisfied by PyTCP's
+send paths (no kernel-style auto-fragmentation on TX), and
+IPv6 probes carry no Fragment header. Locked in by
+`test__tcp__plpmtud__probe_emit__sets_df_bit` (asserts the
+emitted probe's IPv4 DF bit set, MF clear).
 
 ### §3 #3 Reception feedback
 
@@ -105,14 +112,14 @@ on TX). Active probe construction is not yet present.
 > when a probe packet has been received by the
 > destination PL endpoint."
 
-**Adherence:** not implemented. The TCP adapter (plan
-Phase 3) uses native ACK feedback. The UDP adapter
-(plan Phase 4) exposes a manual `ack_probe(size)` API
-that applications with their own ACK channel (QUIC,
-SCTP, app-level heartbeat) call when their app-layer
-ACK confirms the probe arrived; vanilla UDP without
-any ACK channel cannot satisfy this requirement and
-is honestly unaddressable.
+**Adherence:** met. The TCP adapter uses native ACK
+feedback (the snd.una advance hook drives
+`on_probe_ack`). The UDP adapter exposes a manual
+`ack_probe(size)` API that applications with their own
+ACK channel (QUIC, SCTP, app-level heartbeat) call when
+their app-layer ACK confirms the probe arrived; vanilla
+UDP without any ACK channel cannot satisfy this
+requirement and is honestly unaddressable.
 
 ### §3 #4 Probe loss recovery
 
@@ -120,11 +127,16 @@ is honestly unaddressable.
 > carry any user data that would require retransmission
 > if lost."
 
-**Adherence:** not implemented. Plan's TCP adapter
-emits probe segments with zero-padding payload (not
-user data); UDP adapter emits a sized datagram of
-zero-padding (not application data). Both satisfy this
-recommendation when implemented.
+**Adherence:** met for UDP; TCP deviates. The UDP
+adapter emits a sized datagram of zero-padding (not
+application data), satisfying the "no user data on
+probes" recommendation. The TCP probe path reuses a
+normal data segment (user data) rather than a
+dedicated zero-payload probe — matching Linux
+`tcp_mtu_probing`, so a lost TCP probe requires
+retransmission of its data; this RECOMMENDED (not MUST)
+property is deliberately traded for the simpler
+Linux-aligned emit path.
 
 ### §3 #5 PMTU parameters
 
@@ -168,7 +180,10 @@ PyTCP's `_apply_pmtu_update` only writes the cache
 when the new value is smaller than the current MSS
 (implicit via `shrunk = new_mss < self._win.snd_mss`
 gate at `tcp__session.py:812`). The "trigger probe for
-larger" half is not implemented (no active probing).
+larger" half is supported: a classical PTB update
+re-enters the engine's SEARCHING phase via
+`PmtuSearch.on_classical_pmtu`, so a subsequent probe
+tests for a larger PLPMTU.
 
 ### §3 #7 Probing and congestion control
 
@@ -179,12 +194,15 @@ larger" half is not implemented (no active probing).
 > "An update to the PLPMTU (or MPS) MUST NOT increase
 > the congestion window measured in bytes [RFC4821]."
 
-**Adherence:** not implemented (no active probing).
-Plan Phase 3 implements the probe-cwnd-exempt
-accounting (probes tagged on in-flight record,
-`bytes_in_flight()` skips them) and the separate-
-probe-RTO mechanism so probe loss doesn't feed
-data-path congestion control.
+**Adherence:** Linux-pragmatic deviation. PyTCP does
+not exempt probes from congestion control: a probe
+consumes cwnd like ordinary data, and probe loss is
+detected via the regular data RTO (`on_probe_loss`
+driven from the session RTO hook), so a lost probe can
+trigger a congestion reaction. This matches Linux's
+`tcp_mtu_probing`; the strict RFC 8899 §3 #7 MUSTs are
+deliberately not honoured (see the overall-assessment
+table for the rationale).
 
 ### §3 #9 Shared PLPMTU state
 
@@ -196,9 +214,9 @@ data-path congestion control.
 **Adherence:** met (substrate). `stack.pmtu_cache`
 is the per-destination shared cache; both TCP sessions
 and UDP sockets read via `_effective_pmtu()`. The
-forthcoming `stack.pmtu_state` (plan Phase 2)
-generalises this to per-destination search state with
-the same shared-across-PL property.
+`stack.pmtu_state` registry generalises this to
+per-destination search state with the same
+shared-across-PL property.
 
 ---
 
@@ -209,9 +227,11 @@ the same shared-across-PL property.
 > "The DPLPMTUD method relies upon the PL sender being
 > able to generate probe packets with a specific size."
 
-**Adherence:** not implemented. Plan Phase 3
-(`build_probe_segment`) for TCP; Phase 4 (`probe_pmtu(size)`
-on `UdpSocket`) for UDP.
+**Adherence:** met. TCP emits probe-sized data
+segments from the `session/tcp__session__tx.py` TX
+path when `tcp.mtu_probing=2` is set; UDP exposes
+`UdpSocket.probe_pmtu(size)` for an explicit
+sized-datagram probe.
 
 ### §4.2 Confirmation of Probed PLPMTU
 
@@ -219,7 +239,7 @@ on `UdpSocket`) for UDP.
 > probe packet has been received by the corresponding
 > PL receiver."
 
-**Adherence:** not implemented (see §3 #3).
+**Adherence:** met (see §3 #3).
 
 ### §4.3 Detection of Unsupported PLPMTU
 
@@ -227,9 +247,11 @@ on `UdpSocket`) for UDP.
 > detect that a current PLPMTU is unsupported by the
 > network path."
 
-**Adherence:** not implemented. Plan's
-`PmtuSearch.on_probe_loss` + black-hole detection (3
-consecutive losses → ERROR state, clamp to MIN_PLPMTU).
+**Adherence:** met. `PmtuSearch.on_probe_loss` drives
+black-hole detection: `MAX_PROBES` (3) consecutive
+losses take the engine to `PmtuState.ERROR` and clamp
+`current_mtu` to the family floor (`MIN_PLPMTU__IP4` /
+`MIN_PLPMTU__IP6`).
 
 ### §4.4 Disabling the Effect of PMTUD
 
@@ -264,8 +286,9 @@ because `_apply_pmtu_update` only writes when
 > value MUST NOT be smaller than 1 second and SHOULD be
 > larger than 15 seconds."
 
-**Adherence:** not implemented. Plan defaults
-PROBE_TIMER to 30 s per RFC 8899 §5.1.1 default.
+**Adherence:** met. `PROBE_TIMER__SEC` defaults to
+30 s (`packages/pytcp/pytcp/lib/plpmtud.py`) per the
+RFC 8899 §5.1.1 default.
 
 > "PMTU_RAISE_TIMER: The PMTU_RAISE_TIMER is configured
 > to the period a sender will continue to use the
@@ -273,9 +296,10 @@ PROBE_TIMER to 30 s per RFC 8899 §5.1.1 default.
 > Phase. This timer has a period of 600 seconds, as
 > recommended by PLPMTUD [RFC4821]."
 
-**Adherence:** not implemented. Plan uses 600 s
-default; engine `next_probe_size(now)` returns a value
-when PMTU_RAISE_TIMER expires in SEARCH_COMPLETE.
+**Adherence:** met. `PMTU_RAISE_TIMER__SEC` defaults
+to 600 s; the engine's `next_probe_size(now)` returns a
+candidate when PMTU_RAISE_TIMER expires in
+SEARCH_COMPLETE, re-entering the Search Phase.
 
 ### §5.1.2 Constants
 
@@ -295,11 +319,12 @@ when PMTU_RAISE_TIMER expires in SEARCH_COMPLETE.
 > "BASE_PLPMTU: a default BASE_PLPMTU of 1200 bytes is
 > RECOMMENDED."
 
-**Adherence:** not implemented. Plan Phase 1 carries
-these as module-level constants in `packages/pytcp/pytcp/lib/plpmtud.py`
-with the RFC defaults: `MAX_PROBES = 3`, `MIN_PLPMTU =
-1280` (IPv6) / `576` (IPv4 practical floor), `MAX_PLPMTU
-= stack.interface_mtu`, `BASE_PLPMTU = 1200`.
+**Adherence:** met. These are module-level constants in
+`packages/pytcp/pytcp/lib/plpmtud.py` with the RFC
+defaults: `MAX_PROBES = 3`, `MIN_PLPMTU__IP6 = 1280` /
+`MIN_PLPMTU__IP4 = 576` (IPv4 practical floor),
+`MAX_PLPMTU` derived from the interface MTU, and
+`BASE_PLPMTU__IP4 = 1200` / `BASE_PLPMTU__IP6 = 1280`.
 
 ### §5.2 State Machine (BASE / SEARCHING / SEARCH_COMPLETE / ERROR)
 
@@ -310,9 +335,10 @@ with the RFC defaults: `MAX_PROBES = 3`, `MIN_PLPMTU =
 > Phase indicates that the engine cannot confirm
 > connectivity at BASE_PLPMTU."
 
-**Adherence:** not implemented. Plan Phase 1 ships
-`PmtuState` enum (DISABLED / BASE / SEARCHING /
-SEARCH_COMPLETE / ERROR) and the transition logic.
+**Adherence:** met. The `PmtuState` enum (DISABLED /
+BASE / SEARCHING / SEARCH_COMPLETE / ERROR) and its
+transition logic are shipped in
+`packages/pytcp/pytcp/lib/plpmtud.py`.
 
 ### §5.3 Search Algorithm (binary search)
 
@@ -321,11 +347,13 @@ SEARCH_COMPLETE / ERROR) and the transition logic.
 > the search algorithm SHOULD start with BASE_PLPMTU
 > and ramp toward MAX_PLPMTU."
 
-**Adherence:** not implemented. Plan Phase 1 ships
-the binary search with 8-byte granularity:
-`SEARCH_LOW = ack_size`, `SEARCH_HIGH = max_mtu`,
-`candidate = (SEARCH_LOW + SEARCH_HIGH) // 2`,
-convergence when `SEARCH_HIGH - SEARCH_LOW < 8`.
+**Adherence:** met. `PmtuSearch._next_candidate` ships
+the binary search at `LADDER_GRANULARITY = 8` byte
+alignment: `search_low = _ack_size`,
+`search_high = _search_high`,
+`candidate = (search_low + search_high) // 2`,
+declaring convergence when the remaining gap falls at
+or below `LADDER_GRANULARITY`.
 
 ---
 
@@ -400,8 +428,8 @@ The shipped surface is locked in by:
   (5 tests) — pins TcpSession adapter wiring + classical
   PMTU route + snd.una advance hook.
 
-**Status:** locked in for ack/loss feedback paths; probe-
-emit path deferred to Phase 3c.
+**Status:** locked in — ack/loss feedback paths plus the TCP
+probe-emit path (`test__tcp__session__plpmtud_probe_emit.py`).
 
 ### §7 black-hole detection
 
@@ -414,23 +442,33 @@ emit path deferred to Phase 3c.
 
 **Status:** locked in.
 
-### §3 #7 cwnd-exempt probes — Phase 3c gap
+### §4.1 TCP probe-packet generation — locked in (Phase 3c-min)
 
-**No test surface — TCP probe-emit path not yet shipped.**
-The adapter's `in_flight_probe_sizes` snapshot is in place
-for the consumer; the natural future test name is
-`test__tcp__plpmtud__bytes_in_flight_excludes_probe_segment`.
+The TcpSession TX-path emits probe-sized data segments when
+`tcp.mtu_probing=2` is set, covered by
+`test__tcp__session__plpmtud_probe_emit.py` (see the RFC 4821
+record for the per-test breakdown).
+
+### §3 #7 cwnd-exempt probes — Linux-pragmatic deviation
+
+**Not implemented, by design.** PyTCP follows Linux
+`tcp_mtu_probing`, which does not exclude probe segments from
+cwnd — so there is no cwnd-exemption behaviour to test. The
+adapter's `in_flight_probe_sizes` snapshot remains available
+for a future consumer that wants strict RFC 8899 §3 #7
+accounting.
 
 ### Test coverage summary
 
 | Aspect                                              | Coverage                  |
 |-----------------------------------------------------|---------------------------|
 | §3 #5 Local-link MTU / max-size hint                | locked in                 |
+| §3 #2 Probe DF=1 (IPv4) / no-fragment (IPv6)        | locked in (`test__tcp__session__plpmtud_probe_emit__sets_df_bit`) |
 | §3 #6 PTB validation                                | locked in                 |
 | §3 #9 Per-destination shared state                  | locked in                 |
-| §3 #7 Probe-cwnd exemption                          | n/a (Phase 3c gap)        |
+| §3 #7 Probe-cwnd exemption                          | n/a (Linux-pragmatic deviation — probes share cwnd) |
 | §4.1 Probe-packet generation (UDP)                  | locked in                 |
-| §4.1 Probe-packet generation (TCP)                  | n/a (Phase 3c gap)        |
+| §4.1 Probe-packet generation (TCP)                  | locked in (`test__tcp__session__plpmtud_probe_emit`) |
 | §4.3 Unsupported-PLPMTU detection                   | locked in                 |
 | §4.6.4 BASE_PLPMTU floor                            | locked in                 |
 | §5.1.1 Timer machinery                              | locked in                 |
@@ -448,7 +486,7 @@ for the consumer; the natural future test name is
 | §3 #5/#9 / §4.5 Per-destination MTU cache + state   | met                          |
 | §3 #6 PTB-message validation                        | met                          |
 | §3 #1 Non-probe size enforcement                    | met                          |
-| §3 #2 IPv4 DF=1 / IPv6 no-fragmentation on probe    | met for non-probe; TCP probe path deferred (Phase 3c) |
+| §3 #2 IPv4 DF=1 / IPv6 no-fragmentation on probe    | met (TCP probe reuses the unconditional-DF `_phtx_tcp` IPv4 path; test-locked) |
 | §3 #3 Reception feedback                            | met for UDP (manual API); met for TCP (snd.una hook for ack/loss) |
 | §3 #7 Probes excluded from cwnd                     | **Linux-pragmatic deviation** (probes share cwnd; matches Linux tcp_mtu_probing) |
 | §4.1 Probe packet generation                        | met for UDP; met for TCP (Phase 3c-min + `tcp.mtu_probing=2` enable + `tcp.base_mss` cold-start seed) |

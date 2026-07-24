@@ -38,12 +38,12 @@ session's '_transmit_packet' into the IP TX handler.
 
 pytcp/tests/integration/socket/test__socket__tcp_ip_ttl.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_proto import EthernetParser, EtherType, Ip4Parser, Ip6Parser
 from net_proto.lib.packet_rx import PacketRx
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TTL,
     IPPROTO_IP,
     IPPROTO_IPV6,

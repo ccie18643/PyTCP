@@ -28,7 +28,7 @@ sysctls under 'pytcp/protocols/dhcp4/dhcp4__constants.py'.
 
 pytcp/tests/unit/protocols/dhcp4/test__dhcp4__constants.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override

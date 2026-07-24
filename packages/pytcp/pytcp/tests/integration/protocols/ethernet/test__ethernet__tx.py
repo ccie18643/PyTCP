@@ -31,12 +31,10 @@ This module contains integration tests for the Packet Handler Ethernet TX operat
 
 pytcp/tests/integration/protocols/ethernet/test__ethernet__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, Literal
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
+from typing import Any, Literal, override
 
 from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network
 from net_proto import Ip4Assembler, Ip4FragAssembler
@@ -61,6 +59,7 @@ from pytcp.tests.lib.network_testcase import (
     STACK__IP6_HOST,
     STACK__MAC_ADDRESS,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # Due to heavy dependency of IPv4/IPv6 protocols on Ethernet mechanisms
 # the Ethernet tests are mostly executed using IPv4/IPv6 packets.
@@ -449,13 +448,13 @@ _IP6__FOREIGN_SRC = Ip6Address("2001:db8:99::1")
                 #   Version / Traffic Class / Flow Label : 0x60000000
                 #   Payload Length : 0 bytes
                 #   Next Header    : 255 (Reserved)
-                #   Hop Limit      : 64
+                #   Hop Limit      : 1 (multicast default; Linux IPV6_DEFAULT_MCASTHOPS)
                 #   Source IP      : 2001:db8:0:1::7
                 #   Destination IP : ff02::1
                 #
                 # Summary: IPv6 all-nodes multicast mapped to the corresponding Ethernet multicast MAC.
                 b"\x33\x33\x00\x00\x00\x01\x02\x00\x00\x00\x00\x07\x86\xdd\x60\x00"
-                b"\x00\x00\x00\x00\xff\x40\x20\x01\x0d\xb8\x00\x00\x00\x01\x00\x00"
+                b"\x00\x00\x00\x00\xff\x01\x20\x01\x0d\xb8\x00\x00\x00\x01\x00\x00"
                 b"\x00\x00\x00\x00\x00\x07\xff\x02\x00\x00\x00\x00\x00\x00\x00\x00"
                 b"\x00\x00\x00\x00\x00\x01",
             ],
@@ -742,6 +741,7 @@ class TestPacketHandlerEthernetTx(EthernetTestCase):
 
     _frames_tx: list[bytes]
 
+    @override
     def setUp(self) -> None:
         """
         Build fresh per-test 'Ip4IfAddr' and 'Ip6IfAddr' instances so gateway

@@ -27,10 +27,10 @@ This module contains tests for the TCP header fields asserts.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__header__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_proto import (
@@ -49,6 +49,7 @@ class TestTcpHeaderAsserts(TestCase):
     The TCP header fields asserts tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build a valid default kwargs dict for the TCP header constructor

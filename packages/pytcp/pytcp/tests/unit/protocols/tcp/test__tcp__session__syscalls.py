@@ -28,10 +28,11 @@ SEND / RECEIVE / CLOSE syscall handlers.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__session__syscalls.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
+from typing import override
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -39,7 +40,7 @@ from net_addr import Ip4Address
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import ConnError, FsmState, SysCall
 from pytcp.protocols.tcp.tcp__errors import TcpSessionError
-from pytcp.socket.socket_table import SocketTable
+from pytcp.runtime.socket.socket_table import SocketTable
 
 
 class _TcpSessionSyscallFixture(TestCase):
@@ -49,6 +50,7 @@ class _TcpSessionSyscallFixture(TestCase):
     constructed session ready to exercise syscalls.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Stub every stack dependency that the session touches.
@@ -82,6 +84,7 @@ class _TcpSessionSyscallFixture(TestCase):
         self._log_patch = patch("pytcp.protocols.tcp.session.tcp__session.log")
         self._log_patch.start()
 
+    @override
     def tearDown(self) -> None:
         """
         Remove the stack patches.
@@ -97,12 +100,16 @@ class _TcpSessionSyscallFixture(TestCase):
         Build a canonical IPv4 'TcpSession' against a MagicMock socket.
         """
 
+        mock_socket = MagicMock()
+        # rcv_wnd_max derives from the socket's SO_RCVBUF at session
+        # construction; give the mock an int so window arithmetic works.
+        mock_socket._effective_rcvbuf.return_value = 65535
         session = TcpSession(
             local_ip_address=Ip4Address("10.0.0.1"),
             local_port=8080,
             remote_ip_address=Ip4Address("10.0.0.2"),
             remote_port=44444,
-            socket=MagicMock(),
+            socket=mock_socket,
         )
         return session
 

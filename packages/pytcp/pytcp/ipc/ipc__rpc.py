@@ -36,14 +36,14 @@ call over an 'IpcClient' and returns the decoded value (or raises
 
 pytcp/ipc/ipc__rpc.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import json
 from dataclasses import dataclass
 from typing import Any, NoReturn
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__enums import IpcMessageKind, IpcOp
 from pytcp.ipc.ipc__errors import IpcConnectionError, IpcRemoteError

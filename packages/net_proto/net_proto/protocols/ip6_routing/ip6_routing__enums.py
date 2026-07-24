@@ -27,7 +27,7 @@ This module contains the IPv6 Routing Header enums.
 
 net_proto/protocols/ip6_routing/ip6_routing__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -60,5 +60,7 @@ class Ip6RoutingType(ProtoEnumByte):
                 name = "RH3"
             case Ip6RoutingType.RH4:
                 name = "RH4"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name

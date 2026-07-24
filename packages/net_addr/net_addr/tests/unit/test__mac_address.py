@@ -27,13 +27,11 @@ This module contains tests for the NetAddr package MAC address support class.
 
 net_addr/tests/unit/test__mac_address.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import (
     MacAddress,
@@ -42,6 +40,7 @@ from net_addr import (
     MacAddressSanityError,
     NetAddrError,
 )
+from net_addr.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -378,6 +377,7 @@ class TestNetAddrMacAddress(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the MAC address object with testcase arguments.
@@ -1252,3 +1252,30 @@ class TestNetAddrMacAddressWhitespace(TestCase):
                         expected,
                         msg=f"MacAddress({wrapped!r}) must equal MacAddress({value!r}).",
                     )
+
+
+class TestNetAddrMacAddressIgBitEdge(TestCase):
+    """
+    The NetAddr MAC address I/G-bit (multicast) constant edge test.
+    """
+
+    def test__net_addr__mac_address__multicast_even_last_byte(self) -> None:
+        """
+        Ensure a multicast MAC whose final octet is even (so only
+        the group bit, not the address LSB, is set) is still detected
+        as multicast and not unicast — pinning the I/G-bit mask to
+        exactly the group bit, since a fixture whose multicast MACs
+        all end in an odd octet would not.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        mac = MacAddress("33:33:00:00:00:02")
+        self.assertTrue(
+            mac.is_multicast,
+            msg="A group-bit-set MAC with an even final octet must be multicast.",
+        )
+        self.assertFalse(
+            mac.is_unicast,
+            msg="A group-bit-set MAC with an even final octet must not be unicast.",
+        )

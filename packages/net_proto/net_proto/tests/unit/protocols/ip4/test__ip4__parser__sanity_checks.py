@@ -27,15 +27,15 @@ This module contains tests for the IPv4 packet sanity checks.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__parser__sanity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
+from net_addr import Ip4Address
 from net_proto import Ip4Parser, Ip4SanityError, PacketRx
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -146,6 +146,7 @@ class TestIp4ParserSanityChecks(TestCase):
     _frame_rx: bytes
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Wrap the parametrized frame in a PacketRx so it can be fed to
@@ -190,4 +191,46 @@ class TestIp4ParserSanityChecks(TestCase):
             error.exception.pointer,
             self._results["pointer"],
             msg=f"Unexpected sanity-error pointer for case: {self._description}",
+        )
+
+
+class TestIp4ParserLoopbackBypass(TestCase):
+    """
+    The IPv4 parser 'from_loopback' bypass of the loopback-source
+    martian check.
+    """
+
+    # 20-byte IPv4 frame: src=127.0.0.1 (loopback), dst=50.60.70.80,
+    # proto=255, DF set. On the wire this is a §3.2.1.3(g) martian.
+    _LOOPBACK_SRC_FRAME = b"\x45\xff\x00\x14\xff\xff\x40\x00\xff\xff\x82\x5e\x7f\x00\x00\x01\x32\x3c\x46\x50"
+
+    def test__ip4__parser__loopback_src_rejected_on_the_wire(self) -> None:
+        """
+        Ensure a loopback source address is rejected on an ordinary
+        (wire) inbound packet, where 'from_loopback' defaults False.
+
+        Reference: RFC 1122 §3.2.1.3(g) (loopback address must not appear outside a host).
+        """
+
+        with self.assertRaises(Ip4SanityError):
+            Ip4Parser(PacketRx(self._LOOPBACK_SRC_FRAME))
+
+    def test__ip4__parser__loopback_src_accepted_when_from_loopback(self) -> None:
+        """
+        Ensure a loopback source address is accepted when the packet is
+        marked 'from_loopback', so the loopback interface's internal
+        delivery is not martian-filtered.
+
+        Reference: RFC 1122 §3.2.1.3(g) (loopback filter is a wire-ingress policy).
+        """
+
+        packet_rx = PacketRx(self._LOOPBACK_SRC_FRAME)
+        packet_rx.from_loopback = True
+
+        parser = Ip4Parser(packet_rx)
+
+        self.assertEqual(
+            parser.src,
+            Ip4Address("127.0.0.1"),
+            msg="A from_loopback packet must parse with its loopback source intact.",
         )

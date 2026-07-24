@@ -27,7 +27,7 @@ This module contains IP network base class.
 
 net_addr/ip_network.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC, abstractmethod
@@ -302,7 +302,7 @@ class IpNetwork[A: (Ip6Address, Ip4Address), M: (Ip6Mask, Ip4Mask)](Base, Ip, AB
 
     @property
     @abstractmethod
-    def hostmask(self) -> "Ip4Wildcard | Ip6Wildcard":
+    def hostmask(self) -> Ip4Wildcard | Ip6Wildcard:
         """
         Get the network wildcard (inverted netmask) — the
         contiguous special case of an ACL/firewall wildcard.

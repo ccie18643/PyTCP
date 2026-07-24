@@ -52,7 +52,7 @@ RecoveryPoint marker.
 
 pytcp/protocols/tcp/tcp__newreno.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 

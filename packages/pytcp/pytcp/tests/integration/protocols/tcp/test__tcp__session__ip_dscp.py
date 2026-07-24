@@ -34,21 +34,21 @@ ECN (low 2 bits) stays RFC-3168 stack-driven.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__ip_dscp.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import cast
 
 from net_addr import Ip4Address, Ip6Address
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IP_TOS,
     IPPROTO_IP,
     IPPROTO_IPV6,
     IPV6_TCLASS,
     AddressFamily,
 )
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.tcp_segment_factory import build_tcp4, build_tcp6
 from pytcp.tests.lib.tcp_testcase import TcpTestCase
 

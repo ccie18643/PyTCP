@@ -21,6 +21,8 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains the packet handler for inbound IEEE
@@ -36,7 +38,7 @@ wire.
 
 pytcp/runtime/packet_handler/packet_handler__ethernet_802_3__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING

@@ -27,14 +27,12 @@ Module contains tests for the DHCPv4 Router option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__router.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto import (
@@ -42,6 +40,7 @@ from net_proto import (
     Dhcp4OptionRouter,
     Dhcp4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp4OptionRouterAsserts(TestCase):
@@ -234,6 +233,7 @@ class TestDhcp4OptionRouterAssembler(TestCase):
     _args: list[Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the DHCPv4 Router option object with testcase arguments.
@@ -666,3 +666,33 @@ class TestDhcp4OptionRouterBehavior(TestCase):
                 [Ip4Address("192.0.2.1")],
                 type=Dhcp4OptionType.ROUTER,
             )
+
+
+class TestDhcp4OptionRouterWrongType(TestCase):
+    """
+    The DHCPv4 Router option wrong-code-byte parser tests.
+    """
+
+    def test__dhcp4__option__router__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the option code byte equals
+        Dhcp4OptionType.ROUTER and rejects a code byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 2132 §3.5 (Router option code 3).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionRouter.from_buffer(b"\x00\x04\x0a\x00\x00\x01")
+
+    def test__dhcp4__option__router__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects an option code byte above
+        Dhcp4OptionType.ROUTER, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 2132 §3.5 (Router option code 3).
+        """
+
+        with self.assertRaises(AssertionError):
+            Dhcp4OptionRouter.from_buffer(b"\xff\x04\x0a\x00\x00\x01")

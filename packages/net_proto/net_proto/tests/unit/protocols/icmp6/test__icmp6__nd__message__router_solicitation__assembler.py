@@ -28,15 +28,13 @@ assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_solicitation__assembler.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import MacAddress
+from net_addr import Buffer, MacAddress
 from net_proto import (
     ICMP6__ND__ROUTER_SOLICITATION__LEN,
     Icmp6Assembler,
@@ -46,7 +44,7 @@ from net_proto import (
     Icmp6NdRouterSolicitationCode,
     Icmp6Type,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -126,6 +124,7 @@ class TestIcmp6NdMessageRouterSolicitationAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the ICMPv6 assembler wrapping a Router Solicitation message

@@ -29,9 +29,10 @@ seq state container in
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__recv_seq.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
 from unittest import TestCase
 
 from pytcp.protocols.tcp.state.tcp__state__recv_seq import RecvSeqState
@@ -109,4 +110,48 @@ class TestRecvSeqState__Methods(TestCase):
             s.nxt,
             2000,
             msg="advance_nxt must NOT rewind RCV.NXT on stale segments.",
+        )
+
+
+class TestRecvSeqState__Slotted(TestCase):
+    """
+    The slotted-dataclass invariant for RecvSeqState.
+    """
+
+    def test__tcp_state__recv_seq__is_slotted(self) -> None:
+        """
+        Ensure RecvSeqState is a slotted dataclass so it grows no per-instance
+        __dict__ on the TcpSession state object.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertFalse(
+            hasattr(RecvSeqState(), "__dict__"),
+            msg="RecvSeqState must be declared with slots=True (no per-instance __dict__).",
+        )
+
+
+class TestRecvSeqState__KeywordOnlySignatures(TestCase):
+    """
+    Keyword-only enforcement on the RecvSeqState mutator signatures.
+    """
+
+    def test__tcp_state__recv_seq__methods_are_keyword_only(self) -> None:
+        """
+        Ensure the RecvSeqState mutators reject positional arguments — their
+        public parameters are keyword-only, pinning the call contract.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertIs(
+            inspect.signature(RecvSeqState.reset_to).parameters["irs"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RecvSeqState.reset_to 'irs' must be keyword-only.",
+        )
+        self.assertIs(
+            inspect.signature(RecvSeqState.advance_nxt).parameters["seg_end"].kind,
+            inspect.Parameter.KEYWORD_ONLY,
+            msg="RecvSeqState.advance_nxt 'seg_end' must be keyword-only.",
         )

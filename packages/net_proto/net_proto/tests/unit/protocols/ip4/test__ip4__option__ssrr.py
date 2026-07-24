@@ -28,13 +28,11 @@ option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__ssrr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip4Address
 from net_proto import (
@@ -44,6 +42,7 @@ from net_proto import (
     Ip4OptionSsrr,
     Ip4OptionType,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionSsrrAsserts(TestCase):
@@ -171,6 +170,7 @@ class TestIp4OptionSsrrAssembler(TestCase):
     _route: list[Ip4Address]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build an Ip4OptionSsrr from the parametrized 'pointer' / 'route'.
@@ -390,3 +390,33 @@ class TestIp4OptionSsrrIntegrity(TestCase):
             "[INTEGRITY ERROR][IPv4] The IPv4 Ssrr option pointer must be aligned to the 4-byte slot boundary. Got: 5",
             msg="Unexpected integrity-error message for misaligned pointer.",
         )
+
+
+class TestIp4OptionSsrrWrongType(TestCase):
+    """
+    The IPv4 Strict Source Route option wrong-kind-byte parser tests.
+    """
+
+    def test__ip4__option__ssrr__from_buffer_wrong_type_below_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' asserts the kind byte equals
+        Ip4OptionType.SSRR and rejects a kind byte below it, pinning
+        the equality check against a '<=' relaxation.
+
+        Reference: RFC 791 §3.1 (Strict Source Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionSsrr.from_buffer(b"\x00\x07\x04\x0a\x00\x00\x01")
+
+    def test__ip4__option__ssrr__from_buffer_wrong_type_above_raises(self) -> None:
+        """
+        Ensure 'from_buffer()' rejects a kind byte above
+        Ip4OptionType.SSRR, pinning the equality check against a
+        '>=' relaxation.
+
+        Reference: RFC 791 §3.1 (Strict Source Route option kind byte).
+        """
+
+        with self.assertRaises(AssertionError):
+            Ip4OptionSsrr.from_buffer(b"\xff\x07\x04\x0a\x00\x00\x01")

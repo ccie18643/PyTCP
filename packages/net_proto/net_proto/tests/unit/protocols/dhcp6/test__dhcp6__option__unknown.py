@@ -27,14 +27,12 @@ Module contains tests for the unknown DHCPv6 option code.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__unknown.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto import (
     DHCP6__OPTION__LEN,
@@ -43,6 +41,7 @@ from net_proto import (
     Dhcp6OptionType,
     Dhcp6OptionUnknown,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestDhcp6OptionUnknownAsserts(TestCase):
@@ -214,6 +213,7 @@ class TestDhcp6OptionUnknownAssembler(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Initialize the unknown DHCPv6 option object with testcase arguments.

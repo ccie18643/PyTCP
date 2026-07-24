@@ -28,14 +28,12 @@ integrity checks.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_solicitation__parser__integrity_checks.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from types import SimpleNamespace
-from typing import Any, cast
+from typing import Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import Ip6Address
 from net_proto import (
@@ -45,6 +43,7 @@ from net_proto import (
     Ip6Parser,
     PacketRx,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 # Valid 8-byte RS, checksum 0x7aff with pshdr_sum=0 — used as the baseline
 # for the positive boundary test.
@@ -170,6 +169,7 @@ class TestIcmp6NdMessageRouterSolicitationParserIntegrityChecks(TestCase):
     _ip6__dlen: int | None
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build a PacketRx with the parametrized frame and IPv6 payload length.

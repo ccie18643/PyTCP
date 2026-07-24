@@ -29,7 +29,7 @@ frames the RX tap delivers to it.
 
 pytcp/tests/integration/packet_handler/test__packet_socket__bind.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -38,15 +38,15 @@ from unittest.mock import patch
 from net_addr import Ip4Address, Ip4IfAddr, MacAddress
 from net_proto import ArpAssembler, ArpOperation, EthernetAssembler
 from net_proto.lib.packet_rx import PacketRx
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     ETH_P_ALL,
     ETH_P_IP,
     SOCK_RAW,
     AddressFamily,
     socket,
 )
-from pytcp.socket.packet__socket import PacketSocket
-from pytcp.socket.sockaddr_ll import SockAddrLl
+from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.sockaddr_ll import SockAddrLl
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,
@@ -91,7 +91,7 @@ class TestPacketSocketBind(NetworkTestCase):
         """
 
         super().setUp()
-        self.enterContext(patch("pytcp.socket.packet__socket.log"))
+        self.enterContext(patch("pytcp.runtime.socket.packet__socket.log"))
 
     def _packet_socket(self) -> PacketSocket:
         """

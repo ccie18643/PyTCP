@@ -46,9 +46,11 @@ docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__socket_session.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import errno
+import os
 import socket
 import threading
 from typing import Any
@@ -58,19 +60,28 @@ from pytcp.ipc.ipc__dgram_bridge import DatagramBridge
 from pytcp.ipc.ipc__enums import IpcMessageKind
 from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__packet_bridge import PacketBridge
-from pytcp.ipc.ipc__socket_bridge import SocketBridge
+from pytcp.ipc.ipc__socket_bridge import (
+    IPC__BRIDGE__JOIN_TIMEOUT__SEC,
+    SocketBridge,
+)
 from pytcp.ipc.ipc__socket_rpc import (
     SocketRequest,
     decode_socket_request,
-    encode_socket_error,
+    encode_exception,
     encode_socket_ok,
 )
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket import socket as pytcp_socket
-from pytcp.socket.packet__socket import PacketSocket
-from pytcp.socket.raw__socket import RawSocket
-from pytcp.socket.tcp__socket import TcpSocket
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket import (
+    SO_ERROR,
+    SOL_SOCKET,
+    AddressFamily,
+    SocketType,
+)
+from pytcp.runtime.socket import socket as pytcp_socket
+from pytcp.runtime.socket.packet__socket import PacketSocket
+from pytcp.runtime.socket.ping__socket import PingSocket
+from pytcp.runtime.socket.raw__socket import RawSocket
+from pytcp.runtime.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 # The socket methods a client may invoke over SOCKET_CALL.
 _ALLOWED_METHODS: frozenset[str] = frozenset(
@@ -78,8 +89,10 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "socket",
         "bind",
         "connect",
+        "connect_start",
         "listen",
         "accept",
+        "accept_take",
         "setsockopt",
         "getsockopt",
         "shutdown",
@@ -101,7 +114,7 @@ class _DaemonSocket:
 
     def __init__(
         self,
-        sock: TcpSocket | UdpSocket | RawSocket,
+        sock: TcpSocket | UdpSocket | RawSocket | PingSocket,
         bridge: SocketBridge | DatagramBridge,
         /,
     ) -> None:
@@ -113,9 +126,14 @@ class _DaemonSocket:
         self._socket = sock
         self._bridge = bridge
         self._bridge_started = False
+        # Non-blocking connect (A3.3): the pending read-and-clear SO_ERROR
+        # the worker publishes once the async handshake resolves, plus the
+        # worker thread itself.
+        self._so_error: int | None = None
+        self._connect_thread: threading.Thread | None = None
 
     @property
-    def socket(self) -> TcpSocket | UdpSocket | RawSocket:
+    def socket(self) -> TcpSocket | UdpSocket | RawSocket | PingSocket:
         """
         Get the underlying daemon-side stack socket.
         """
@@ -133,6 +151,57 @@ class _DaemonSocket:
             self._bridge.start()
             self._bridge_started = True
 
+    def start_connect_async(self, address: tuple[str, int], filler_len: int, /) -> None:
+        """
+        Run a non-blocking connect on a background worker so the dispatch
+        thread returns at once (A3.3). The worker drives the blocking
+        handshake, publishes the resulting SO_ERROR, and — on success —
+        starts the data bridge.
+        """
+
+        self._connect_thread = threading.Thread(
+            target=self._run_connect,
+            args=(address, filler_len),
+            name="IPC-Connect",
+            daemon=True,
+        )
+        self._connect_thread.start()
+
+    def _run_connect(self, address: tuple[str, int], filler_len: int, /) -> None:
+        """
+        Worker body: drive the blocking handshake, capture its errno
+        (0 on success), drain the client's priming filler so its fd flips
+        writable on both success and failure, then start the bridge when
+        the connection established.
+        """
+
+        # The non-blocking connect path is stream-only (the session gates
+        # 'connect_start' to a TcpSocket), so the bridge is always a
+        # SocketBridge with the priming-drain affordance.
+        assert isinstance(self._bridge, SocketBridge)
+
+        try:
+            self._socket.connect(address)
+            so_error = 0
+        except OSError as error:
+            so_error = error.errno if error.errno is not None else errno.ECONNREFUSED
+
+        # Publish the result before flipping the client fd writable so a
+        # select-writable-then-read sequence observes the final SO_ERROR.
+        self._so_error = so_error
+        self._bridge.prime_drain(filler_len)
+        if so_error == 0:
+            self.start_bridge()
+
+    def take_so_error(self) -> int:
+        """
+        Return and clear the pending non-blocking-connect SO_ERROR,
+        defaulting to 0 (no error) — the BSD read-once SO_ERROR semantics.
+        """
+
+        so_error, self._so_error = self._so_error, None
+        return so_error if so_error is not None else 0
+
     def close(self, *, abort: bool) -> None:
         """
         Stop the bridge and tear down the connection. A TCP connection
@@ -149,6 +218,12 @@ class _DaemonSocket:
                     self._socket.close()
         else:
             self._socket.close()
+
+        # Reap a non-blocking connect worker — aborting / closing the stack
+        # socket above cancels any in-flight handshake, so the worker
+        # unblocks and exits promptly.
+        if self._connect_thread is not None:
+            self._connect_thread.join(timeout=IPC__BRIDGE__JOIN_TIMEOUT__SEC)
 
 
 class _DaemonPacketSocket:
@@ -211,7 +286,7 @@ class SocketSession:
         self._next_handle = 0
         self._stop_event = stop_event
 
-    def handle(self, request: IpcMessage, /) -> tuple[IpcMessage, socket.socket | None]:
+    def handle(self, request: IpcMessage, /) -> tuple[IpcMessage, socket.socket | int | None]:
         """
         Serve one SOCKET_CALL request, returning the response and — for
         the 'socket' call — the client-end socket to pass alongside it.
@@ -224,13 +299,16 @@ class SocketSession:
 
         try:
             value, fd_socket = self._invoke(decode_socket_request(request.body))
-        except Exception as error:
+        # Socket-RPC boundary: translate ANY handler failure into a
+        # structured RESPONSE_ERROR for the client (faithful error
+        # forwarding, not silent swallowing).
+        except Exception as error:  # pylint: disable=broad-exception-caught
             return (
                 IpcMessage(
                     kind=IpcMessageKind.RESPONSE_ERROR,
                     op=request.op,
                     req_id=request.req_id,
-                    body=encode_socket_error(error_type=type(error).__name__, message=str(error)),
+                    body=encode_exception(error),
                 ),
                 None,
             )
@@ -257,7 +335,7 @@ class SocketSession:
                 pass
         self._sockets.clear()
 
-    def _invoke(self, request: SocketRequest, /) -> tuple[Any, socket.socket | None]:
+    def _invoke(self, request: SocketRequest, /) -> tuple[Any, socket.socket | int | None]:
         """
         Route an allowlisted socket method to the addressed handle.
         """
@@ -274,7 +352,10 @@ class SocketSession:
 
         daemon_socket = self._sockets.get(request.handle) if request.handle is not None else None
         if daemon_socket is None:
-            raise KeyError(f"Unknown socket handle {request.handle!r}.")
+            # An unknown handle is the daemon-side analogue of operating on
+            # a closed descriptor; surface it as the stdlib's EBADF so the
+            # reconstructed client error is OSError(EBADF), not KeyError.
+            raise OSError(errno.EBADF, "Bad file descriptor")
 
         if isinstance(daemon_socket, _DaemonPacketSocket):
             return self._invoke_packet(daemon_socket, request)
@@ -289,20 +370,40 @@ class SocketSession:
                 sock.connect(request.args["address"])
                 daemon_socket.start_bridge()
                 return None, None
+            case "connect_start":
+                if not isinstance(sock, TcpSocket):
+                    raise OSError("connect_start() is supported only on a stream socket.")
+                daemon_socket.start_connect_async(request.args["address"], request.args["filler_len"])
+                return None, None
             case "listen":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("listen() is supported only on a stream socket.")
                 sock.listen(backlog=request.args["backlog"])
-                return None, None
+                # Pass the listener's accept-readiness eventfd (A3.4) so the
+                # client can select for a queued child. A dup'd eventfd
+                # shares the kernel counter, so the daemon's accept-side
+                # drain reflects on the client's fd with no watcher thread.
+                return None, os.dup(sock.fileno())
             case "accept":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("accept() is supported only on a stream socket.")
                 return self._accept(sock)
+            case "accept_take":
+                if not isinstance(sock, TcpSocket):
+                    raise OSError("accept_take() is supported only on a stream socket.")
+                return self._accept_take(sock)
             case "setsockopt":
                 sock.setsockopt(request.args["level"], request.args["optname"], request.args["value"])
                 return None, None
             case "getsockopt":
-                return sock.getsockopt(request.args["level"], request.args["optname"]), None
+                level = request.args["level"]
+                optname = request.args["optname"]
+                # The non-blocking-connect SO_ERROR edge is owned by the
+                # daemon socket, not the stack socket: return-and-clear the
+                # worker-published handshake result (0 when none pending).
+                if level == SOL_SOCKET and optname == SO_ERROR:
+                    return daemon_socket.take_so_error(), None
+                return sock.getsockopt(level, optname), None
             case "shutdown":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("shutdown() is not supported on a datagram socket.")
@@ -324,7 +425,7 @@ class SocketSession:
         daemon_socket: _DaemonPacketSocket,
         request: SocketRequest,
         /,
-    ) -> tuple[Any, socket.socket | None]:
+    ) -> tuple[Any, socket.socket | int | None]:
         """
         Route an AF_PACKET socket's call. A link-layer socket addresses
         with a 'sockaddr_ll' and supports only 'bind' / 'close' as control
@@ -355,18 +456,46 @@ class SocketSession:
                 child, peer = listening.accept(timeout=IPC__SESSION__ACCEPT_POLL__SEC)
             except TimeoutError:
                 continue
-
-            assert isinstance(child, TcpSocket)
-            data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
-            child_socket = _DaemonSocket(child, SocketBridge(child, data_end))
-            child_socket.start_bridge()
-
-            handle = self._next_handle
-            self._next_handle += 1
-            self._sockets[handle] = child_socket
-            return {"handle": handle, "peer": peer}, client_end
+            return self._build_accepted_child(child, peer)
 
         raise OSError("accept() interrupted by daemon shutdown.")
+
+    def _accept_take(self, listening: TcpSocket, /) -> tuple[dict[str, Any], socket.socket]:
+        """
+        Non-blocking accept (A3.4): take one queued child without blocking
+        the dispatch thread, or raise 'BlockingIOError(EAGAIN)' when the
+        accept queue is empty. The client gates this on the listener's
+        select-readable accept-readiness fd; the take itself drains that
+        eventfd when it removes the last queued child.
+        """
+
+        try:
+            child, peer = listening.accept(timeout=0)
+        except TimeoutError as error:
+            raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN)) from error
+        return self._build_accepted_child(child, peer)
+
+    def _build_accepted_child(
+        self,
+        child: pytcp_socket,
+        peer: tuple[str, int],
+        /,
+    ) -> tuple[dict[str, Any], socket.socket]:
+        """
+        Wrap an accepted child stack socket in a started data bridge,
+        register its handle, and return the handle and peer address with
+        the client end to pass.
+        """
+
+        assert isinstance(child, TcpSocket)
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        child_socket = _DaemonSocket(child, SocketBridge(child, data_end))
+        child_socket.start_bridge()
+
+        handle = self._next_handle
+        self._next_handle += 1
+        self._sockets[handle] = child_socket
+        return {"handle": handle, "peer": peer}, client_end
 
     def _open(
         self,
@@ -385,6 +514,9 @@ class SocketSession:
             case SocketType.STREAM:
                 return self._open_stream(family=family)
             case SocketType.DGRAM:
+                if protocol in (IpProto.ICMP4, IpProto.ICMP6):
+                    assert isinstance(protocol, IpProto)
+                    return self._open_ping(family=family, protocol=protocol)
                 return self._open_dgram(family=family)
             case SocketType.RAW:
                 if family is AddressFamily.PACKET:
@@ -434,6 +566,20 @@ class SocketSession:
 
         data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
         daemon_socket = _DaemonSocket(raw_socket, DatagramBridge(raw_socket, data_end))
+        daemon_socket.start_bridge()
+        return self._register(daemon_socket, client_end)
+
+    def _open_ping(self, *, family: AddressFamily, protocol: IpProto) -> tuple[dict[str, int], socket.socket]:
+        """
+        Create a daemon ICMP Echo ('ping') datagram socket (over a
+        SOCK_DGRAM data bridge, started immediately) — Linux 'SOCK_DGRAM'
+        + 'IPPROTO_ICMP' / 'IPPROTO_ICMPV6'.
+        """
+
+        ping_socket = PingSocket(family, SocketType.DGRAM, protocol)
+
+        data_end, client_end = socket.socketpair(socket.AF_UNIX, socket.SOCK_DGRAM)
+        daemon_socket = _DaemonSocket(ping_socket, DatagramBridge(ping_socket, data_end))
         daemon_socket.start_bridge()
         return self._register(daemon_socket, client_end)
 

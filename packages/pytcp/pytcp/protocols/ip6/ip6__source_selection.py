@@ -35,7 +35,7 @@ the IPv6 TX mixin because it needs the runtime address book
 
 pytcp/protocols/ip6/ip6__source_selection.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip6Address

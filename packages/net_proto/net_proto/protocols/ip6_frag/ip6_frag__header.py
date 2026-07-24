@@ -27,7 +27,7 @@ This module contains the IPv6 Frag header.
 
 net_proto/protocols/ip6_frag/ip6_frag__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,7 +35,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from net_proto.lib.int_checks import is_8_byte_alligned, is_uint13, is_uint32
 from net_proto.lib.proto_struct import ProtoStruct

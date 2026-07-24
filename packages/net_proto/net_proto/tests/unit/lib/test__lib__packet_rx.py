@@ -27,17 +27,16 @@ This module contains tests for the NetProto PacketRx class.
 
 net_proto/tests/unit/lib/test__lib__packet_rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import itertools
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.lib.tracker import Tracker
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -83,6 +82,7 @@ class TestNetProtoLibPacketRx(TestCase):
     _frame: Any
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Reset the shared Tracker counters so tracker assertions are stable.
@@ -94,6 +94,7 @@ class TestNetProtoLibPacketRx(TestCase):
         Tracker._tx_counter = itertools.count()
         self._packet = PacketRx(self._frame)
 
+    @override
     def tearDown(self) -> None:
         """
         Restore the shared Tracker counters after each test.
@@ -178,12 +179,14 @@ class TestNetProtoLibPacketRxBehavior(TestCase):
     The NetProto PacketRx behavior tests not tied to a parameter matrix.
     """
 
+    @override
     def setUp(self) -> None:
         self._saved_rx_counter = Tracker._rx_counter
         self._saved_tx_counter = Tracker._tx_counter
         Tracker._rx_counter = itertools.count()
         Tracker._tx_counter = itertools.count()
 
+    @override
     def tearDown(self) -> None:
         Tracker._rx_counter = self._saved_rx_counter
         Tracker._tx_counter = self._saved_tx_counter

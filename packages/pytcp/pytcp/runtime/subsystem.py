@@ -27,13 +27,13 @@ This module contains the base class for all of the subsystems used by the stack.
 
 pytcp/runtime/subsystem.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
 from abc import ABC, abstractmethod
 
-from pytcp.lib.logger import log
+from pytcp.lib.logger import log, set_log_interface
 
 SUBSYSTEM_SLEEP_TIME__SEC = 0.1
 
@@ -64,6 +64,11 @@ class Subsystem(ABC):
     _subsystem_name: str
     _event__stop_subsystem: threading.Event
     _thread: threading.Thread | None
+    # Interface name this subsystem belongs to, bound onto the worker
+    # thread's log context so every message it emits is interface-tagged.
+    # None for stack-wide subsystems (the timer) whose work is not tied to
+    # one interface.
+    _log_interface: str | None = None
 
     def __init__(self, *, info: str | None = None) -> None:
         """
@@ -77,6 +82,16 @@ class Subsystem(ABC):
 
         self._event__stop_subsystem = threading.Event()
         self._thread = None
+
+    def set_log_interface(self, interface_name: str | None, /) -> None:
+        """
+        Bind this subsystem's worker-thread log context to 'interface_name'
+        so every message it emits is interface-tagged. Called by the
+        stack lifecycle at construction time before 'start()'; the value
+        is read once by the worker thread in '_thread__subsystem'.
+        """
+
+        self._log_interface = interface_name
 
     def start(self) -> None:
         """
@@ -94,7 +109,13 @@ class Subsystem(ABC):
         )
 
         self._event__stop_subsystem.clear()
-        self._thread = threading.Thread(target=self._thread__subsystem)
+        # Daemon worker: 'stop()' joins it with a bounded 2.0 s timeout
+        # for a graceful exit, but a subclass blocked in a syscall (a
+        # DHCPv4 client mid-recv, a ring blocked on the TAP fd) can miss
+        # that window and be left dangling. A daemon thread is then
+        # abandoned at interpreter exit instead of wedging the process —
+        # the safety net behind the bounded join in 'stop()'.
+        self._thread = threading.Thread(target=self._thread__subsystem, daemon=True)
         self._thread.start()
         self._start()
 
@@ -139,6 +160,10 @@ class Subsystem(ABC):
         """
         Run the subsystem loop until the stop event is set.
         """
+
+        # Tag every message this worker thread emits with its interface so
+        # a multi-homed trace is readable per NIC.
+        set_log_interface(self._log_interface)
 
         __debug__ and log("stack", f"Started {self._subsystem_name}")
 

@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the inbound TCP packets.
 
 pytcp/runtime/packet_handler/packet_handler__tcp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import TYPE_CHECKING, cast
@@ -36,9 +38,9 @@ from net_addr import IpVersion
 from net_proto import PacketRx, PacketValidationError, TcpParser
 from pytcp import stack
 from pytcp.lib.logger import log
-from pytcp.socket import AddressFamily
-from pytcp.socket.tcp__metadata import TcpMetadata
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
@@ -122,7 +124,8 @@ class TcpRxHandler:
         )
 
         # Check if incoming packet matches active TCP socket.
-        if tcp_socket := cast(TcpSocket, stack.sockets.get(packet_rx_md.socket_id, None)):
+        tcp_socket = cast(TcpSocket | None, stack.sockets.get(packet_rx_md.socket_id, None))
+        if tcp_socket is not None:
             self._if._packet_stats_rx.tcp__socket_match_active__forward_to_socket += 1
             __debug__ and log(
                 "tcp",
@@ -141,33 +144,35 @@ class TcpRxHandler:
             }
         ):
             for tcp_listening_socket_pattern in packet_rx_md.listening_socket_ids:
-                if tcp_socket := cast(
-                    TcpSocket,
+                tcp_socket = cast(
+                    TcpSocket | None,
                     stack.sockets.get(tcp_listening_socket_pattern, None),
+                )
+                if tcp_socket is None:
+                    continue
+                # H3 Phase 3b cross-family dual-stack filter: an
+                # IPv4 inbound matching an AF_INET6 listener (via
+                # the wildcard '::' pattern emitted by
+                # 'listening_socket_ids') requires that listener
+                # to have 'IPV6_V6ONLY = 0'. A 'V6ONLY = 1'
+                # listener keeps its strict-IPv6 namespace —
+                # skip the match so the IPv4 inbound either
+                # finds a same-family AF_INET listener earlier
+                # in the patterns list or falls through to the
+                # no-listener drop path.
+                if (
+                    tcp_socket.address_family is AddressFamily.INET6
+                    and packet_rx_md.ip__local_address.version is IpVersion.IP4
+                    and tcp_socket.ipv6_v6only
                 ):
-                    # H3 Phase 3b cross-family dual-stack filter: an
-                    # IPv4 inbound matching an AF_INET6 listener (via
-                    # the wildcard '::' pattern emitted by
-                    # 'listening_socket_ids') requires that listener
-                    # to have 'IPV6_V6ONLY = 0'. A 'V6ONLY = 1'
-                    # listener keeps its strict-IPv6 namespace —
-                    # skip the match so the IPv4 inbound either
-                    # finds a same-family AF_INET listener earlier
-                    # in the patterns list or falls through to the
-                    # no-listener drop path.
-                    if (
-                        tcp_socket._address_family is AddressFamily.INET6
-                        and packet_rx_md.ip__local_address.version is IpVersion.IP4
-                        and tcp_socket._ipv6_v6only
-                    ):
-                        continue
-                    self._if._packet_stats_rx.tcp__socket_match_listening__forward_to_socket += 1
-                    __debug__ and log(
-                        "tcp",
-                        f"{packet_rx_md.tracker} - <INFO>TCP packet matches " f"listening socket [{tcp_socket}]</>",
-                    )
-                    tcp_socket.process_tcp_packet(packet_rx_md)
-                    return
+                    continue
+                self._if._packet_stats_rx.tcp__socket_match_listening__forward_to_socket += 1
+                __debug__ and log(
+                    "tcp",
+                    f"{packet_rx_md.tracker} - <INFO>TCP packet matches " f"listening socket [{tcp_socket}]</>",
+                )
+                tcp_socket.process_tcp_packet(packet_rx_md)
+                return
 
         # In case packet doesn't match any active or listening socket
         # and it carries RST flag then drop it silently.

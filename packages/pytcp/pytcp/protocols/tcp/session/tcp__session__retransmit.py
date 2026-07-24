@@ -46,7 +46,7 @@ This is the final phase of the TcpSession decomposition.
 
 packages/pytcp/pytcp/protocols/tcp/session/tcp__session__retransmit.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
@@ -68,10 +68,10 @@ from pytcp.protocols.tcp.tcp__rack import (
 )
 from pytcp.protocols.tcp.tcp__rto import back_off
 from pytcp.protocols.tcp.tcp__seq import gt32, le32, lt32, sub32
+from pytcp.runtime.socket.tcp__metadata import TcpMetadata
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
-    from pytcp.socket.tcp__metadata import TcpMetadata
 
 
 class TcpRetransmitter:
@@ -387,7 +387,7 @@ class TcpRetransmitter:
             f"{session._snd_seq.nxt}, resetting snd_ewn to {session._cc.snd_ewn}",
         )
 
-    def retransmit_packet_request(self, packet_rx_md: "TcpMetadata") -> None:
+    def retransmit_packet_request(self, packet_rx_md: TcpMetadata) -> None:
         """
         Retransmit packet after receiving fast-retransmit request from
         peer (RFC 5681 §3.2: third duplicate ACK, one-shot per loss
@@ -692,7 +692,7 @@ class TcpRetransmitter:
         if rack_timeout_ms > 0:
             session._arm_timer("rack", rack_timeout_ms)
 
-    def rack_process_ack(self, packet_rx_md: "TcpMetadata") -> None:
+    def rack_process_ack(self, packet_rx_md: TcpMetadata) -> None:
         """
         Apply RFC 8985 §6.2 step 1-2 (rack_update) + step 5
         (rack_detect_loss) on every accepted ACK. Called from

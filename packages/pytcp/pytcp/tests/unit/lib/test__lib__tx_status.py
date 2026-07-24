@@ -27,16 +27,15 @@ This module contains tests for the 'TxStatus' enum.
 
 pytcp/tests/unit/lib/test__lib__tx_status.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from enum import IntEnum
 from typing import Any
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from pytcp.lib.tx_status import TxStatus
+from pytcp.tests.lib.parameterized import parameterized_class
 
 # The canonical roster of TxStatus members in declaration order. If a
 # member is added, removed, or reordered in 'pytcp/lib/tx_status.py'
@@ -55,6 +54,7 @@ _EXPECTED_MEMBERS: tuple[str, ...] = (
     "DROPPED__ETHERNET_802_3__DST_RESOLUTION_FAIL",
     "DROPPED__ARP__NO_PROTOCOL_SUPPORT",
     "PASSED__IP4__TO_TX_RING",
+    "PASSED__IP4__LOOPBACK",
     "DROPPED__IP4__NO_PROTOCOL_SUPPORT",
     "DROPPED__IP4__SRC_NOT_OWNED",
     "DROPPED__IP4__SRC_MULTICAST",
@@ -65,6 +65,7 @@ _EXPECTED_MEMBERS: tuple[str, ...] = (
     "DROPPED__IP4__MTU_EXCEED_DF",
     "DROPPED__IP4__UNKNOWN",
     "PASSED__IP6__TO_TX_RING",
+    "PASSED__IP6__LOOPBACK",
     "DROPPED__IP6__NO_PROTOCOL_SUPPORT",
     "DROPPED__IP6__SRC_NOT_OWNED",
     "DROPPED__IP6__SRC_MULTICAST",
@@ -170,7 +171,7 @@ class TestTxStatusClass(TestCase):
             "_member": TxStatus.DROPPED__IP4__UNKNOWN,
             "_results": {
                 "name": "DROPPED__IP4__UNKNOWN",
-                "value": 21,
+                "value": 22,
                 "__str__": "DROPPED__IP4__UNKNOWN",
             },
         },
@@ -179,7 +180,7 @@ class TestTxStatusClass(TestCase):
             "_member": TxStatus.DROPPED__ICMP6__UNKNOWN,
             "_results": {
                 "name": "DROPPED__ICMP6__UNKNOWN",
-                "value": 37,
+                "value": 39,
                 "__str__": "DROPPED__ICMP6__UNKNOWN",
             },
         },
@@ -197,7 +198,7 @@ class TestTxStatusClass(TestCase):
             "_member": TxStatus.DROPPED__IP6__EXT_FRAG_UNKNOWN,
             "_results": {
                 "name": "DROPPED__IP6__EXT_FRAG_UNKNOWN",
-                "value": 32,
+                "value": 34,
                 "__str__": "DROPPED__IP6__EXT_FRAG_UNKNOWN",
             },
         },

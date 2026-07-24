@@ -27,14 +27,14 @@ This module contains tests for the NetProto ProtoOption/ProtoOptions base classe
 
 net_proto/tests/unit/lib/test__lib__proto_option.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import FrozenInstanceError, dataclass
-from typing import Self
+from typing import Self, override
 from unittest import TestCase
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_enum import ProtoEnumByte
 from net_proto.lib.proto_option import (
     ProtoOption,
@@ -56,13 +56,16 @@ class _FixtureOptionType(ProtoOptionType):
 class _FixtureOption(ProtoOption):
     """Minimal concrete ProtoOption used as a fixture."""
 
+    @override
     def __post_init__(self) -> None:
         assert self.len >= 1, f"'len' must be at least 1. Got: {self.len}"
 
+    @override
     def __buffer__(self, _: int) -> memoryview:
         return memoryview(bytes(self.type) + self.len.to_bytes(1, "big"))
 
     @classmethod
+    @override
     def from_buffer(cls, buffer: Buffer, /) -> Self:
         return cls(
             type=_FixtureOptionType.from_bytes(bytes(buffer[:1])),
@@ -74,6 +77,7 @@ class _FixtureOptions(ProtoOptions):
     """Minimal concrete ProtoOptions container used as a fixture."""
 
     @classmethod
+    @override
     def from_buffer(cls, buffer: Buffer, /) -> Self:
         options: list[ProtoOption] = []
         offset = 0
@@ -88,6 +92,7 @@ class _OtherFixtureOptions(ProtoOptions):
     """Second container class used to exercise cross-type inequality."""
 
     @classmethod
+    @override
     def from_buffer(cls, buffer: Buffer, /) -> Self:
         return cls()
 
@@ -152,6 +157,7 @@ class TestNetProtoLibProtoOptionConcrete(TestCase):
     The NetProto ProtoOption concrete-subclass behavior tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._option = _FixtureOption(type=_FixtureOptionType.A, len=2)
 
@@ -255,6 +261,7 @@ class TestNetProtoLibProtoOptionsEmpty(TestCase):
     The NetProto ProtoOptions empty-container tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._options = _FixtureOptions()
 
@@ -318,6 +325,7 @@ class TestNetProtoLibProtoOptionsPopulated(TestCase):
     The NetProto ProtoOptions populated-container tests.
     """
 
+    @override
     def setUp(self) -> None:
         self._option_a = _FixtureOption(type=_FixtureOptionType.A, len=2)
         self._option_b = _FixtureOption(type=_FixtureOptionType.B, len=3)
@@ -551,6 +559,7 @@ class TestNetProtoLibProtoOptionsAbstractBody(TestCase):
 
         class _SuperOptions(ProtoOptions):
             @classmethod
+            @override
             def from_buffer(cls, buffer: Buffer, /) -> Self:
                 return super().from_buffer(buffer)
 

@@ -27,13 +27,11 @@ This module contains unit tests for the 'EthernetRxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, cast, override
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_addr import MacAddress
 from net_proto import EtherType
@@ -44,6 +42,7 @@ from pytcp.runtime.packet_handler.dispatch import DispatchRegistry
 from pytcp.runtime.packet_handler.packet_handler__ethernet__rx import (
     EthernetRxHandler,
 )
+from pytcp.tests.lib.parameterized import parameterized_class
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandlerL2
@@ -277,6 +276,7 @@ class TestPacketHandlerEthernetRx(TestCase):
     _expected_dispatch: list[str]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the stub handler and run the frame through the mixin method.

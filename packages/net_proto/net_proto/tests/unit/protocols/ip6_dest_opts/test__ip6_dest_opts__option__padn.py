@@ -27,19 +27,18 @@ This module contains tests for the IPv6 Dest Opts PadN option.
 
 net_proto/tests/unit/protocols/ip6_dest_opts/test__ip6_dest_opts__option__padn.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import Any
 from unittest import TestCase
-
-from parameterized import parameterized_class  # type: ignore[import-untyped]
 
 from net_proto.protocols.ip6_dest_opts.ip6_dest_opts__errors import Ip6DestOptsIntegrityError
 from net_proto.protocols.ip6_dest_opts.options.ip6_dest_opts__option import Ip6DestOptsOptionType
 from net_proto.protocols.ip6_dest_opts.options.ip6_dest_opts__option__padn import (
     Ip6DestOptsOptionPadN,
 )
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(

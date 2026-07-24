@@ -27,7 +27,7 @@ This module contains the IPv4 option support code.
 
 net_proto/protocols/ip4/options/ip4__option.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from dataclasses import dataclass

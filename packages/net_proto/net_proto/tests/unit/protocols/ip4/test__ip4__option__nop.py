@@ -27,15 +27,14 @@ Module contains tests for the IPv4 Nop (No Operation) option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__nop.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
 from net_proto import IP4__OPTION__NOP__LEN, Ip4OptionNop, Ip4OptionType
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 class TestIp4OptionNopAssembler(TestCase):
@@ -43,6 +42,7 @@ class TestIp4OptionNopAssembler(TestCase):
     The IPv4 Nop option assembler tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 Nop option; the option takes no constructor args.

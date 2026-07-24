@@ -21,16 +21,19 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the outbound IPv6 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip6__tx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from net_addr import Ip6Address, MacAddress
@@ -44,6 +47,8 @@ from net_proto import (
     RawAssembler,
     Tracker,
 )
+from net_proto.lib.packet_rx import PacketRx
+from pytcp import stack
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.logger import log
 from pytcp.lib.tx_status import TxStatus
@@ -98,7 +103,13 @@ class Ip6TxHandler:
         self._if._packet_stats_tx.ip6__pre_assemble += 1
 
         if ip6__hop is None:
-            ip6__hop = self._if._effective_ip6_hop_limit()
+            # Linux 'IPV6_DEFAULT_MCASTHOPS' (net/ipv6/af_inet6.c
+            # inet6_create): outbound multicast datagrams default to
+            # Hop-Limit=1 so multicast does not escape the local link
+            # unless the caller explicitly opts in — mirroring the
+            # IPv4 TTL=1 default. Unicast reads the RA-advertised /
+            # protocol default via '_effective_ip6_hop_limit'.
+            ip6__hop = 1 if ip6__dst.is_multicast else self._if._effective_ip6_hop_limit()
 
         assert 0 < ip6__hop < 256
 
@@ -151,6 +162,22 @@ class Ip6TxHandler:
             ip6__flow=ip6__flow,
             ip6__payload=ip6__payload,
         )
+
+        # Loopback diversion: a locally-destined packet — one to ::1 or to
+        # one of THIS host's own unicast addresses — is delivered
+        # internally through the loopback interface, never on the wire
+        # (the PyTCP analogue of Linux routing local traffic through 'lo';
+        # see the IPv4 counterpart). Enqueue the assembled packet onto the
+        # loopback ring; its consumer thread drains it into the RX path,
+        # so a whole exchange never nests TX -> RX -> TX in one call stack.
+        # Phase 2: a FIB HOST-scope local route supersedes this shortcut.
+        if (loopback := stack.loopback_handler()) is not None and (
+            ip6__dst.is_loopback or ip6__dst in stack.local_ip6_unicast()
+        ):
+            self._if._packet_stats_tx.ip6__loopback__send += 1
+            __debug__ and log("ip6", f"{ip6_packet_tx.tracker} - Loopback delivery of {ip6_packet_tx}")
+            loopback.enqueue_loopback(PacketRx(bytes(ip6_packet_tx)))
+            return TxStatus.PASSED__IP6__LOOPBACK
 
         # Check if IP packet can be sent out without fragmentation,
         # if so send it out.
@@ -264,15 +291,9 @@ class Ip6TxHandler:
 
         # If source is unspecified and destination is unicast,
         # run RFC 6724 default source-address selection across
-        # the owned candidate set. Multicast destinations with
-        # src=:: are intentionally not handled here — the
-        # DAD-probe and MLDv2-report branches above carry the
-        # only legitimate src=:: multicast forms, and any other
-        # multicast packet with src=:: is treated as malformed
-        # and falls through to the drop branch below. The
-        # local/external split is preserved at the stat-counter
-        # level for backwards compatibility with existing
-        # observability dashboards.
+        # the owned candidate set. The local/external split is
+        # preserved at the stat-counter level for backwards
+        # compatibility with existing observability dashboards.
         if ip6__src.is_unspecified and ip6__dst.is_unicast:
             selected = self._select_ip6_source(ip6__dst=ip6__dst)
             if selected is not None:
@@ -284,6 +305,28 @@ class Ip6TxHandler:
                     "ip6",
                     f"{tracker} - Packet source is unspecified, RFC 6724 "
                     f"selector picked source IPv6 address {selected}",
+                )
+                return selected
+
+        # RFC 6724 source selection ALSO applies to a multicast
+        # destination (a DHCPv6 SOLICIT to ff02::1:2, an app sending to
+        # a group from an unbound socket): fill in a source of adequate
+        # scope from the owned set — the link-local for a link-local-
+        # scoped group — matching Linux, which selects a source for a
+        # multicast send. The DAD-probe (RFC 4861 §4.3) and MLDv2-report
+        # branches above already returned the only two src=:: multicast
+        # forms that MUST stay unspecified, so a packet reaching here
+        # legitimately wants a real source; '_select_ip6_source' returns
+        # None (-> drop below) when no owned address has adequate scope.
+        if ip6__src.is_unspecified and ip6__dst.is_multicast:
+            selected = self._select_ip6_source(ip6__dst=ip6__dst)
+            if selected is not None:
+                self._if._packet_stats_tx.ip6__src_unspecified__replace_multicast += 1
+                __debug__ and log(
+                    "ip6",
+                    f"{tracker} - Packet source is unspecified, RFC 6724 "
+                    f"selector picked source IPv6 address {selected} for "
+                    f"multicast destination {ip6__dst}",
                 )
                 return selected
 
@@ -454,12 +497,15 @@ class Ip6TxHandler:
         ip6__hop: int | None = None,
         ip6__ecn: int = 0,
         ip6__dscp: int = 0,
+        on_complete: Callable[[], None] | None = None,
     ) -> None:
         """
         Interface method for RAW Socket -> Packet Assembler
         communication. Handed to the TX worker fire-and-forget via
         '_marshal_tx_async' (Phase 4b): the calling app thread does
-        not block for the 'TxStatus'.
+        not block for the 'TxStatus'. 'on_complete' (if given) fires
+        once after the datagram leaves the send queue — the SO_SNDBUF
+        release hook.
         """
 
         kwargs: dict[str, Any] = {
@@ -474,7 +520,7 @@ class Ip6TxHandler:
         }
         if ip6__hop is not None:
             kwargs["ip6__hop"] = ip6__hop
-        self._if._marshal_tx_async(lambda: self._phtx_ip6(**kwargs))
+        self._if._marshal_tx_async(lambda: self._phtx_ip6(**kwargs), on_complete=on_complete)
 
     def __send_out_packet(self, ip6_packet_tx: Ip6Assembler) -> None:
         assert self._if._tx_ring is not None, "PacketHandler must have an injected TX ring to send."

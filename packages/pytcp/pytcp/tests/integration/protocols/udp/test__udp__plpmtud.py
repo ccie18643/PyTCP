@@ -40,11 +40,11 @@ in Phase 4 of the PLPMTUD plan. Exercises:
 
 pytcp/tests/integration/protocols/udp/test__udp__plpmtud.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from pytcp.lib.plpmtud import MAX_PROBES, MIN_PLPMTU__IP4, PmtuState
-from pytcp.socket import AddressFamily
+from pytcp.runtime.socket import AddressFamily
 from pytcp.tests.lib.udp_testcase import (
     HOST_A__IP4_ADDRESS,
     UdpTestCase,

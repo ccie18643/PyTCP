@@ -27,7 +27,7 @@ This module contains the DHCPv4 protocol enum classes.
 
 net_proto/protocols/dhcp4/dhcp4__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -92,5 +92,7 @@ class Dhcp4MessageType(ProtoEnumByte):
                 name = "Release"
             case Dhcp4MessageType.INFORM:
                 name = "Inform"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name

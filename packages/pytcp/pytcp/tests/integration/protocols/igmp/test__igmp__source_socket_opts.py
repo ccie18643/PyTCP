@@ -31,7 +31,7 @@ Linux 'ip_mc_source' errno mapping.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_socket_opts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno
@@ -43,7 +43,7 @@ from pytcp.lib.ip4_multicast_filter import (
     Ip4MulticastFilter,
     Ip4MulticastFilterMode,
 )
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     AF_INET,
     IP_ADD_MEMBERSHIP,
     IP_ADD_SOURCE_MEMBERSHIP,

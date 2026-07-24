@@ -58,7 +58,7 @@ for the per-clause spec audit.
 
 pytcp/protocols/tcp/tcp__cwnd.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 # RFC 6928 §2 Initial Window: post-handshake congestion window. The

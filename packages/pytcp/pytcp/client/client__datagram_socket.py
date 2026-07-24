@@ -38,17 +38,21 @@ plus an IANA next-header protocol.
 
 pytcp/client/client__datagram_socket.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-import socket
+import errno
+import os
+from collections.abc import Iterable
 
+from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__dgram_bridge import IPC__DGRAM_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
 from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
-from pytcp.socket import AddressFamily, SocketType
+from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
+from pytcp.runtime.socket import SO_RCVBUF, SOL_SOCKET, AddressFamily, SocketType
 
 # Default receive bound — the maximum UDP payload, so 'recvfrom' without
 # an explicit bufsize never truncates a legal datagram.
@@ -70,7 +74,11 @@ class _ClientDatagramBase:
         self._client = client
         self._handle = handle
         self._family = family
-        self._data_socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM, fileno=data_fd)
+        self._data_socket = stdlib_socket.socket(stdlib_socket.AF_UNIX, stdlib_socket.SOCK_DGRAM, fileno=data_fd)
+        # Whether 'connect()' has set a default peer. 'send()' (no
+        # destination) requires it — matching stdlib, which raises
+        # EDESTADDRREQ on a connection-less datagram send.
+        self._connected = False
 
     def fileno(self) -> int:
         """
@@ -109,8 +117,33 @@ class _ClientDatagramBase:
         Send 'data' as a datagram to the connected peer.
         """
 
+        if not self._connected:
+            raise OSError(errno.EDESTADDRREQ, os.strerror(errno.EDESTADDRREQ))
         self._data_socket.send(encode_dgram(None, data))
         return len(data)
+
+    def sendmsg(
+        self,
+        buffers: Iterable[Buffer],
+        ancdata: Iterable[tuple[int, int, Buffer]] = (),
+        flags: int = 0,
+        address: tuple[str, int] | None = None,
+        /,
+    ) -> int:
+        """
+        Send a datagram from the scatter-gather 'buffers' with optional
+        ancillary control messages, mirroring stdlib 'socket.sendmsg'. The
+        cmsg (e.g. an IPv4 IP_TOS / IPv6 IPV6_TCLASS entry) is framed
+        alongside the payload; the daemon applies it via the stack
+        socket's 'sendmsg'. 'flags' is accepted for signature parity and
+        ignored (no send flags apply over the datagram bridge).
+        """
+
+        _ = flags
+        payload = b"".join(bytes(buffer) for buffer in buffers)
+        cmsg = [(level, ctype, bytes(cdata)) for level, ctype, cdata in ancdata]
+        self._data_socket.send(encode_dgram(address, payload, cmsg))
+        return len(payload)
 
     def recvfrom(self, bufsize: int = IPC__CLIENT_DGRAM__MAX_PAYLOAD) -> tuple[bytes, tuple[str, int]]:
         """
@@ -131,7 +164,7 @@ class _ClientDatagramBase:
     ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
         """
         Receive one datagram with its ancillary control messages and
-        sender address, mirroring stdlib 'socket.recvmsg'. The IPv6
+        sender address, mirroring stdlib 'stdlib_socket.recvmsg'. The IPv6
         address is a 4-tuple '(host, port, flowinfo, scope_id)' (flowinfo
         / scope_id are 0 — PyTCP does not track them per datagram).
         'ancbufsize' is advisory: the daemon already framed every cmsg the
@@ -167,11 +200,21 @@ class _ClientDatagramBase:
         """
 
         socket_call(self._client, method="connect", handle=self._handle, args={"address": address})
+        self._connected = True
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
-        Set a socket option on the daemon socket.
+        Set a socket option on the daemon stdlib_socket.
         """
+
+        if isinstance(level, int) and level == SOL_SOCKET and optname == SO_RCVBUF and isinstance(value, int):
+            # SO_RCVBUF is honoured on the real receive buffer — the
+            # client's socketpair end is the effective client-side
+            # datagram buffer — rather than only stored on the daemon.
+            # The socketpair is a real kernel socket, so the kernel
+            # doubling / clamps match stdlib exactly.
+            self._data_socket.setsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF, value)
+            return
 
         socket_call(
             self._client,
@@ -182,8 +225,13 @@ class _ClientDatagramBase:
 
     def getsockopt(self, level: int | IpProto, optname: int, /) -> int | bytes:
         """
-        Get a socket option from the daemon socket.
+        Get a socket option from the daemon stdlib_socket.
         """
+
+        if isinstance(level, int) and level == SOL_SOCKET and optname == SO_RCVBUF:
+            # Report the real socketpair buffer size (kernel-adjusted),
+            # matching what 'setsockopt(SO_RCVBUF)' applied above.
+            return self._data_socket.getsockopt(stdlib_socket.SOL_SOCKET, stdlib_socket.SO_RCVBUF)
 
         result: int | bytes = socket_call(
             self._client,
@@ -208,6 +256,18 @@ class _ClientDatagramBase:
 
         result: tuple[str, int] = socket_call(self._client, method="getpeername", handle=self._handle, args={})
         return result
+
+    def detach(self) -> int:
+        """
+        Detach and return the data-channel descriptor.
+
+        The caller takes ownership of the descriptor; the shim's data
+        socket no longer holds it. The daemon handle is left in place (to
+        be reaped when the client disconnects), so the descriptor stays
+        connected to the daemon-side stdlib_socket.
+        """
+
+        return self._data_socket.detach()
 
     def close(self) -> None:
         """
@@ -255,4 +315,28 @@ class ClientRawSocket(_ClientDatagramBase):
         """
 
         handle, data_fd = open_socket(client, family=family, type_=SocketType.RAW, protocol=protocol)
+        super().__init__(client, handle, data_fd, family)
+
+
+class ClientPingSocket(_ClientDatagramBase):
+    """
+    A client-side ICMP Echo ('ping') datagram socket backed by a daemon
+    socket over IPC (Linux 'SOCK_DGRAM' + 'IPPROTO_ICMP' / 'IPPROTO_ICMPV6').
+    """
+
+    def __init__(
+        self,
+        client: IpcClient,
+        /,
+        *,
+        protocol: IpProto,
+        family: AddressFamily = AddressFamily.INET4,
+    ) -> None:
+        """
+        Open a daemon-side ICMP Echo datagram socket for 'protocol'
+        ('IPPROTO_ICMP' / 'IPPROTO_ICMPV6') and adopt its passed
+        SOCK_DGRAM data-channel descriptor.
+        """
+
+        handle, data_fd = open_socket(client, family=family, type_=SocketType.DGRAM, protocol=protocol)
         super().__init__(client, handle, data_fd, family)

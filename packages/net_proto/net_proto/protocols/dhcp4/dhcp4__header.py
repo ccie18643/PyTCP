@@ -27,7 +27,7 @@ This module contains the DHCPv4 header class.
 
 net_proto/protocols/dhcp4/dhcp4__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -35,8 +35,7 @@ from abc import ABC
 from dataclasses import dataclass, field
 from typing import Self, override
 
-from net_addr import Ip4Address, MacAddress
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer, Ip4Address, MacAddress
 from net_proto.lib.int_checks import is_uint8, is_uint16, is_uint32
 from net_proto.lib.proto_struct import ProtoStruct
 from net_proto.protocols.dhcp4.dhcp4__enums import (

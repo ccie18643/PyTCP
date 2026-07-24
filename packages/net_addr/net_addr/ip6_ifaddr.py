@@ -27,7 +27,7 @@ This module contains IPv6 interface address support class.
 
 net_addr/ip6_ifaddr.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import hashlib

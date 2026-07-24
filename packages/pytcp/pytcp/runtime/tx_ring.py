@@ -27,7 +27,7 @@ This module contains class supporting stack TX Ring operations.
 
 pytcp/runtime/tx_ring.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import collections
@@ -37,6 +37,7 @@ import threading
 from collections.abc import Callable
 from typing import override
 
+from net_addr import Buffer
 from net_proto import (
     Ethernet8023Assembler,
     EthernetAssembler,
@@ -44,7 +45,6 @@ from net_proto import (
     Ip4FragAssembler,
     Ip6Assembler,
 )
-from net_proto.lib.buffer import Buffer
 from net_proto.protocols.ethernet.ethernet__header import ETHERNET__HEADER__LEN
 from net_proto.protocols.ethernet_802_3.ethernet_802_3__header import (
     ETHERNET_802_3__HEADER__LEN,
@@ -87,21 +87,35 @@ class _TxRequest:
     'TxStatus' (or any exception) is handed back to the waiter.
     """
 
-    __slots__ = ("_run", "_event", "_result", "_exc")
+    __slots__ = ("_run", "_event", "_result", "_exc", "_on_complete")
 
-    def __init__(self, run: Callable[[], TxStatus], /, *, blocking: bool = True) -> None:
+    def __init__(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        blocking: bool = True,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         """
         Initialize the marshaled request from its callable. A
         'blocking' request carries a 'threading.Event' the producer
         waits on; a fire-and-forget request ('blocking=False', the
         Phase 4b async-send path) has no event — the worker runs it
         and discards the result.
+
+        'on_complete' (if given) is invoked exactly once after the
+        callable finishes — success, raise, or inline fallback —
+        from the request's 'execute()' 'finally'. The UDP SO_SNDBUF
+        accounting uses it to decrement a socket's outstanding-bytes
+        counter when its datagram leaves the send queue.
         """
 
         self._run = run
         self._event = threading.Event() if blocking else None
         self._result: TxStatus | None = None
         self._exc: BaseException | None = None
+        self._on_complete = on_complete
 
     def execute(self) -> None:
         """
@@ -110,7 +124,9 @@ class _TxRequest:
         request the event is set in a 'finally' so a raising callable
         never strands the waiter; for a fire-and-forget request a
         raise is logged (no caller to receive it) and swallowed so it
-        cannot kill the TX loop.
+        cannot kill the TX loop. The 'on_complete' hook fires in the
+        same 'finally' so send-buffer accounting is released on every
+        exit path.
         """
 
         try:
@@ -125,6 +141,8 @@ class _TxRequest:
         finally:
             if self._event is not None:
                 self._event.set()
+            if self._on_complete is not None:
+                self._on_complete()
 
     def wait(self) -> None:
         """
@@ -207,6 +225,16 @@ class TxRing(Subsystem):
         # gives the Link API a single source of truth for
         # 'stats.tx_bytes'.
         self._link_stats = link_stats
+
+    def set_mtu(self, mtu: int, /) -> None:
+        """
+        Set the writev-size MTU bound for this TX ring — the Link API's
+        'set_mtu' mutator resizes the bound interface's own ring through
+        this. Validation (RFC 791 floor, uint16 ceiling) is the Link
+        API's responsibility.
+        """
+
+        self._mtu = mtu
 
     @property
     def queue_full_drop_count(self) -> int:
@@ -346,7 +374,13 @@ class TxRing(Subsystem):
         request.wait()
         return request.result()
 
-    def dispatch_async(self, run: Callable[[], TxStatus], /) -> None:
+    def dispatch_async(
+        self,
+        run: Callable[[], TxStatus],
+        /,
+        *,
+        on_complete: Callable[[], None] | None = None,
+    ) -> None:
         """
         Fire-and-forget variant of 'dispatch' (Phase 4b async send):
         hand the '_phtx_*' call to the TX worker and return
@@ -357,9 +391,13 @@ class TxRing(Subsystem):
         matching Linux's queued-on-send semantics). Same inline
         fallback as 'dispatch' when there is no live worker or the
         caller already IS the worker.
+
+        'on_complete' fires once after the marshaled call finishes on
+        whichever thread runs it (worker or inline fallback) — the
+        SO_SNDBUF release hook.
         """
 
-        request = _TxRequest(run, blocking=False)
+        request = _TxRequest(run, blocking=False, on_complete=on_complete)
         worker = self._thread
         if worker is None or not worker.is_alive() or threading.current_thread() is worker:
             request.execute()

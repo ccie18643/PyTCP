@@ -27,17 +27,24 @@ Tests for the IPC SCM_RIGHTS file-descriptor-passing primitive.
 
 pytcp/tests/unit/ipc/test__ipc__fdpass.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import array
 import os
 import socket
+import struct
 from typing import override
 from unittest import TestCase
 
 from pytcp.ipc.ipc__errors import IpcFrameError
 from pytcp.ipc.ipc__fdpass import recv_frame_with_fd, send_frame_with_fd
-from pytcp.ipc.ipc__frame import IPC__FRAME__MAX_PAYLOAD_LEN, send_frame
+from pytcp.ipc.ipc__frame import (
+    IPC__FRAME__LENGTH_PREFIX_STRUCT,
+    IPC__FRAME__MAX_PAYLOAD_LEN,
+    pack_frame,
+    send_frame,
+)
 
 
 class TestIpcFdPass(TestCase):
@@ -165,3 +172,93 @@ class TestIpcFdPass(TestCase):
 
         with self.assertRaises(IpcFrameError):
             send_frame_with_fd(self._sock_a, bytes(IPC__FRAME__MAX_PAYLOAD_LEN + 1), self._pipe_r)
+
+
+class TestIpcFdPass__MutationGoldens(TestCase):
+    """
+    SCM_RIGHTS fd-passing branch goldens: the received descriptor is a
+    live, distinct fd (not an off-by-one index), an fd-less frame
+    yields None, and more than one passed descriptor is rejected.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Create the AF_UNIX control-channel socketpair shared by the
+        fd-passing tests.
+        """
+
+        self._sock_a, self._sock_b = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(self._sock_a.close)
+        self.addCleanup(self._sock_b.close)
+
+    def _pipe(self) -> tuple[int, int]:
+        """Return a fresh pipe (read, write) registered for cleanup."""
+
+        read_fd, write_fd = os.pipe()
+        self.addCleanup(lambda: os.close(read_fd))
+        self.addCleanup(lambda: os.close(write_fd))
+        return read_fd, write_fd
+
+    def test__fdpass__received_fd_is_live_and_distinct(self) -> None:
+        """
+        Ensure the descriptor recovered from a passed frame is a new,
+        distinct fd that refers to the same underlying pipe — pinning
+        the 'fds[0]' return index (an off-by-one would IndexError) and
+        the single-fd acceptance (a '> 0' edit would reject it).
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        read_fd, write_fd = self._pipe()
+        send_frame_with_fd(self._sock_a, b"with-fd", read_fd)
+
+        payload, got_fd = recv_frame_with_fd(self._sock_b)
+        self.addCleanup(lambda: os.close(got_fd) if got_fd is not None else None)
+
+        self.assertEqual(payload, b"with-fd", msg="payload must accompany the passed fd.")
+        self.assertIsInstance(got_fd, int, msg="a single passed fd must be returned.")
+        assert got_fd is not None
+        self.assertNotEqual(got_fd, read_fd, msg="the received fd must be a new descriptor.")
+        os.write(write_fd, b"PING")
+        self.assertEqual(
+            os.read(got_fd, 4),
+            b"PING",
+            msg="the received fd must read bytes written through the original pipe.",
+        )
+
+    def test__fdpass__frame_without_fd_yields_none(self) -> None:
+        """
+        Ensure a plain (fd-less) frame recovered via recv_frame_with_fd
+        yields a None descriptor, pinning the no-fd branch.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._sock_a.sendall(pack_frame(b"plain"))
+
+        payload, got_fd = recv_frame_with_fd(self._sock_b)
+
+        self.assertEqual(payload, b"plain", msg="the fd-less payload must be recovered.")
+        self.assertIsNone(got_fd, msg="a frame with no SCM_RIGHTS fd must yield None.")
+
+    def test__fdpass__more_than_one_fd_rejected(self) -> None:
+        """
+        Ensure a frame carrying two passed descriptors is rejected,
+        pinning the 'len(fds) > 1' guard against an off-by-one that
+        would accept two.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        read_a, _ = self._pipe()
+        read_b, _ = self._pipe()
+        prefix = struct.pack(IPC__FRAME__LENGTH_PREFIX_STRUCT, 3)
+        self._sock_a.sendmsg(
+            [prefix],
+            [(socket.SOL_SOCKET, socket.SCM_RIGHTS, array.array("i", [read_a, read_b]))],
+        )
+        self._sock_a.sendall(b"xyz")
+
+        with self.assertRaises(IpcFrameError):
+            recv_frame_with_fd(self._sock_b)

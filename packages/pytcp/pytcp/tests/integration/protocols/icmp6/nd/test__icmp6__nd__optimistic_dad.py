@@ -46,10 +46,11 @@ entry only for the duration of the wait.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__optimistic_dad.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import threading
+from typing import override
 
 from net_addr import Ip6Address, Ip6IfAddr
 from net_proto import (
@@ -59,6 +60,10 @@ from net_proto import (
     Icmp6Parser,
     Ip6Parser,
     PacketRx,
+)
+from pytcp.lib.ip6_multicast_filter import (
+    Ip6MulticastFilter,
+    Ip6MulticastFilterMode,
 )
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6DadState
 from pytcp.stack import sysctl as sysctl_module
@@ -97,6 +102,7 @@ class TestIcmp6Nd__OptimisticDad__SysctlRegistration(NdTestCase):
     booleans.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -171,6 +177,7 @@ class TestIcmp6Nd__OptimisticDad__SyncDad__StateLifecycle(NdTestCase):
     after DAD passes.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -236,6 +243,7 @@ class TestIcmp6Nd__OptimisticDad__OptimisticPath__PreClaim(NdTestCase):
     during the wait per RFC 4429 §3.3.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.
@@ -351,6 +359,7 @@ class TestIcmp6Nd__OptimisticDad__NaOverrideFlag(NdTestCase):
     differential between OPTIMISTIC and VALID source state.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Install the candidate as a regular '_ip6_ifaddr' entry
@@ -365,7 +374,7 @@ class TestIcmp6Nd__OptimisticDad__NaOverrideFlag(NdTestCase):
         if snm_mac not in self._packet_handler._mac_multicast:
             self._packet_handler._mac_multicast.append(snm_mac)
         if snm_ip not in self._packet_handler._ip6_multicast:
-            self._packet_handler._ip6_multicast.append(snm_ip)
+            self._packet_handler._ip6_multicast_filters[snm_ip] = Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE)
 
     def test__icmp6__nd__optimistic_dad__na_clears_override_for_optimistic(self) -> None:
         """
@@ -435,6 +444,7 @@ class TestIcmp6Nd__OptimisticDad__SysctlOff__NoPreClaim(NdTestCase):
     §5.4 strict semantics.
     """
 
+    @override
     def tearDown(self) -> None:
         """
         Restore sysctl defaults so per-test overrides don't leak.

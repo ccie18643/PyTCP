@@ -33,7 +33,7 @@ Covers the new 'interface_scope=True' '_Knob' shape, the
 
 pytcp/tests/unit/stack/test__stack__sysctl_iface.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import sys
@@ -768,3 +768,52 @@ class TestSysctlIfaceListIntegration(_SysctlIfaceFixtureBase):
             {"default": 1, "tap7": 2},
             msg="snapshot must surface the per-iface storage dict for an interface-scope knob.",
         )
+
+
+class TestSysctlIfaceDescribe(_SysctlIfaceFixtureBase):
+    """
+    Interface-scope knob 'describe' key-form tolerance tests.
+    """
+
+    def test__lib__sysctl_iface__describe_accepts_base_and_slot_forms(self) -> None:
+        """
+        Ensure 'describe' returns the knob's registered description
+        whether the knob is addressed by its base key, the 'default'
+        template slot, or a per-interface slot. The description is
+        knob-level metadata shared by every slot, so all three forms
+        resolve to the same string.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self._register_iface_int(
+            key="test.arp.accept",
+            carrier_name="pytcp_test_iface_carrier_describe",
+            attr="ARP__ACCEPT",
+            default=0,
+            description="Accept gratuitous replies on this interface.",
+        )
+        expected = "Accept gratuitous replies on this interface."
+        for key in (
+            "test.arp.accept",
+            "test.arp.default.accept",
+            "test.arp.tap7.accept",
+        ):
+            with self.subTest(key=key):
+                self.assertEqual(
+                    sysctl.describe(key),
+                    expected,
+                    msg=f"describe({key!r}) must return the knob-level description.",
+                )
+
+    def test__lib__sysctl_iface__describe_rejects_unknown_key(self) -> None:
+        """
+        Ensure 'describe' raises 'KeyError' for a key that maps to no
+        registered knob, including a slot-qualified form whose base is
+        unregistered.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(KeyError, msg="describe must reject an unknown key."):
+            sysctl.describe("test.nope.tap7.accept")

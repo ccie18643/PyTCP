@@ -27,7 +27,7 @@ This module contains the enum representing the interface layer.
 
 pytcp/lib/interface_layer.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from enum import Enum, auto
@@ -40,3 +40,4 @@ class InterfaceLayer(Enum):
 
     L2 = auto()  # Layer 2 (TAP)
     L3 = auto()  # Layer 3 (TUN)
+    LOOPBACK = auto()  # Loopback (lo) — internal delivery, no wire

@@ -36,10 +36,10 @@ while the boot interface and everything bound to it is left untouched.
 
 pytcp/tests/integration/multi_interface/test__multi_interface__remove_cascade.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import cast
+from typing import cast, override
 from unittest import TestCase
 from unittest.mock import MagicMock, create_autospec
 
@@ -48,9 +48,9 @@ from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import SysCall
 from pytcp.runtime.fib import Route
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket import socket as SocketBase
-from pytcp.socket.socket_id import SocketId
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import socket as SocketBase
+from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import STACK__IP4_HOST
 
@@ -102,6 +102,7 @@ class TestMultiInterfaceRemoveCascade(IcmpTestCase, TestCase):
     The multi-homed-host RTM_DELLINK interface-removal cascade tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Bring up the ICMP harness boot interface, mark the stack

@@ -28,7 +28,7 @@ and acknowledgement numbers, per RFC 9293 §3.4.
 
 pytcp/protocols/tcp/tcp__seq.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_proto.lib.int_checks import UINT_32__MAX, is_uint32
@@ -92,7 +92,8 @@ def gt32(a: Seq32, b: Seq32, /) -> bool:
     sequence-number space, per RFC 9293 §3.4.
     """
 
-    return lt32(b, a)
+    # Deliberate operand swap: 'a > b' holds iff 'b < a'.
+    return lt32(b, a)  # pylint: disable=arguments-out-of-order
 
 
 def ge32(a: Seq32, b: Seq32, /) -> bool:
@@ -101,7 +102,8 @@ def ge32(a: Seq32, b: Seq32, /) -> bool:
     sequence-number space, per RFC 9293 §3.4.
     """
 
-    return le32(b, a)
+    # Deliberate operand swap: 'a >= b' holds iff 'b <= a'.
+    return le32(b, a)  # pylint: disable=arguments-out-of-order
 
 
 def add32(a: Seq32, /, *rest: int) -> Seq32:

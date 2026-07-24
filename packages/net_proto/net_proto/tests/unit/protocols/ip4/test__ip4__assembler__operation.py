@@ -27,15 +27,13 @@ This module contains tests for the IPv4 packet assembler operation.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__assembler__operation.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
-from parameterized import parameterized_class  # type: ignore[import-untyped]
-
-from net_addr import Ip4Address, IpVersion
+from net_addr import Buffer, Ip4Address, IpVersion
 from net_proto import (
     Ip4Assembler,
     Ip4FragAssembler,
@@ -45,7 +43,7 @@ from net_proto import (
     IpProto,
     RawAssembler,
 )
-from net_proto.lib.buffer import Buffer
+from net_proto.tests.lib.parameterized import parameterized_class
 
 
 @parameterized_class(
@@ -292,6 +290,7 @@ class TestIp4AssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 assembler from the parametrized kwargs.
@@ -793,6 +792,7 @@ class TestIp4FragAssemblerOperation(TestCase):
     _kwargs: dict[str, Any]
     _results: dict[str, Any]
 
+    @override
     def setUp(self) -> None:
         """
         Build the IPv4 (Frag) assembler from the parametrized kwargs.

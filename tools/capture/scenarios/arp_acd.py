@@ -28,14 +28,13 @@ Conflict Detection — three ARP Probes then two Announcements.
 
 tools/capture/scenarios/arp_acd.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
 from typing import Any
 
 import click
-
 from tools.capture.lib import Harness, common_options, make_config
 
 
@@ -48,35 +47,13 @@ def command(**kwargs: Any) -> None:
 
     cfg = make_config(**kwargs)
     with Harness(cfg) as harness:
-        harness.start_capture("arp")
-        harness.start_example(
-            "examples.stack",
-            "--stack-interface",
-            cfg.iface,
-            "--stack-ip4-address",
-            cfg.ip4,
-            "--stack-ip4-gateway",
-            cfg.gw4,
-            "--stack-no-ip6",
-        )
+        harness.start_stack(ip4="static", ip6="off")
         harness.wait_for(f"Successfully claimed IPv4 address {cfg.ip4_addr}", cfg.claim_timeout)
         time.sleep(1)
-        harness.stop_example()
+        harness.stop_all()
         harness.log_highlights(
             r"Sent out ARP Probe|Sent out ARP Announcement|Successfully claimed IPv4",
             10,
         )
-        harness.wire(
-            "-Y",
-            "arp",
-            "-T",
-            "fields",
-            "-e",
-            "frame.time_relative",
-            "-e",
-            "arp.src.proto_ipv4",
-            "-e",
-            "arp.dst.proto_ipv4",
-            "-e",
-            "_ws.col.Info",
-        )
+        # The stack's own ACD frames: outbound ARP Probes + Announcement.
+        harness.wire("arp")

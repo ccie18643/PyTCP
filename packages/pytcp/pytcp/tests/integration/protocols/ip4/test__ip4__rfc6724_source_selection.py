@@ -38,8 +38,10 @@ rules 3, 6, and 7 do not apply.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__rfc6724_source_selection.py
 
-ver 3.0.7
+ver 3.0.8
 """
+
+from typing import override
 
 from net_addr import Ip4Address, Ip4IfAddr
 from pytcp.tests.lib.ip4_testcase import Ip4TestCase
@@ -62,6 +64,7 @@ class TestRfc6724Ip4Rule1SameAddress(Ip4TestCase):
     The IPv4 RFC 6724 §5 rule 1 (prefer same address) tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip4_ifaddr' with one stack address whose
@@ -99,6 +102,7 @@ class TestRfc6724Ip4Rule2Scope(Ip4TestCase):
     The IPv4 RFC 6724 §5 rule 2 (prefer appropriate scope) tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip4_ifaddr' with one link-local
@@ -154,6 +158,7 @@ class TestRfc6724Ip4Rule8LongestMatch(Ip4TestCase):
     The IPv4 RFC 6724 §5 rule 8 (longest matching prefix) tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Populate '_ip4_ifaddr' with three same-scope candidates

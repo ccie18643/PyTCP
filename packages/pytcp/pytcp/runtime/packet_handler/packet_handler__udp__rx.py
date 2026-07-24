@@ -21,13 +21,15 @@
 ##                                                                            ##
 ################################################################################
 
+# pylint: disable=protected-access
+# pyright: reportPrivateUsage=false
 
 """
 This module contains packet handler for the inbound UDP packets.
 
 pytcp/runtime/packet_handler/packet_handler__udp__rx.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import time
@@ -48,8 +50,8 @@ from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.icmp.icmp__error_emitter import try_emit_icmp_error
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
-from pytcp.socket.udp__metadata import UdpMetadata
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__metadata import UdpMetadata
+from pytcp.runtime.socket.udp__socket import UdpSocket
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
@@ -94,34 +96,41 @@ class UdpRxHandler:
             udp__remote_port=raw_sport,
         )
         for socket_id in candidate_md.socket_ids:
-            socket = cast(UdpSocket, stack.sockets.get(socket_id, None))
-            if socket is not None and socket._udp_no_check6_rx:
+            socket = cast(
+                UdpSocket | None, stack.sockets.get_for_ingress(socket_id, ifindex=self._if._ifindex, default=None)
+            )
+            if socket is not None and socket.udp_no_check6_rx:
                 UdpParser(packet_rx, accept_zero_cksum_ip6=True)
                 return True
         return False
 
     def __phrx_udp__multicast_source_allowed(self, socket: UdpSocket, packet_rx: PacketRx) -> bool:
         """
-        Apply the RFC 3376 §3.1 data-plane source-delivery filter (Linux
-        'ip_mc_sf_allow') for a candidate socket. An IPv4 multicast
-        datagram is admitted only if the socket's source filter for this
-        (interface, group) admits the datagram's source; a socket with no
-        per-(interface, group) source filter keeps the existing
-        any-source delivery. Non-multicast and IPv6 datagrams are never
-        gated here.
+        Apply the data-plane source-delivery filter (Linux
+        'ip_mc_sf_allow') for a candidate socket. An IPv4 (RFC 3376 §3.1)
+        or IPv6 (RFC 3810 §4.1) multicast datagram is admitted only if the
+        socket's source filter for this (interface, group) admits the
+        datagram's source; a socket with no per-(interface, group) source
+        filter keeps the existing any-source delivery. Non-multicast
+        datagrams are never gated here.
         """
-
-        if packet_rx.ip.ver is not IpVersion.IP4 or not packet_rx.ip4.dst.is_multicast:
-            return True
 
         # Delegate to the lock-guarded per-socket source-admit gate so
         # the RX read of the socket's source-filter map is serialized
         # against an application-thread setsockopt under no-GIL.
-        return socket._ip4_multicast_source_admits(
-            ifindex=self._if._ifindex,
-            group=packet_rx.ip4.dst,
-            source=packet_rx.ip4.src,
-        )
+        if packet_rx.ip.ver is IpVersion.IP4 and packet_rx.ip4.dst.is_multicast:
+            return socket.ip4_multicast_source_admits(
+                ifindex=self._if._ifindex,
+                group=packet_rx.ip4.dst,
+                source=packet_rx.ip4.src,
+            )
+        if packet_rx.ip.ver is IpVersion.IP6 and packet_rx.ip6.dst.is_multicast:
+            return socket.ip6_multicast_source_admits(
+                ifindex=self._if._ifindex,
+                group=packet_rx.ip6.dst,
+                source=packet_rx.ip6.src,
+            )
+        return True
 
     def _phrx_udp(self, packet_rx: PacketRx, /) -> None:
         """
@@ -187,29 +196,33 @@ class UdpRxHandler:
         )
 
         for socket_id in packet_rx_md.socket_ids:
-            if socket := cast(UdpSocket, stack.sockets.get(socket_id, None)):
-                # RFC 3376 §3.1 / Linux 'ip_mc_sf_allow' data-plane
-                # source filter: an IPv4 multicast datagram is delivered
-                # to a socket only if the socket's source filter for this
-                # (interface, group) admits the source. A socket with no
-                # source filter (no source-API join) keeps the existing
-                # any-source delivery; a filtered-out source falls through
-                # to the next candidate socket.
-                if not self.__phrx_udp__multicast_source_allowed(socket, packet_rx):
-                    self._if._packet_stats_rx.udp__multicast_source_filtered__drop += 1
-                    __debug__ and log(
-                        "udp",
-                        f"{packet_rx_md.tracker} - <INFO>Source {packet_rx.ip.src} filtered "
-                        f"for socket [{socket}] on group {packet_rx.ip.dst}</>",
-                    )
-                    continue
-                self._if._packet_stats_rx.udp__socket_match += 1
+            socket = cast(
+                UdpSocket | None, stack.sockets.get_for_ingress(socket_id, ifindex=self._if._ifindex, default=None)
+            )
+            if socket is None:
+                continue
+            # RFC 3376 §3.1 / Linux 'ip_mc_sf_allow' data-plane
+            # source filter: an IPv4 multicast datagram is delivered
+            # to a socket only if the socket's source filter for this
+            # (interface, group) admits the source. A socket with no
+            # source filter (no source-API join) keeps the existing
+            # any-source delivery; a filtered-out source falls through
+            # to the next candidate socket.
+            if not self.__phrx_udp__multicast_source_allowed(socket, packet_rx):
+                self._if._packet_stats_rx.udp__multicast_source_filtered__drop += 1
                 __debug__ and log(
                     "udp",
-                    f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+                    f"{packet_rx_md.tracker} - <INFO>Source {packet_rx.ip.src} filtered "
+                    f"for socket [{socket}] on group {packet_rx.ip.dst}</>",
                 )
-                socket.process_udp_packet(packet_rx_md)
-                return
+                continue
+            self._if._packet_stats_rx.udp__socket_match += 1
+            __debug__ and log(
+                "udp",
+                f"{packet_rx_md.tracker} - <INFO>Found matching listening " f"socket [{socket}]</>",
+            )
+            socket.process_udp_packet(packet_rx_md)
+            return
 
         # Silently drop packet if it's source address is unspecified.
         if packet_rx.ip.src.is_unspecified:

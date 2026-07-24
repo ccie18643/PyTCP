@@ -24,12 +24,13 @@
 
 """
 This module contains the shared capture harness: configuration,
-process lifecycle, readiness waits, tshark capture/decode, and the
+process lifecycle, readiness waits, daemon-native capture/decode (the
+stack's own 'pytcp tcpdump' engine — no external tshark), and the
 host-side IPv6 peer helper used by every scenario command.
 
 tools/capture/lib.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import os
@@ -49,15 +50,20 @@ import click
 _ROOT = Path(__file__).resolve().parents[2]
 
 # Filtered out of the stack-log highlight view: per-packet ring
-# tracing and the raw Ethernet line that every frame emits.
-_LOG_NOISE = re.compile(r"RX-RING|TX-RING|^ *[0-9.]+ \| ETHER")
+# tracing, the raw Ethernet line every frame emits, and the internal
+# capture socket's own per-frame recv logging (the 'pytcp tcpdump'
+# drain reads every frame off a PACKET/RAW socket).
+_LOG_NOISE = re.compile(r"RX-RING|TX-RING|^ *[0-9.]+ \| ETHER|PACKET/RAW")
 _ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
-# The service-scenario stack-log highlight pattern (TCP/UDP echo).
+# The service-scenario highlight pattern: the daemon-backed echo
+# server's startup banner plus the daemon stack's TCP/UDP session
+# milestones (the async servers log only a banner; the per-connection
+# detail is in the daemon's own stack log).
 SERVICE_LOG_RE = (
-    r"Starting the service|Socket created, bound|bind\(\) call failed|"
-    r"listening mode|Inbound connection|Received [0-9]+ bytes|"
-    r"Sent [0-9]+ bytes|DROPPED__|Failed to send|Unable to sent"
+    r"async (TCP|UDP) echo server|Socket created, bound|"
+    r"listening mode|Inbound connection|ESTABLISHED|CLOSE_WAIT|LAST_ACK|TIME_WAIT|"
+    r"Received [0-9]+ bytes|Sent [0-9]+ bytes|DROPPED__"
 )
 
 
@@ -119,17 +125,20 @@ def common_options(func: Callable[..., Any]) -> Callable[..., Any]:
 
     options = [
         click.option("--iface", envvar="IFACE", default="tap7", show_default=True),
-        click.option("--ip4", envvar="IP4", default="192.168.1.77/24", show_default=True),
-        click.option("--gw4", envvar="GW4", default="192.168.1.1", show_default=True),
+        # 192.168.177.0/24 is deliberately uncommon: a capture harness on
+        # the ubiquitous 192.168.1.0/24 would collide with the operator's
+        # real LAN, so the host would route the ping out its real NIC.
+        click.option("--ip4", envvar="IP4", default="192.168.177.77/24", show_default=True),
+        click.option("--gw4", envvar="GW4", default="192.168.177.1", show_default=True),
         click.option("--ip6", envvar="IP6", default="fd00:1::77/64", show_default=True),
         click.option("--gw6", envvar="GW6", default="", show_default=True),
         click.option("--port", envvar="PORT", type=int, default=7, show_default=True),
-        click.option("--peer", envvar="PEER", default="", help="Host-side IPv4 (icmp); auto-detected if empty."),
+        click.option("--peer", envvar="PEER", default="192.168.177.1", help="Host-side IPv4 (icmp)."),
         click.option("--peer6", envvar="PEER6", default="fd00:1::1", show_default=True),
         click.option("--claim-timeout", envvar="CLAIM_TIMEOUT", type=int, default=60, show_default=True),
         click.option("--bind-timeout", envvar="BIND_TIMEOUT", type=int, default=90, show_default=True),
-        click.option("--raw", is_flag=True, default=False, help="Dump the full unfiltered tshark summary."),
-        click.option("--keep", is_flag=True, default=False, help="Keep the pcap and print its path."),
+        click.option("--raw", is_flag=True, default=False, help="Print every decoded capture line, unfiltered."),
+        click.option("--keep", is_flag=True, default=False, help="Keep the decoded capture file and print its path."),
     ]
     # Note: the tc netem impairment (--loss/--delay-ms/...) and the
     # e2e expectation assertions (--expect-*) are run-wide concerns
@@ -177,9 +186,9 @@ def make_config(**kwargs: Any) -> Config:
 
 class Harness:
     """
-    The capture harness: owns the example + tshark subprocesses,
-    the temp workspace, and the host-side IPv6 peer address, and
-    tears all of them down on context exit.
+    The capture harness: owns the daemon + optional service
+    subprocesses, the temp workspace, and the host-side IPv6 peer
+    address, and tears all of them down on context exit.
     """
 
     def __init__(self, config: Config, /) -> None:
@@ -189,11 +198,18 @@ class Harness:
 
         self._cfg = config
         self._tmp = Path(tempfile.mkdtemp(prefix="pytcp-cap-"))
-        self._pcap = self._tmp / "cap.pcap"
+        # The daemon captures its own traffic — both directions, from boot,
+        # including stack-internal loopback — to a libpcap file via its
+        # '--capture-pcap' option; 'wire()' renders it with tshark's rich
+        # dissectors (the same output 'pytcp tcpdump' produces).
+        self._capfile = self._tmp / "capture.pcap"
+        self._sock = self._tmp / "daemon.sock"
         self._log = self._tmp / "stack.log"
+        self._svc_log = self._tmp / "service.log"
         self._out = self._tmp / "client.out"
-        self._svc: subprocess.Popen[bytes] | None = None
-        self._cap: subprocess.Popen[bytes] | None = None
+        # Every child process (daemon + optional service), killed in order
+        # on context exit.
+        self._procs: list[subprocess.Popen[bytes]] = []
         self._host_if: str | None = None
         self._host_v6_added = False
         self._netem_if: str | None = None
@@ -209,13 +225,18 @@ class Harness:
         """
 
         if os.geteuid() != 0:
-            raise CaptureError("must run as root (packet capture + TAP need it)")
+            raise CaptureError("must run as root (TAP access needs it)")
         if shutil.which("tshark") is None:
-            raise CaptureError("tshark not installed")
+            raise CaptureError("tshark not installed (the wire captures are rendered with it)")
         if not (_ROOT / "venv" / "bin" / "python").exists():
             raise CaptureError("venv python not found (run: make venv)")
         if subprocess.run(["ip", "link", "show", self._cfg.iface], capture_output=True).returncode != 0:
             raise CaptureError(f"interface {self._cfg.iface} missing (run: make tap7)")
+        # A prior daemon whose graceful shutdown was slow may still hold
+        # the TAP (errno EBUSY); sweep any stale daemon so this run can
+        # open the interface cleanly.
+        subprocess.run(["pkill", "-9", "-f", r"pytcp\.daemon"], capture_output=True)
+        time.sleep(1)
         self._apply_netem()
         return self
 
@@ -227,9 +248,14 @@ class Harness:
         per-scenario wiring needed).
         """
 
-        self._kill(self._svc, signal.SIGINT, hard_after=1.0)
-        self._kill(self._cap, signal.SIGTERM, hard_after=1.0)
-        subprocess.run(["pkill", "-9", "-f", r"examples\."], capture_output=True)
+        # Kill service(s) before the daemon (a service is a client of the
+        # daemon). SIGKILL after a short grace: the daemon's graceful
+        # shutdown is slow, but the capture file is line-buffered and
+        # flushed per frame, so a hard kill loses no captured lines.
+        for proc in reversed(self._procs):
+            self._kill(proc, signal.SIGTERM, hard_after=2.0)
+        self._procs.clear()
+        subprocess.run(["pkill", "-9", "-f", r"pytcp\.daemon|examples\."], capture_output=True)
         if self._host_v6_added and self._host_if is not None:
             subprocess.run(
                 ["ip", "-6", "addr", "del", f"{self._cfg.peer6}/64", "dev", self._host_if],
@@ -240,10 +266,10 @@ class Harness:
                 ["tc", "qdisc", "del", "dev", self._netem_if, "root"],
                 capture_output=True,
             )
-        if self._cfg.keep:
-            keep = Path(tempfile.gettempdir()) / self._pcap.name
-            shutil.copy2(self._pcap, keep)
-            click.echo(f"\n[kept pcap: {keep}]")
+        if self._cfg.keep and self._capfile.exists():
+            keep = Path(tempfile.gettempdir()) / f"pytcp-{self._cfg.iface}-capture.txt"
+            shutil.copy2(self._capfile, keep)
+            click.echo(f"\n[kept capture: {keep}]")
         shutil.rmtree(self._tmp, ignore_errors=True)
         if exc_type is None:
             self.check_or_exit()
@@ -318,70 +344,115 @@ class Harness:
 
     # -- subprocess control ----------------------------------------
 
-    def start_capture(self, bpf: str, /) -> None:
+    def start_stack(self, *, ip4: str = "static", ip6: str = "off") -> None:
         """
-        Start tshark as the capture engine writing the pcap; it is
-        flushed and closed by a graceful SIGTERM on teardown.
+        Launch the PyTCP daemon on 'cfg.iface' capturing its own traffic to
+        a libpcap file ('--capture-pcap') from boot, so 'wire()' can render
+        it with tshark. 'ip4' / 'ip6' each select 'static' (assign
+        'cfg.ip4' / 'cfg.ip6'), 'auto' (autoconfigure via DHCPv4 / SLAAC),
+        or 'off' ('--no-ip4' / '--no-ip6'). The daemon's own stack log is
+        captured to the run log for readiness waits and highlights.
         """
 
-        self._cap = subprocess.Popen(
-            ["tshark", "-i", self._cfg.iface, "-f", bpf, "-w", str(self._pcap)],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        time.sleep(1)
-
-    def start_example(self, *module_args: str) -> None:
-        """
-        Spawn an example module (the stack or an echo service),
-        redirecting its combined output to the run's log file.
-        """
+        argv = [
+            str(_ROOT / "venv" / "bin" / "python"),
+            "-u",
+            "-m",
+            "pytcp.daemon",
+            "--ipc-socket",
+            str(self._sock),
+            "--interface",
+            self._cfg.iface,
+            "--capture",
+            str(self._capfile),
+            "--capture-pcap",
+        ]
+        if ip4 == "off":
+            argv += ["--no-ip4"]
+        elif ip4 == "static":
+            argv += ["--ip4-address", self._cfg.ip4]
+        if ip6 == "off":
+            argv += ["--no-ip6"]
+        elif ip6 == "static":
+            argv += ["--ip6-address", self._cfg.ip6]
 
         env = os.environ | {"PYTHONPATH": str(_ROOT)}
-        with self._log.open("wb") as log:
-            self._svc = subprocess.Popen(
-                [str(_ROOT / "venv" / "bin" / "python"), "-u", "-m", *module_args],
+        log = self._log.open("wb")
+        self._procs.append(subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT, env=env))
+
+    def start_service(self, module: str, *module_args: str) -> None:
+        """
+        Launch a daemon-backed example (a TCP / UDP echo server) against
+        the running daemon via 'PYTCP_DAEMON_SOCKET', redirecting its
+        output to the service log for readiness waits and highlights.
+        """
+
+        env = os.environ | {
+            "PYTHONPATH": str(_ROOT),
+            "PYTCP_DAEMON_SOCKET": str(self._sock),
+        }
+        log = self._svc_log.open("wb")
+        self._procs.append(
+            subprocess.Popen(
+                [str(_ROOT / "venv" / "bin" / "python"), "-u", "-m", module, *module_args],
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 env=env,
             )
+        )
 
-    def stop_example(self) -> None:
+    def stop_all(self) -> None:
         """
-        Stop the example, then the capture (SIGTERM so tshark
-        flushes and closes the savefile cleanly).
+        Stop every child process (services before the daemon), leaving the
+        line-buffered capture file complete on disk.
         """
 
-        self._kill(self._svc, signal.SIGINT, hard_after=2.0)
-        self._svc = None
-        self._kill(self._cap, signal.SIGTERM, hard_after=1.0)
-        self._cap = None
+        for proc in reversed(self._procs):
+            self._kill(proc, signal.SIGTERM, hard_after=2.0)
+        self._procs.clear()
 
     # -- readiness / output ----------------------------------------
 
+    def _all_log_text(self) -> str:
+        """
+        Return the combined text of the daemon (stack) log and the
+        service log — readiness lines may come from either.
+        """
+
+        text = ""
+        for path in (self._log, self._svc_log):
+            if path.exists():
+                text += path.read_text(errors="replace")
+        return text
+
     def wait_for(self, pattern: str, timeout: int, /) -> None:
         """
-        Block until a line matching 'pattern' appears in the stack
-        log, or fail after 'timeout' seconds.
+        Block until a line matching 'pattern' appears in the daemon or
+        service log, or fail after 'timeout' seconds.
         """
 
         rx = re.compile(pattern)
         for _ in range(timeout):
-            if self._log.exists() and rx.search(self._log.read_text(errors="replace")):
+            if rx.search(self._all_log_text()):
                 return
+            # Fast-fail if every child has already exited (e.g. the daemon
+            # could not open the TAP): the readiness line will never come.
+            if self._procs and all(proc.poll() is not None for proc in self._procs):
+                tail = "\n".join(self._all_log_text().splitlines()[-3:])
+                raise CaptureError(f"stack process exited before readiness. Last log lines:\n{tail}")
             time.sleep(1)
         raise CaptureError(f"timed out after {timeout}s waiting for: {pattern}")
 
     def log_highlights(self, pattern: str, max_lines: int = 18, /) -> None:
         """
-        Print the matching, de-noised, ANSI-stripped stack-log
+        Print the matching, de-noised, ANSI-stripped daemon / service log
         lines under a section header.
         """
 
         click.echo("=== stack log ===")
         rx = re.compile(pattern)
         shown = 0
-        for line in self._log.read_text(errors="replace").splitlines():
+        for line in self._all_log_text().splitlines():
             line = _ANSI.sub("", line)
             if rx.search(line) and not _LOG_NOISE.search(line):
                 click.echo(line)
@@ -391,7 +462,7 @@ class Harness:
         # Expectations evaluate against the FULL log, not just the
         # highlighted subset, so an --expect-log can assert on any
         # line the stack emitted.
-        self._captured["log"] = self._log.read_text(errors="replace")
+        self._captured["log"] = self._all_log_text()
 
     def print_client_output(self, header: str, /) -> None:
         """
@@ -404,21 +475,27 @@ class Harness:
             self._captured["client"] = text
             click.echo(text.rstrip("\n"))
 
-    def wire(self, *tshark_args: str) -> None:
+    def wire(self, display_filter: str | None = None, /) -> None:
         """
-        Decode the captured pcap with tshark and print it; '--raw'
-        forces the full unfiltered packet summary instead.
+        Render the daemon's own libpcap capture with tshark — its rich
+        dissectors decoding both ingress and the stack's own egress (and
+        stack-internal loopback), from boot. 'display_filter' is a tshark
+        display-filter expression (e.g. "icmp or arp") retaining only the
+        matching frames; '--raw' overrides it to print every frame.
+        Timestamps are relative to the first captured frame.
         """
 
         click.echo()
         click.echo(f"=== wire capture ({self._cfg.iface}) ===")
-        args = ["tshark", "-r", str(self._pcap)]
-        if not self._cfg.raw:
-            args += list(tshark_args)
+        args = ["tshark", "-r", str(self._capfile), "-n", "-t", "r"]
+        if display_filter is not None and not self._cfg.raw:
+            args += ["-Y", display_filter]
         out = subprocess.run(args, capture_output=True, text=True).stdout.strip()
         if not out:
+            # Fall back to the unfiltered summary so a mismatched filter
+            # never silently yields an empty capture block.
             out = subprocess.run(
-                ["tshark", "-r", str(self._pcap)],
+                ["tshark", "-r", str(self._capfile), "-n", "-t", "r"],
                 capture_output=True,
                 text=True,
             ).stdout.strip()

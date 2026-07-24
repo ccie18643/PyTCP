@@ -12,7 +12,7 @@ This document records, paragraph by paragraph, how the
 current PyTCP codebase relates to each normative
 statement in RFC 7413. The audit was performed by
 reading the RFC text fresh and inspecting the codebase
-under `packages/pytcp/pytcp/protocols/tcp/`, `packages/pytcp/pytcp/socket/`,
+under `packages/pytcp/pytcp/protocols/tcp/`, `packages/pytcp/pytcp/runtime/socket/`,
 `packages/pytcp/pytcp/stack/`, and `packages/net_proto/net_proto/protocols/tcp/options/`
 directly; no prior memory or rule-file content was
 reused. Sections that contain no normative content
@@ -222,7 +222,7 @@ result in `_fastopen_cookie_to_emit`.
 > bytes."
 
 **Adherence:** met. The client connect() at
-`packages/pytcp/pytcp/socket/tcp__socket.py:464-470` accepts a
+`packages/pytcp/pytcp/runtime/socket/tcp__socket.py:667` accepts a
 `data` argument; when `data` is non-empty AND a
 cookie is cached, the SYN carries both the cookie
 and the data. The pre-load goes into
@@ -268,10 +268,17 @@ SYN-piggybacked data.
 
 ### §4.1.2 Cookie generation and validation
 
-- **Unit:**
-  `packages/pytcp/pytcp/tests/unit/protocols/tcp/test__tcp__fastopen.py`
-  covers `generate_cookie` / `validate_cookie` with
-  parameterised IP addresses.
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__fastopen.py`
+  exercises `generate_cookie` / `validate_cookie`
+  end-to-end:
+  `test__fastopen__server_issues_cookie_on_tfo_request_syn`
+  (generation),
+  `test__fastopen__server_accepts_syn_data_with_valid_cookie`
+  and
+  `test__fastopen__server_discards_syn_data_when_cookie_invalid`
+  (validation). There is no dedicated cookie-helper
+  unit test.
 
 **Status:** locked in.
 
@@ -311,7 +318,7 @@ needed.
 - **Integration:** the
   `setsockopt(TCP_FASTOPEN, qlen)` flow is tested
   via the keepalive-style socket-API tests in
-  `packages/pytcp/pytcp/tests/unit/socket/test__socket__tcp__socket.py`.
+  `packages/pytcp/pytcp/tests/unit/runtime/socket/test__runtime__socket__tcp__socket.py`.
 
 **Status:** locked in.
 
@@ -361,7 +368,7 @@ needed.
 | Aspect                                          | Coverage                                       |
 |-------------------------------------------------|------------------------------------------------|
 | §4.1.1 Wire format                              | locked in (parser + assembler)                 |
-| §4.1.2 Cookie generation / validation           | locked in (HMAC unit tests)                    |
+| §4.1.2 Cookie generation / validation           | locked in (HMAC, integration)                  |
 | §4.1.3 Client cookie cache                      | locked in                                      |
 | §4.1.3 MSS caching (recommendation)             | n/a (non-normative "we recommend")             |
 | §4.1.3.1 Negative response caching              | locked in by construction                      |
@@ -395,26 +402,10 @@ PyTCP implements the core RFC 7413 TFO mechanism
 including bilateral negotiation, cookie generation
 and validation, server-side cookie issuance,
 client-side cookie caching, and the data-on-SYN
-fast path. Three substantive gaps:
-
-1. **§4.1.3.1 negative response caching (MUST)**:
-   not implemented. Repeated TFO failures to the
-   same server are not cached; the client retries
-   TFO indefinitely.
-
-2. **§4.2 PendingFastOpenRequests limit (MUST)**:
-   the application-supplied `qlen` is stored but
-   not actively enforced as a SYN-RCVD count.
-   PyTCP can be DoS'd via TFO-cookie-validation
-   resource exhaustion under sufficient attacker
-   load.
-
-3. **§4.4 SYN retransmit without TFO (SHOULD)**:
-   PyTCP does not strip TFO from retransmitted SYNs.
-
-All three gaps are localised fixes (~5-10 LOC each
-plus tests). The §4.2 limit gap is the most
-security-relevant; closing it would require
-incrementing/decrementing a counter on every SYN-
-RCVD entry/exit and rejecting new TFO attempts
-when the counter exceeds the configured `qlen`.
+fast path. The three MUST/SHOULD requirements most
+implementations overlook are all satisfied — §4.1.3.1
+negative-response caching (MUST), §4.2
+PendingFastOpenRequests limit (MUST), and §4.4
+SYN-retransmit-without-TFO (SHOULD) — as detailed in
+the corresponding sections above and reflected in the
+overall table. The audit identifies no gaps.

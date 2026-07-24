@@ -42,10 +42,12 @@ response algorithm.
 > RTTVAR_prev = RTTVAR."
 
 **Adherence:** partial. PyTCP's F-RTO snapshot at
-`packages/pytcp/pytcp/protocols/tcp/tcp__session.py:2619-2622`
-captures `_frto_pre_cwnd`, `_frto_pre_ssthresh`, and
-`_frto_pre_snd_max` — analogous to pipe_prev. It does
-NOT snapshot SRTT_prev / RTTVAR_prev.
+`packages/pytcp/pytcp/protocols/tcp/state/tcp__state__cc.py:158-173`
+(`save_frto_snapshot`, called from
+`session/tcp__session__retransmit.py:280`) captures
+`_cc.frto_pre_cwnd`, `_cc.frto_pre_ssthresh`, and
+`_cc.frto_pre_snd_max` — analogous to pipe_prev. It
+does NOT snapshot SRTT_prev / RTTVAR_prev.
 
 ### Step 7: SPUR_TO branching
 

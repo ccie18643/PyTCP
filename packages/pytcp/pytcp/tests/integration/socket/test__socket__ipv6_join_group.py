@@ -39,7 +39,7 @@ setsockopt path through to it.
 
 pytcp/tests/integration/socket/test__socket__ipv6_join_group.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import errno
@@ -47,13 +47,13 @@ import struct
 import sys
 
 from net_addr import Ip6Address
-from pytcp.socket import (
+from pytcp.runtime.socket import (
     IPPROTO_IPV6,
     IPV6_JOIN_GROUP,
     IPV6_LEAVE_GROUP,
     AddressFamily,
 )
-from pytcp.socket.udp__socket import UdpSocket
+from pytcp.runtime.socket.udp__socket import UdpSocket
 from pytcp.tests.lib.network_testcase import NetworkTestCase
 
 
@@ -265,6 +265,79 @@ class TestSocketIpv6JoinGroup(NetworkTestCase):
             len(emitted),
             1,
             msg="A join must emit at least one MLDv2 Report frame.",
+        )
+
+
+class TestSocketIpv6MembershipRefcount(NetworkTestCase):
+    """
+    IPv6 multicast membership is per-socket refcounted through the
+    'Membership6Api' — a group stays joined on the interface until the
+    last socket holding it leaves, and socket close releases the
+    membership.
+    """
+
+    def test__socket__ipv6_two_sockets_one_leaves_group_persists(self) -> None:
+        """
+        Ensure two sockets joining the same IPv6 group keep the
+        interface membership until BOTH leave — one socket's
+        IPV6_LEAVE_GROUP must not tear down a group another socket
+        still holds (per-socket refcounting via the membership API).
+
+        Reference: RFC 3810 §4.2 (interface state is the merge of per-socket state).
+        Reference: Linux ipv6_sock_mc_drop (per-socket refcount, not remove-for-all).
+        """
+
+        group = Ip6Address("ff15::1234")
+        sock_a = UdpSocket(family=AddressFamily.INET6)
+        sock_b = UdpSocket(family=AddressFamily.INET6)
+
+        sock_a.setsockopt(IPPROTO_IPV6, IPV6_JOIN_GROUP, _ipv6_mreq(group))
+        sock_b.setsockopt(IPPROTO_IPV6, IPV6_JOIN_GROUP, _ipv6_mreq(group))
+        self.assertIn(
+            group,
+            self._packet_handler._ip6_multicast,
+            msg="Both sockets joined; the group must be present on the interface.",
+        )
+
+        sock_a.setsockopt(IPPROTO_IPV6, IPV6_LEAVE_GROUP, _ipv6_mreq(group))
+        self.assertIn(
+            group,
+            self._packet_handler._ip6_multicast,
+            msg="One socket leaving must not drop a group another socket still holds.",
+        )
+
+        sock_b.setsockopt(IPPROTO_IPV6, IPV6_LEAVE_GROUP, _ipv6_mreq(group))
+        self.assertNotIn(
+            group,
+            self._packet_handler._ip6_multicast,
+            msg="The group must leave the interface once the last socket releases it.",
+        )
+
+    def test__socket__ipv6_close_releases_membership(self) -> None:
+        """
+        Ensure closing a socket releases every IPv6 multicast membership
+        it still holds, so a leaked joined socket cannot keep its group
+        joined on the interface forever (Linux 'ipv6_sock_mc_close').
+
+        Reference: RFC 3810 §6.1 (leave on the last contributor drop).
+        Reference: Linux ipv6_sock_mc_close (drop memberships on close).
+        """
+
+        group = Ip6Address("ff15::4321")
+        sock = UdpSocket(family=AddressFamily.INET6)
+        sock.setsockopt(IPPROTO_IPV6, IPV6_JOIN_GROUP, _ipv6_mreq(group))
+        self.assertIn(
+            group,
+            self._packet_handler._ip6_multicast,
+            msg="Fixture precondition: join must have succeeded.",
+        )
+
+        sock.close()
+
+        self.assertNotIn(
+            group,
+            self._packet_handler._ip6_multicast,
+            msg="Closing the last socket holding a group must release the interface membership.",
         )
 
 

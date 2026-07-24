@@ -28,10 +28,10 @@ assembler & parser argument asserts.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_advertisement__asserts.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
-from typing import Any
+from typing import Any, override
 from unittest import TestCase
 
 from net_addr import MacAddress
@@ -55,6 +55,7 @@ class TestIcmp6NdMessageRouterAdvertisementAsserts(TestCase):
     constructor assert tests.
     """
 
+    @override
     def setUp(self) -> None:
         """
         Create the default arguments for the ICMPv6 ND Router Advertisement

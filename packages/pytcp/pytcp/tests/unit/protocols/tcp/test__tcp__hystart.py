@@ -28,7 +28,7 @@ functions and constants in 'pytcp/protocols/tcp/tcp__hystart.py'.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__hystart.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from unittest import TestCase
@@ -549,3 +549,296 @@ class TestCssGrowthIncrement(TestCase):
                 f"expected {smss // 4}."
             ),
         )
+
+
+def _hystart_state(**overrides: object) -> HyStartState:
+    """Build a HyStartState with the given field overrides."""
+
+    state = HyStartState()
+    for name, value in overrides.items():
+        setattr(state, name, value)
+    return state
+
+
+class TestHyStartMutationGoldens(TestCase):
+    """
+    Branch-boundary, floor-division, and default-value goldens closing
+    the remaining HyStart++ mutation survivors. The infinity-sentinel
+    '== -1' equality mutations to 'is -1' are documented equivalents
+    (-1 is interned) and left in place; the '!=' / branch / arithmetic
+    mutations are killed here.
+    """
+
+    def test__hystart__infinity_sentinel_is_minus_one(self) -> None:
+        """
+        Ensure the RTT infinity sentinel is exactly -1.
+
+        Reference: RFC 9406 §4.2 (lastRoundMinRTT initialised to infinity).
+        """
+
+        self.assertEqual(
+            HYSTART__RTT_INFINITY,
+            -1,
+            msg="HYSTART__RTT_INFINITY must be -1.",
+        )
+
+    def test__hystart__state_defaults_and_slots(self) -> None:
+        """
+        Ensure a fresh HyStartState defaults windowEnd and
+        cssRoundsRemaining to 0 and is slotted (no __dict__).
+
+        Reference: RFC 9406 §4.2 (initial HyStart++ state).
+        """
+
+        state = HyStartState()
+        self.assertEqual(state.window_end_seq, 0, msg="window_end_seq must default to 0.")
+        self.assertEqual(state.css_rounds_remaining, 0, msg="css_rounds_remaining must default to 0.")
+        self.assertFalse(
+            hasattr(state, "__dict__"),
+            msg="HyStartState must be slotted (no __dict__).",
+        )
+
+    def test__hystart__rtt_thresh_floor_div_and_clamps(self) -> None:
+        """
+        Ensure RttThresh is lastRoundMinRTT // 8 (integer floor)
+        clamped to [4, 16] ms.
+
+        Reference: RFC 9406 §4.2 (RttThresh formula and clamps).
+        """
+
+        self.assertEqual(rtt_thresh_ms(100), 12, msg="100 // 8 = 12 (in band).")
+        self.assertEqual(rtt_thresh_ms(10), 4, msg="lower clamp to MIN_RTT_THRESH 4.")
+        self.assertEqual(rtt_thresh_ms(200), 16, msg="upper clamp to MAX_RTT_THRESH 16.")
+
+    def test__hystart__rtt_thresh_guard(self) -> None:
+        """
+        Ensure rtt_thresh_ms accepts its exact lower boundary of 0 and
+        rejects a negative input.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        self.assertEqual(rtt_thresh_ms(0), 4, msg="rtt_thresh_ms(0) accepted -> 4.")
+        with self.assertRaises(AssertionError):
+            rtt_thresh_ms(-1)
+
+    def test__hystart__exit_to_css_trigger(self) -> None:
+        """
+        Ensure the SS→CSS delay trigger fires only when the sample
+        floor is met and currentRoundMinRTT >= lastRoundMinRTT +
+        RttThresh, pinning the additive threshold (not bit-OR) and the
+        '>=' boundary.
+
+        Reference: RFC 9406 §4.2 (delay-increase trigger to CSS).
+        """
+
+        # last=100 -> RttThresh=12 -> trigger at current >= 112.
+        self.assertTrue(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=112,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="current=112 == last+thresh must trigger CSS exit.",
+        )
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=111,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="current=111 < last+thresh must NOT trigger (kills '>='→'>').",
+        )
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=110,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="current=110 between (last|thresh) and (last+thresh) must NOT trigger (kills '+'→'|').",
+        )
+
+    def test__hystart__exit_to_css_sample_floor_uses_lt(self) -> None:
+        """
+        Ensure the sample-count floor uses '<' (not 'is not'): a count
+        above N_RTT_SAMPLE still triggers, where an 'is not' edit would
+        early-return False.
+
+        Reference: RFC 9406 §4.2 (rttSampleCount >= N_RTT_SAMPLE gate).
+        """
+
+        self.assertTrue(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=9,
+                    current_round_min_rtt_ms=112,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="count=9 (> 8) must still trigger (kills '<'→'is not').",
+        )
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=7,
+                    current_round_min_rtt_ms=112,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="count=7 (< 8) must not trigger (pins the sample floor; kills 'return False'→'True').",
+        )
+
+    def test__hystart__exit_to_css_infinity_guards_return_false(self) -> None:
+        """
+        Ensure the SS→CSS trigger returns False (not True) when
+        currentRoundMinRTT or lastRoundMinRTT is still the infinity
+        sentinel, or when already in CSS.
+
+        Reference: RFC 9406 §4.2 (both RTTs must be valid).
+        """
+
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=-1,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="current == infinity must return False.",
+        )
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=112,
+                    last_round_min_rtt_ms=-1,
+                )
+            ),
+            msg="last == infinity must return False.",
+        )
+        self.assertFalse(
+            should_exit_slow_start_to_css(
+                _hystart_state(
+                    in_css=True,
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=112,
+                    last_round_min_rtt_ms=100,
+                )
+            ),
+            msg="already in CSS must return False.",
+        )
+
+    def test__hystart__resume_from_css_trigger(self) -> None:
+        """
+        Ensure the CSS→SS resume fires only when currentRoundMinRTT is
+        strictly below cssBaselineMinRtt, pinning the strict '<' and
+        the False-returning guards.
+
+        Reference: RFC 9406 §4.2 (spurious-CSS-exit resume).
+        """
+
+        self.assertTrue(
+            should_resume_slow_start_from_css(
+                _hystart_state(
+                    in_css=True,
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=50,
+                    css_baseline_min_rtt_ms=100,
+                )
+            ),
+            msg="current=50 < baseline=100 must resume slow start.",
+        )
+        self.assertFalse(
+            should_resume_slow_start_from_css(
+                _hystart_state(
+                    in_css=True,
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=100,
+                    css_baseline_min_rtt_ms=100,
+                )
+            ),
+            msg="current=100 == baseline must NOT resume (kills '<'→'<=').",
+        )
+        self.assertFalse(
+            should_resume_slow_start_from_css(
+                _hystart_state(
+                    in_css=False,
+                    rtt_sample_count=8,
+                    current_round_min_rtt_ms=50,
+                    css_baseline_min_rtt_ms=100,
+                )
+            ),
+            msg="not in CSS must return False.",
+        )
+
+    def test__hystart__css_growth_floor_div_and_guards(self) -> None:
+        """
+        Ensure the CSS growth increment is min(bytes_acked, smss) // 4
+        (integer floor) and the argument guards hold at their
+        boundaries.
+
+        Reference: RFC 9406 §4.2 (CSS cwnd += min(N, L*SMSS) / CSS_GROWTH_DIVISOR).
+        """
+
+        self.assertEqual(
+            css_growth_increment(101, 1460),
+            25,
+            msg="101 // 4 = 25 (odd input pins the floor division).",
+        )
+        css_growth_increment(0, 1)
+        with self.assertRaises(AssertionError):
+            css_growth_increment(-1, 1460)
+        with self.assertRaises(AssertionError):
+            css_growth_increment(100, 0)
+
+    def test__hystart__rotate_round_css_decrement_logic(self) -> None:
+        """
+        Ensure round rotation decrements cssRoundsRemaining only while
+        in CSS and the counter is strictly positive, pinning the 'and'
+        (not 'or') and the '> 0' guard.
+
+        Reference: RFC 9406 §4.2 (CSS round counting at round boundary).
+        """
+
+        in_css = _hystart_state(in_css=True, css_rounds_remaining=3, current_round_min_rtt_ms=80)
+        rotate_round(in_css, 5000)
+        self.assertEqual(in_css.css_rounds_remaining, 2, msg="in CSS with rounds>0 must decrement to 2.")
+        self.assertEqual(in_css.last_round_min_rtt_ms, 80, msg="lastRoundMinRTT must take currentRoundMinRTT.")
+        self.assertEqual(in_css.current_round_min_rtt_ms, -1, msg="currentRoundMinRTT must reset to infinity.")
+
+        not_css = _hystart_state(in_css=False, css_rounds_remaining=3)
+        rotate_round(not_css, 9000)
+        self.assertEqual(
+            not_css.css_rounds_remaining,
+            3,
+            msg="not in CSS must NOT decrement (kills 'and'→'or').",
+        )
+
+        css_zero = _hystart_state(in_css=True, css_rounds_remaining=0)
+        rotate_round(css_zero, 1)
+        self.assertEqual(
+            css_zero.css_rounds_remaining,
+            0,
+            msg="rounds==0 must NOT decrement below 0 (kills '> 0'→'>= 0').",
+        )
+
+    def test__hystart__guards_reject_negative(self) -> None:
+        """
+        Ensure the css_growth_increment smss guard and the
+        fold_rtt_sample rtt guard reject negatives (kills '> 0'→'!= 0'
+        and '>= 0'→'!= 0').
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        with self.assertRaises(AssertionError):
+            css_growth_increment(100, -1)
+        with self.assertRaises(AssertionError):
+            fold_rtt_sample(HyStartState(), -1)

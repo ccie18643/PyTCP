@@ -33,7 +33,7 @@ consumer in modern networks).
 
 net_proto/protocols/llc/llc__header.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 import struct
@@ -41,7 +41,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.int_checks import is_uint8
 from net_proto.lib.proto_struct import ProtoStruct
 from net_proto.protocols.llc.llc__enums import LlcControl, LlcSap

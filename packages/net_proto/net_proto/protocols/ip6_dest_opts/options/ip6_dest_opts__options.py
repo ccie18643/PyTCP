@@ -27,13 +27,13 @@ This module contains the IPv6 Destination Options packet options class.
 
 net_proto/protocols/ip6_dest_opts/options/ip6_dest_opts__options.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from abc import ABC
 from typing import Self, override
 
-from net_proto.lib.buffer import Buffer
+from net_addr import Buffer
 from net_proto.lib.proto_option import ProtoOptions
 from net_proto.protocols.ip6_dest_opts.ip6_dest_opts__errors import (
     Ip6DestOptsIntegrityError,

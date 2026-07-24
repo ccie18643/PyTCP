@@ -27,7 +27,7 @@ This module contains the DHCPv6 protocol enum classes.
 
 net_proto/protocols/dhcp6/dhcp6__enums.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from typing import override
@@ -87,8 +87,10 @@ class Dhcp6MessageType(ProtoEnumByte):
                 name = "Relay-Forward"
             case Dhcp6MessageType.RELAY_REPL:
                 name = "Relay-Reply"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name
 
 
 class Dhcp6StatusCode(ProtoEnumWord):
@@ -125,5 +127,7 @@ class Dhcp6StatusCode(ProtoEnumWord):
                 name = "UseMulticast"
             case Dhcp6StatusCode.NO_PREFIX_AVAIL:
                 name = "NoPrefixAvail"
+            case _:
+                name = f"{self.value}"
 
-        return f"{self.value}" if self.is_unknown else name
+        return name

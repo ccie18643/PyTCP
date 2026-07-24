@@ -61,16 +61,16 @@ Reference RFCs:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__handshake__passive.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
 from net_addr import Ip4Address
 from pytcp import stack
 from pytcp.protocols.tcp.session import TcpSession
 from pytcp.protocols.tcp.tcp__enums import FsmState, SysCall
-from pytcp.socket import AddressFamily, SocketType
-from pytcp.socket.socket_id import SocketId
-from pytcp.socket.tcp__socket import TcpSocket
+from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket.socket_id import SocketId
+from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.tests.lib.network_testcase import (
     HOST_A__IP4_ADDRESS,
     STACK__IP4_HOST,
@@ -144,7 +144,7 @@ class TestTcpPassiveOpen__Handshake(TcpTestCase):
         # Drive LISTEN syscall: state CLOSED -> LISTEN.
         session.tcp_fsm(syscall=SysCall.LISTEN)
 
-        return sock, session
+        return sock, session  # pyright: ignore[reportReturnType]  # factory __new__ divergence; mypy-clean
 
     def _child_socket_id(self) -> SocketId:
         """

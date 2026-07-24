@@ -28,16 +28,41 @@ Phase-1 boot default-route dual-write helper.
 
 pytcp/tests/unit/stack/test__stack__route.py
 
-ver 3.0.7
+ver 3.0.8
 """
 
+import inspect
+from types import SimpleNamespace
 from typing import override
 from unittest import TestCase
+from unittest.mock import patch
 
-from net_addr import Ip4Address, Ip4Network, Ip6Address, Ip6Network
-from pytcp.runtime.fib import Route, RouteProtocol, RouteTable
-from pytcp.socket import AddressFamily
+from net_addr import Ip4Address, Ip4IfAddr, Ip4Network, Ip6Address, Ip6IfAddr, Ip6Network
+from pytcp import stack
+from pytcp.runtime.fib import Route, RouteProtocol, RouteScope, RouteTable
+from pytcp.runtime.socket import AddressFamily
 from pytcp.stack.route import RouteApi, install_boot_default_routes
+
+# Silence the STACK log channel for the whole module: the Route API logs
+# every default-route install on the 'stack' channel, which otherwise
+# leaks into the test-runner output (unit_testing.md §10a.4).
+_ORIGINAL_LOG_CHANNEL: set[str] = stack.LOG__CHANNEL
+
+
+def setUpModule() -> None:
+    """
+    Silence stack log output for the duration of this module's tests.
+    """
+
+    stack.LOG__CHANNEL = set()
+
+
+def tearDownModule() -> None:
+    """
+    Restore the production log-channel configuration.
+    """
+
+    stack.LOG__CHANNEL = _ORIGINAL_LOG_CHANNEL
 
 
 class TestRouteApiRead(TestCase):
@@ -48,12 +73,15 @@ class TestRouteApiRead(TestCase):
     @override
     def setUp(self) -> None:
         """
-        Build a RouteApi over fresh empty IPv4 / IPv6 FIBs.
+        Build a RouteApi over fresh empty IPv4 / IPv6 FIBs, with no
+        interfaces registered so 'list_routes' reflects only the FIB
+        (no synthesized connected routes).
         """
 
         self._ip4_fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
         self._ip6_fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
         self._route_api = RouteApi(ip4_fib=self._ip4_fib, ip6_fib=self._ip6_fib)
+        self.enterContext(patch("pytcp.stack.interfaces", {}, create=True))
 
     def test__stack__route__list_reflects_fib_contents(self) -> None:
         """
@@ -257,12 +285,16 @@ class TestRouteApiMutation(TestCase):
     @override
     def setUp(self) -> None:
         """
-        Build a RouteApi over fresh empty IPv4 / IPv6 FIBs.
+        Build a RouteApi over fresh empty IPv4 / IPv6 FIBs, with no
+        interfaces registered so 'list_routes' reflects only the FIB
+        (no synthesized connected routes leaking in from a sibling
+        integration test).
         """
 
         self._ip4_fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
         self._ip6_fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
         self._route_api = RouteApi(ip4_fib=self._ip4_fib, ip6_fib=self._ip6_fib)
+        self.enterContext(patch("pytcp.stack.interfaces", {}, create=True))
 
     def test__stack__route__add_route_installs_into_fib(self) -> None:
         """
@@ -403,6 +435,55 @@ class TestRouteApiMutation(TestCase):
             msg="replace_default must leave exactly the new default route.",
         )
 
+    def test__stack__route__replace_default_records_oif(self) -> None:
+        """
+        Ensure 'replace_default' stamps the supplied egress interface
+        index onto the installed default route, so 'ip route'-style
+        introspection can render the default's 'dev'.
+
+        Reference: RFC 1122 §3.3.1 (default route / next-hop selection).
+        """
+
+        self._route_api.replace_default(
+            gateway=Ip4Address("10.0.1.1"),
+            protocol=RouteProtocol.DHCP,
+            oif=2,
+        )
+
+        self.assertEqual(
+            self._route_api.list_routes(family=AddressFamily.INET4),
+            (
+                Route(
+                    destination=Ip4Network("0.0.0.0/0"),
+                    gateway=Ip4Address("10.0.1.1"),
+                    protocol=RouteProtocol.DHCP,
+                    oif=2,
+                ),
+            ),
+            msg="replace_default must stamp the egress ifindex onto the default route.",
+        )
+
+    def test__stack__route__replace_default_oif_defaults_to_none(self) -> None:
+        """
+        Ensure 'replace_default' leaves the default route's egress
+        interface unset when no 'oif' is supplied, preserving the
+        gateway-only default-route shape.
+
+        Reference: RFC 1122 §3.3.1 (default route / next-hop selection).
+        """
+
+        self._route_api.replace_default(
+            gateway=Ip4Address("10.0.1.1"),
+            protocol=RouteProtocol.DHCP,
+        )
+
+        (default,) = self._route_api.list_routes(family=AddressFamily.INET4)
+
+        self.assertIsNone(
+            default.oif,
+            msg="replace_default must leave oif unset when none is supplied.",
+        )
+
     def test__stack__route__remove_default_clears_default_route(self) -> None:
         """
         Ensure 'remove_default' / 'remove_default' delete
@@ -514,3 +595,100 @@ class TestRouteControlTypesPublicSurface(TestCase):
             RuntimeRouteScope,
             msg="pytcp.stack.RouteScope must be the runtime RouteScope enum.",
         )
+
+
+class TestRouteApiConnectedRoutes(TestCase):
+    """
+    The 'list_routes' connected-route synthesis tests.
+    """
+
+    @override
+    def setUp(self) -> None:
+        """
+        Build a RouteApi over empty FIBs and register one interface (ifindex
+        1) carrying an IPv4 and an IPv6 address, so 'list_routes' can
+        synthesize the on-link connected routes from the address list.
+        """
+
+        self._ip4_fib: RouteTable[Ip4Address, Ip4Network] = RouteTable()
+        self._ip6_fib: RouteTable[Ip6Address, Ip6Network] = RouteTable()
+        self._route_api = RouteApi(ip4_fib=self._ip4_fib, ip6_fib=self._ip6_fib)
+        handler = SimpleNamespace(
+            ip4_ifaddr=(Ip4IfAddr("192.168.1.145/24"),),
+            ip6_ifaddr=(Ip6IfAddr("2603:808c:2800:4301::5/64"),),
+        )
+        self.enterContext(patch("pytcp.stack.interfaces", {1: handler}, create=True))
+
+    def test__stack__route__synthesizes_connected_ipv4_route(self) -> None:
+        """
+        Ensure 'list_routes' synthesizes the on-link IPv4 connected route
+        from an interface address — the Linux 'proto kernel scope link'
+        route the kernel auto-installs per assigned address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        connected = [
+            route
+            for route in self._route_api.list_routes(family=AddressFamily.INET4)
+            if str(route.destination) == "192.168.1.0/24"
+        ]
+
+        self.assertEqual(len(connected), 1, msg="One connected route must be synthesized per IPv4 address.")
+        self.assertEqual(
+            (str(connected[0].prefsrc), connected[0].oif, connected[0].scope, connected[0].protocol),
+            ("192.168.1.145", 1, RouteScope.LINK, RouteProtocol.KERNEL),
+            msg="The connected route must carry the address as src, the ifindex as oif, link scope, kernel proto.",
+        )
+
+    def test__stack__route__synthesizes_connected_ipv6_route(self) -> None:
+        """
+        Ensure 'list_routes' synthesizes the on-link IPv6 connected route
+        from an interface address.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        connected = [
+            route
+            for route in self._route_api.list_routes(family=AddressFamily.INET6)
+            if str(route.destination) == "2603:808c:2800:4301::/64"
+        ]
+
+        self.assertEqual(len(connected), 1, msg="One connected route must be synthesized per IPv6 address.")
+        self.assertEqual(
+            connected[0].oif,
+            1,
+            msg="The IPv6 connected route must egress the address's interface.",
+        )
+
+
+class TestRouteApi__KeywordOnlySignatures(TestCase):
+    """
+    Pin the keyword-only parameters on every RouteApi method so the
+    '*'→'/' separator mutation is caught.
+    """
+
+    def test__route__api_methods_are_keyword_only(self) -> None:
+        """
+        Ensure each RouteApi mutation/query method keeps its
+        parameters keyword-only.
+
+        Reference: PyTCP test infrastructure (no RFC clause).
+        """
+
+        expected = {
+            "add_route": {"route"},
+            "list_routes": {"family"},
+            "remove_default": {"family"},
+            "remove_route": {"destination", "gateway"},
+            "replace_default": {"gateway", "protocol", "oif"},
+        }
+        for method, names in expected.items():
+            params = inspect.signature(getattr(RouteApi, method)).parameters
+            kw_only = {name for name, param in params.items() if param.kind is inspect.Parameter.KEYWORD_ONLY}
+            self.assertEqual(
+                kw_only,
+                names,
+                msg=f"RouteApi.{method} must keep keyword-only parameters {names}.",
+            )

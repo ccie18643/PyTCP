@@ -175,8 +175,8 @@ ACKs feed `update()` normally).
 ### §2.1 step 1 — RTO snapshot
 
 - **Integration:** F-RTO integration tests under
-  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__data_transfer__retransmit_timeout.py`
-  drive an RTO and verify that
+  `packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__frto.py`
+  (`TestTcpSession__Frto`) drive an RTO and verify that
   `_frto_pre_cwnd` / `_frto_pre_ssthresh` /
   `_frto_pre_snd_max` are snapshotted before the
   conventional halving runs.
