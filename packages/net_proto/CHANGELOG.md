@@ -6,7 +6,7 @@ released in lockstep with `PyTCP` and `PyTCP-net_addr` — they share a
 version. Releases before 3.0.8 are on the
 [GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
 
-## 3.0.8 — 2026-07-22
+## 3.0.8 — 2026-07-23
 
 ### Added
 

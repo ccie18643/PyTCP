@@ -6,7 +6,7 @@ lockstep with `PyTCP-net_proto` and `PyTCP-net_addr` — they share a
 version. Releases before 3.0.8 are on the
 [GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
 
-## 3.0.8 — 2026-07-22
+## 3.0.8 — 2026-07-23
 
 The daemon-backed userspace. 3.0.7 split the stack into a daemon that
 owns the interface and a thin client boundary; 3.0.8 builds the
