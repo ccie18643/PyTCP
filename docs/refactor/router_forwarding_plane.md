@@ -5,7 +5,7 @@
 | Track        | Phase 2 — router-grade parity (Project North Star)                    |
 | Target       | PyTCP 3.0.9 (unicast forwarding plane: M0–M4)                         |
 | Branch       | `PyTCP_3_0_9`                                                         |
-| Status       | **M0 + M1 landed** — unicast forwarding + transit ICMP errors shipped; M2–M4 pending |
+| Status       | **M0 + M1 + M2 landed** — unicast forwarding + transit ICMP errors + transit PMTU/fragmentation shipped; M3–M4 pending |
 | Follow-up    | M5 (multicast router / querier) + FIB extensions — optional, post-3.0.9 |
 | Precedent    | `routing_table_host_mode.md`, `packet_handler_rewrite_plan.md`, `sysctl_per_interface.md` |
 
@@ -317,6 +317,14 @@ forwarder's Destination-Unreachable taxonomy.
 4. **Fuller Dest-Unreachable codes**: host unreachable (code 1) when
    next-hop ARP/ND resolution hard-fails; communication administratively
    prohibited (code 13) reserved for a future forward-drop policy.
+   **Deferred (not in the M2 cut).** There is no "resolution
+   hard-failed after N probes" signal from the neighbor cache to the
+   forward path yet — a transit datagram whose next hop is unresolved
+   is queued pending ARP/ND (`ip{4,6}__forward_no_neighbor__drop`, the
+   RFC 1122 §2.3.2.2 soft queue) exactly as in M1. Emitting Host
+   Unreachable needs a cache-exhaustion callback that distinguishes a
+   transit datagram from a host-originated one; tracked as a Phase-2
+   refinement in the RFC 1812 adherence records.
 5. **Embedded-datagram length + ICMP error rate-limiting** applied to
    every transit error (RFC 4443 §2.4, RFC 1812 §4.3.2.8) — reuse the
    shipped rate limiters.
@@ -501,7 +509,7 @@ handling) — tracked in the adherence records as "n/a (M5)".
 |---|---|---|
 | **M0** ✅ | Plan + `RouterTestCase` 3-interface harness + stat fields | everything |
 | **M1** ✅ | `ip_forward` knob + forward branch + Time-Exceeded + no-route Unreachable | M2–M4 |
-| **M2** | Transit PMTU (Frag-Needed / Packet Too Big) + IPv4 forwarded fragmentation + Host-Unreachable | M4 |
+| **M2** ✅ | Transit PMTU (Frag-Needed / Packet Too Big) + IPv4 forwarded fragmentation (Host-Unreachable deferred) | M4 |
 | **M3** | ICMP Redirect generation (+ new ICMPv4 codec, host RX-accept) | M4 |
 | **M4** | RFC 1812 conformance sweep + adherence records flipped | release |
 | M5 | *(optional follow-up)* multicast querier + FIB ECMP/policy | — |

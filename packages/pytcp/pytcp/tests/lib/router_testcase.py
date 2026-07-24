@@ -58,6 +58,7 @@ from net_proto import (
     Icmp4MessageDestinationUnreachable,
     Icmp4MessageTimeExceeded,
     Icmp6MessageDestinationUnreachable,
+    Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
 )
 from net_proto.lib.enums import EtherType
@@ -375,11 +376,13 @@ class RouterTestCase(IcmpTestCase):
         icmp_type: int,
         icmp_code: int,
         to_ip: Ip4Address,
+        mtu: int | None = None,
     ) -> None:
         """
         Assert that the only frame emitted is an ICMPv4 error of
         '(icmp_type, icmp_code)' sent back to 'to_ip' out the ingress
-        interface, embedding the offending datagram.
+        interface, embedding the offending datagram. When 'mtu' is given
+        (Fragmentation Needed), assert the next-hop MTU field carries it.
         """
 
         frame = self._assert_single_egress(emitted, egress=ingress)
@@ -398,6 +401,118 @@ class RouterTestCase(IcmpTestCase):
             len(message.data),
             0,
             msg="ICMPv4 error must embed the offending datagram.",
+        )
+        if mtu is not None:
+            self.assertEqual(
+                probe.icmp_mtu,
+                mtu,
+                msg="ICMPv4 Fragmentation Needed must carry the egress MTU as the next-hop MTU.",
+            )
+
+    def _assert_icmp6_packet_too_big(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        ingress: AddedInterface,
+        mtu: int,
+        to_ip: Ip6Address,
+    ) -> None:
+        """
+        Assert that the only frame emitted is an ICMPv6 Packet Too Big
+        (Type 2) carrying 'mtu' as the next-hop MTU, sent back to 'to_ip'
+        out the ingress interface, embedding the offending datagram.
+        """
+
+        frame = self._assert_single_egress(emitted, egress=ingress)
+        probe = self._parse_tx_icmp6(frame)
+        self.assertEqual(probe.icmp_type, 2, msg="Unexpected ICMPv6 error type (expected Packet Too Big).")
+        message = probe.message
+        self.assertIsInstance(
+            message,
+            Icmp6MessagePacketTooBig,
+            msg="Forward ICMPv6 oversize error must be a Packet Too Big.",
+        )
+        assert isinstance(message, Icmp6MessagePacketTooBig)
+        self.assertEqual(probe.ip_dst, to_ip, msg="ICMPv6 Packet Too Big must be sent back to the datagram source.")
+        self.assertEqual(message.mtu, mtu, msg="ICMPv6 Packet Too Big must carry the egress MTU.")
+        self.assertGreater(len(message.data), 0, msg="ICMPv6 Packet Too Big must embed the offending datagram.")
+
+    def _assert_forwarded_fragments_ip4(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        egress: AddedInterface,
+        src_ip: Ip4Address,
+        dst_ip: Ip4Address,
+        ttl_out: int,
+        next_hop_mac: MacAddress,
+        payload: bytes,
+        mtu: int,
+    ) -> None:
+        """
+        Assert that the datagram was fragmented to 'mtu' and forwarded
+        out 'egress' toward 'next_hop_mac' as two or more fragments,
+        nothing on any other interface: every fragment fits the MTU,
+        preserves the IPv4 source / destination / Identification, carries
+        'ttl_out' (ttl_in - 1), sets MF=1 on all but the last, has
+        contiguous offsets, and — reassembled — reproduces the original
+        UDP datagram whose payload is 'payload' byte-for-byte.
+        """
+
+        for ifindex, frames in emitted.items():
+            if ifindex == egress.ifindex:
+                self.assertGreater(len(frames), 1, msg="Fragmented forward must emit two or more fragments.")
+            else:
+                self.assertEqual(frames, [], msg=f"No fragment must leave ifindex {ifindex}.")
+
+        frames = emitted[egress.ifindex]
+        reassembled = bytearray()
+        expected_offset = 0
+        fragment_id: int | None = None
+        for index, frame in enumerate(frames):
+            packet_rx = PacketRx(frame)
+            EthernetParser(packet_rx)
+            self.assertEqual(
+                packet_rx.ethernet.dst, next_hop_mac, msg="Fragment Ethernet dst must be the next-hop MAC."
+            )
+            self.assertIs(packet_rx.ethernet.type, EtherType.IP4, msg="Fragment Ethernet type must be IPv4.")
+            # Frame length minus the 14-byte Ethernet header is the IPv4
+            # datagram length, which must fit the egress MTU.
+            self.assertLessEqual(len(frame) - 14, mtu, msg="Every fragment must fit the egress MTU.")
+            Ip4Parser(packet_rx)
+            self.assertEqual(packet_rx.ip4.src, src_ip, msg="Fragment IPv4 source must be preserved.")
+            self.assertEqual(packet_rx.ip4.dst, dst_ip, msg="Fragment IPv4 destination must be preserved.")
+            self.assertEqual(packet_rx.ip4.ttl, ttl_out, msg=f"Fragment TTL must be {ttl_out}.")
+            self.assertEqual(packet_rx.ip4.offset, expected_offset, msg="Fragment offsets must be contiguous.")
+            is_last = index == len(frames) - 1
+            self.assertEqual(
+                packet_rx.ip4.flag_mf,
+                not is_last,
+                msg="Every fragment but the last must set MF=1; the last must clear it.",
+            )
+            if fragment_id is None:
+                fragment_id = packet_rx.ip4.id
+            self.assertEqual(
+                packet_rx.ip4.id,
+                fragment_id,
+                msg="All fragments must share the original datagram's Identification.",
+            )
+            reassembled += bytes(packet_rx.ip4.payload_bytes)
+            expected_offset += len(packet_rx.ip4.payload_bytes)
+
+        # The reassembled IPv4 payload is the original UDP datagram: an
+        # 8-byte UDP header followed by the byte-identical payload.
+        self.assertEqual(
+            len(reassembled),
+            8 + len(payload),
+            msg="Reassembled fragments must reproduce exactly one UDP datagram (8-byte header + payload).",
+        )
+        self.assertEqual(
+            bytes(reassembled[8:]),
+            payload,
+            msg="Reassembled UDP payload must be byte-identical to the original.",
         )
 
     def _assert_icmp6_error(
@@ -442,6 +557,7 @@ class RouterTestCase(IcmpTestCase):
         src_ip: Ip4Address,
         dst_ip: Ip4Address,
         ttl: int = 64,
+        df: bool = False,
         payload: bytes = b"router-forward-test",
     ) -> bytes:
         """
@@ -449,10 +565,11 @@ class RouterTestCase(IcmpTestCase):
         Ethernet destination is the ingress interface's own unicast MAC)
         from an on-link source, addressed to an IPv4 destination that is
         not one of the router's own addresses — i.e. a transit datagram.
+        'df' sets the Don't-Fragment flag (for the transit-PMTU tests).
         """
 
         udp = UdpAssembler(udp__sport=40000, udp__dport=40000, udp__payload=payload)
-        ip4 = Ip4Assembler(ip4__src=src_ip, ip4__dst=dst_ip, ip4__ttl=ttl, ip4__payload=udp)
+        ip4 = Ip4Assembler(ip4__src=src_ip, ip4__dst=dst_ip, ip4__ttl=ttl, ip4__flag_df=df, ip4__payload=udp)
         eth = EthernetAssembler(
             ethernet__src=src_mac,
             ethernet__dst=ingress.handler._mac_unicast,

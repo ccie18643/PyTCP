@@ -106,6 +106,14 @@ class Icmp4TxHandler:
                 # RFC 1812 §4.3.3.1 — no-route response emitted by the
                 # transit forward path.
                 self._if._packet_stats_tx.icmp4__destination_unreachable__network__send += 1
+            case (
+                Icmp4Type.DESTINATION_UNREACHABLE,
+                Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
+            ):
+                # RFC 1812 §4.3.3.3 / RFC 1191 — transit PMTU response
+                # emitted by the forward path when a DF=1 datagram
+                # exceeds the egress MTU.
+                self._if._packet_stats_tx.icmp4__destination_unreachable__frag_needed__send += 1
             case Icmp4Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp4__parameter_problem__send += 1
             case Icmp4Type.TIME_EXCEEDED, _:

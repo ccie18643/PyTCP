@@ -53,6 +53,7 @@ from net_proto import (
     Icmp6DestinationUnreachableCode,
     Icmp6Message,
     Icmp6MessageDestinationUnreachable,
+    Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
     Icmp6TimeExceededCode,
     PacketRx,
@@ -172,23 +173,27 @@ class Ip6ForwardHandler:
             self._emit_time_exceeded(packet_rx)
             return
 
-        # 7. Oversize transit traffic is dropped in M1 (routers never
-        #    fragment IPv6 — RFC 8200 §5; the transit Packet Too Big
-        #    response lands in M2). Checked against the ORIGINAL
+        # 7. Oversize transit traffic (M2). Routers never fragment IPv6
+        #    (RFC 8200 §5), so a datagram larger than the egress MTU is
+        #    discarded and the source is told to lower its path MTU via
+        #    an ICMPv6 Packet Too Big (Type 2) carrying the egress MTU
+        #    (RFC 4443 §3.2 / RFC 8201 §3). Checked against the ORIGINAL
         #    datagram length.
-        datagram = bytearray(ip6.packet_bytes)
-        if len(datagram) > egress.interface_mtu:
+        if len(ip6.packet_bytes) > egress.interface_mtu:
             self._if._packet_stats_rx.ip6__forward_too_big__drop += 1
             __debug__ and log(
                 "ip6",
-                f"{packet_rx.tracker} - <WARN>Forwarded datagram ({len(datagram)} B) "
-                f"exceeds egress MTU {egress.interface_mtu}, dropping (M2: Packet Too Big)</>",
+                f"{packet_rx.tracker} - <WARN>Forwarded datagram ({len(ip6.packet_bytes)} B) "
+                f"exceeds egress MTU {egress.interface_mtu}, dropping and sending "
+                "ICMPv6 Packet Too Big</>",
             )
+            self._emit_packet_too_big(packet_rx, next_hop_mtu=egress.interface_mtu)
             return
 
-        # 8. Rewrite the Hop-Limit in place (RFC 8200 §3). There is no
-        #    header checksum to recompute; the payload is preserved
-        #    byte-for-byte.
+        # 8. In-MTU datagram: rewrite the Hop-Limit in place (RFC 8200
+        #    §3). There is no header checksum to recompute; the payload
+        #    is preserved byte-for-byte.
+        datagram = bytearray(ip6.packet_bytes)
         datagram[IP6__FORWARD__HOP_OFFSET] -= 1
 
         self._forward_out_ip6(
@@ -245,6 +250,26 @@ class Ip6ForwardHandler:
             "ip6",
             f"{packet_rx.tracker} - <WARN>Next hop {next_hop} unresolved on "
             f"{egress.interface_name}; queued pending ND resolution</>",
+        )
+
+    def _emit_packet_too_big(self, packet_rx: PacketRx, /, *, next_hop_mtu: int) -> None:
+        """
+        Emit ICMPv6 Packet Too Big (Type 2) carrying the egress
+        interface MTU, back to the source of a forwarded datagram that
+        exceeds the egress MTU — the transit Path-MTU-Discovery response
+        (routers never fragment IPv6).
+
+        Reference: RFC 4443 §3.2 (Packet Too Big).
+        Reference: RFC 8201 §3 (next-hop MTU in the ICMP error).
+        Reference: RFC 8200 §5 (routers never fragment IPv6).
+        """
+
+        self._emit_forward_icmp_error(
+            packet_rx,
+            message_factory=lambda data: Icmp6MessagePacketTooBig(
+                mtu=next_hop_mtu,
+                data=data,
+            ),
         )
 
     def _emit_time_exceeded(self, packet_rx: PacketRx, /) -> None:

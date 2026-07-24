@@ -43,6 +43,17 @@ plus the M1 transit-forwarding plane:
   `Ip4ForwardHandler._emit_time_exceeded`; the ICMPv4 TX handler
   has a `TIME_EXCEEDED` dispatch arm (`icmp4__time_exceeded__send`).
   Tested in the same router integration file.
+- **§4.3.3.4 (Fragmentation Needed — transit PMTU)** — a router
+  MUST send Destination Unreachable / Fragmentation Needed (Code
+  4) with the next-hop MTU when it must fragment a DF=1 forwarded
+  datagram. Adherence: met (M2) via
+  `Ip4ForwardHandler._emit_frag_needed`, which carries the egress
+  interface MTU (RFC 1191 §3); the ICMPv4 TX handler has a
+  `DESTINATION_UNREACHABLE, FRAGMENTATION_NEEDED` dispatch arm
+  (`icmp4__destination_unreachable__frag_needed__send`). Tested in
+  the same router integration file. (The IPv6 parallel — ICMPv6
+  Packet Too Big on transit oversize — is audited under the icmp6
+  RFC 4443 record.)
 - **§4.3.2.8 (Rate-Limiting)** — token-bucket rate limit on
   originated ICMP error messages. Adherence: met (post-Phase α1.1).
   Implemented in `packages/pytcp/pytcp/protocols/icmp/icmp__error_emitter.py`
@@ -61,7 +72,7 @@ For the canonical host-side audit of the §3.2.2 rules, see
 [`../rfc1122__host_requirements_icmp/adherence.md`](../rfc1122__host_requirements_icmp/adherence.md).
 
 The full per-section RFC 1812 walkthrough is deferred — the
-remaining router-side ICMP work (Redirect emission, M3; transit
-Frag-Needed during PMTU, M2) and non-ICMP sections (routing
-protocols, source-route processing) land with later Phase-2
-milestones.
+remaining router-side ICMP work (Redirect emission, M3; Host
+Unreachable on next-hop hard-failure) and non-ICMP sections
+(routing protocols, source-route processing) land with later
+Phase-2 milestones.

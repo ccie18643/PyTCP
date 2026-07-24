@@ -273,15 +273,16 @@ class TestRouterIp6Forwarding(RouterTestCase):
             ip6__forward_no_neighbor__drop=1,
         )
 
-    def test__router__ip6__forward__oversize_dropped_pending_ptb(self) -> None:
+    def test__router__ip6__forward__oversize_packet_too_big(self) -> None:
         """
         Ensure an inbound IPv6 transit datagram larger than the egress
-        interface MTU is dropped in M1 (routers never fragment IPv6; the
-        transit Packet Too Big response lands in M2), with no frame
-        emitted.
+        MTU is not forwarded (routers never fragment IPv6) but instead
+        elicits an ICMPv6 Packet Too Big (Type 2) carrying the egress
+        MTU as the next-hop MTU, back to the source.
 
         Reference: RFC 8200 §5 (routers never fragment IPv6).
-        Reference: PyTCP test infrastructure (M1 placeholder drop).
+        Reference: RFC 4443 §3.2 (Packet Too Big).
+        Reference: RFC 8201 §3 (next-hop MTU in the ICMP error).
         """
 
         self._enable_forwarding()
@@ -298,7 +299,12 @@ class TestRouterIp6Forwarding(RouterTestCase):
             ),
         )
 
-        self._assert_no_forward(emitted)
+        self._assert_icmp6_packet_too_big(
+            emitted,
+            ingress=self.if1,
+            mtu=1500,
+            to_ip=HOST_A__IP6_ADDRESS,
+        )
         self._assert_packet_stats_rx(
             ethernet__pre_parse=1,
             ethernet__dst_unicast=1,

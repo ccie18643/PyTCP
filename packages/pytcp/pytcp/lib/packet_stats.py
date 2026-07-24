@@ -162,6 +162,7 @@ class PacketStatsRx(PacketStats):
     # 'ip4__dst_unknown__drop' counter (byte-for-byte host
     # behaviour), so there is no 'forward_disabled__drop' here.
     ip4__forward: int = 0
+    ip4__forward_fragmented: int = 0
     ip4__forward_no_route__drop: int = 0
     ip4__forward_ttl_exceeded__drop: int = 0
     ip4__forward_no_neighbor__drop: int = 0
@@ -421,6 +422,7 @@ class PacketStatsTx(PacketStats):
     icmp4__destination_unreachable__port__send: int = 0
     icmp4__destination_unreachable__protocol__send: int = 0
     icmp4__destination_unreachable__network__send: int = 0
+    icmp4__destination_unreachable__frag_needed__send: int = 0
     icmp4__parameter_problem__send: int = 0
     icmp4__time_exceeded__send: int = 0
     icmp4__unknown__drop: int = 0
@@ -430,6 +432,7 @@ class PacketStatsTx(PacketStats):
     icmp6__echo_request__send: int = 0
     icmp6__destination_unreachable__port__send: int = 0
     icmp6__destination_unreachable__no_route__send: int = 0
+    icmp6__packet_too_big__send: int = 0
     icmp6__parameter_problem__send: int = 0
     icmp6__time_exceeded__send: int = 0
     icmp6__nd__router_solicitation__send: int = 0

@@ -53,6 +53,9 @@ from net_proto import (
     Icmp4MessageDestinationUnreachable,
     Icmp4MessageTimeExceeded,
     Icmp4TimeExceededCode,
+    Ip4FragAssembler,
+    Ip4OptionNop,
+    Ip4Options,
     PacketRx,
     RawAssembler,
     inet_cksum,
@@ -61,6 +64,7 @@ from pytcp import stack
 from pytcp.lib.logger import log
 from pytcp.protocols.icmp.icmp__error_emitter import try_emit_icmp_error
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
+from pytcp.protocols.ip.ip_frag import iter_fragment_chunks
 from pytcp.stack import sysctl, sysctl_iface
 
 if TYPE_CHECKING:
@@ -170,23 +174,36 @@ class Ip4ForwardHandler:
             self._emit_time_exceeded(packet_rx)
             return
 
-        # 7. Oversize transit traffic is dropped in M1 (the transit
-        #    PMTU Fragmentation-Needed response and forwarded-packet
-        #    fragmentation land in M2). Checked against the ORIGINAL
-        #    datagram length; the TTL decrement does not change it.
-        datagram = bytearray(ip4.packet_bytes)
-        if len(datagram) > egress.interface_mtu:
-            self._if._packet_stats_rx.ip4__forward_too_big__drop += 1
-            __debug__ and log(
-                "ip4",
-                f"{packet_rx.tracker} - <WARN>Forwarded datagram ({len(datagram)} B) "
-                f"exceeds egress MTU {egress.interface_mtu}, dropping (M2: PMTU/frag)</>",
-            )
+        # 7. Oversize transit traffic (M2). A datagram larger than the
+        #    egress MTU cannot be forwarded whole. Checked against the
+        #    ORIGINAL datagram length; the TTL decrement does not change
+        #    it. RFC 1812 §4.3.3.3 / RFC 791 §3.2:
+        #    - DF=1  -> discard + ICMPv4 Destination Unreachable /
+        #              Fragmentation Needed (Code 4) carrying the egress
+        #              MTU (transit PMTU), so the source can lower its
+        #              path MTU (RFC 1191).
+        #    - DF=0  -> fragment to the egress MTU and forward each
+        #              fragment (routers fragment, unlike the host
+        #              origination path which fragments its own TX).
+        if len(ip4.packet_bytes) > egress.interface_mtu:
+            if ip4.flag_df:
+                self._if._packet_stats_rx.ip4__forward_too_big__drop += 1
+                __debug__ and log(
+                    "ip4",
+                    f"{packet_rx.tracker} - <WARN>Forwarded datagram "
+                    f"({len(ip4.packet_bytes)} B) exceeds egress MTU "
+                    f"{egress.interface_mtu} with DF=1, dropping and sending "
+                    "ICMPv4 Fragmentation Needed</>",
+                )
+                self._emit_frag_needed(packet_rx, next_hop_mtu=egress.interface_mtu)
+                return
+            self._forward_fragmented_ip4(egress=egress, next_hop=next_hop, packet_rx=packet_rx)
             return
 
-        # 8. Rewrite the header in place: TTL -= 1, recompute the
-        #    header checksum over the IHL-bounded header (RFC 791
-        #    §3.1). The payload is preserved byte-for-byte.
+        # 8. In-MTU datagram: rewrite the header in place — TTL -= 1,
+        #    recompute the header checksum over the IHL-bounded header
+        #    (RFC 791 §3.1). The payload is preserved byte-for-byte.
+        datagram = bytearray(ip4.packet_bytes)
         datagram[IP4__FORWARD__TTL_OFFSET] -= 1
         datagram[IP4__FORWARD__CKSUM_OFFSET] = datagram[IP4__FORWARD__CKSUM_OFFSET + 1] = 0
         struct.pack_into(
@@ -250,6 +267,99 @@ class Ip4ForwardHandler:
             "ip4",
             f"{packet_rx.tracker} - <WARN>Next hop {next_hop} unresolved on "
             f"{egress.interface_name}; queued pending ARP resolution</>",
+        )
+
+    def _forward_fragmented_ip4(
+        self,
+        *,
+        egress: PacketHandler,
+        next_hop: Ip4Address,
+        packet_rx: PacketRx,
+    ) -> None:
+        """
+        Fragment a forwarded IPv4 datagram to the egress interface MTU
+        and emit each fragment toward 'next_hop' (RFC 791 §3.2; the
+        router fragments a DF=0 datagram it cannot forward whole). Each
+        fragment inherits the original DSCP / ECN / Identification /
+        protocol and carries the TTL decremented by one; the first
+        fragment keeps the full options, later fragments only the
+        copy-flag=1 subset (RFC 791 §3.1 option-copy rule). Reuses the
+        origination-path 'iter_fragment_chunks' + 'Ip4FragAssembler'
+        machinery. On a next-hop ARP miss the whole datagram is dropped
+        (no per-fragment queueing) and counted as a no-neighbor drop.
+        """
+
+        arp_cache = egress.arp_cache
+        assert arp_cache is not None, "IPv4 forward egress must be an L2 interface with an ARP cache."
+
+        next_hop_mac = arp_cache.find_entry(ip4_address=next_hop)
+        if next_hop_mac is None:
+            self._if._packet_stats_rx.ip4__forward_no_neighbor__drop += 1
+            __debug__ and log(
+                "ip4",
+                f"{packet_rx.tracker} - <WARN>Next hop {next_hop} unresolved on "
+                f"{egress.interface_name}; dropping oversize forward (no fragment queue)</>",
+            )
+            return
+
+        ip4 = packet_rx.ip4
+        ttl_out = ip4.ttl - 1
+
+        first_fragment_options = ip4.options
+        copy_options_filtered = ip4.options.with_copy_flag(True)
+        copy_options_padding = (-len(copy_options_filtered)) & 0b11
+        non_first_fragment_options = Ip4Options(
+            *copy_options_filtered,
+            *(Ip4OptionNop() for _ in range(copy_options_padding)),
+        )
+
+        for offset, chunk, is_last in iter_fragment_chunks(
+            bytes(ip4.payload_bytes),
+            max_chunk_bytes=egress.interface_mtu - ip4.hlen,
+        ):
+            fragment_options = first_fragment_options if offset == 0 else non_first_fragment_options
+            ip4_frag_tx = Ip4FragAssembler(
+                ip4_frag__src=ip4.src,
+                ip4_frag__dst=ip4.dst,
+                ip4_frag__ttl=ttl_out,
+                ip4_frag__dscp=ip4.dscp,
+                ip4_frag__ecn=ip4.ecn,
+                ip4_frag__options=fragment_options,
+                ip4_frag__payload=chunk,
+                ip4_frag__offset=offset,
+                ip4_frag__flag_mf=not is_last,
+                # Preserve the ORIGINAL datagram's Identification so the
+                # far-end reassembles all fragments into one datagram.
+                ip4_frag__id=ip4.id,
+                ip4_frag__proto=ip4.proto,
+            )
+            egress._phtx_ethernet(ethernet__dst=next_hop_mac, ethernet__payload=ip4_frag_tx)
+
+        self._if._packet_stats_rx.ip4__forward_fragmented += 1
+        __debug__ and log(
+            "ip4",
+            f"{packet_rx.tracker} - Forwarded fragmented IPv4 datagram to next hop "
+            f"{next_hop} via {egress.interface_name}",
+        )
+
+    def _emit_frag_needed(self, packet_rx: PacketRx, /, *, next_hop_mtu: int) -> None:
+        """
+        Emit ICMPv4 Destination Unreachable / Fragmentation Needed (Type
+        3, Code 4) carrying the egress interface MTU, back to the source
+        of a DF=1 forwarded datagram that exceeds the egress MTU — the
+        transit Path-MTU-Discovery response.
+
+        Reference: RFC 1812 §4.3.3.3 (Fragmentation Needed on DF=1 oversize).
+        Reference: RFC 1191 §3 (next-hop MTU in the ICMP error).
+        """
+
+        self._emit_forward_icmp_error(
+            packet_rx,
+            message_factory=lambda data: Icmp4MessageDestinationUnreachable(
+                code=Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
+                mtu=next_hop_mtu,
+                data=data,
+            ),
         )
 
     def _emit_time_exceeded(self, packet_rx: PacketRx, /) -> None:

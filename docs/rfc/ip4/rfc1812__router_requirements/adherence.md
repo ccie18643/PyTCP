@@ -12,15 +12,16 @@
 This document records the PyTCP codebase's adherence to RFC 1812.
 RFC 1812 is the **router-grade companion** to RFC 1122 — it
 defines what an IPv4 router MUST do. As of PyTCP 3.0.9 (Phase-2
-milestone **M1**) the stack forwards IPv4 unicast transit
+milestones **M1 + M2**) the stack forwards IPv4 unicast transit
 traffic: the core forward-or-deliver decision, the TTL decrement
-with ICMPv4 Time Exceeded on expiry, and the no-route ICMPv4
-Destination Unreachable are **met**. The remaining forwarding
-clauses — transit PMTU / forwarded-packet fragmentation (M2),
-ICMP Redirect emission (M3), and IP-options processing on
-forward (M4) — stay **n/a (Phase 2)** per the project north-star
-(`CLAUDE.md` "Project North Star" → Phase 2: router-grade
-parity).
+with ICMPv4 Time Exceeded on expiry, the no-route ICMPv4
+Destination Unreachable (M1), the transit-PMTU ICMPv4
+Fragmentation Needed on a DF=1 oversize datagram, and
+forwarded-packet fragmentation of a DF=0 oversize datagram (M2)
+are all **met**. The remaining forwarding clauses — ICMP Redirect
+emission (M3) and IP-options processing on forward (M4) — stay
+**n/a (Phase 2)** per the project north-star (`CLAUDE.md`
+"Project North Star" → Phase 2: router-grade parity).
 
 This audit enumerates the §4-§5 normative requirements and
 classifies each as one of:
@@ -54,21 +55,22 @@ path is greppable.
 | §4.2.2.2      | Addresses in options (LSRR/SSRR rewrite)         | n/a (Phase 2 — M4) |
 | §4.2.2.4      | TOS routing                                      | n/a (Phase 2) |
 | §4.2.2.5      | Header checksum recomputation                    | met (M1) |
-| §4.2.2.7      | Fragmentation on forward                         | n/a (Phase 2 — M2) |
+| §4.2.2.7      | Fragmentation on forward                         | met (M2) |
 | §4.2.2.8      | Reassembly (routers MUST NOT reassemble in transit) | met by absence |
 | §4.2.2.9      | TTL decrement + Time Exceeded                    | met (M1) |
 | §4.2.2.10     | Multi-subnet broadcasts                          | n/a (Phase 2) |
 | §4.2.3.1      | IP broadcast addresses                           | inherited from RFC 1122 host audit |
 | §4.2.3.2      | IP multicasting                                  | inherited (host-side) |
-| §4.2.3.3      | Path MTU Discovery (router side: emit Frag-Needed) | partial — host-side PMTUD audited under RFC 1191; transit Frag-Needed is M2 |
+| §4.2.3.3      | Path MTU Discovery (router side: emit Frag-Needed) | met (M2) — transit Frag-Needed carries the egress MTU |
 | §4.3          | ICMP general (TTL, source, error reporting)      | inherited from RFC 1122 host audit + RFC 4884 / RFC 6633 audits |
 | §4.3.2.8      | ICMP error rate limiting                         | met (host-side; reused on the transit-error path) |
 | §4.3.3        | ICMP Destination Unreachable                     | met (host + M1 no-route network-unreachable) |
 | §4.3.3.2      | ICMP Redirect (emission)                         | n/a (Phase 2 — M3) |
 | §4.3.3.3      | ICMP Source Quench (emission)                    | n/a (deprecated by RFC 6633; audit there) |
+| §4.3.3.4      | ICMP Frag-Needed (transit PMTU emission)         | met (M2) |
 | §4.3.3.5      | ICMP Time Exceeded (emission)                    | met (M1) |
 | §4.3.3.7      | ICMP Echo Reply                                  | met (RFC 1122 / icmp4 audit) |
-| §5            | Forwarding plane                                 | partial — unicast forwarding met (M1); PMTU/frag (M2), Redirect (M3), options (M4) deferred |
+| §5            | Forwarding plane                                 | partial — unicast forwarding + PMTU/frag met (M1+M2); Redirect (M3), options (M4) deferred |
 
 ---
 
@@ -79,9 +81,20 @@ path is greppable.
 > (unless they have DF set, in which case it MUST emit ICMP
 > Destination Unreachable / Frag-Needed)."
 
-**Adherence:** n/a (Phase 2). PyTCP fragments on the **TX
-origination** path (audited under RFC 791 §3.2). Forwarding-
-time fragmentation requires the routing plane.
+**Adherence:** met (M2). When a forwarded datagram exceeds the
+egress MTU, `Ip4ForwardHandler.try_forward_ip4`
+(`packet_handler__ip4__forward.py`) branches on the DF flag:
+- **DF=1** → discard + ICMPv4 Destination Unreachable /
+  Fragmentation Needed (Code 4) carrying the egress MTU (transit
+  PMTU, §4.3.3.4 below), bumping `ip4__forward_too_big__drop`.
+- **DF=0** → `_forward_fragmented_ip4` fragments to the egress
+  MTU and forwards each fragment, reusing the origination-path
+  `iter_fragment_chunks` + `Ip4FragAssembler` machinery. Each
+  fragment inherits the original DSCP / ECN / **Identification**
+  (preserved so the far end reassembles) / protocol and carries
+  the TTL decremented by one; the first fragment keeps the full
+  options, later fragments only the copy-flag=1 subset (RFC 791
+  §3.1). Counted in `ip4__forward_fragmented`.
 
 ## §4.2.2.8 Reassembly
 
@@ -182,6 +195,38 @@ Unreachable (Type 3, Code 0, network unreachable) from
 handler gained a `DESTINATION_UNREACHABLE, NETWORK` dispatch arm
 (`icmp4__destination_unreachable__network__send`).
 
+**Host Unreachable (Code 1) on next-hop resolution failure —
+deferred.** RFC 1812 also prescribes Destination Unreachable /
+Host Unreachable (Code 1) when a router cannot resolve the
+next-hop link-layer address. PyTCP today queues the forwarded
+datagram pending ARP resolution (`ip4__forward_no_neighbor__drop`,
+the RFC 1122 §2.3.2.2 soft queue) rather than emitting Host
+Unreachable, because there is no "resolution hard-failed after N
+probes" signal from the neighbor cache to the forward path yet.
+Emitting Host Unreachable needs a cache-exhaustion callback that
+distinguishes a transit datagram from a host-originated one; it is
+tracked as a Phase-2 refinement, not part of the M2 cut.
+
+## §4.3.3.4 ICMP Fragmentation Needed (transit PMTU)
+
+> "A router MUST send an ICMP Destination Unreachable / Code 4
+> (Fragmentation Needed and DF set) when it needs to fragment a
+> datagram whose DF bit is set, and SHOULD include the next-hop
+> MTU (RFC 1191)."
+
+**Adherence:** met (M2). See §4.2.2.7 — a DF=1 forwarded datagram
+exceeding the egress MTU is discarded and
+`Ip4ForwardHandler._emit_frag_needed` sends ICMPv4 Destination
+Unreachable / Fragmentation Needed (Type 3, Code 4) carrying the
+egress interface MTU in the next-hop-MTU field (RFC 1191 §3), back
+to the source, gated by the shared host-requirements gate + ICMP
+error rate limiter. The ICMPv4 TX handler gained a
+`DESTINATION_UNREACHABLE, FRAGMENTATION_NEEDED` dispatch arm
+(`icmp4__destination_unreachable__frag_needed__send`). The
+transit-forwarder row of the RFC 1191 PMTU record
+[`../rfc1191__pmtud_ip4/adherence.md`](../rfc1191__pmtud_ip4/adherence.md)
+references this emission.
+
 ## §5 Forwarding
 
 The IPv4 **unicast** forward path is implemented (M1): the
@@ -190,9 +235,10 @@ the FIB (§5.2.4), the TTL decrement (§5.3.1), and the martian /
 scope destination filter (§5.3.7). The `ip4.ip_forward` /
 `ip4.forwarding` sysctls gate it (Linux `net.ipv4.ip_forward` /
 `net.ipv4.conf.<iface>.forwarding`; default off = exact host
-behaviour). Remaining §5 work — transit PMTU + forwarded-packet
-fragmentation (M2), ICMP Redirect generation (M3), IP-options
-processing on forward (M4), RPF and multipath — stays Phase 2.
+behaviour). §5.2.6 forwarded-packet fragmentation and the transit
+PMTU response landed in M2 (see §4.2.2.7 / §4.3.3.4). Remaining §5
+work — ICMP Redirect generation (M3), IP-options processing on
+forward (M4), RPF and multipath — stays Phase 2.
 
 ---
 
@@ -237,12 +283,26 @@ processing on forward (M4), RPF and multipath — stays Phase 2.
 
 **Status:** locked in (M1 scope).
 
+### §4.2.2.7 / §4.3.3.4 / §4.2.3.3 IPv4 transit PMTU + fragmentation (M2)
+
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/router/test__router__ip4__forwarding.py`
+  — DF=1 oversize → ICMPv4 Fragmentation Needed (Type 3, Code 4)
+  carrying the egress MTU; DF=0 oversize → multiple fragments on
+  the egress interface, each fitting the MTU, preserving
+  src/dst/Identification, carrying the decremented TTL, with
+  contiguous offsets and MF flags, reassembling to the original
+  UDP datagram byte-for-byte.
+
+**Status:** locked in (M2 scope).
+
 ### Remaining Phase-2 gaps
 
 **No test surface yet — later milestones.** The remaining matrix:
 
-1. Fragmentation on forward + Frag-Needed on DF=1 (M2).
-2. ICMP Redirect emission when a better path is known (M3).
+1. ICMP Redirect emission when a better path is known (M3).
+2. Host Unreachable (Code 1) on next-hop resolution hard-failure
+   (Phase-2 refinement — see §4.3.3.1).
 3. Source-route processing (LSRR/SSRR pointer advance, dst
    rewrite, options preservation across fragments) (M4).
 4. RPF / ingress-filter checks.
@@ -256,9 +316,10 @@ processing on forward (M4), RPF and multipath — stays Phase 2.
 | §4.3.3.1 Destination Unreachable on no route (M1)   | locked in |
 | §4.3.3.5 ICMP Time Exceeded emission (M1)           | locked in |
 | §5 unicast forward-or-deliver + next-hop (M1)       | locked in |
+| §4.2.2.7 / §4.3.3.4 transit PMTU + fragmentation (M2) | locked in |
 | §4.3.2.8 ICMP error rate limiting                   | locked in |
 | §4.2.2.8 No in-transit reassembly                   | locked in by code structure |
-| §4.2.2.7 (M2) / §4.3.3.2 (M3) / §4.2.2.1-2 (M4)      | n/a (Phase 2) |
+| §4.3.3.2 (M3) / §4.2.2.1-2 (M4)                      | n/a (Phase 2) |
 
 ---
 
@@ -268,23 +329,27 @@ processing on forward (M4), RPF and multipath — stays Phase 2.
 |-----------------------------------------------------|--------|
 | §4.2.2 IP options on forwarded packets              | n/a (Phase 2 — M4) |
 | §4.2.2.5 Header checksum recomputation              | met (M1) |
-| §4.2.2.7 Fragmentation on forward                   | n/a (Phase 2 — M2) |
+| §4.2.2.7 Fragmentation on forward                   | met (M2) |
 | §4.2.2.8 No reassembly in transit                   | met by absence (host-side reassembly intact) |
 | §4.2.2.9 TTL decrement + Time Exceeded              | met (M1) |
 | §4.2.3.1 IP broadcast handling                      | inherited from RFC 1122 host audit |
-| §4.2.3.3 PMTUD (router side)                        | host-side audited under RFC 1191; transit Frag-Needed is M2 |
+| §4.2.3.3 PMTUD (router side)                        | met (M2) — transit Frag-Needed with egress MTU |
 | §4.3.2.8 ICMP error rate limiting                   | met    |
 | §4.3.3.1 Destination Unreachable on no route        | met (M1) |
 | §4.3.3.2 ICMP Redirect emission                     | n/a (Phase 2 — M3) |
+| §4.3.3.4 ICMP Fragmentation Needed (transit PMTU)   | met (M2) |
 | §4.3.3.5 ICMP Time Exceeded emission                | met (M1) |
-| §5 Forwarding plane (unicast)                       | met (M1); PMTU/frag (M2), Redirect (M3), options (M4) deferred |
+| §5 Forwarding plane (unicast)                       | met (M1+M2); Redirect (M3), options (M4) deferred |
 
-As of 3.0.9 (M1) PyTCP forwards IPv4 unicast transit traffic and
+As of 3.0.9 (M1 + M2) PyTCP forwards IPv4 unicast transit traffic,
 originates the TTL-expiry (Time Exceeded) and no-route
-(Destination Unreachable) ICMP errors a forwarder must. The
-remaining RFC 1812 forwarding clauses are deferred to later
-Phase-2 milestones with a one-to-one map to where each piece
-lands: transit PMTU + forwarded-packet fragmentation (M2), ICMP
+(Destination Unreachable) ICMP errors a forwarder must, and — for
+oversize transit traffic — either fragments a DF=0 datagram to the
+egress MTU or emits an ICMPv4 Fragmentation Needed carrying the
+egress MTU for a DF=1 datagram (transit PMTU). The remaining
+RFC 1812 forwarding clauses are deferred to later Phase-2
+milestones with a one-to-one map to where each piece lands: ICMP
 Redirect generation (M3), IP-options processing on forward (M4),
-plus RPF / multipath. Default-off forwarding keeps the Phase-1
-host posture byte-for-byte intact.
+Host Unreachable on next-hop hard-failure, plus RPF / multipath.
+Default-off forwarding keeps the Phase-1 host posture
+byte-for-byte intact.

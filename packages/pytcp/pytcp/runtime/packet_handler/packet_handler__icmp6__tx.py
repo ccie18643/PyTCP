@@ -168,6 +168,11 @@ class Icmp6TxHandler:
                 # RFC 4443 §3.1 / RFC 1812 §5.2 — no-route response
                 # emitted by the transit forward path.
                 self._if._packet_stats_tx.icmp6__destination_unreachable__no_route__send += 1
+            case Icmp6Type.PACKET_TOO_BIG, _:
+                # RFC 8201 §3 / RFC 4443 §3.2 — transit PMTU response
+                # emitted by the forward path when a datagram exceeds
+                # the egress MTU (routers never fragment IPv6).
+                self._if._packet_stats_tx.icmp6__packet_too_big__send += 1
             case Icmp6Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp6__parameter_problem__send += 1
             case Icmp6Type.TIME_EXCEEDED, _:

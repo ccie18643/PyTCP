@@ -81,6 +81,25 @@ oversized segments. The RFC 5927 §4
 sequence-in-window guard is applied before notifying
 TCP.
 
+### §3 ICMP "Fragmentation Needed" emission (transit forwarder)
+
+> "A router that cannot forward a datagram because it exceeds the
+> next-hop MTU and has DF set MUST send an ICMP Destination
+> Unreachable / Fragmentation Needed carrying the Next-Hop MTU
+> field (RFC 1191 §3)."
+
+**Adherence:** **shipped (Phase-2 M2)** — the *emission* side, the
+router counterpart of the reception clause above. When
+forwarding is enabled and a DF=1 transit datagram exceeds the
+egress interface MTU, `Ip4ForwardHandler._emit_frag_needed`
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__forward.py`)
+emits ICMPv4 Destination Unreachable / Fragmentation Needed (Type
+3, Code 4) with the egress interface MTU in the Next-Hop MTU
+field, back to the datagram's source. Audited in full under
+[`../rfc1812__router_requirements/adherence.md`](../rfc1812__router_requirements/adherence.md)
+§4.2.2.7 / §4.3.3.4. A DF=0 oversize transit datagram is instead
+fragmented to the egress MTU and forwarded.
+
 ### §6.5 TCP retransmit walkback on PMTU shrink
 
 > "If TCP responds to the receipt of an ICMP Datagram

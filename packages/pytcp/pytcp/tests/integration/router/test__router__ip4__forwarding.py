@@ -274,15 +274,15 @@ class TestRouterIp4Forwarding(RouterTestCase):
             ip4__forward_no_neighbor__drop=1,
         )
 
-    def test__router__ip4__forward__oversize_dropped_pending_pmtu(self) -> None:
+    def test__router__ip4__forward__oversize_df_set_frag_needed(self) -> None:
         """
         Ensure an inbound IPv4 transit datagram larger than the egress
-        interface MTU is dropped in M1 (the transit PMTU response and
-        forwarded-packet fragmentation land in M2), with no frame
-        emitted.
+        MTU with the Don't-Fragment flag set is not forwarded but
+        instead elicits an ICMPv4 Fragmentation Needed (Type 3, Code 4)
+        carrying the egress MTU as the next-hop MTU.
 
-        Reference: RFC 1812 §4.3.3.3 (oversize transit, PMTU — M2).
-        Reference: PyTCP test infrastructure (M1 placeholder drop).
+        Reference: RFC 1812 §4.3.3.3 (Fragmentation Needed on DF=1 oversize).
+        Reference: RFC 1191 §3 (next-hop MTU in the ICMP error).
         """
 
         self._enable_forwarding()
@@ -295,16 +295,68 @@ class TestRouterIp4Forwarding(RouterTestCase):
                 src_ip=HOST_A__IP4_ADDRESS,
                 dst_ip=HOST_D__IP4,
                 ttl=64,
+                df=True,
                 payload=b"X" * 1600,
             ),
         )
 
-        self._assert_no_forward(emitted)
+        self._assert_icmp4_error(
+            emitted,
+            ingress=self.if1,
+            icmp_type=3,
+            icmp_code=4,
+            to_ip=HOST_A__IP4_ADDRESS,
+            mtu=1500,
+        )
         self._assert_packet_stats_rx(
             ethernet__pre_parse=1,
             ethernet__dst_unicast=1,
             ip4__pre_parse=1,
             ip4__forward_too_big__drop=1,
+        )
+
+    def test__router__ip4__forward__oversize_df_clear_fragments(self) -> None:
+        """
+        Ensure an inbound IPv4 transit datagram larger than the egress
+        MTU with the Don't-Fragment flag clear is fragmented to the
+        egress MTU and forwarded out the egress interface as multiple
+        fragments, each preserving the source / destination /
+        Identification and carrying the decremented TTL.
+
+        Reference: RFC 791 §3.2 (router fragments a DF=0 oversize datagram).
+        Reference: RFC 1812 §5.2.6 (fragmentation on forward).
+        """
+
+        self._enable_forwarding()
+
+        emitted = self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_transit_ip4(
+                ingress=self.if1,
+                src_mac=HOST_A__MAC_ADDRESS,
+                src_ip=HOST_A__IP4_ADDRESS,
+                dst_ip=HOST_D__IP4,
+                ttl=64,
+                df=False,
+                payload=b"X" * 1600,
+            ),
+        )
+
+        self._assert_forwarded_fragments_ip4(
+            emitted,
+            egress=self.if2,
+            src_ip=HOST_A__IP4_ADDRESS,
+            dst_ip=HOST_D__IP4,
+            ttl_out=63,
+            next_hop_mac=HOST_D__MAC,
+            payload=b"X" * 1600,
+            mtu=1500,
+        )
+        self._assert_packet_stats_rx(
+            ethernet__pre_parse=1,
+            ethernet__dst_unicast=1,
+            ip4__pre_parse=1,
+            ip4__forward_fragmented=1,
         )
 
     def test__router__ip4__forward__disabled_drops_as_host(self) -> None:
