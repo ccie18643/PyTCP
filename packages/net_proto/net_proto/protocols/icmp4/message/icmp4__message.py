@@ -54,6 +54,7 @@ class Icmp4Type(ProtoEnumByte):
 
     ECHO_REPLY = 0  # RFC 792 §"Echo or Echo Reply Message".
     DESTINATION_UNREACHABLE = 3  # RFC 792 §"Destination Unreachable Message".
+    REDIRECT = 5  # RFC 792 §"Redirect Message".
     ECHO_REQUEST = 8  # RFC 792 §"Echo or Echo Reply Message".
     TIME_EXCEEDED = 11  # RFC 792 §"Time Exceeded Message".
     PARAMETER_PROBLEM = 12  # RFC 792 §"Parameter Problem Message".

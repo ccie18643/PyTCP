@@ -68,7 +68,7 @@ def _packet_rx_with_ip4(frame: bytes) -> PacketRx:
                 b"\x43\x44\x45\x46"
             ),
             "_results": {
-                "error_message": ("The 'type' field value must be one of [0, 3, 8, 11, 12]. Got: 255."),
+                "error_message": ("The 'type' field value must be one of [0, 3, 5, 8, 11, 12]. Got: 255."),
             },
         },
         {
@@ -82,7 +82,7 @@ def _packet_rx_with_ip4(frame: bytes) -> PacketRx:
                 b"\x01\x02\xfe\xfd"
             ),
             "_results": {
-                "error_message": ("The 'type' field value must be one of [0, 3, 8, 11, 12]. Got: 1."),
+                "error_message": ("The 'type' field value must be one of [0, 3, 5, 8, 11, 12]. Got: 1."),
             },
         },
         {
@@ -97,7 +97,7 @@ def _packet_rx_with_ip4(frame: bytes) -> PacketRx:
                 + b"X" * 65511
             ),
             "_results": {
-                "error_message": ("The 'type' field value must be one of [0, 3, 8, 11, 12]. Got: 1."),
+                "error_message": ("The 'type' field value must be one of [0, 3, 5, 8, 11, 12]. Got: 1."),
             },
         },
     ]
@@ -122,7 +122,7 @@ class TestIcmp4MessageUnknownParser(TestCase):
     def test__icmp4__message__unknown__parser(self) -> None:
         """
         Ensure the ICMPv4 parser rejects a frame whose 'type' is not one of
-        the five host-stack-supported values (0, 3, 8, 11, 12) with
+        the six host-stack-supported values (0, 3, 5, 8, 11, 12) with
         Icmp4SanityError.
 
         Reference: RFC 792 (defined ICMP type numbers).
