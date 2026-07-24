@@ -29,7 +29,7 @@ querier; the querier role is Phase-2 router work).
 
 net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__query.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

@@ -34,7 +34,7 @@ tests can rely on the harness shape.
 
 pytcp/tests/integration/protocols/ethernet/test__ethernet__harness_smoke.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import MacAddress

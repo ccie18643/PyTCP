@@ -31,7 +31,7 @@ consumers that may want to build LLC frames in user code.
 
 net_proto/protocols/llc/llc__assembler.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

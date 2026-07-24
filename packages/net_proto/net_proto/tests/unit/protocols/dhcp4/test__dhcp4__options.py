@@ -28,7 +28,7 @@ properties, and integrity checks).
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__options.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

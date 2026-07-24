@@ -40,7 +40,7 @@ in Phase 4 of the PLPMTUD plan. Exercises:
 
 pytcp/tests/integration/protocols/udp/test__udp__plpmtud.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.lib.plpmtud import MAX_PROBES, MIN_PLPMTU__IP4, PmtuState

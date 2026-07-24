@@ -27,7 +27,7 @@ This module contains tests for the ICMPv6 Echo Reply emission gate.
 
 pytcp/tests/unit/protocols/icmp6/test__icmp6__echo_gate.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

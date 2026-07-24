@@ -53,7 +53,7 @@ Needs a running daemon that owns the TAP interface, e.g.:
 
 examples/tcp_echo_server__async.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import asyncio

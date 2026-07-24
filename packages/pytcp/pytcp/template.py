@@ -27,5 +27,5 @@ This module contains a template for new PyTCP project files.
 
 pytcp/template.py
 
-ver 3.0.8
+ver 3.0.9
 """

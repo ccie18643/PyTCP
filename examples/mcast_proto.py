@@ -32,7 +32,7 @@ or an mDNS record, kept deliberately simple:
 
 examples/mcast_proto.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

@@ -27,7 +27,7 @@ This module contains tests for the 'LoopbackRing' in-process queue.
 
 pytcp/tests/unit/runtime/test__runtime__loopback_ring.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

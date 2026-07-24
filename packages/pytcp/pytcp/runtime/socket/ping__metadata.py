@@ -34,7 +34,7 @@ that 'recvmsg' surfaces as an 'IP_TTL' / 'IPV6_HOPLIMIT' cmsg when
 
 pytcp/runtime/socket/ping__metadata.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

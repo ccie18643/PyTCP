@@ -27,7 +27,7 @@ This module contains unit tests for the 'UdpTxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__udp__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Callable

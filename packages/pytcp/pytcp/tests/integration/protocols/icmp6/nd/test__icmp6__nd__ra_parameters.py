@@ -50,7 +50,7 @@ consumers.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_parameters.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

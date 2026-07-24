@@ -29,7 +29,7 @@ This module contains packet handler for the inbound IPv6 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip6__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time as time_module

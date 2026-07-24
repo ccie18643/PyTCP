@@ -32,7 +32,7 @@ DAD-in-progress IPv6 addresses). It backs 'ClientStack.activity'.
 
 pytcp/client/client__activity_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import cast

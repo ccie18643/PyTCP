@@ -37,7 +37,7 @@ running.
 
 pytcp/ipc/ipc__packet_bridge.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import socket

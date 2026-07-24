@@ -27,7 +27,7 @@ This module contains the Ethernet 802.3 packet assembler class.
 
 net_proto/protocols/ethernet_802_3/ethernet_802_3__assembler.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

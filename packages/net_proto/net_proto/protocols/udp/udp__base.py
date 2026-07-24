@@ -27,7 +27,7 @@ This module contains the UDP protocol base class.
 
 net_proto/protocols/udp/udp__base.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

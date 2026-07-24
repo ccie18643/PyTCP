@@ -28,7 +28,7 @@ This module contains tests for the 'PacketStats', 'PacketStatsRx', and
 
 pytcp/tests/unit/lib/test__lib__packet_stats.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass

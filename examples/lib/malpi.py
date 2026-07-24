@@ -30,7 +30,7 @@ UDP and TCP echo servers use. Carried over from the legacy examples.
 
 examples/lib/malpi.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 malpka: bytes = (

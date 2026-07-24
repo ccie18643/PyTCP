@@ -29,7 +29,7 @@ half-state container, covering the BSD-style 'shutdown(SHUT_RD)' /
 
 pytcp/protocols/tcp/state/tcp__state__shutdown.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

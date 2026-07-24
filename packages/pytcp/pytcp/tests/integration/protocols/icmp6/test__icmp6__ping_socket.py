@@ -33,7 +33,7 @@ header) with the reply's Hop Limit as an 'IPV6_HOPLIMIT' cmsg.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__ping_socket.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

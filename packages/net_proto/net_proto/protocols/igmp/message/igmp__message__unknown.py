@@ -29,7 +29,7 @@ silently ignores (RFC 3376 §4).
 
 net_proto/protocols/igmp/message/igmp__message__unknown.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

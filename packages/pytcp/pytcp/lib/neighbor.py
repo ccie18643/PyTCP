@@ -52,7 +52,7 @@ Design + per-phase migration plan: docs/refactor/nud_state_machine.md
 
 pytcp/lib/neighbor.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

@@ -43,7 +43,7 @@ no module-level state).
 
 pytcp/protocols/ip4/link_local/link_local__rng.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

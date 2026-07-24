@@ -27,7 +27,7 @@ Module contains tests for the TCP Mss (Maximum Segment Size) option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__mss.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

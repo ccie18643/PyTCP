@@ -27,7 +27,7 @@ This module contains the IGMPv2 Leave Group message support class.
 
 net_proto/protocols/igmp/message/igmp__message__v2_leave.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

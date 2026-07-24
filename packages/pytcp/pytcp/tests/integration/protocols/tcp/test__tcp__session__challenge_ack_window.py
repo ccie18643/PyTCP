@@ -30,7 +30,7 @@ challenge_ack pin for the TCP timer-client migration §5.5
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__challenge_ack_window.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address

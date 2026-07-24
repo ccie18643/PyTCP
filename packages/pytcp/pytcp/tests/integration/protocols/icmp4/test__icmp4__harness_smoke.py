@@ -32,7 +32,7 @@ protocol refactor) can rely on the harness shape.
 
 pytcp/tests/integration/protocols/icmp4/test__icmp4__harness_smoke.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address, MacAddress

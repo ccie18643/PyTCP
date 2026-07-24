@@ -35,7 +35,7 @@ handler's StreamWriter response reaches the wire.
 
 pytcp/tests/integration/ipc/test__ipc__asyncio_streams.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import asyncio

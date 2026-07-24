@@ -46,7 +46,7 @@ entry only for the duration of the wait.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__optimistic_dad.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

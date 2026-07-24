@@ -27,7 +27,7 @@ This module contains the BSD-like Raw socket interface for the stack.
 
 pytcp/runtime/socket/raw__socket.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

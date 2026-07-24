@@ -29,7 +29,7 @@ This module contains the TCP FSM FIN_WAIT_2 state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__fin_wait_2.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING

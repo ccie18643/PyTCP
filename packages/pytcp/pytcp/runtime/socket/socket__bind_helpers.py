@@ -27,7 +27,7 @@ This module contains helper functions for IP-related operations.
 
 pytcp/runtime/socket/socket__bind_helpers.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import hashlib

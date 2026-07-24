@@ -48,7 +48,7 @@ socket-API surface. Exercises:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__ip_recverr.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno as errno_mod

@@ -31,7 +31,7 @@ boundary-accepted case pinning that exact minimum.
 
 net_proto/tests/unit/protocols/snap/test__snap__parser__integrity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

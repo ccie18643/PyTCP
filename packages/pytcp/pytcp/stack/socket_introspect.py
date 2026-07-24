@@ -38,7 +38,7 @@ over the live socket table.
 
 pytcp/stack/socket_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Iterable

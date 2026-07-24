@@ -37,7 +37,7 @@ path is covered separately by the daemon integration suite under
 
 pytcp/tests/unit/socket/test__socket__dropin__behaviour.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

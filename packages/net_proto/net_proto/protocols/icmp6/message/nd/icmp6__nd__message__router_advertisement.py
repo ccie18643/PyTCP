@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Router Advertisement message support class.
 
 net_proto/protocols/icmp6/message/nd/icmp6__nd__message__router_advertisement.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

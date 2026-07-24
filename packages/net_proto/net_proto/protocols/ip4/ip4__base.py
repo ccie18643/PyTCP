@@ -27,7 +27,7 @@ This module contains the IPv4 protocol base class.
 
 net_proto/protocols/ip4/ip4__base.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

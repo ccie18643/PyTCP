@@ -27,7 +27,7 @@ Module contains tests for the ICMPv4 unknown message assembler & parser asserts.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__unknown__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

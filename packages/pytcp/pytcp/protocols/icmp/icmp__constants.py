@@ -34,7 +34,7 @@ through the backing module attribute the registry writes.
 
 pytcp/protocols/icmp/icmp__constants.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # Maximum sustained rate at which the stack will originate ICMP error

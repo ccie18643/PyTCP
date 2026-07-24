@@ -27,7 +27,7 @@ Unit tests for ShutdownState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__shutdown.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

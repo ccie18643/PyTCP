@@ -42,7 +42,7 @@ it when an inbound PI advertises 'valid_lifetime=0' (RFC 4862
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__slaac_address_tracking.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time

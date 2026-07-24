@@ -29,7 +29,7 @@ This module contains the TCP FSM LAST_ACK state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__last_ack.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING

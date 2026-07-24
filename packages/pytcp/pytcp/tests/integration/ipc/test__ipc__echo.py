@@ -42,7 +42,7 @@ deadlock.
 
 pytcp/tests/integration/ipc/test__ipc__echo.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import os

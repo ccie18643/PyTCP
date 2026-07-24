@@ -29,7 +29,7 @@ pointers (IRS / RCV.NXT / RCV.UNA).
 
 pytcp/protocols/tcp/state/tcp__state__recv_seq.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

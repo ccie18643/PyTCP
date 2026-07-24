@@ -28,7 +28,7 @@ tests for IPv6 — Phase 2 next-hop decision pins.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__routing.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import cast

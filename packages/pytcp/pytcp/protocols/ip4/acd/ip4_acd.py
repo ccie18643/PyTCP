@@ -32,7 +32,7 @@ conflicts) and the policy (when to probe / announce / yield).
 
 pytcp/protocols/ip4/acd/ip4_acd.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import random

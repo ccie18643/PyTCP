@@ -27,7 +27,7 @@ This module contains the DHCPv4 Parameter Request List option support code.
 
 net_proto/protocols/dhcp4/options/dhcp4__option__param_req_list.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

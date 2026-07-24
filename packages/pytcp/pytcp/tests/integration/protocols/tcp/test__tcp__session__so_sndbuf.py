@@ -37,7 +37,7 @@ and the close path wake a blocked writer.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__so_sndbuf.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

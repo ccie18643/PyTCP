@@ -28,7 +28,7 @@ surface, and '__str__' formatting.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__session__lifecycle.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace

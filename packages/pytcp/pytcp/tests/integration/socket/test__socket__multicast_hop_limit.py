@@ -35,7 +35,7 @@ knobs separate — 'inet->uc_ttl' vs 'inet->mc_ttl',
 
 pytcp/tests/integration/socket/test__socket__multicast_hop_limit.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

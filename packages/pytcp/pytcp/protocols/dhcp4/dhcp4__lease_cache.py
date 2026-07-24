@@ -77,7 +77,7 @@ corrupted cache cannot crash the lifecycle.
 
 pytcp/protocols/dhcp4/dhcp4__lease_cache.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import json

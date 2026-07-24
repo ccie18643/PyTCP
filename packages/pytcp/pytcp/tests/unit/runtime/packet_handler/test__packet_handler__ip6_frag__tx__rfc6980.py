@@ -29,7 +29,7 @@ fragmentation predicate ('is_ndp_message') in
 
 pytcp/tests/unit/runtime/packet_handler/test__packet_handler__ip6_frag__tx__rfc6980.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -37,7 +37,7 @@ the test harness uses for snapshot/restore.
 
 pytcp/stack/lifecycle.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any

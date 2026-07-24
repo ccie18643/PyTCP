@@ -37,7 +37,7 @@ partitioned per interface (the handler instance IS the interface).
 
 pytcp/tests/integration/multi_interface/test__multi_interface__rx_reply_isolation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

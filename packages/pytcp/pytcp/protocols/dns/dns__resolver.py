@@ -38,7 +38,7 @@ is unit-testable without a live upstream; the defaults open a real
 
 pytcp/protocols/dns/dns__resolver.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import secrets

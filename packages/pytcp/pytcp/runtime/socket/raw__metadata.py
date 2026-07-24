@@ -27,7 +27,7 @@ This module contains the interface class for the IP Parser -> Raw Socket communi
 
 pytcp/runtime/socket/raw__metadata.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

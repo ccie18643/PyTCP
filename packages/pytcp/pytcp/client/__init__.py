@@ -48,7 +48,7 @@ and a socket shim through 'ClientStack.socket()', never imported directly.
 
 pytcp/client/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.client.client__datagram_socket import ClientPingSocket, ClientRawSocket, ClientUdpSocket

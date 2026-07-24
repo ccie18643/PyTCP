@@ -33,7 +33,7 @@ neighbour-cache override.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__redirect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

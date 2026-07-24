@@ -40,7 +40,7 @@ boundary translation but keeps a distinct request shape.
 
 pytcp/ipc/ipc__socket_rpc.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import json

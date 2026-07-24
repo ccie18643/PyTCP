@@ -52,7 +52,7 @@ for the setup). Then, against any FTP server the stack can reach:
 
 examples/ftp_client__async.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import asyncio

@@ -33,7 +33,7 @@ consumer in modern networks).
 
 net_proto/protocols/llc/llc__header.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

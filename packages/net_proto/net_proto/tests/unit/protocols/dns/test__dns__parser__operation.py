@@ -27,7 +27,7 @@ This module contains tests for the DNS message parser operation.
 
 net_proto/tests/unit/protocols/dns/test__dns__parser__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

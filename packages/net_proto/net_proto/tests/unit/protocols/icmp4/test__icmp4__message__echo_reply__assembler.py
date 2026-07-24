@@ -27,7 +27,7 @@ Module contains tests for the ICMPv4 Echo Reply message assembler.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__echo_reply__assembler.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, cast, override

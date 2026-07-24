@@ -27,7 +27,7 @@ Module contains tests for the unknown DHCPv4 option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__unknown.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import FrozenInstanceError

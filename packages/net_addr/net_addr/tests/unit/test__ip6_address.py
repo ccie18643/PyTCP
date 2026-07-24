@@ -27,7 +27,7 @@ This module contains tests for the NetAddr package IPv6 address support class.
 
 net_addr/tests/unit/test__ip6_address.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

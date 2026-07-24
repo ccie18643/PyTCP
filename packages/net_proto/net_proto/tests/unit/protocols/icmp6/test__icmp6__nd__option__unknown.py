@@ -27,7 +27,7 @@ Module contains tests for the unknown ICMPv6 ND option.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__unknown.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

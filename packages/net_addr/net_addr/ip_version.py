@@ -27,7 +27,7 @@ This module contains IP version enum.
 
 net_addr/ip_version.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from enum import IntEnum

@@ -31,7 +31,7 @@ must produce a Dhcp4IntegrityError before parsing begins.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__parser__integrity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any

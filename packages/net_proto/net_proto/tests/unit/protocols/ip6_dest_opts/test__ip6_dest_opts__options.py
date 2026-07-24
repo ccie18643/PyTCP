@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Dest Opts options container.
 
 net_proto/tests/unit/protocols/ip6_dest_opts/test__ip6_dest_opts__options.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

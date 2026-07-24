@@ -28,7 +28,7 @@ U-frame header dataclass.
 
 net_proto/tests/unit/protocols/llc/test__llc__header__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -35,7 +35,7 @@ shims marshal to it over IPC).
 
 pytcp/stack/resolver.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address, Ip6Address

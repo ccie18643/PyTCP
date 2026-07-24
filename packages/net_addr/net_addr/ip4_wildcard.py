@@ -27,7 +27,7 @@ This module contains IPv4 wildcard support class.
 
 net_addr/ip4_wildcard.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import socket

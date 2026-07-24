@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Frag packet integrity checks.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__parser__integrity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace

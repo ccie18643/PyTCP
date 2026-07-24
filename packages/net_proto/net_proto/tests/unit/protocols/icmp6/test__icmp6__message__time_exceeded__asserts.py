@@ -28,7 +28,7 @@ asserts and 'from_buffer()' invariants.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__time_exceeded__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

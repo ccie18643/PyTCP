@@ -30,7 +30,7 @@ announcement datagrams.
 
 pytcp/tests/unit/examples/test__examples__mcast_proto.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

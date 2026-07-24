@@ -35,7 +35,7 @@ SOCKET_CALL op keyed by the daemon-assigned handle.
 
 pytcp/client/client__packet_socket.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_proto.lib.enums import EtherType

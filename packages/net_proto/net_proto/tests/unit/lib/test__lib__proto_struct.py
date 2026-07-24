@@ -27,7 +27,7 @@ This module contains tests for the NetProto ProtoStruct base class.
 
 net_proto/tests/unit/lib/test__lib__proto_struct.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass

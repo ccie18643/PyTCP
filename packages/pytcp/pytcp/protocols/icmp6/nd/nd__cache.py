@@ -37,7 +37,7 @@ escape hatch, sysctl-driven knobs) from the parent class.
 
 pytcp/protocols/icmp6/nd/nd__cache.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

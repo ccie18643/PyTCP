@@ -29,7 +29,7 @@ and the wrap-aware add/sub/in-range utilities.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__seq.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any

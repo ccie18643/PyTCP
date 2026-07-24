@@ -27,7 +27,7 @@ This module contains the Buffer type alias.
 
 net_addr/buffer.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 type Buffer = bytes | bytearray | memoryview

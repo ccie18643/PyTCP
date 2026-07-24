@@ -27,7 +27,7 @@ This module contains tests for the socket-list introspection core.
 
 pytcp/tests/unit/stack/test__stack__socket_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import inspect

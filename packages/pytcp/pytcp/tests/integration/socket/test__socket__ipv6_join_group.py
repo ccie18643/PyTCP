@@ -39,7 +39,7 @@ setsockopt path through to it.
 
 pytcp/tests/integration/socket/test__socket__ipv6_join_group.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

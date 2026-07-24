@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Pi (Prefix Information) option support code.
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__pi.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

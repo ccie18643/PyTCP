@@ -28,7 +28,7 @@ deadline-map helpers (Phase 1 of the TCP timer-client migration).
 
 pytcp/tests/unit/protocols/tcp/test__tcp__session__timers.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

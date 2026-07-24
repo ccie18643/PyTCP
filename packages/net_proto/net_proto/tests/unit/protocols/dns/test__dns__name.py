@@ -27,7 +27,7 @@ This module contains tests for the DNS domain-name codec.
 
 net_proto/tests/unit/protocols/dns/test__dns__name.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -61,7 +61,7 @@ non-empty-cookie (Length = 6..18, response/use form).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__fastopen.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address, Ip6Address

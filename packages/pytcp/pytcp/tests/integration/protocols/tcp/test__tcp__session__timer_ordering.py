@@ -30,7 +30,7 @@ tlp) and the §5.4 '_transmit_data' no-armed-timer gap audit.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__timer_ordering.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Callable

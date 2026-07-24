@@ -31,7 +31,7 @@ ICMP-related work can rely on the harness shape.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__harness_smoke.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip6Address, MacAddress

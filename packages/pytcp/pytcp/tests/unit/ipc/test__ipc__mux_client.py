@@ -27,7 +27,7 @@ This module contains tests for the multiplexed IPC client.
 
 pytcp/tests/unit/ipc/test__ipc__mux_client.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import os

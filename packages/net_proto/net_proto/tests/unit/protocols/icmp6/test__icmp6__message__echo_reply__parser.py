@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 Echo Reply message parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__echo_reply__parser.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace

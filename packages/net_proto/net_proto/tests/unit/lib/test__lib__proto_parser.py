@@ -27,7 +27,7 @@ This module contains tests for the NetProto ProtoParser base class.
 
 net_proto/tests/unit/lib/test__lib__proto_parser.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

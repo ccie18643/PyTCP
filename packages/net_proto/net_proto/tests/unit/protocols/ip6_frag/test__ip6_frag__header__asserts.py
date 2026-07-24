@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Frag header fields asserts.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__header__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

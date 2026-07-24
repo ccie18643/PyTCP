@@ -27,7 +27,7 @@ This module contains tests for the IPv4 packet integrity checks.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__parser__integrity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

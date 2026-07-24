@@ -27,7 +27,7 @@ This module contains the TCP protocol base class.
 
 net_proto/protocols/tcp/tcp__base.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

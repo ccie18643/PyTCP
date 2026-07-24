@@ -27,7 +27,7 @@ This module contains the DHCPv4 protocol enum classes.
 
 net_proto/protocols/dhcp4/dhcp4__enums.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

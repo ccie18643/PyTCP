@@ -34,7 +34,7 @@ semantics (no FSM mutation per RFC 5927 §6).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__icmp__time_exceeded__ip6.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip6Address

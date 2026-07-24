@@ -39,7 +39,7 @@ no pytcp stack reach-in (see docs/refactor/kernel_userspace_separation.md
 
 pytcp/ipc/ipc__mux_client.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import os

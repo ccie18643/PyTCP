@@ -28,7 +28,7 @@ the stack over IPv4 (ARP resolution + ICMP Echo).
 
 tools/capture/scenarios/ip4_icmp_echo.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time

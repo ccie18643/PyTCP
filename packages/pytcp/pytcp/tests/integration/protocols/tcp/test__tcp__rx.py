@@ -31,7 +31,7 @@ This module contains integration tests for the TCP RX packet-handler path.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_proto.lib.packet_rx import PacketRx

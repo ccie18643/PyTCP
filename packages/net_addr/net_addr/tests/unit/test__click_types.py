@@ -27,7 +27,7 @@ This module contains tests for the NetAddr package Click type adapters.
 
 net_addr/tests/unit/test__click_types.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import assert_type, override

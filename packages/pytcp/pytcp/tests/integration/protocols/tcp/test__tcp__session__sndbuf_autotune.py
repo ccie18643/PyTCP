@@ -36,7 +36,7 @@ bound feeds the Tier-1 SO_SNDBUF gate via '_effective_sndbuf()'.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__sndbuf_autotune.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

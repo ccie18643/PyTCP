@@ -33,7 +33,7 @@ gracefully leaves every joined group except all-nodes (ff02::1).
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__mld2_leave.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

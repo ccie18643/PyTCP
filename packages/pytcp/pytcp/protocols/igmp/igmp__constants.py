@@ -29,7 +29,7 @@ sysctls.
 
 pytcp/protocols/igmp/igmp__constants.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # RFC 3376 §8.1 Robustness Variable. The number of times a host

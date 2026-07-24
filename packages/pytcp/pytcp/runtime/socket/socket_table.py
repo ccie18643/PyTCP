@@ -27,7 +27,7 @@ This module contains the lock-guarded registry of open stack sockets.
 
 pytcp/runtime/socket/socket_table.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading
