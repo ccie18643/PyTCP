@@ -8,22 +8,41 @@
 | Date        | June 1995                             |
 | Source text | [`rfc1812.txt`](rfc1812.txt)          |
 
-This adherence record is currently a stub. PyTCP is a host stack,
-not a router, so most of RFC 1812 does not apply directly. The
-RFC is included for reference because §4.3.2 and §4.3.3 prescribe
-the canonical forms of the ICMP error messages PyTCP both sends
-(Port Unreachable in response to closed-port datagrams) and
-receives (Destination Unreachable, Frag-Needed/PTB during PMTUD).
+As of PyTCP 3.0.9 (Phase-2 milestone M1) the stack forwards IPv4
+unicast transit traffic, so the §4.3.3 ICMP error clauses a
+forwarder must originate — Time Exceeded on TTL expiry and
+Destination Unreachable on no route — are now **met** (see the
+companion IPv4 record
+[`../../ip4/rfc1812__router_requirements/adherence.md`](../../ip4/rfc1812__router_requirements/adherence.md)).
+The §4.3.2 rate-limiting and source-address rules are reused on
+the transit-error path.
 
-Currently relevant clauses, as of the recent ICMP host-requirements
-work:
+Currently relevant clauses, as of the ICMP host-requirements work
+plus the M1 transit-forwarding plane:
 
 - **§4.3.2.5 (Source Address)** — outbound ICMP errors source from
-  the egress interface address. Adherence: met via
-  `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py:306`,
-  which sets `ip4__src=packet_rx.ip4.dst` (reflection of the
-  inbound destination, which is the stack's own address for
-  unicast-delivered datagrams).
+  the interface facing the original sender. Adherence: met. For a
+  host-delivered datagram the UDP closed-port path reflects
+  `ip4__src=packet_rx.ip4.dst`
+  (`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__udp__rx.py`);
+  for a **transit** datagram — whose destination is not ours to
+  reflect — the forward path selects the ingress interface's
+  address toward the source via
+  `select_ip4_source(packet_rx.ip4.src)`
+  (`packet_handler__ip4__forward.py::_emit_forward_icmp_error`).
+- **§4.3.3.1 (Destination Unreachable — no route)** — a router
+  MUST send Destination Unreachable (Code 0, network unreachable)
+  when it has no route for a forwarded datagram. Adherence: met
+  (M1) via `Ip4ForwardHandler._emit_dest_unreachable`; the ICMPv4
+  TX handler has a `DESTINATION_UNREACHABLE, NETWORK` dispatch arm
+  (`icmp4__destination_unreachable__network__send`). Tested at
+  `packages/pytcp/pytcp/tests/integration/router/test__router__ip4__forwarding.py`.
+- **§4.3.3.5 (Time Exceeded)** — a router MUST send Time Exceeded
+  (Code 0) when it discards a forwarded datagram whose TTL
+  decremented to zero. Adherence: met (M1) via
+  `Ip4ForwardHandler._emit_time_exceeded`; the ICMPv4 TX handler
+  has a `TIME_EXCEEDED` dispatch arm (`icmp4__time_exceeded__send`).
+  Tested in the same router integration file.
 - **§4.3.2.8 (Rate-Limiting)** — token-bucket rate limit on
   originated ICMP error messages. Adherence: met (post-Phase α1.1).
   Implemented in `packages/pytcp/pytcp/protocols/icmp/icmp__error_emitter.py`
@@ -41,6 +60,8 @@ work:
 For the canonical host-side audit of the §3.2.2 rules, see
 [`../rfc1122__host_requirements_icmp/adherence.md`](../rfc1122__host_requirements_icmp/adherence.md).
 
-The full per-section RFC 1812 walkthrough is deferred — most
-sections (gateway-side forwarding, routing protocols, source-route
-processing) have no implementation surface in PyTCP.
+The full per-section RFC 1812 walkthrough is deferred — the
+remaining router-side ICMP work (Redirect emission, M3; transit
+Frag-Needed during PMTU, M2) and non-ICMP sections (routing
+protocols, source-route processing) land with later Phase-2
+milestones.

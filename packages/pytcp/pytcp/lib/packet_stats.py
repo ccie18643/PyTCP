@@ -154,12 +154,39 @@ class PacketStatsRx(PacketStats):
     ip4__frag__overlap__drop: int = 0
     ip4__frag__ecn_mixed__drop: int = 0
 
+    # Phase-2 router forwarding-plane counters (RFC 1812 §5.2).
+    # 'ip4__forward' bumps on a datagram forwarded out an egress
+    # interface; the '*__drop' variants pin each forward-branch
+    # rejection so the strict '_assert_packet_stats_rx' contract
+    # holds. The forwarding-disabled drop keeps the host-parity
+    # 'ip4__dst_unknown__drop' counter (byte-for-byte host
+    # behaviour), so there is no 'forward_disabled__drop' here.
+    ip4__forward: int = 0
+    ip4__forward_no_route__drop: int = 0
+    ip4__forward_ttl_exceeded__drop: int = 0
+    ip4__forward_no_neighbor__drop: int = 0
+    ip4__forward_martian_dst__drop: int = 0
+    ip4__forward_too_big__drop: int = 0
+
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0
     ip6__no_proto_support__drop: int = 0
     ip6__dst_unknown__drop: int = 0
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0
+
+    # Phase-2 router forwarding-plane counters (RFC 1812 §5.2) —
+    # the IPv6 parallel of the 'ip4__forward*' set. 'scope__drop'
+    # replaces 'martian_dst__drop': IPv6 never forwards a
+    # link-local source/destination off-link (RFC 4007). No IPv6
+    # header checksum and no forwarded-packet fragmentation
+    # (routers never fragment IPv6 — RFC 8200 §5).
+    ip6__forward: int = 0
+    ip6__forward_no_route__drop: int = 0
+    ip6__forward_hop_exceeded__drop: int = 0
+    ip6__forward_no_neighbor__drop: int = 0
+    ip6__forward_scope__drop: int = 0
+    ip6__forward_too_big__drop: int = 0
 
     ip6_frag__pre_parse: int = 0
     ip6_frag__failed_parse: int = 0
@@ -393,14 +420,18 @@ class PacketStatsTx(PacketStats):
     icmp4__echo_request__send: int = 0
     icmp4__destination_unreachable__port__send: int = 0
     icmp4__destination_unreachable__protocol__send: int = 0
+    icmp4__destination_unreachable__network__send: int = 0
     icmp4__parameter_problem__send: int = 0
+    icmp4__time_exceeded__send: int = 0
     icmp4__unknown__drop: int = 0
 
     icmp6__pre_assemble: int = 0
     icmp6__echo_reply__send: int = 0
     icmp6__echo_request__send: int = 0
     icmp6__destination_unreachable__port__send: int = 0
+    icmp6__destination_unreachable__no_route__send: int = 0
     icmp6__parameter_problem__send: int = 0
+    icmp6__time_exceeded__send: int = 0
     icmp6__nd__router_solicitation__send: int = 0
     icmp6__nd__router_advertisement__send: int = 0
     icmp6__nd__neighbor_solicitation__send: int = 0

@@ -394,9 +394,9 @@ class TestIcmp4Tx__DestUnreachableUnsupportedCode(IcmpTestCase):
         """
         Ensure '_phtx_icmp4' drops with TxStatus.DROPPED__ICMP4__UNKNOWN
         when asked to emit a Destination Unreachable with a code other
-        than PORT or PROTOCOL — the TX path only supports those two
-        subcases today, and the fall-through is a defensive drop with
-        a counter bump rather than an exception.
+        than PORT, PROTOCOL, or NETWORK — the TX path only supports
+        those subcases today, and the fall-through is a defensive drop
+        with a counter bump rather than an exception.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -407,7 +407,7 @@ class TestIcmp4Tx__DestUnreachableUnsupportedCode(IcmpTestCase):
             ip4__src=STACK__IP4_HOST.address,
             ip4__dst=HOST_A__IP4_ADDRESS,
             icmp4__message=Icmp4MessageDestinationUnreachable(
-                code=Icmp4DestinationUnreachableCode.NETWORK,
+                code=Icmp4DestinationUnreachableCode.HOST,
             ),
         )
 

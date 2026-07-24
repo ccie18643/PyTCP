@@ -11,10 +11,16 @@
 
 This document records the PyTCP codebase's adherence to RFC 1812.
 RFC 1812 is the **router-grade companion** to RFC 1122 — it
-defines what an IPv4 router MUST do. PyTCP today is a host
-stack; **most of RFC 1812 is n/a (Phase 2)** per the project
-north-star (`CLAUDE.md` "Project North Star" → Phase 2:
-router-grade parity).
+defines what an IPv4 router MUST do. As of PyTCP 3.0.9 (Phase-2
+milestone **M1**) the stack forwards IPv4 unicast transit
+traffic: the core forward-or-deliver decision, the TTL decrement
+with ICMPv4 Time Exceeded on expiry, and the no-route ICMPv4
+Destination Unreachable are **met**. The remaining forwarding
+clauses — transit PMTU / forwarded-packet fragmentation (M2),
+ICMP Redirect emission (M3), and IP-options processing on
+forward (M4) — stay **n/a (Phase 2)** per the project north-star
+(`CLAUDE.md` "Project North Star" → Phase 2: router-grade
+parity).
 
 This audit enumerates the §4-§5 normative requirements and
 classifies each as one of:
@@ -36,31 +42,33 @@ Architecture, §3 Link Layer, Appendices) is omitted.
 
 ## Top-line adherence
 
-PyTCP **does not implement** the forwarding plane that RFC 1812
-governs. The audit's primary purpose is to enumerate the
-Phase-2 gaps so the migration path is greppable.
+PyTCP implements the **IPv4 unicast forwarding plane** as of
+3.0.9 M1; the transit PMTU (M2), Redirect (M3), and IP-options
+(M4) clauses remain deferred. The audit enumerates both what M1
+now satisfies and the remaining Phase-2 gaps so the migration
+path is greppable.
 
 | Section group | Topic                                            | Status |
 |---------------|--------------------------------------------------|--------|
-| §4.2.2.1      | IP options on forwarded packets                  | n/a (Phase 2) |
-| §4.2.2.2      | Addresses in options (LSRR/SSRR rewrite)         | n/a (Phase 2) |
+| §4.2.2.1      | IP options on forwarded packets                  | n/a (Phase 2 — M4) |
+| §4.2.2.2      | Addresses in options (LSRR/SSRR rewrite)         | n/a (Phase 2 — M4) |
 | §4.2.2.4      | TOS routing                                      | n/a (Phase 2) |
-| §4.2.2.5      | Header checksum recomputation                    | n/a (Phase 2) |
-| §4.2.2.7      | Fragmentation on forward                         | n/a (Phase 2) |
+| §4.2.2.5      | Header checksum recomputation                    | met (M1) |
+| §4.2.2.7      | Fragmentation on forward                         | n/a (Phase 2 — M2) |
 | §4.2.2.8      | Reassembly (routers MUST NOT reassemble in transit) | met by absence |
-| §4.2.2.9      | TTL decrement + Time Exceeded                    | n/a (Phase 2) |
+| §4.2.2.9      | TTL decrement + Time Exceeded                    | met (M1) |
 | §4.2.2.10     | Multi-subnet broadcasts                          | n/a (Phase 2) |
 | §4.2.3.1      | IP broadcast addresses                           | inherited from RFC 1122 host audit |
 | §4.2.3.2      | IP multicasting                                  | inherited (host-side) |
-| §4.2.3.3      | Path MTU Discovery (router side: emit Frag-Needed) | partial — host-side PMTUD audited under RFC 1191 |
+| §4.2.3.3      | Path MTU Discovery (router side: emit Frag-Needed) | partial — host-side PMTUD audited under RFC 1191; transit Frag-Needed is M2 |
 | §4.3          | ICMP general (TTL, source, error reporting)      | inherited from RFC 1122 host audit + RFC 4884 / RFC 6633 audits |
-| §4.3.2.8      | ICMP error rate limiting                         | met (host-side; see icmp4 audit) |
-| §4.3.3        | ICMP Destination Unreachable                     | met (RFC 1122 audit) |
-| §4.3.3.2      | ICMP Redirect (emission)                         | n/a (Phase 2) |
+| §4.3.2.8      | ICMP error rate limiting                         | met (host-side; reused on the transit-error path) |
+| §4.3.3        | ICMP Destination Unreachable                     | met (host + M1 no-route network-unreachable) |
+| §4.3.3.2      | ICMP Redirect (emission)                         | n/a (Phase 2 — M3) |
 | §4.3.3.3      | ICMP Source Quench (emission)                    | n/a (deprecated by RFC 6633; audit there) |
-| §4.3.3.5      | ICMP Time Exceeded (emission)                    | n/a (Phase 2 — no forwarding to expire TTL) |
+| §4.3.3.5      | ICMP Time Exceeded (emission)                    | met (M1) |
 | §4.3.3.7      | ICMP Echo Reply                                  | met (RFC 1122 / icmp4 audit) |
-| §5            | Forwarding plane                                 | n/a (Phase 2) |
+| §5            | Forwarding plane                                 | partial — unicast forwarding met (M1); PMTU/frag (M2), Redirect (M3), options (M4) deferred |
 
 ---
 
@@ -97,17 +105,29 @@ forwarding is not implemented.
 > decremented to zero, the router MUST discard the datagram
 > and MUST send an ICMP Time Exceeded message."
 
-**Adherence:** n/a (Phase 2). PyTCP enforces "TTL=0 on receive
-rejects the datagram" host-side (RFC 1122 §3.2.1.7 audit). The
-forwarder-side TTL decrement and ICMP Time Exceeded emission
-will land with the Phase-2 forwarder.
+**Adherence:** met (M1). The forward path at
+`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__forward.py`
+(`Ip4ForwardHandler.try_forward_ip4`) branches off
+`_forward_or_deliver_ip4` when the destination is not owned and
+forwarding is enabled. It rejects a datagram arriving with
+`ttl <= 1` (bumping `ip4__forward_ttl_exceeded__drop`) and emits
+ICMPv4 Time Exceeded (Type 11, Code 0) back to the source; a
+forwarded datagram has its TTL decremented by one and its header
+checksum recomputed before re-emission. The pre-existing host-side
+"TTL=0 on receive rejects the datagram" behaviour (RFC 1122
+§3.2.1.7 audit) is unchanged.
 
-**`# Phase 2:`** the natural place is a new
-`packet_handler__ip4__forward.py` that branches off
-`_phrx_ip4` after the destination filter when the dst is not
-owned; the decrement + Time-Exceeded emission go there. The
-ICMPv4 Time Exceeded message type is already implemented
-(`packages/net_proto/net_proto/protocols/icmp4/messages/icmp4__message__time_exceeded.py`).
+## §4.2.2.5 Header Checksum Recomputation
+
+> "A router MUST recompute the IP header checksum whenever it
+> modifies the header (e.g. on the TTL decrement)."
+
+**Adherence:** met (M1). After decrementing the TTL byte, the
+forward path zeroes the checksum field and recomputes it over
+the IHL-bounded header via `inet_cksum`
+(`packet_handler__ip4__forward.py`, `try_forward_ip4` step 8).
+The forwarded-frame integration tests re-parse the egress frame
+and assert the header checksum sums to zero (valid).
 
 ## §4.3.2.8 ICMP Error Rate Limiting
 
@@ -129,13 +149,50 @@ under RFC 1122 §3.2.2 also references it.
 > "A router MUST generate a Redirect message ... when it is
 > aware of a better path."
 
-**Adherence:** n/a (Phase 2). Host-side Redirect *processing*
-is also n/a in PyTCP (audited under RFC 1122 §3.3.1.5).
+**Adherence:** n/a (Phase 2 — M3). Host-side Redirect
+*processing* is also n/a in PyTCP (audited under RFC 1122
+§3.3.1.5). Generation lands with M3.
+
+## §4.3.3.5 ICMP Time Exceeded Emission
+
+> "If a router discards a packet because its TTL was decremented
+> to zero, it MUST send an ICMP Time Exceeded (Code 0) to the
+> source."
+
+**Adherence:** met (M1). See §4.2.2.9 — the forward path emits
+ICMPv4 Time Exceeded (Type 11, Code 0, TTL exceeded in transit)
+from `Ip4ForwardHandler._emit_time_exceeded`, sourced from the
+ingress interface's address toward the original sender (RFC 1812
+§4.3.2.5) and embedding the offending datagram. The emission
+runs the shared host-requirements gate + the existing ICMPv4
+error rate limiter (§4.3.2.8). The ICMPv4 TX handler gained a
+`TIME_EXCEEDED` dispatch arm (`icmp4__time_exceeded__send`).
+
+## §4.3.3.1 Destination Unreachable on No Route
+
+> "A router MUST generate a Destination Unreachable message ...
+> Code 0 (Network Unreachable) when it cannot forward a packet
+> because it has no route to the destination network."
+
+**Adherence:** met (M1). When the FIB resolves no route for a
+transit destination, the forward path bumps
+`ip4__forward_no_route__drop` and emits ICMPv4 Destination
+Unreachable (Type 3, Code 0, network unreachable) from
+`Ip4ForwardHandler._emit_dest_unreachable`. The ICMPv4 TX
+handler gained a `DESTINATION_UNREACHABLE, NETWORK` dispatch arm
+(`icmp4__destination_unreachable__network__send`).
 
 ## §5 Forwarding
 
-The entire §5 (route lookup, RPF, ICMP Redirect generation,
-default-gateway preference, multipath, etc.) is **Phase 2**.
+The IPv4 **unicast** forward path is implemented (M1): the
+forward-or-deliver split (§5.2.1), next-hop determination via
+the FIB (§5.2.4), the TTL decrement (§5.3.1), and the martian /
+scope destination filter (§5.3.7). The `ip4.ip_forward` /
+`ip4.forwarding` sysctls gate it (Linux `net.ipv4.ip_forward` /
+`net.ipv4.conf.<iface>.forwarding`; default off = exact host
+behaviour). Remaining §5 work — transit PMTU + forwarded-packet
+fragmentation (M2), ICMP Redirect generation (M3), IP-options
+processing on forward (M4), RPF and multipath — stays Phase 2.
 
 ---
 
@@ -162,26 +219,46 @@ default-gateway preference, multipath, etc.) is **Phase 2**.
 
 **Status:** locked in indirectly.
 
-### All Phase-2 gaps
+### §4.2.2.9 / §4.3.3.5 / §4.3.3.1 / §5 IPv4 unicast forwarding (M1)
 
-**No test surface — Phase 2.** When the forwarder lands the
-natural matrix is:
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/router/test__router__ip4__forwarding.py`
+  on the three-interface `RouterTestCase` topology — happy-path
+  forward out a connected LAN and via the default gateway (TTL
+  decrement, correct egress + next-hop MAC, byte-identical
+  payload, valid recomputed checksum, ingress isolation); TTL=1
+  → ICMPv4 Time Exceeded; no route → ICMPv4 Destination
+  Unreachable; martian destination / oversize / unresolved
+  next-hop drops; forwarding-disabled host-parity drop.
+- **Unit:**
+  `packages/pytcp/pytcp/tests/unit/stack/test__stack__forwarding_sysctl.py`
+  the `ip4.ip_forward` / `ip4.forwarding` knob registration,
+  defaults, validation, and per-interface scope.
 
-1. TTL decrement on forward + Time Exceeded emission on
-   decrement-to-zero.
-2. Fragmentation on forward + Frag-Needed on DF=1.
-3. ICMP Redirect emission when a better path is known.
-4. Source-route processing (LSRR/SSRR pointer advance, dst
-   rewrite, options preservation across fragments).
-5. RPF / ingress-filter checks.
+**Status:** locked in (M1 scope).
+
+### Remaining Phase-2 gaps
+
+**No test surface yet — later milestones.** The remaining matrix:
+
+1. Fragmentation on forward + Frag-Needed on DF=1 (M2).
+2. ICMP Redirect emission when a better path is known (M3).
+3. Source-route processing (LSRR/SSRR pointer advance, dst
+   rewrite, options preservation across fragments) (M4).
+4. RPF / ingress-filter checks.
 
 ### Test coverage summary
 
 | Aspect                                              | Coverage |
 |-----------------------------------------------------|----------|
+| §4.2.2.9 TTL decrement + Time Exceeded (M1)         | locked in |
+| §4.2.2.5 Header checksum recomputation (M1)         | locked in |
+| §4.3.3.1 Destination Unreachable on no route (M1)   | locked in |
+| §4.3.3.5 ICMP Time Exceeded emission (M1)           | locked in |
+| §5 unicast forward-or-deliver + next-hop (M1)       | locked in |
 | §4.3.2.8 ICMP error rate limiting                   | locked in |
 | §4.2.2.8 No in-transit reassembly                   | locked in by code structure |
-| §4.2.2.7 / §4.2.2.9 / §4.3.3.2 / §5 — forwarder      | n/a (Phase 2) |
+| §4.2.2.7 (M2) / §4.3.3.2 (M3) / §4.2.2.1-2 (M4)      | n/a (Phase 2) |
 
 ---
 
@@ -189,21 +266,25 @@ natural matrix is:
 
 | Aspect                                              | Status |
 |-----------------------------------------------------|--------|
-| §4.2.2 IP options on forwarded packets              | n/a (Phase 2) |
-| §4.2.2.7 Fragmentation on forward                   | n/a (Phase 2) |
+| §4.2.2 IP options on forwarded packets              | n/a (Phase 2 — M4) |
+| §4.2.2.5 Header checksum recomputation              | met (M1) |
+| §4.2.2.7 Fragmentation on forward                   | n/a (Phase 2 — M2) |
 | §4.2.2.8 No reassembly in transit                   | met by absence (host-side reassembly intact) |
-| §4.2.2.9 TTL decrement + Time Exceeded              | n/a (Phase 2) |
+| §4.2.2.9 TTL decrement + Time Exceeded              | met (M1) |
 | §4.2.3.1 IP broadcast handling                      | inherited from RFC 1122 host audit |
-| §4.2.3.3 PMTUD (router side)                        | host-side audited under RFC 1191 |
+| §4.2.3.3 PMTUD (router side)                        | host-side audited under RFC 1191; transit Frag-Needed is M2 |
 | §4.3.2.8 ICMP error rate limiting                   | met    |
-| §4.3.3.2 ICMP Redirect emission                     | n/a (Phase 2) |
-| §4.3.3.5 ICMP Time Exceeded emission                | n/a (Phase 2) |
-| §5 Forwarding plane                                 | n/a (Phase 2) |
+| §4.3.3.1 Destination Unreachable on no route        | met (M1) |
+| §4.3.3.2 ICMP Redirect emission                     | n/a (Phase 2 — M3) |
+| §4.3.3.5 ICMP Time Exceeded emission                | met (M1) |
+| §5 Forwarding plane (unicast)                       | met (M1); PMTU/frag (M2), Redirect (M3), options (M4) deferred |
 
-PyTCP intentionally defers the bulk of RFC 1812 to Phase 2. The
-audit's value is structural — it enumerates the Phase-2 gap
-list with a one-to-one map to where each piece will land
-(forward handler, source-route forwarder, Redirect emission,
-Time Exceeded emission, multipath, RPF). The Phase-1 host
-posture is intact and does not foreclose any of these
-additions.
+As of 3.0.9 (M1) PyTCP forwards IPv4 unicast transit traffic and
+originates the TTL-expiry (Time Exceeded) and no-route
+(Destination Unreachable) ICMP errors a forwarder must. The
+remaining RFC 1812 forwarding clauses are deferred to later
+Phase-2 milestones with a one-to-one map to where each piece
+lands: transit PMTU + forwarded-packet fragmentation (M2), ICMP
+Redirect generation (M3), IP-options processing on forward (M4),
+plus RPF / multipath. Default-off forwarding keeps the Phase-1
+host posture byte-for-byte intact.

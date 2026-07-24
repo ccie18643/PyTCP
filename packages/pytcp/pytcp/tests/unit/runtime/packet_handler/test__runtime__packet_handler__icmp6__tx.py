@@ -582,8 +582,8 @@ class TestPacketHandlerIcmp6TxUnsupported(TestCase):
         with 'TxStatus.DROPPED__ICMP6__UNKNOWN' and bumps the
         'icmp6__unknown__drop' counter — defensive over a 'raise'
         that would crash the calling thread. ICMPv6 Destination
-        Unreachable code=NO_ROUTE is not in the supported match arms
-        (only PORT is).
+        Unreachable code=ADDRESS is not in the supported match arms
+        (only PORT and NO_ROUTE are).
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -594,7 +594,7 @@ class TestPacketHandlerIcmp6TxUnsupported(TestCase):
             ip6__dst=HOST_A__IP6,
             ip6__hop=64,
             icmp6__message=Icmp6MessageDestinationUnreachable(
-                code=Icmp6DestinationUnreachableCode.NO_ROUTE,
+                code=Icmp6DestinationUnreachableCode.ADDRESS,
                 data=b"\x00" * 40,
             ),
         )

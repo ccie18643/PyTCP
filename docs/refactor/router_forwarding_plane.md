@@ -5,7 +5,7 @@
 | Track        | Phase 2 — router-grade parity (Project North Star)                    |
 | Target       | PyTCP 3.0.9 (unicast forwarding plane: M0–M4)                         |
 | Branch       | `PyTCP_3_0_9`                                                         |
-| Status       | **Not started** — plan only                                          |
+| Status       | **M0 + M1 landed** — unicast forwarding + transit ICMP errors shipped; M2–M4 pending |
 | Follow-up    | M5 (multicast router / querier) + FIB extensions — optional, post-3.0.9 |
 | Precedent    | `routing_table_host_mode.md`, `packet_handler_rewrite_plan.md`, `sysctl_per_interface.md` |
 
@@ -179,13 +179,20 @@ holds:
 
 ```
 ip4__forward                       ip6__forward
-ip4__forward_disabled__drop        ip6__forward_disabled__drop
 ip4__forward_no_route__drop        ip6__forward_no_route__drop
 ip4__forward_ttl_exceeded__drop    ip6__forward_hop_exceeded__drop
 ip4__forward_no_neighbor__drop     ip6__forward_no_neighbor__drop
 ip4__forward_too_big__drop         ip6__forward_too_big__drop
 ip4__forward_martian_dst__drop     ip6__forward_scope__drop
 ```
+
+**Note (M1 decision):** the `forward_disabled__drop` counters
+originally proposed here were **not** added — the
+forwarding-disabled path keeps the existing host-parity
+`ip{4,6}__dst_unknown__drop` counter so §3.1's byte-for-byte host
+behaviour holds and the M0 baseline disabled tests stay green.
+The M1 counters land in the same commit as the code that bumps
+them (per-family), not in M0.
 
 **Commit:** `test(router): RouterTestCase + 3-interface forwarding harness`.
 
@@ -492,8 +499,8 @@ handling) — tracked in the adherence records as "n/a (M5)".
 
 | Milestone | Deliverable | Blocks |
 |---|---|---|
-| **M0** | Plan + `RouterTestCase` 3-interface harness + stat fields | everything |
-| **M1** | `ip_forward` knob + forward branch + Time-Exceeded + no-route Unreachable | M2–M4 |
+| **M0** ✅ | Plan + `RouterTestCase` 3-interface harness + stat fields | everything |
+| **M1** ✅ | `ip_forward` knob + forward branch + Time-Exceeded + no-route Unreachable | M2–M4 |
 | **M2** | Transit PMTU (Frag-Needed / Packet Too Big) + IPv4 forwarded fragmentation + Host-Unreachable | M4 |
 | **M3** | ICMP Redirect generation (+ new ICMPv4 codec, host RX-accept) | M4 |
 | **M4** | RFC 1812 conformance sweep + adherence records flipped | release |
@@ -508,21 +515,35 @@ an explicit ask.
 
 ## §10. Risks / open questions
 
-1. **Forward-path TX re-injection vs. the origination TX path.** The
-   forward module must re-emit received bytes with a decremented
-   lifetime without re-running source selection / upper-layer assembly.
-   Confirm the cleanest seam onto the egress handler's TX ring
-   (probably a dedicated `forward_ip{4,6}(packet_rx, *, egress,
-   next_hop_mac)` that assembles an Ethernet frame around the existing
-   IP payload). *Resolve in M1 spike.*
+1. **Forward-path TX re-injection vs. the origination TX path.**
+   *Resolved (M1).* The forward module rebuilds the received IP
+   bytes in a `bytearray` (decrementing the TTL / Hop-Limit byte and,
+   for IPv4, recomputing the header checksum), wraps them in a
+   `RawAssembler(ether_type=IP4/IP6)` + `EthernetAssembler`, resolves
+   the next-hop MAC from the egress interface's own ARP/ND cache, and
+   calls the egress handler's `_phtx_ethernet(ethernet__dst=mac, …)`.
+   The payload is preserved byte-for-byte (no source selection, no
+   upper-layer re-assembly); a cache miss queues the frame via
+   `enqueue_pending` (RFC 1122 §2.3.2.2). See
+   `packet_handler__ip{4,6}__forward.py`.
 2. **Next-hop ARP/ND miss under forwarding.** The host TX path queues
    and probes on a cache miss. For transit traffic, decide the queue
    policy (bounded per-next-hop queue, drop-with-Host-Unreachable after
    N probes) — Linux drops after `unres_qlen`. *Resolve in M1/M2.*
-3. **Global-master ↔ per-interface knob coupling.** Decide whether the
-   master write eagerly stamps every per-interface knob (Linux) or is
-   evaluated as `master OR per-iface` at read time. Eager-stamp matches
-   Linux `ip_forward` most closely. *Resolve in M1.*
+3. **Global-master ↔ per-interface knob coupling.** *Resolved (M1):
+   read-time `master OR per-iface`.* PyTCP evaluates
+   `sysctl.get("ip4.ip_forward") or sysctl_iface.get_for_iface(
+   "ip4.forwarding", ifname)` at the RX forward gate rather than
+   eager-stamping every per-interface slot on a master write. This is
+   observably identical for the forward decision (enable-all and
+   per-interface-enable both work) and avoids a runtime write-hook the
+   sysctl framework does not have; it differs from Linux only in
+   per-interface introspection fidelity, marked `# Phase 2:` in
+   `stack/__init__.py`. Related decision: the **forwarding-disabled
+   drop keeps the host-parity `ip{4,6}__dst_unknown__drop` counter** —
+   §3.1's "byte-for-byte host behaviour" invariant won over the §2.4
+   `forward_disabled__drop` proposal, so that counter was not added and
+   the M0 baseline disabled-drop tests stay green unchanged.
 4. **ICMP error source address.** RFC 1812 §4.3.2.5 constrains the
    source of a router-originated ICMP error. Reuse `select_local_ip*_
    source(dst)` for the interface facing the original sender. *Confirm

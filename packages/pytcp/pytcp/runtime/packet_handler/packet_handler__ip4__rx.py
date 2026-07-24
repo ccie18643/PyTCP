@@ -53,6 +53,7 @@ from pytcp.protocols.icmp.icmp__error_emitter import try_emit_icmp_error
 from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
 from pytcp.protocols.ip.ip_frag import IpFragFlowId
 from pytcp.protocols.ip.ip_frag_table import IpFragAddOutcome
+from pytcp.runtime.packet_handler.packet_handler__ip4__forward import Ip4ForwardHandler
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.stack import sysctl_iface
@@ -74,6 +75,7 @@ class Ip4RxHandler:
         """
 
         self._if = interface
+        self._forward = Ip4ForwardHandler(interface=interface)
 
     def _forward_or_deliver_ip4(self, packet_rx: PacketRx, /) -> bool:
         """
@@ -81,28 +83,20 @@ class Ip4RxHandler:
         datagram. Return True to deliver it up the local stack, False
         if the forward path consumed it.
 
-        Phase 1 (host): deliver iff the destination is one of our
-        addresses — unicast, joined multicast, or broadcast — or no
-        unicast is configured yet (the DHCP-client accept-all
-        bootstrap, where the OFFER / ACK arrive before an address is
-        claimed). Any other destination is not ours to deliver.
-
-        # Phase 2: the forward branch runs the FIB next-hop lookup,
-        # the TTL decrement + ICMPv4 Time-Exceeded on expiry, and the
-        # ICMPv4 Redirect generation. A host has no forwarding plane,
-        # so it drops non-local datagrams here (counted in
-        # 'ip4__dst_unknown__drop'; the forward-specific counter lands
-        # with the forwarding plane).
+        Deliver iff the destination is one of our addresses — unicast,
+        joined multicast, or broadcast — or no unicast is configured
+        yet (the DHCP-client accept-all bootstrap, where the OFFER /
+        ACK arrive before an address is claimed). Any other
+        destination is handed to the Phase-2 forward path, which
+        forwards it toward its next hop when forwarding is enabled and
+        otherwise drops it with exact host-mode behaviour (see
+        'Ip4ForwardHandler.try_forward_ip4').
         """
 
         if self._if._accepts_local_dst_ip4(packet_rx.ip4.dst):
             return True
 
-        self._if._packet_stats_rx.ip4__dst_unknown__drop += 1
-        __debug__ and log(
-            "ip4",
-            f"{packet_rx.tracker} - IP packet not destined for this stack; " "host does not forward, dropping",
-        )
+        self._forward.try_forward_ip4(packet_rx)
         return False
 
     def _phrx_ip4(self, packet_rx: PacketRx, /) -> None:

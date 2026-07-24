@@ -178,7 +178,7 @@ class TestPacketHandlerIcmp4Tx(TestCase):
         is dropped with 'TxStatus.DROPPED__ICMP4__UNKNOWN' and bumps
         the 'icmp4__unknown__drop' counter — defensive over the old
         'raise ValueError' behaviour. Destination Unreachable with
-        code=NETWORK is not in the supported match arms.
+        code=HOST is not in the supported match arms.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -187,7 +187,7 @@ class TestPacketHandlerIcmp4Tx(TestCase):
             ip4__src=STACK__IP4_ADDRESS,
             ip4__dst=HOST_A__IP4,
             icmp4__message=Icmp4MessageDestinationUnreachable(
-                code=Icmp4DestinationUnreachableCode.NETWORK,
+                code=Icmp4DestinationUnreachableCode.HOST,
                 data=b"\x00" * 20,
             ),
         )

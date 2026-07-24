@@ -54,13 +54,26 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
+from net_proto import (
+    Icmp4MessageDestinationUnreachable,
+    Icmp4MessageTimeExceeded,
+    Icmp6MessageDestinationUnreachable,
+    Icmp6MessageTimeExceeded,
+)
+from net_proto.lib.enums import EtherType
+from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
+from net_proto.protocols.ethernet.ethernet__parser import EthernetParser
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
+from net_proto.protocols.ip4.ip4__parser import Ip4Parser
 from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
+from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
+from net_proto.protocols.udp.udp__parser import UdpParser
 from pytcp import stack
 from pytcp.runtime.fib import Route, RouteProtocol
+from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
 from pytcp.tests.lib.network_testcase import AddedInterface
 
@@ -77,6 +90,13 @@ ROUTER__IF2__IP6 = Ip6IfAddr("2001:db8:0:2::1/64")
 HOST_D__MAC = MacAddress("02:00:00:00:00:20")
 HOST_D__IP4 = Ip4Address("10.0.2.20")
 HOST_D__IP6 = Ip6Address("2001:db8:0:2::20")
+
+# An on-link LAN-B host whose neighbor entry is a permanent MISS
+# (seeded to None) — the fixture for the forward "no neighbor"
+# path, where next-hop resolution fails and the datagram is queued
+# pending resolution rather than emitted.
+HOST_E__IP4 = Ip4Address("10.0.2.21")
+HOST_E__IP6 = Ip6Address("2001:db8:0:2::21")
 
 # if-3 — the upstream interface carrying the default route.
 ROUTER__IF3__MAC = MacAddress("02:00:00:00:00:03")
@@ -130,13 +150,14 @@ class RouterTestCase(IcmpTestCase):
         # share one drive / capture surface.
         self.if1 = AddedInterface(handler=self._packet_handler, frames_tx=self._frames_tx)
 
-        # if-2 = LAN-B (10.0.2.0/24 / 2001:db8:0:2::/64), HOST_D on-link.
+        # if-2 = LAN-B (10.0.2.0/24 / 2001:db8:0:2::/64), HOST_D on-link
+        # and resolvable; HOST_E on-link but a permanent neighbor miss.
         self.if2 = self._add_interface(
             mac_address=ROUTER__IF2__MAC,
             ip4_host=ROUTER__IF2__IP4,
             ip6_host=ROUTER__IF2__IP6,
-            arp_entries={HOST_D__IP4: HOST_D__MAC},
-            nd_entries={HOST_D__IP6: HOST_D__MAC},
+            arp_entries={HOST_D__IP4: HOST_D__MAC, HOST_E__IP4: None},
+            nd_entries={HOST_D__IP6: HOST_D__MAC, HOST_E__IP6: None},
         )
 
         # if-3 = upstream (203.0.113.0/24 / 2001:db8:0:3::/64), the
@@ -170,6 +191,247 @@ class RouterTestCase(IcmpTestCase):
                 oif=self.if3.ifindex,
                 protocol=RouteProtocol.STATIC,
             )
+        )
+
+    @override
+    def tearDown(self) -> None:
+        """
+        Restore sysctl defaults so a test that enabled forwarding does
+        not leak the mutation into unrelated tests run in the same
+        process.
+        """
+
+        sysctl_module.reset_to_defaults()
+        super().tearDown()
+
+    def _enable_forwarding(self) -> None:
+        """
+        Enable IPv4 and IPv6 forwarding stack-wide via the global
+        master switches, turning the router-under-test into a
+        forwarder on every interface.
+        """
+
+        sysctl_module.set("ip4.ip_forward", True)
+        sysctl_module.set("ip6.all.forwarding", True)
+
+    def _assert_single_egress(self, emitted: dict[int, list[bytes]], /, *, egress: AddedInterface) -> bytes:
+        """
+        Assert that '_drive_forward' emitted exactly one frame on
+        'egress' and nothing on any other interface, and return that
+        egress frame for further decoding.
+        """
+
+        for ifindex, frames in emitted.items():
+            expected = 1 if ifindex == egress.ifindex else 0
+            self.assertEqual(
+                len(frames),
+                expected,
+                msg=(
+                    f"Expected {expected} frame(s) on ifindex {ifindex} "
+                    f"(egress is ifindex {egress.ifindex}); got {len(frames)}: {frames!r}"
+                ),
+            )
+        return emitted[egress.ifindex][0]
+
+    def _assert_forwarded_ip4(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        egress: AddedInterface,
+        src_ip: Ip4Address,
+        dst_ip: Ip4Address,
+        ttl_out: int,
+        next_hop_mac: MacAddress,
+        payload: bytes,
+    ) -> None:
+        """
+        Assert that the datagram was forwarded out 'egress' toward
+        'next_hop_mac': Ethernet dst is the next-hop MAC and src is the
+        egress interface's own MAC; the IPv4 source / destination are
+        preserved; the TTL is 'ttl_out' (ttl_in - 1); the header
+        checksum is valid; and the UDP payload is byte-identical.
+        """
+
+        frame = self._assert_single_egress(emitted, egress=egress)
+
+        packet_rx = PacketRx(frame)
+        EthernetParser(packet_rx)
+        self.assertEqual(
+            packet_rx.ethernet.dst,
+            next_hop_mac,
+            msg=f"Forwarded frame Ethernet dst must be the next-hop MAC {next_hop_mac}.",
+        )
+        self.assertEqual(
+            packet_rx.ethernet.src,
+            egress.handler._mac_unicast,
+            msg="Forwarded frame Ethernet src must be the egress interface's own MAC.",
+        )
+        self.assertIs(
+            packet_rx.ethernet.type,
+            EtherType.IP4,
+            msg="Forwarded frame Ethernet type must be IPv4.",
+        )
+
+        Ip4Parser(packet_rx)
+        self.assertEqual(
+            packet_rx.ip4.src,
+            src_ip,
+            msg="Forwarded IPv4 source must be preserved.",
+        )
+        self.assertEqual(
+            packet_rx.ip4.dst,
+            dst_ip,
+            msg="Forwarded IPv4 destination must be preserved.",
+        )
+        self.assertEqual(
+            packet_rx.ip4.ttl,
+            ttl_out,
+            msg=f"Forwarded IPv4 TTL must be decremented to {ttl_out}.",
+        )
+        self.assertEqual(
+            inet_cksum(memoryview(bytes(packet_rx.ip4.packet_bytes))[: packet_rx.ip4.hlen]),
+            0,
+            msg="Forwarded IPv4 header checksum must be valid (sums to zero).",
+        )
+
+        UdpParser(packet_rx)
+        self.assertEqual(
+            bytes(packet_rx.udp.payload),
+            payload,
+            msg="Forwarded UDP payload must be byte-identical.",
+        )
+
+    def _assert_forwarded_ip6(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        egress: AddedInterface,
+        src_ip: Ip6Address,
+        dst_ip: Ip6Address,
+        hop_out: int,
+        next_hop_mac: MacAddress,
+        payload: bytes,
+    ) -> None:
+        """
+        Assert that the datagram was forwarded out 'egress' toward
+        'next_hop_mac': Ethernet dst is the next-hop MAC and src is the
+        egress interface's own MAC; the IPv6 source / destination are
+        preserved; the Hop-Limit is 'hop_out' (hop_in - 1); and the UDP
+        payload is byte-identical.
+        """
+
+        frame = self._assert_single_egress(emitted, egress=egress)
+
+        packet_rx = PacketRx(frame)
+        EthernetParser(packet_rx)
+        self.assertEqual(
+            packet_rx.ethernet.dst,
+            next_hop_mac,
+            msg=f"Forwarded frame Ethernet dst must be the next-hop MAC {next_hop_mac}.",
+        )
+        self.assertEqual(
+            packet_rx.ethernet.src,
+            egress.handler._mac_unicast,
+            msg="Forwarded frame Ethernet src must be the egress interface's own MAC.",
+        )
+        self.assertIs(
+            packet_rx.ethernet.type,
+            EtherType.IP6,
+            msg="Forwarded frame Ethernet type must be IPv6.",
+        )
+
+        Ip6Parser(packet_rx)
+        self.assertEqual(
+            packet_rx.ip6.src,
+            src_ip,
+            msg="Forwarded IPv6 source must be preserved.",
+        )
+        self.assertEqual(
+            packet_rx.ip6.dst,
+            dst_ip,
+            msg="Forwarded IPv6 destination must be preserved.",
+        )
+        self.assertEqual(
+            packet_rx.ip6.hop,
+            hop_out,
+            msg=f"Forwarded IPv6 Hop-Limit must be decremented to {hop_out}.",
+        )
+
+        UdpParser(packet_rx)
+        self.assertEqual(
+            bytes(packet_rx.udp.payload),
+            payload,
+            msg="Forwarded UDP payload must be byte-identical.",
+        )
+
+    def _assert_icmp4_error(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        ingress: AddedInterface,
+        icmp_type: int,
+        icmp_code: int,
+        to_ip: Ip4Address,
+    ) -> None:
+        """
+        Assert that the only frame emitted is an ICMPv4 error of
+        '(icmp_type, icmp_code)' sent back to 'to_ip' out the ingress
+        interface, embedding the offending datagram.
+        """
+
+        frame = self._assert_single_egress(emitted, egress=ingress)
+        probe = self._parse_tx_icmp4(frame)
+        self.assertEqual(probe.icmp_type, icmp_type, msg="Unexpected ICMPv4 error type.")
+        self.assertEqual(probe.icmp_code, icmp_code, msg="Unexpected ICMPv4 error code.")
+        self.assertEqual(probe.ip_dst, to_ip, msg="ICMPv4 error must be sent back to the datagram source.")
+        message = probe.message
+        self.assertIsInstance(
+            message,
+            (Icmp4MessageDestinationUnreachable, Icmp4MessageTimeExceeded),
+            msg="Forward ICMPv4 error must be a Destination Unreachable or Time Exceeded.",
+        )
+        assert isinstance(message, (Icmp4MessageDestinationUnreachable, Icmp4MessageTimeExceeded))
+        self.assertGreater(
+            len(message.data),
+            0,
+            msg="ICMPv4 error must embed the offending datagram.",
+        )
+
+    def _assert_icmp6_error(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        ingress: AddedInterface,
+        icmp_type: int,
+        icmp_code: int,
+        to_ip: Ip6Address,
+    ) -> None:
+        """
+        Assert that the only frame emitted is an ICMPv6 error of
+        '(icmp_type, icmp_code)' sent back to 'to_ip' out the ingress
+        interface, embedding the offending datagram.
+        """
+
+        frame = self._assert_single_egress(emitted, egress=ingress)
+        probe = self._parse_tx_icmp6(frame)
+        self.assertEqual(probe.icmp_type, icmp_type, msg="Unexpected ICMPv6 error type.")
+        self.assertEqual(probe.icmp_code, icmp_code, msg="Unexpected ICMPv6 error code.")
+        self.assertEqual(probe.ip_dst, to_ip, msg="ICMPv6 error must be sent back to the datagram source.")
+        message = probe.message
+        self.assertIsInstance(
+            message,
+            (Icmp6MessageDestinationUnreachable, Icmp6MessageTimeExceeded),
+            msg="Forward ICMPv6 error must be a Destination Unreachable or Time Exceeded.",
+        )
+        assert isinstance(message, (Icmp6MessageDestinationUnreachable, Icmp6MessageTimeExceeded))
+        self.assertGreater(
+            len(message.data),
+            0,
+            msg="ICMPv6 error must embed the offending datagram.",
         )
 
     def _build_transit_ip4(

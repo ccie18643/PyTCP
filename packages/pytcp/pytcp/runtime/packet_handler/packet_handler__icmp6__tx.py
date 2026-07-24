@@ -161,8 +161,19 @@ class Icmp6TxHandler:
                 Icmp6DestinationUnreachableCode.PORT,
             ):
                 self._if._packet_stats_tx.icmp6__destination_unreachable__port__send += 1
+            case (
+                Icmp6Type.DESTINATION_UNREACHABLE,
+                Icmp6DestinationUnreachableCode.NO_ROUTE,
+            ):
+                # RFC 4443 §3.1 / RFC 1812 §5.2 — no-route response
+                # emitted by the transit forward path.
+                self._if._packet_stats_tx.icmp6__destination_unreachable__no_route__send += 1
             case Icmp6Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp6__parameter_problem__send += 1
+            case Icmp6Type.TIME_EXCEEDED, _:
+                # RFC 4443 §3.3 / RFC 1812 §5.3.1 — Hop-Limit-expiry
+                # response emitted by the transit forward path.
+                self._if._packet_stats_tx.icmp6__time_exceeded__send += 1
             case Icmp6Type.ND__ROUTER_SOLICITATION, _:
                 self._if._packet_stats_tx.icmp6__nd__router_solicitation__send += 1
             case Icmp6Type.ND__ROUTER_ADVERTISEMENT, _:

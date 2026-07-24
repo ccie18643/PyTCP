@@ -99,8 +99,19 @@ class Icmp4TxHandler:
                 Icmp4DestinationUnreachableCode.PROTOCOL,
             ):
                 self._if._packet_stats_tx.icmp4__destination_unreachable__protocol__send += 1
+            case (
+                Icmp4Type.DESTINATION_UNREACHABLE,
+                Icmp4DestinationUnreachableCode.NETWORK,
+            ):
+                # RFC 1812 §4.3.3.1 — no-route response emitted by the
+                # transit forward path.
+                self._if._packet_stats_tx.icmp4__destination_unreachable__network__send += 1
             case Icmp4Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp4__parameter_problem__send += 1
+            case Icmp4Type.TIME_EXCEEDED, _:
+                # RFC 1812 §4.3.3.5 — TTL-expiry response emitted by the
+                # transit forward path.
+                self._if._packet_stats_tx.icmp4__time_exceeded__send += 1
             case Icmp4Type.ECHO_REQUEST, _:
                 self._if._packet_stats_tx.icmp4__echo_request__send += 1
             case _:
