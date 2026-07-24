@@ -103,7 +103,7 @@ class TestPacketStatsBase(TestCase):
                 "is_subclass_of_packet_stats": True,
                 "is_dataclass": True,
                 "is_slotted": True,
-                "field_count": 208,
+                "field_count": 213,
             },
         },
         {
@@ -113,7 +113,7 @@ class TestPacketStatsBase(TestCase):
                 "is_subclass_of_packet_stats": True,
                 "is_dataclass": True,
                 "is_slotted": True,
-                "field_count": 122,
+                "field_count": 123,
             },
         },
     ]

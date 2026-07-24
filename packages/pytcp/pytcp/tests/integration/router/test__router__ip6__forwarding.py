@@ -38,12 +38,15 @@ ver 3.0.9
 
 from net_addr import Ip6Address, Ip6Network
 from pytcp import stack
+from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.tests.lib.network_testcase import HOST_A__IP6_ADDRESS, HOST_A__MAC_ADDRESS
 from pytcp.tests.lib.router_testcase import (
     HOST_D__IP6,
     HOST_D__MAC,
     HOST_E__IP6,
     INTERNET__IP6,
+    LAN_B_GW__IP6,
+    LAN_B_GW__MAC,
     UPSTREAM_GW__MAC,
     RouterTestCase,
 )
@@ -310,6 +313,60 @@ class TestRouterIp6Forwarding(RouterTestCase):
             ethernet__dst_unicast=1,
             ip6__pre_parse=1,
             ip6__forward_too_big__drop=1,
+        )
+
+    def test__router__ip6__forward__hairpin_emits_redirect(self) -> None:
+        """
+        Ensure a datagram forwarded back out the interface it arrived on
+        (next hop on-link to the source) elicits an ICMPv6 ND Redirect,
+        sourced from the interface link-local address, advertising the
+        better first hop, while the triggering datagram is still
+        forwarded toward that next hop.
+
+        Reference: RFC 4861 §8 (ICMPv6 Redirect on same-interface forward).
+        Reference: RFC 4861 §4.5 (Redirect source is link-local).
+        """
+
+        self._enable_forwarding()
+        # More-specific route sending 2001:db8:0:9::/64 back out LAN-B via
+        # a gateway on LAN-B — makes ingress == egress (if2) a hairpin.
+        stack.ip6_fib.add(
+            route=Route(
+                destination=Ip6Network("2001:db8:0:9::/64"),
+                gateway=LAN_B_GW__IP6,
+                oif=self.if2.ifindex,
+                protocol=RouteProtocol.STATIC,
+            )
+        )
+
+        emitted = self._drive_forward(
+            ingress=self.if2,
+            frame=self._build_transit_ip6(
+                ingress=self.if2,
+                src_mac=HOST_D__MAC,
+                src_ip=HOST_D__IP6,
+                dst_ip=INTERNET__IP6,
+                hop=64,
+            ),
+        )
+
+        self._assert_redirect_and_forward_ip6(
+            emitted,
+            iface=self.if2,
+            src_ip=HOST_D__IP6,
+            dst_ip=INTERNET__IP6,
+            target=LAN_B_GW__IP6,
+            next_hop_mac=LAN_B_GW__MAC,
+            hop_out=63,
+            payload=b"router-forward-test",
+        )
+        self._assert_iface_packet_stats_rx(
+            self.if2,
+            ethernet__pre_parse=1,
+            ethernet__dst_unicast=1,
+            ip6__pre_parse=1,
+            ip6__forward=1,
+            ip6__forward_redirect=1,
         )
 
     def test__router__ip6__forward__disabled_drops_as_host(self) -> None:

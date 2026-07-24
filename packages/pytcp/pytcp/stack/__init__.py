@@ -249,6 +249,22 @@ IP6__ALL_FORWARDING: bool = False
 # IP6__FORWARDING[<if>]' (read-time OR).
 IP6__FORWARDING: dict[str, bool] = {"default": False}
 
+# Per-interface ICMP Redirect emission switch — when a router
+# forwards a datagram back out the interface it arrived on and the
+# next hop is on-link to the source, it sends an ICMP Redirect
+# advising the better first hop (RFC 1812 §5.2.7.2). Linux
+# 'net.ipv4.conf.<iface>.send_redirects' / '.ipv6...' default on.
+IP4__SEND_REDIRECTS: dict[str, bool] = {"default": True}
+IP6__SEND_REDIRECTS: dict[str, bool] = {"default": True}
+
+# Per-interface ICMPv4 Redirect acceptance switch — when set, an
+# inbound ICMPv4 Redirect installs a per-destination gateway route
+# (RFC 1122 §3.3.1.2). Linux
+# 'net.ipv4.conf.<iface>.accept_redirects' default on for a host.
+# (The IPv6 counterpart is 'icmp6.accept_redirects', registered
+# alongside the ND constants.)
+IP4__ACCEPT_REDIRECTS: dict[str, bool] = {"default": True}
+
 # ARP runtime configuration constants live alongside the ARP
 # protocol code at 'pytcp/protocols/arp/arp__constants.py'.
 # Importers should refer to that module directly rather than
@@ -386,6 +402,42 @@ _sysctl_register(
         "RFC 1812 §5.2.1 per-interface IPv6 forwarding switch (OR-combined"
         " with the 'ip6.all.forwarding' master); Linux"
         " 'net.ipv6.conf.<iface>.forwarding'."
+    ),
+)
+_sysctl_register(
+    key="ip4.send_redirects",
+    module_name=__name__,
+    attr="IP4__SEND_REDIRECTS",
+    default=IP4__SEND_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip4.send_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 1812 §5.2.7.2 ICMPv4 Redirect emission gate; Linux"
+        " 'net.ipv4.conf.<iface>.send_redirects' analogue (default on)."
+    ),
+)
+_sysctl_register(
+    key="ip6.send_redirects",
+    module_name=__name__,
+    attr="IP6__SEND_REDIRECTS",
+    default=IP6__SEND_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip6.send_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 4861 §8 ICMPv6 Redirect emission gate; Linux"
+        " 'net.ipv6.conf.<iface>.send_redirects' analogue (default on)."
+    ),
+)
+_sysctl_register(
+    key="ip4.accept_redirects",
+    module_name=__name__,
+    attr="IP4__ACCEPT_REDIRECTS",
+    default=IP4__ACCEPT_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip4.accept_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 1122 §3.3.1.2 ICMPv4 Redirect acceptance gate; Linux"
+        " 'net.ipv4.conf.<iface>.accept_redirects' analogue (default on)."
     ),
 )
 _sysctl_register(

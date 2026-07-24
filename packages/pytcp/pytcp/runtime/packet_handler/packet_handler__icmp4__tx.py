@@ -116,6 +116,10 @@ class Icmp4TxHandler:
                 self._if._packet_stats_tx.icmp4__destination_unreachable__frag_needed__send += 1
             case Icmp4Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp4__parameter_problem__send += 1
+            case Icmp4Type.REDIRECT, _:
+                # RFC 1812 §5.2.7.2 — better-first-hop advice emitted by
+                # the transit forward path (hairpin forward).
+                self._if._packet_stats_tx.icmp4__redirect__send += 1
             case Icmp4Type.TIME_EXCEEDED, _:
                 # RFC 1812 §4.3.3.5 — TTL-expiry response emitted by the
                 # transit forward path.

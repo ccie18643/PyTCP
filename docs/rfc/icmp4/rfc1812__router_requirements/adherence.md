@@ -54,6 +54,21 @@ plus the M1 transit-forwarding plane:
   the same router integration file. (The IPv6 parallel — ICMPv6
   Packet Too Big on transit oversize — is audited under the icmp6
   RFC 4443 record.)
+- **§4.3.3.2 (Redirect — emission + RX accept)** — a router SHOULD
+  send an ICMP Redirect (Type 5) advising a better first hop when
+  it forwards a datagram back out the interface it arrived on, and
+  a host MAY act on an inbound Redirect (RFC 1122 §3.3.1.2).
+  Adherence: met (M3). Emission:
+  `Ip4ForwardHandler._maybe_emit_redirect` (Code 1, host redirect;
+  gated by `ip4.send_redirects`); the ICMPv4 Redirect wire codec is
+  new (`Icmp4Type.REDIRECT = 5`,
+  `icmp4__message__redirect.py`) with a full net_proto unit-test
+  matrix, and the ICMPv4 TX handler has a `REDIRECT` dispatch arm
+  (`icmp4__redirect__send`). RX-accept:
+  `Icmp4RxHandler.__phrx_icmp4__redirect` installs a
+  `RouteProtocol.REDIRECT` host route toward an on-link gateway,
+  gated by `ip4.accept_redirects`. Tested in the router
+  integration files.
 - **§4.3.2.8 (Rate-Limiting)** — token-bucket rate limit on
   originated ICMP error messages. Adherence: met (post-Phase α1.1).
   Implemented in `packages/pytcp/pytcp/protocols/icmp/icmp__error_emitter.py`
@@ -72,7 +87,6 @@ For the canonical host-side audit of the §3.2.2 rules, see
 [`../rfc1122__host_requirements_icmp/adherence.md`](../rfc1122__host_requirements_icmp/adherence.md).
 
 The full per-section RFC 1812 walkthrough is deferred — the
-remaining router-side ICMP work (Redirect emission, M3; Host
-Unreachable on next-hop hard-failure) and non-ICMP sections
-(routing protocols, source-route processing) land with later
-Phase-2 milestones.
+remaining router-side ICMP work (Host Unreachable on next-hop
+hard-failure) and non-ICMP sections (routing protocols,
+source-route processing) land with later Phase-2 milestones.

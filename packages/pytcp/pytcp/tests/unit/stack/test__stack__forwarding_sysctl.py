@@ -189,6 +189,50 @@ class TestStackForwardingSysctl(TestCase):
             msg="tap_b without an override must observe the default (False).",
         )
 
+    def test__redirect_knobs__registered_interface_scope_default_on(self) -> None:
+        """
+        Ensure the three ICMP-Redirect policy knobs — 'ip4.send_redirects',
+        'ip6.send_redirects', and 'ip4.accept_redirects' — are registered
+        as per-interface knobs whose 'default' slot is True (Linux
+        default-on).
+
+        Reference: RFC 1812 §5.2.7.2 (ICMP Redirect emission).
+        Reference: Linux net.ipv4.conf.<iface>.send_redirects / accept_redirects.
+        """
+
+        for key in ("ip4.send_redirects", "ip6.send_redirects", "ip4.accept_redirects"):
+            with self.subTest(key=key):
+                knob = sysctl_module._registry.get(key)
+                self.assertIsNotNone(knob, msg=f"{key!r} must be registered.")
+                assert knob is not None
+                self.assertTrue(knob.interface_scope, msg=f"{key!r} must be interface-scope.")
+                self.assertIs(
+                    sysctl_iface.get_for_iface(key, "tap7"),
+                    True,
+                    msg=f"An unconfigured interface must observe {key!r}'s default (True).",
+                )
+
+    def test__ip4__send_redirects__per_iface_override_scoped(self) -> None:
+        """
+        Ensure 'ip4.tap_a.send_redirects = False' lands only in tap_a's
+        slot while tap_b keeps the default-on template.
+
+        Reference: Linux net.ipv4.conf.<iface>.send_redirects (per-interface scope).
+        """
+
+        sysctl_module.set("ip4.tap_a.send_redirects", False)
+
+        self.assertIs(
+            sysctl_iface.get_for_iface("ip4.send_redirects", "tap_a"),
+            False,
+            msg="tap_a's slot must observe the override.",
+        )
+        self.assertIs(
+            sysctl_iface.get_for_iface("ip4.send_redirects", "tap_b"),
+            True,
+            msg="tap_b without an override must observe the default (True).",
+        )
+
     def test__ip6__all_forwarding__flat_key_shadows_iface_split(self) -> None:
         """
         Ensure the flat master key 'ip6.all.forwarding' resolves to

@@ -34,13 +34,14 @@ ver 3.0.9
 
 from typing import TYPE_CHECKING, cast
 
-from net_addr import Ip4Address, IpVersion
+from net_addr import Ip4Address, Ip4Network, IpVersion
 from net_proto import (
     Icmp4DestinationUnreachableCode,
     Icmp4MessageDestinationUnreachable,
     Icmp4MessageEchoReply,
     Icmp4MessageEchoRequest,
     Icmp4MessageParameterProblem,
+    Icmp4MessageRedirect,
     Icmp4MessageTimeExceeded,
     Icmp4ParameterProblemCode,
     Icmp4Parser,
@@ -56,6 +57,7 @@ from pytcp.protocols.icmp4.icmp4__echo_gate import should_emit_echo_reply
 from pytcp.protocols.icmp4.icmp4__echo_options import echo_reply_options
 from pytcp.protocols.icmp.icmp__error_demux import EmbeddedL4, parse_embedded_l4
 from pytcp.protocols.tcp.tcp__icmp_metadata import IcmpCategory, IcmpMetadata
+from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.runtime.socket.error_queue import SoEeOrigin
 from pytcp.runtime.socket.ping__metadata import PingMetadata
@@ -63,9 +65,15 @@ from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.socket.udp__metadata import UdpMetadata
 from pytcp.runtime.socket.udp__socket import UdpSocket
+from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
+
+# Byte offset of the Destination Address field within an embedded
+# IPv4 header (RFC 791 §3.1) — used to extract the original
+# destination from an ICMPv4 Redirect's embedded datagram.
+IP4__EMBEDDED__DST_OFFSET = 16
 
 
 class Icmp4RxHandler:
@@ -113,6 +121,8 @@ class Icmp4RxHandler:
                 self.__phrx_icmp4__time_exceeded(packet_rx)
             case Icmp4Type.PARAMETER_PROBLEM:
                 self.__phrx_icmp4__parameter_problem(packet_rx)
+            case Icmp4Type.REDIRECT:
+                self.__phrx_icmp4__redirect(packet_rx)
             case _:
                 self.__phrx_icmp4__unknown(packet_rx)
 
@@ -673,6 +683,69 @@ class Icmp4RxHandler:
                 icmp4__message=echo_reply_message,
                 echo_tracker=packet_rx.tracker,
             )
+        )
+
+    def __phrx_icmp4__redirect(self, packet_rx: PacketRx) -> None:
+        """
+        Process an inbound ICMPv4 Redirect: when 'ip4.accept_redirects'
+        is enabled on the receiving interface and the advertised gateway
+        is on-link, install a per-destination host route toward the
+        better first hop ('RouteProtocol.REDIRECT'); ignore it otherwise.
+
+        Reference: RFC 1122 §3.3.1.2 (host processing of Redirects).
+        Reference: RFC 1812 §5.2.7.2 (treat as a host redirect).
+        """
+
+        assert isinstance(packet_rx.icmp4.message, Icmp4MessageRedirect)
+        message = packet_rx.icmp4.message
+        self._if._packet_stats_rx.icmp4__redirect += 1
+
+        __debug__ and log(
+            "icmp4",
+            f"{packet_rx.tracker} - Received ICMPv4 Redirect from {packet_rx.ip4.src}, "
+            f"code={message.code}, gateway={message.gateway}",
+        )
+
+        if not sysctl_iface.get_for_iface("ip4.accept_redirects", self._if._interface_name):
+            self._if._packet_stats_rx.icmp4__redirect__ignore += 1
+            __debug__ and log(
+                "icmp4",
+                f"{packet_rx.tracker} - <INFO>Ignoring ICMPv4 Redirect " "(ip4.accept_redirects=False)</>",
+            )
+            return
+
+        # RFC 1122 §3.3.1.2: the advertised gateway MUST be on-link on
+        # the receiving interface, and the embedded datagram MUST carry
+        # the original IPv4 header (destination at header offset 16).
+        gateway = message.gateway
+        on_link = any(gateway in ip4_host.network for ip4_host in self._if._ip4_ifaddr)
+        if not on_link or len(message.data) < IP4__EMBEDDED__DST_OFFSET + 4:
+            self._if._packet_stats_rx.icmp4__redirect__ignore += 1
+            __debug__ and log(
+                "icmp4",
+                f"{packet_rx.tracker} - <WARN>Ignoring ICMPv4 Redirect: gateway "
+                f"{gateway} not on-link or embedded datagram truncated</>",
+            )
+            return
+
+        destination = Ip4Address(bytes(message.data)[IP4__EMBEDDED__DST_OFFSET : IP4__EMBEDDED__DST_OFFSET + 4])
+        host_route = Ip4Network(f"{destination}/32")
+        # Replace any prior redirect route for this destination, then
+        # install the better first hop (RFC 1812 §5.2.7.2: host route).
+        stack.ip4_fib.remove(destination=host_route, gateway=None)
+        stack.ip4_fib.add(
+            route=Route(
+                destination=host_route,
+                gateway=gateway,
+                oif=self._if._ifindex,
+                protocol=RouteProtocol.REDIRECT,
+            )
+        )
+        self._if._packet_stats_rx.icmp4__redirect__accept += 1
+        __debug__ and log(
+            "icmp4",
+            f"{packet_rx.tracker} - Installed ICMP-Redirect route {destination}/32 "
+            f"via {gateway} on {self._if.interface_name}",
         )
 
     def __phrx_icmp4__unknown(self, packet_rx: PacketRx) -> None:

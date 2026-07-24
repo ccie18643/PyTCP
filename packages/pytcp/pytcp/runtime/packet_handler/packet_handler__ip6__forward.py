@@ -50,12 +50,19 @@ from net_addr import Buffer, Ip6Address
 from net_proto import (
     EthernetAssembler,
     EtherType,
+    Icmp6Assembler,
     Icmp6DestinationUnreachableCode,
     Icmp6Message,
     Icmp6MessageDestinationUnreachable,
     Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
+    Icmp6NdMessageRedirect,
+    Icmp6NdOption,
+    Icmp6NdOptionRedirectedHeader,
+    Icmp6NdOptions,
+    Icmp6NdOptionTlla,
     Icmp6TimeExceededCode,
+    Ip6Assembler,
     PacketRx,
     RawAssembler,
 )
@@ -72,6 +79,12 @@ if TYPE_CHECKING:
 # at byte 7 (RFC 8200 §3). There is no header checksum to
 # recompute (unlike IPv4).
 IP6__FORWARD__HOP_OFFSET = 7
+
+# RFC 4861 §4.5: the ICMPv6 Redirect (message + IPv6 header + ND
+# options) MUST fit the IPv6 minimum MTU. Cap the Redirected Header
+# option's embedded datagram so the whole message stays under 1280:
+# 1280 - 40 (IPv6 hdr) - 40 (Redirect fixed) - 8 (TLLA) - 8 (RH hdr).
+IP6__FORWARD__REDIRECT__EMBED_MAX = 1184
 
 
 class Ip6ForwardHandler:
@@ -173,6 +186,14 @@ class Ip6ForwardHandler:
             self._emit_time_exceeded(packet_rx)
             return
 
+        # 5b. ICMPv6 ND Redirect (M3). RFC 4861 §8 / RFC 1812 §5.2.7.2:
+        #     when the datagram is being forwarded back out the interface
+        #     it arrived on (ingress == egress), advise the source of the
+        #     better first hop. The triggering datagram is still
+        #     forwarded below.
+        if egress is self._if:
+            self._maybe_emit_redirect(packet_rx, target=next_hop)
+
         # 7. Oversize transit traffic (M2). Routers never fragment IPv6
         #    (RFC 8200 §5), so a datagram larger than the egress MTU is
         #    discarded and the source is told to lower its path MTU via
@@ -251,6 +272,87 @@ class Ip6ForwardHandler:
             f"{packet_rx.tracker} - <WARN>Next hop {next_hop} unresolved on "
             f"{egress.interface_name}; queued pending ND resolution</>",
         )
+
+    def _maybe_emit_redirect(self, packet_rx: PacketRx, /, *, target: Ip6Address) -> None:
+        """
+        Emit an ICMPv6 ND Redirect (RFC 4861 §4.5) advising the source of
+        'packet_rx' that 'target' is the better first hop for the
+        datagram's destination, when the datagram is being forwarded back
+        out the interface it arrived on. Gated by the per-interface
+        'ip6.send_redirects' sysctl.
+
+        The Redirect is sourced from the interface's link-local address
+        (RFC 4861 §4.5) with Hop Limit 255, addressed to the original
+        source. It carries a Target Link-Layer Address option when the
+        target's MAC is in the ND cache, and a Redirected Header option
+        embedding (a bounded prefix of) the triggering datagram. The
+        triggering datagram is still forwarded.
+        """
+
+        if not sysctl_iface.get_for_iface("ip6.send_redirects", self._if._interface_name):
+            return
+
+        ip6_src = self._link_local_source()
+        if ip6_src is None:
+            return
+
+        nd_cache = self._if.nd_cache
+        assert nd_cache is not None, "IPv6 forward egress must be an L2 interface with an ND cache."
+        target_mac = nd_cache.find_entry(ip6_address=target)
+
+        options: list[Icmp6NdOption] = []
+        if target_mac is not None:
+            options.append(Icmp6NdOptionTlla(target_mac))
+        # The Redirected Header option is a length-prefixed ND option, so
+        # its embedded datagram must be a multiple of 8 bytes (RFC 4861
+        # §4.6.3): cap at the min-MTU budget, then floor to an 8-byte
+        # boundary (dropping up to 7 diagnostic bytes).
+        embed = bytes(packet_rx.ip.packet_bytes)[:IP6__FORWARD__REDIRECT__EMBED_MAX]
+        embed = embed[: len(embed) - len(embed) % 8]
+        options.append(Icmp6NdOptionRedirectedHeader(data=embed))
+
+        ip6_packet_tx = Ip6Assembler(
+            ip6__src=ip6_src,
+            ip6__dst=packet_rx.ip6.src,
+            ip6__hop=255,
+            ip6__payload=Icmp6Assembler(
+                icmp6__message=Icmp6NdMessageRedirect(
+                    target_address=target,
+                    destination_address=packet_rx.ip6.dst,
+                    options=Icmp6NdOptions(*options),
+                ),
+                echo_tracker=packet_rx.tracker,
+            ),
+        )
+
+        self._if._packet_stats_rx.ip6__forward_redirect += 1
+        __debug__ and log(
+            "ip6",
+            f"{packet_rx.tracker} - Sending ICMPv6 Redirect to {packet_rx.ip6.src}: "
+            f"better first hop for {packet_rx.ip6.dst} is {target}",
+        )
+        # Emit through the L2 path with the original sender's MAC (from
+        # the received frame) as the explicit destination. This bypasses
+        # the origination-path RFC 4007 §6 source-scope check — which
+        # (correctly for general traffic) would reject the RFC 4861 §4.5
+        # mandated link-local source toward the global-addressed on-link
+        # sender — while keeping the link-local source the RFC requires.
+        self._if._phtx_ethernet(
+            ethernet__dst=packet_rx.ethernet.src,
+            ethernet__payload=ip6_packet_tx,
+        )
+
+    def _link_local_source(self) -> Ip6Address | None:
+        """
+        Return the ingress interface's link-local unicast address — the
+        RFC 4861 §4.5 mandated source for an ICMPv6 Redirect — or None
+        when the interface has no link-local address configured.
+        """
+
+        for address in self._if._ip6_unicast:
+            if address.is_link_local:
+                return address
+        return None
 
     def _emit_packet_too_big(self, packet_rx: PacketRx, /, *, next_hop_mtu: int) -> None:
         """

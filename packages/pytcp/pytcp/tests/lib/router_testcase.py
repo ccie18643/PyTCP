@@ -56,10 +56,13 @@ from net_addr import (
 )
 from net_proto import (
     Icmp4MessageDestinationUnreachable,
+    Icmp4MessageRedirect,
     Icmp4MessageTimeExceeded,
     Icmp6MessageDestinationUnreachable,
     Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
+    Icmp6NdMessageRedirect,
+    IpProto,
 )
 from net_proto.lib.enums import EtherType
 from net_proto.lib.inet_cksum import inet_cksum
@@ -73,6 +76,7 @@ from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.udp.udp__assembler import UdpAssembler
 from net_proto.protocols.udp.udp__parser import UdpParser
 from pytcp import stack
+from pytcp.lib.packet_stats import PacketStatsRx
 from pytcp.runtime.fib import Route, RouteProtocol
 from pytcp.stack import sysctl as sysctl_module
 from pytcp.tests.lib.icmp_testcase import IcmpTestCase
@@ -88,6 +92,9 @@ from pytcp.tests.lib.network_testcase import AddedInterface
 ROUTER__IF2__MAC = MacAddress("02:00:00:00:00:02")
 ROUTER__IF2__IP4 = Ip4IfAddr("10.0.2.1/24")
 ROUTER__IF2__IP6 = Ip6IfAddr("2001:db8:0:2::1/64")
+# if-2's link-local address — the RFC 4861 §4.5 mandated source for
+# an ICMPv6 Redirect emitted out this interface.
+ROUTER__IF2__IP6_LINK_LOCAL = Ip6IfAddr("fe80::2/64")
 HOST_D__MAC = MacAddress("02:00:00:00:00:20")
 HOST_D__IP4 = Ip4Address("10.0.2.20")
 HOST_D__IP6 = Ip6Address("2001:db8:0:2::20")
@@ -98,6 +105,15 @@ HOST_D__IP6 = Ip6Address("2001:db8:0:2::20")
 # pending resolution rather than emitted.
 HOST_E__IP4 = Ip4Address("10.0.2.21")
 HOST_E__IP6 = Ip6Address("2001:db8:0:2::21")
+
+# An on-link LAN-B gateway (distinct from HOST_D) used as the
+# next hop for the ICMP-Redirect hairpin tests: a route whose
+# gateway is on the SAME interface the datagram arrives on makes
+# the router forward it back out that interface (ingress ==
+# egress) and advise the source of the better first hop.
+LAN_B_GW__MAC = MacAddress("02:00:00:00:00:30")
+LAN_B_GW__IP4 = Ip4Address("10.0.2.30")
+LAN_B_GW__IP6 = Ip6Address("2001:db8:0:2::30")
 
 # if-3 — the upstream interface carrying the default route.
 ROUTER__IF3__MAC = MacAddress("02:00:00:00:00:03")
@@ -157,8 +173,16 @@ class RouterTestCase(IcmpTestCase):
             mac_address=ROUTER__IF2__MAC,
             ip4_host=ROUTER__IF2__IP4,
             ip6_host=ROUTER__IF2__IP6,
-            arp_entries={HOST_D__IP4: HOST_D__MAC, HOST_E__IP4: None},
-            nd_entries={HOST_D__IP6: HOST_D__MAC, HOST_E__IP6: None},
+            arp_entries={
+                HOST_D__IP4: HOST_D__MAC,
+                HOST_E__IP4: None,
+                LAN_B_GW__IP4: LAN_B_GW__MAC,
+            },
+            nd_entries={
+                HOST_D__IP6: HOST_D__MAC,
+                HOST_E__IP6: None,
+                LAN_B_GW__IP6: LAN_B_GW__MAC,
+            },
         )
 
         # if-3 = upstream (203.0.113.0/24 / 2001:db8:0:3::/64), the
@@ -170,6 +194,10 @@ class RouterTestCase(IcmpTestCase):
             arp_entries={UPSTREAM_GW__IP4: UPSTREAM_GW__MAC},
             nd_entries={UPSTREAM_GW__IP6: UPSTREAM_GW__MAC},
         )
+
+        # Give if-2 a link-local address so the ICMPv6 Redirect path has
+        # the RFC 4861 §4.5 mandated link-local source available.
+        self.if2.handler._ip6_ifaddr.append(ROUTER__IF2__IP6_LINK_LOCAL)
 
         self._interfaces = [self.if1, self.if2, self.if3]
 
@@ -549,6 +577,132 @@ class RouterTestCase(IcmpTestCase):
             msg="ICMPv6 error must embed the offending datagram.",
         )
 
+    def _assert_redirect_and_forward_ip4(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        iface: AddedInterface,
+        src_ip: Ip4Address,
+        dst_ip: Ip4Address,
+        gateway: Ip4Address,
+        next_hop_mac: MacAddress,
+        ttl_out: int,
+        payload: bytes,
+    ) -> None:
+        """
+        Assert that a hairpin forward emitted exactly two frames on
+        'iface' (nothing elsewhere): an ICMPv4 Redirect (Type 5, Code 1 —
+        host) back to 'src_ip' advertising 'gateway' as the better first
+        hop, AND the triggering datagram still forwarded toward
+        'next_hop_mac' with the TTL decremented and payload preserved.
+        """
+
+        for ifindex, frames in emitted.items():
+            expected = 2 if ifindex == iface.ifindex else 0
+            self.assertEqual(
+                len(frames),
+                expected,
+                msg=f"Expected {expected} frame(s) on ifindex {ifindex}; got {len(frames)}: {frames!r}",
+            )
+
+        redirect_frame: bytes | None = None
+        forward_frame: bytes | None = None
+        for frame in emitted[iface.ifindex]:
+            packet_rx = PacketRx(frame)
+            EthernetParser(packet_rx)
+            Ip4Parser(packet_rx)
+            if packet_rx.ip4.proto is IpProto.ICMP4:
+                redirect_frame = frame
+            else:
+                forward_frame = frame
+
+        self.assertIsNotNone(redirect_frame, msg="A hairpin forward must emit an ICMPv4 Redirect.")
+        self.assertIsNotNone(forward_frame, msg="A hairpin forward must still forward the triggering datagram.")
+        assert redirect_frame is not None and forward_frame is not None
+
+        probe = self._parse_tx_icmp4(redirect_frame)
+        self.assertEqual(probe.icmp_type, 5, msg="Redirect must be ICMPv4 type 5.")
+        self.assertEqual(probe.icmp_code, 1, msg="Redirect must use the host code (1).")
+        self.assertEqual(probe.ip_dst, src_ip, msg="Redirect must be sent back to the datagram source.")
+        message = probe.message
+        self.assertIsInstance(message, Icmp4MessageRedirect, msg="Emitted message must be an ICMPv4 Redirect.")
+        assert isinstance(message, Icmp4MessageRedirect)
+        self.assertEqual(message.gateway, gateway, msg="Redirect must advertise the better first hop as gateway.")
+
+        forward_rx = PacketRx(forward_frame)
+        EthernetParser(forward_rx)
+        self.assertEqual(forward_rx.ethernet.dst, next_hop_mac, msg="Forwarded frame must go to the next-hop MAC.")
+        Ip4Parser(forward_rx)
+        self.assertEqual(forward_rx.ip4.dst, dst_ip, msg="Forwarded IPv4 destination must be preserved.")
+        self.assertEqual(forward_rx.ip4.ttl, ttl_out, msg=f"Forwarded IPv4 TTL must be {ttl_out}.")
+        UdpParser(forward_rx)
+        self.assertEqual(bytes(forward_rx.udp.payload), payload, msg="Forwarded UDP payload must be preserved.")
+
+    def _assert_redirect_and_forward_ip6(
+        self,
+        emitted: dict[int, list[bytes]],
+        /,
+        *,
+        iface: AddedInterface,
+        src_ip: Ip6Address,
+        dst_ip: Ip6Address,
+        target: Ip6Address,
+        next_hop_mac: MacAddress,
+        hop_out: int,
+        payload: bytes,
+    ) -> None:
+        """
+        Assert that a hairpin forward emitted exactly two frames on
+        'iface' (nothing elsewhere): an ICMPv6 ND Redirect back to
+        'src_ip' advertising 'target' as the better first hop for
+        'dst_ip', AND the triggering datagram still forwarded toward
+        'next_hop_mac' with the Hop-Limit decremented and payload
+        preserved.
+        """
+
+        for ifindex, frames in emitted.items():
+            expected = 2 if ifindex == iface.ifindex else 0
+            self.assertEqual(
+                len(frames),
+                expected,
+                msg=f"Expected {expected} frame(s) on ifindex {ifindex}; got {len(frames)}: {frames!r}",
+            )
+
+        redirect_frame: bytes | None = None
+        forward_frame: bytes | None = None
+        for frame in emitted[iface.ifindex]:
+            packet_rx = PacketRx(frame)
+            EthernetParser(packet_rx)
+            Ip6Parser(packet_rx)
+            if packet_rx.ip6.next is IpProto.ICMP6:
+                redirect_frame = frame
+            else:
+                forward_frame = frame
+
+        self.assertIsNotNone(redirect_frame, msg="A hairpin forward must emit an ICMPv6 ND Redirect.")
+        self.assertIsNotNone(forward_frame, msg="A hairpin forward must still forward the triggering datagram.")
+        assert redirect_frame is not None and forward_frame is not None
+
+        probe = self._parse_tx_icmp6(redirect_frame)
+        self.assertEqual(probe.icmp_type, 137, msg="Redirect must be ICMPv6 type 137 (ND Redirect).")
+        self.assertEqual(probe.ip_dst, src_ip, msg="Redirect must be sent back to the datagram source.")
+        self.assertTrue(probe.ip_src.is_link_local, msg="ICMPv6 Redirect source must be link-local (RFC 4861 §4.5).")
+        message = probe.message
+        self.assertIsInstance(message, Icmp6NdMessageRedirect, msg="Emitted message must be an ICMPv6 ND Redirect.")
+        assert isinstance(message, Icmp6NdMessageRedirect)
+        self.assertEqual(message.target_address, target, msg="Redirect target must be the better first hop.")
+        self.assertEqual(message.destination_address, dst_ip, msg="Redirect destination must be the original dst.")
+
+        forward_rx = PacketRx(forward_frame)
+        EthernetParser(forward_rx)
+        self.assertEqual(forward_rx.ethernet.dst, next_hop_mac, msg="Forwarded frame must go to the next-hop MAC.")
+        Ip6Parser(forward_rx)
+        self.assertEqual(forward_rx.ip6.dst, dst_ip, msg="Forwarded IPv6 destination must be preserved.")
+        self.assertEqual(forward_rx.ip6.hop, hop_out, msg=f"Forwarded IPv6 Hop-Limit must be {hop_out}.")
+        UdpParser(forward_rx)
+        self.assertEqual(bytes(forward_rx.udp.payload), payload, msg="Forwarded UDP payload must be preserved.")
+
     def _build_transit_ip4(
         self,
         *,
@@ -619,6 +773,24 @@ class RouterTestCase(IcmpTestCase):
         return {
             interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
         }
+
+    def _assert_iface_packet_stats_rx(self, iface: AddedInterface, /, **fields: int) -> None:
+        """
+        Assert an exact match of the RX packet-stats on a specific
+        interface — every counter not named in 'fields' must be zero.
+        The per-interface analogue of 'IcmpTestCase._assert_packet_stats_rx'
+        (which pins the boot interface); needed when a test drives an
+        inbound frame into if2 / if3 rather than the boot interface.
+        """
+
+        self.assertEqual(
+            iface.handler.packet_stats_rx,
+            PacketStatsRx(**fields),
+            msg=(
+                f"Unexpected packet_stats_rx on ifindex {iface.ifindex} (exact match "
+                f"required, unspecified counters must be zero). Got: {iface.handler.packet_stats_rx!r}"
+            ),
+        )
 
     def _assert_no_forward(self, emitted: dict[int, list[bytes]], /) -> None:
         """

@@ -163,6 +163,7 @@ class PacketStatsRx(PacketStats):
     # behaviour), so there is no 'forward_disabled__drop' here.
     ip4__forward: int = 0
     ip4__forward_fragmented: int = 0
+    ip4__forward_redirect: int = 0
     ip4__forward_no_route__drop: int = 0
     ip4__forward_ttl_exceeded__drop: int = 0
     ip4__forward_no_neighbor__drop: int = 0
@@ -183,6 +184,7 @@ class PacketStatsRx(PacketStats):
     # header checksum and no forwarded-packet fragmentation
     # (routers never fragment IPv6 — RFC 8200 §5).
     ip6__forward: int = 0
+    ip6__forward_redirect: int = 0
     ip6__forward_no_route__drop: int = 0
     ip6__forward_hop_exceeded__drop: int = 0
     ip6__forward_no_neighbor__drop: int = 0
@@ -238,6 +240,9 @@ class PacketStatsRx(PacketStats):
     icmp4__parameter_problem__tcp__notify: int = 0
     icmp4__parameter_problem__tcp__seq_out_of_window__drop: int = 0
     icmp4__parameter_problem__udp__notify: int = 0
+    icmp4__redirect: int = 0
+    icmp4__redirect__accept: int = 0
+    icmp4__redirect__ignore: int = 0
     icmp4__unknown: int = 0
 
     icmp6__pre_parse: int = 0
@@ -425,6 +430,7 @@ class PacketStatsTx(PacketStats):
     icmp4__destination_unreachable__frag_needed__send: int = 0
     icmp4__parameter_problem__send: int = 0
     icmp4__time_exceeded__send: int = 0
+    icmp4__redirect__send: int = 0
     icmp4__unknown__drop: int = 0
 
     icmp6__pre_assemble: int = 0

@@ -51,7 +51,9 @@ from net_proto import (
     Icmp4DestinationUnreachableCode,
     Icmp4Message,
     Icmp4MessageDestinationUnreachable,
+    Icmp4MessageRedirect,
     Icmp4MessageTimeExceeded,
+    Icmp4RedirectCode,
     Icmp4TimeExceededCode,
     Ip4FragAssembler,
     Ip4OptionNop,
@@ -173,6 +175,14 @@ class Ip4ForwardHandler:
             )
             self._emit_time_exceeded(packet_rx)
             return
+
+        # 5b. ICMP Redirect (M3). RFC 1812 §5.2.7.2: when the datagram
+        #     is being forwarded back out the interface it arrived on
+        #     (ingress == egress), the next hop is on-link to the source,
+        #     so advise the source of the better first hop. The
+        #     triggering datagram is still forwarded below.
+        if egress is self._if:
+            self._maybe_emit_redirect(packet_rx, gateway=next_hop)
 
         # 7. Oversize transit traffic (M2). A datagram larger than the
         #    egress MTU cannot be forwarded whole. Checked against the
@@ -400,6 +410,52 @@ class Ip4ForwardHandler:
                 code=Icmp4DestinationUnreachableCode.NETWORK,
                 data=data,
             ),
+        )
+
+    def _maybe_emit_redirect(self, packet_rx: PacketRx, /, *, gateway: Ip4Address) -> None:
+        """
+        Emit an ICMPv4 Redirect (Type 5, Code 1 — redirect for the host)
+        advising the source of 'packet_rx' of the better first hop
+        'gateway', when the datagram is being forwarded back out the
+        interface it arrived on (RFC 1812 §5.2.7.2). Gated by the
+        per-interface 'ip4.send_redirects' sysctl; suppressed for
+        source-routed datagrams (§5.2.7.2) and when no interface source
+        address is available. The Redirect is sourced from the ingress
+        interface's address toward the original sender and embeds the
+        offending datagram; the triggering datagram is still forwarded.
+
+        RFC 1812 §5.2.7.2 recommends the host-redirect code over the
+        network-redirect code to avoid subnetting ambiguity, matching
+        Linux ('ICMP_REDIR_HOST').
+        """
+
+        if packet_rx.ip4.lsrr is not None or packet_rx.ip4.ssrr is not None:
+            return
+
+        if not sysctl_iface.get_for_iface("ip4.send_redirects", self._if._interface_name):
+            return
+
+        ip4_src = self._if.select_ip4_source(packet_rx.ip4.src)
+        if ip4_src is None:
+            return
+
+        self._if._packet_stats_rx.ip4__forward_redirect += 1
+        __debug__ and log(
+            "ip4",
+            f"{packet_rx.tracker} - Sending ICMPv4 Redirect to {packet_rx.ip4.src}: "
+            f"better first hop for {packet_rx.ip4.dst} is {gateway}",
+        )
+        self._if._marshal_tx(
+            lambda: self._if._phtx_icmp4(
+                ip4__src=ip4_src,
+                ip4__dst=packet_rx.ip4.src,
+                icmp4__message=Icmp4MessageRedirect(
+                    code=Icmp4RedirectCode.HOST,
+                    gateway=gateway,
+                    data=packet_rx.ip.packet_bytes,
+                ),
+                echo_tracker=packet_rx.tracker,
+            )
         )
 
     def _emit_forward_icmp_error(
