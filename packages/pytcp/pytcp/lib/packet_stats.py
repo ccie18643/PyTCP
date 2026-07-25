@@ -455,6 +455,7 @@ class PacketStatsTx(PacketStats):
     igmp__v2_report__send: int = 0
     igmp__v1_report__send: int = 0
     igmp__v2_leave__send: int = 0
+    igmp__general_query__send: int = 0
 
     tcp__pre_assemble: int = 0
     tcp__flag_ns: int = 0

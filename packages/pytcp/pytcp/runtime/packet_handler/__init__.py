@@ -800,6 +800,12 @@ class PacketHandler(Subsystem, ABC):
 
         self._log_stack_address_info()
 
+        # Take up the IGMP querier role when this interface is
+        # configured as a multicast router ('igmp.mc_forwarding');
+        # a no-op for a plain host. Phase 2: a runtime control API
+        # re-drives this when the switch flips after bring-up.
+        self.refresh_igmp_querier()
+
     def _thread__packet_handler__acquire_ip6_addresses(self) -> None:
         """
         Thread to acquire the IPv6 addresses.
@@ -2842,6 +2848,25 @@ class PacketHandler(Subsystem, ABC):
         """
 
         self._igmp_tx._send_igmp_leave_all()
+
+    def refresh_igmp_querier(self) -> None:
+        """
+        Reconcile the interface's IGMP querier role with its
+        'igmp.mc_forwarding' switch (delegates to the IGMP TX
+        sub-handler). Public surface for the interface bring-up path.
+        """
+
+        self._igmp_tx.refresh_querier()
+
+    def stop_igmp_querier(self) -> None:
+        """
+        Relinquish the IGMP querier role and cancel its timers
+        (delegates to the IGMP TX sub-handler). Public surface for the
+        stack-shutdown lifecycle path.
+        """
+
+        with self._lock__multicast:
+            self._igmp_tx._stop_querier()
 
     def send_mld_leave_all(self) -> None:
         """

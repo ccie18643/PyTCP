@@ -62,6 +62,7 @@ from net_proto import (
     Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
     Icmp6NdMessageRedirect,
+    IgmpMessageQuery,
     IpProto,
 )
 from net_proto.lib.enums import EtherType
@@ -69,6 +70,7 @@ from net_proto.lib.inet_cksum import inet_cksum
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ethernet.ethernet__parser import EthernetParser
+from net_proto.protocols.igmp.igmp__parser import IgmpParser
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.ip4.ip4__parser import Ip4Parser
 from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
@@ -242,6 +244,81 @@ class RouterTestCase(IcmpTestCase):
 
         sysctl_module.set("ip4.ip_forward", True)
         sysctl_module.set("ip6.all.forwarding", True)
+
+    def _enable_igmp_querier(self, *ifaces: AddedInterface) -> dict[int, list[bytes]]:
+        """
+        Enable the IGMP querier role ('igmp.mc_forwarding') and bring it
+        up on each named interface, returning the frames each interface
+        emitted as a direct result (the first of the startup General
+        Query burst). The test-harness interfaces are unnamed, so the
+        knob's 'default' slot is set; only the interfaces whose querier
+        is explicitly brought up here become queriers.
+        """
+
+        sysctl_module.set("igmp.default.mc_forwarding", True)
+
+        before = {interface.ifindex: len(interface.frames_tx) for interface in self._interfaces}
+        for iface in ifaces:
+            iface.handler.refresh_igmp_querier()
+        return {
+            interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
+        }
+
+    def _advance_frames(self, *, ms: int) -> dict[int, list[bytes]]:
+        """
+        Advance the virtual clock by 'ms' and return, per interface
+        index, the frames that interface emitted during the tick — the
+        timer-driven analogue of '_drive_forward'.
+        """
+
+        before = {interface.ifindex: len(interface.frames_tx) for interface in self._interfaces}
+        self._advance(ms=ms)
+        return {
+            interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
+        }
+
+    def _assert_igmp_general_query(self, frame: bytes, /, *, source: Ip4Address) -> IgmpMessageQuery:
+        """
+        Assert that 'frame' is an IGMPv3 General Query emitted by the
+        querier — carried in IPv4 to the all-systems group 224.0.0.1
+        with TTL 1 (RFC 3376 §4), sourced from 'source', with the group
+        address 0.0.0.0 and no sources — and return the decoded Query
+        for any further per-field assertions.
+        """
+
+        packet_rx = PacketRx(frame)
+        EthernetParser(packet_rx)
+        Ip4Parser(packet_rx)
+
+        self.assertEqual(
+            packet_rx.ip4.dst,
+            Ip4Address("224.0.0.1"),
+            msg=f"General Query must be sent to the all-systems group 224.0.0.1; got {packet_rx.ip4.dst}.",
+        )
+        self.assertEqual(
+            packet_rx.ip4.ttl,
+            1,
+            msg=f"General Query must be sent with TTL 1; got {packet_rx.ip4.ttl}.",
+        )
+        self.assertEqual(
+            packet_rx.ip4.src,
+            source,
+            msg=f"General Query must be sourced from {source}; got {packet_rx.ip4.src}.",
+        )
+
+        IgmpParser(packet_rx)
+        message = packet_rx.igmp.message
+        self.assertIsInstance(
+            message,
+            IgmpMessageQuery,
+            msg=f"Emitted IGMP message must be a Membership Query; got {type(message).__name__}.",
+        )
+        assert isinstance(message, IgmpMessageQuery)
+        self.assertTrue(
+            message.is_general_query,
+            msg="Emitted Query must be a General Query (group 0.0.0.0, no sources).",
+        )
+        return message
 
     def _assert_single_egress(self, emitted: dict[int, list[bytes]], /, *, egress: AddedInterface) -> bytes:
         """

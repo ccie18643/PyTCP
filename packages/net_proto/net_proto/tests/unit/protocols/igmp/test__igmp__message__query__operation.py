@@ -38,6 +38,7 @@ from net_proto.protocols.igmp.message.igmp__message import IgmpVersion
 from net_proto.protocols.igmp.message.igmp__message__query import (
     IgmpMessageQuery,
     decode_igmp_float_code,
+    encode_igmp_float_code,
 )
 from net_proto.tests.lib.parameterized import parameterized_class
 
@@ -307,3 +308,64 @@ class TestIgmpFloatCodeDecode(TestCase):
                     expected,
                     msg=f"decode_igmp_float_code({code:#04x}) must be {expected}.",
                 )
+
+
+class TestIgmpFloatCodeEncode(TestCase):
+    """
+    The IGMP Max Resp Code / QQIC floating-point encode tests.
+    """
+
+    def test__igmp__encode_float_code__linear(self) -> None:
+        """
+        Ensure a value below 128 encodes to itself (the linear form) and
+        the boundary value 127 stays linear.
+
+        Reference: RFC 3376 §4.1.1 (Max Resp Code linear form < 128).
+        """
+
+        for value in (0, 1, 100, 127):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    encode_igmp_float_code(value),
+                    value,
+                    msg=f"encode_igmp_float_code({value}) must be {value} (linear).",
+                )
+
+    def test__igmp__encode_float_code__representable_roundtrip(self) -> None:
+        """
+        Ensure every exactly-representable floating-point value round-trips
+        through encode then decode unchanged.
+
+        Reference: RFC 3376 §4.1.1 (Max Resp Code floating-point form).
+        Reference: RFC 3376 §4.1.7 (QQIC floating-point form).
+        """
+
+        for value in (128, 248, 256, 8192, 31744):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    decode_igmp_float_code(encode_igmp_float_code(value)),
+                    value,
+                    msg=f"decode(encode({value})) must be {value} for a representable value.",
+                )
+
+    def test__igmp__encode_float_code__floor_and_saturate(self) -> None:
+        """
+        Ensure a non-representable value floors to the largest representable
+        value at or below it, and a value beyond the maximum saturates at
+        0xff (31744).
+
+        Reference: RFC 3376 §4.1.1 (Max Resp Code floating-point form).
+        """
+
+        # 130 sits between 128 (0x80) and 136 (0x81); it floors to 128.
+        self.assertEqual(
+            encode_igmp_float_code(130),
+            0x80,
+            msg="encode_igmp_float_code(130) must floor to code 0x80 (decodes to 128).",
+        )
+        # Beyond the maximum representable value saturates at 0xff.
+        self.assertEqual(
+            encode_igmp_float_code(100_000),
+            0xFF,
+            msg="A value beyond the maximum representable must saturate at code 0xff.",
+        )

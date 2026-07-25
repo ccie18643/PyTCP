@@ -41,6 +41,7 @@ from net_addr import Ip4Address
 from net_proto import (
     IgmpAssembler,
     IgmpMessage,
+    IgmpMessageQuery,
     IgmpMessageV1Report,
     IgmpMessageV2Leave,
     IgmpMessageV2Report,
@@ -50,6 +51,7 @@ from net_proto import (
     IgmpVersion,
     Ip4OptionRouterAlert,
     Ip4Options,
+    encode_igmp_float_code,
 )
 from pytcp import stack
 from pytcp.lib.ip4_multicast_filter import (
@@ -59,6 +61,7 @@ from pytcp.lib.ip4_multicast_filter import (
 from pytcp.lib.logger import log
 from pytcp.protocols.igmp import igmp__constants
 from pytcp.runtime.timer import TimerHandle
+from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
     from pytcp.runtime.packet_handler import PacketHandler
@@ -96,6 +99,9 @@ class IgmpTxHandler:
     _if: "PacketHandler"
     _igmp_state_change__pending: dict[Ip4Address, _IgmpPendingChange]
     _igmp_state_change__handle: TimerHandle | None
+    _igmp_querier__active: bool
+    _igmp_querier__handle: TimerHandle | None
+    _igmp_querier__startup_remaining: int
 
     def __init__(self, *, interface: "PacketHandler") -> None:
         """
@@ -105,6 +111,9 @@ class IgmpTxHandler:
         self._if = interface
         self._igmp_state_change__pending = {}
         self._igmp_state_change__handle = None
+        self._igmp_querier__active = False
+        self._igmp_querier__handle = None
+        self._igmp_querier__startup_remaining = 0
 
     def _current_state_record(self, group: Ip4Address, /) -> IgmpV3GroupRecord | None:
         """
@@ -358,6 +367,110 @@ class IgmpTxHandler:
             stack.timer.cancel(self._igmp_state_change__handle)
             self._igmp_state_change__handle = None
         self._igmp_state_change__pending.clear()
+
+    def refresh_querier(self) -> None:
+        """
+        Reconcile the interface's IGMP querier role with its
+        'igmp.mc_forwarding' switch: start the querier when the
+        interface is (newly) a multicast router, stop it when the
+        switch is cleared. Idempotent — a no-op when already in the
+        target state. Called at interface bring-up and by the test
+        harness (there is no runtime sysctl-change hook — an operator
+        sets 'igmp.mc_forwarding' before bring-up; Phase 2: a control
+        API drives this at runtime).
+
+        Reference: RFC 3376 §6 (a multicast router acts as querier).
+        """
+
+        with self._if._lock__multicast:
+            enabled = bool(sysctl_iface.get_for_iface("igmp.mc_forwarding", self._if._interface_name))
+            if enabled and not self._igmp_querier__active:
+                self._start_querier()
+            elif not enabled and self._igmp_querier__active:
+                self._stop_querier()
+
+    def _start_querier(self) -> None:
+        """
+        Take up the querier role: send the first of the RFC 3376 §8.7
+        Startup Query Count General Queries and arm the re-arming
+        General-Query ticket. Runs under the interface multicast lock.
+        """
+
+        self._igmp_querier__active = True
+        self._igmp_querier__startup_remaining = max(1, igmp__constants.IGMP__STARTUP_QUERY_COUNT)
+        self._send_general_query_and_rearm()
+
+    def _stop_querier(self) -> None:
+        """
+        Relinquish the querier role: cancel the pending General-Query
+        ticket and clear the querier state. Runs under the interface
+        multicast lock.
+        """
+
+        self._igmp_querier__active = False
+        self._igmp_querier__startup_remaining = 0
+        if self._igmp_querier__handle is not None:
+            stack.timer.cancel(self._igmp_querier__handle)
+            self._igmp_querier__handle = None
+
+    def _fire_general_query(self) -> None:
+        """
+        Timer callback: emit one periodic General Query and re-arm.
+        Takes the interface multicast lock so a concurrent
+        'refresh_querier' / stop on another thread cannot tear the
+        querier state, and bails when the role was relinquished while
+        the ticket was in flight.
+
+        Reference: RFC 3376 §6 (querier General Query interval).
+        """
+
+        with self._if._lock__multicast:
+            self._igmp_querier__handle = None
+            if not self._igmp_querier__active:
+                return
+            self._send_general_query_and_rearm()
+
+    def _send_general_query_and_rearm(self) -> None:
+        """
+        Emit one General Query and schedule the next: at the Startup
+        Query Interval while the startup burst is draining (RFC 3376
+        §8.6 / §8.7), then at the steady-state Query Interval (§8.2).
+        Runs under the interface multicast lock.
+        """
+
+        self._send_igmp_general_query()
+
+        if self._igmp_querier__startup_remaining > 1:
+            self._igmp_querier__startup_remaining -= 1
+            delay_ms = igmp__constants.IGMP__STARTUP_QUERY_INTERVAL__MS
+        else:
+            self._igmp_querier__startup_remaining = 0
+            delay_ms = igmp__constants.IGMP__QUERY_INTERVAL__MS
+
+        self._igmp_querier__handle = stack.timer.call_later(delay_ms, self._fire_general_query)
+
+    def _send_igmp_general_query(self) -> None:
+        """
+        Emit an IGMPv3 General Query (group 0.0.0.0, no sources) to the
+        all-systems group 224.0.0.1 with the querier's advertised Max
+        Resp Code (Query Response Interval), QRV (Robustness Variable),
+        and QQIC (Query Interval). The Max Resp Code / QQIC are encoded
+        via the RFC 3376 §4.1.1 / §4.1.7 float form.
+
+        Reference: RFC 3376 §4.1 (General Query fields).
+        Reference: RFC 3376 §8.3 (Query Response Interval — Max Resp Code).
+        """
+
+        message = IgmpMessageQuery(
+            version=IgmpVersion.V3,
+            max_resp_code=encode_igmp_float_code(igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS // 100),
+            group_address=Ip4Address(),
+            qrv=igmp__constants.IGMP__ROBUSTNESS_VARIABLE & 0x07,
+            qqic=encode_igmp_float_code(igmp__constants.IGMP__QUERY_INTERVAL__MS // 1000),
+        )
+
+        self._if._packet_stats_tx.igmp__general_query__send += 1
+        self._emit_igmp(message, IGMP__ALL_SYSTEMS)
 
     def _emit_igmp(self, message: IgmpMessage, ip4__dst: Ip4Address, /) -> None:
         """

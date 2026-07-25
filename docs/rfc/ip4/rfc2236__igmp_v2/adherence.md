@@ -39,7 +39,8 @@ selection live in the RFC 3376 audit.
 | §3      | Unsolicited Report on join (v2 form in v2 mode)        | met |
 | §3      | Report suppression on hearing another host's Report    | met (v1/v2 compatibility mode) |
 | §3      | Leave Group to 224.0.0.2 on leave                      | met (v2 compatibility mode) |
-| §3      | Query / querier behaviour                              | out of scope (Phase 2 router role) |
+| §3      | Querier General Query emission                         | met (Phase-2 M5b; IGMPv3 form) |
+| §3      | Querier election + specific queries                    | out of scope (later M5b) |
 
 ---
 

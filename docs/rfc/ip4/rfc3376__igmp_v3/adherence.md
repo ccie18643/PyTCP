@@ -307,9 +307,24 @@ sending nothing when the result is empty.
 (`IGMP__ALL_SYSTEMS` guard), and the membership API refuses to
 leave it.
 
-The router-side host-state-table maintenance (the querier's
-view of which groups have members, used for forwarding) is
-out-of-scope Phase-2 router work.
+**Querier General Query emission** — as of the Phase-2 M5b
+slice, an interface configured as a multicast router
+(`igmp.mc_forwarding`) takes the querier role and emits General
+Queries: `IgmpTxHandler._send_igmp_general_query` builds an
+IGMPv3 General Query (group 0.0.0.0) advertising the Query
+Response Interval (Max Resp Code, §8.3), Robustness Variable
+(QRV), and Query Interval (QQIC, §8.2) to the all-systems group
+224.0.0.1 with TTL 1. `refresh_querier` / `_start_querier`
+send the §8.7 Startup Query Count burst spaced at the §8.6
+Startup Query Interval, then settle to the §8.2 steady-state
+interval via the self-re-arming General-Query ticket. Tested at
+`tests/integration/router/test__router__igmp__querier.py`.
+
+Still out of scope (later M5b slices): querier **election**
+(RFC 3376 §6.6.2 — non-querier suppression on hearing a lower-IP
+Query) and the router-side **group-membership table** built from
+inbound Reports (§6.4, the querier's view of which groups have
+members, used for forwarding).
 
 ## §7. Interoperation With Older Versions of IGMP
 
@@ -543,6 +558,21 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
+### §6 / §8.2 / §8.6 / §8.7 Querier General Query emission
+
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`
+  The `igmp.mc_forwarding` activation gate, the startup
+  General-Query burst spacing (Startup Query Count / Interval),
+  the steady-state periodic Query (Query Interval), the
+  advertised Max Resp Code / QQIC / QRV, and querier teardown.
+- **Unit:**
+  `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
+  the RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder.
+
+**Status:** locked in (Phase-2 M5b slice — election + membership
+table pending).
+
 ### §8 Timing / robustness sysctls
 
 - **Integration:**
@@ -603,7 +633,8 @@ candidates the UDP demux already produced).
 | §8 timing / robustness constants (sysctls)      | met   |
 | §9 source-specific multicast (control plane)    | met   |
 | §3.1 / §9 data-plane RX source-delivery filter (UDP + RAW) | met (`ip_mc_sf_allow`) |
-| Router / querier role                           | out of scope (Phase 2) |
+| Querier General Query emission (§6/§8.2/§8.6/§8.7) | met (Phase-2 M5b) |
+| Querier election (§6.6.2) + membership table (§6.4) | out of scope (later M5b) |
 
 PyTCP implements the IGMPv3 **host** role including source
 filtering: a group is held per-socket as an INCLUDE / EXCLUDE

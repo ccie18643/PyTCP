@@ -449,6 +449,8 @@ from net_proto.protocols.igmp.message.igmp__message import (
 )
 from net_proto.protocols.igmp.message.igmp__message__query import (
     IgmpMessageQuery,
+    decode_igmp_float_code,
+    encode_igmp_float_code,
 )
 from net_proto.protocols.igmp.message.igmp__message__unknown import (
     IgmpMessageUnknown,
@@ -925,6 +927,8 @@ __all__ = [
     "IgmpType",
     "IgmpVersion",
     "IgmpMessageQuery",
+    "decode_igmp_float_code",
+    "encode_igmp_float_code",
     "IgmpMessageV3Report",
     "IgmpMessageV2Report",
     "IgmpMessageV2Leave",

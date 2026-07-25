@@ -431,6 +431,23 @@ def is_non_negative_int(name: str) -> Callable[[Any], None]:
     return validator
 
 
+def is_bool(name: str) -> Callable[[Any], None]:
+    """
+    Build a validator that requires a value of exactly 'True' or
+    'False'. Surfaces 'name' in the rejection message.
+    """
+
+    def validator(value: Any) -> None:
+        """
+        Raise 'ValueError' unless 'value' is a bool.
+        """
+
+        if not isinstance(value, bool):
+            raise ValueError(f"sysctl {name!r} must be a bool; got {type(value).__name__}({value!r})")
+
+    return validator
+
+
 def is_float_in_range(name: str, *, low: float, high: float) -> Callable[[Any], None]:
     """
     Build a validator that requires a real-number value in the

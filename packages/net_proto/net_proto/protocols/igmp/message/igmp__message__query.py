@@ -93,6 +93,33 @@ def decode_igmp_float_code(code: int, /) -> int:
     return (mant | 0x10) << (exp + 3)
 
 
+def encode_igmp_float_code(value: int, /) -> int:
+    """
+    Encode a linear IGMP Max Resp Code / QQIC value to its octet code.
+
+    RFC 3376 §4.1.1 / §4.1.7: a value below 128 encodes to itself; a
+    larger value encodes to the floating-point form 1|exp|mant, flooring
+    to the largest representable value at or below it and saturating at
+    0xff (31744) for anything beyond the maximum representable value.
+    """
+
+    if value < IGMP__CODE__FLOAT_THRESHOLD:
+        return value
+
+    # value ~= (mant | 0x10) << (exp + 3); shift right (flooring) until
+    # the mantissa fits the 5-bit 0x10..0x1f window.
+    mant = value >> 3
+    exp = 0
+    while mant > 0x1F:
+        mant >>= 1
+        exp += 1
+
+    if exp > 0x07:
+        return 0xFF
+
+    return 0x80 | (exp << 4) | (mant & 0x0F)
+
+
 @dataclass(frozen=True, kw_only=True, slots=True)
 class IgmpMessageQuery(IgmpMessage):
     """
