@@ -464,6 +464,15 @@ RFC 1191 / 8201 (transit PMTU), 792 / 4443 (transit ICMP + Redirect).
 **Deferred; not in the 3.0.9 cut.** Opened as its own plan/commit
 series when the 3.0.9 unicast plane has landed and stabilized.
 
+> **Detailed plan:** the M5 scope below is decomposed into eight
+> tests-first milestones (M5a–M5h) in
+> [`multicast_router_querier.md`](multicast_router_querier.md) —
+> Query assemblers + querier sysctls (M5a), the IGMP querier
+> (M5b–M5c), the MLD querier (M5d–M5e), the multicast forwarding
+> data plane (M5f), and the two independent FIB extensions
+> (M5g ECMP, M5h policy routing). This section is the scoping
+> summary; that doc is the turn-the-crank decomposition.
+
 ### 8.1 Multicast router / querier role
 
 PyTCP has the full IGMP/MLD **host/member** side (membership reporting,
