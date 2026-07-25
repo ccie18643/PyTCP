@@ -8,14 +8,15 @@
 | Date        | June 1995                             |
 | Source text | [`rfc1812.txt`](rfc1812.txt)          |
 
-As of PyTCP 3.0.9 (Phase-2 milestone M1) the stack forwards IPv4
-unicast transit traffic, so the §4.3.3 ICMP error clauses a
-forwarder must originate — Time Exceeded on TTL expiry and
-Destination Unreachable on no route — are now **met** (see the
-companion IPv4 record
-[`../../ip4/rfc1812__router_requirements/adherence.md`](../../ip4/rfc1812__router_requirements/adherence.md)).
-The §4.3.2 rate-limiting and source-address rules are reused on
-the transit-error path.
+As of PyTCP 3.0.9 the IPv4 unicast forwarding plane is complete
+(Phase-2 milestones M1–M4), so every §4.3.3 ICMP error a forwarder
+must originate is now **met**: Time Exceeded on TTL expiry and
+Destination Unreachable on no route (M1), Fragmentation Needed for
+the transit PMTU (M2), and ICMP Redirect on a same-interface
+forward plus host RX-accept (M3) — see the companion IPv4 record
+[`../../ip4/rfc1812__router_requirements/adherence.md`](../../ip4/rfc1812__router_requirements/adherence.md).
+The §4.3.2 rate-limiting and source-address-selection rules are
+reused on every transit-error path.
 
 Currently relevant clauses, as of the ICMP host-requirements work
 plus the M1 transit-forwarding plane:

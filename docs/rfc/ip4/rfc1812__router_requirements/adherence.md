@@ -11,16 +11,18 @@
 
 This document records the PyTCP codebase's adherence to RFC 1812.
 RFC 1812 is the **router-grade companion** to RFC 1122 — it
-defines what an IPv4 router MUST do. As of PyTCP 3.0.9 (Phase-2
-milestones **M1 + M2**) the stack forwards IPv4 unicast transit
-traffic: the core forward-or-deliver decision, the TTL decrement
-with ICMPv4 Time Exceeded on expiry, the no-route ICMPv4
-Destination Unreachable (M1), the transit-PMTU ICMPv4
-Fragmentation Needed on a DF=1 oversize datagram, and
-forwarded-packet fragmentation of a DF=0 oversize datagram (M2)
-are all **met**. The remaining forwarding clauses — ICMP Redirect
-emission (M3) and IP-options processing on forward (M4) — stay
-**n/a (Phase 2)** per the project north-star (`CLAUDE.md`
+defines what an IPv4 router MUST do. As of PyTCP 3.0.9 the
+**IPv4 unicast forwarding plane is complete** (Phase-2 milestones
+**M1–M4**): the forward-or-deliver decision, the TTL decrement
+with ICMPv4 Time Exceeded on expiry, and the no-route ICMPv4
+Destination Unreachable (M1); forwarded-packet fragmentation and
+the transit-PMTU Fragmentation Needed (M2); ICMP Redirect
+generation + host RX-accept (M3); and the forward-path martian /
+directed-broadcast / source filtering plus IP-options preservation
+(M4) are all **met**. A small residue of §5.2.4 SHOULD refinements
+(active Record-Route / Timestamp append, LSRR/SSRR source-route
+forwarding) and the policy-routing / RPF / multipath features stay
+deferred with rationale, per the project north-star (`CLAUDE.md`
 "Project North Star" → Phase 2: router-grade parity).
 
 This audit enumerates the §4-§5 normative requirements and
@@ -51,8 +53,8 @@ path is greppable.
 
 | Section group | Topic                                            | Status |
 |---------------|--------------------------------------------------|--------|
-| §4.2.2.1      | IP options on forwarded packets                  | n/a (Phase 2 — M4) |
-| §4.2.2.2      | Addresses in options (LSRR/SSRR rewrite)         | n/a (Phase 2 — M4) |
+| §4.2.2.1      | IP options on forwarded packets (preservation)   | met (M4); active RR/TS append deferred |
+| §4.2.2.2      | Addresses in options (LSRR/SSRR rewrite)         | n/a — source-routed dropped at RX gate by default |
 | §4.2.2.4      | TOS routing                                      | n/a (Phase 2) |
 | §4.2.2.5      | Header checksum recomputation                    | met (M1) |
 | §4.2.2.7      | Fragmentation on forward                         | met (M2) |
@@ -247,16 +249,56 @@ references this emission.
 
 ## §5 Forwarding
 
-The IPv4 **unicast** forward path is implemented (M1): the
+The IPv4 **unicast** forward path is implemented across M1–M4: the
 forward-or-deliver split (§5.2.1), next-hop determination via
-the FIB (§5.2.4), the TTL decrement (§5.3.1), and the martian /
-scope destination filter (§5.3.7). The `ip4.ip_forward` /
-`ip4.forwarding` sysctls gate it (Linux `net.ipv4.ip_forward` /
+the FIB (§5.2.4), the TTL decrement (§5.3.1), forwarded-packet
+fragmentation + transit PMTU (§5.2.6 / §4.2.2.7 / §4.3.3.4, M2),
+ICMP Redirect generation + RX-accept (§4.3.3.2, M3), and the M4
+conformance items below. The `ip4.ip_forward` / `ip4.forwarding`
+sysctls gate it (Linux `net.ipv4.ip_forward` /
 `net.ipv4.conf.<iface>.forwarding`; default off = exact host
-behaviour). §5.2.6 forwarded-packet fragmentation and the transit
-PMTU response landed in M2 (see §4.2.2.7 / §4.3.3.4). Remaining §5
-work — ICMP Redirect generation (M3), IP-options processing on
-forward (M4), RPF and multipath — stays Phase 2.
+behaviour).
+
+## §5.3.5.2 / §5.3.7 Forward-path filtering (M4)
+
+> "A router MUST NOT forward a directed broadcast [§5.3.5.2 / RFC
+> 2644] ... MUST verify the source address is plausible and MUST
+> NOT forward datagrams with a martian source or destination
+> [§5.3.7]."
+
+**Adherence:** met (M4). The forward-destination martian filter in
+`Ip4ForwardHandler.try_forward_ip4` drops loopback / unspecified /
+limited-broadcast / link-local / multicast destinations **and** the
+directed broadcast of any directly-connected subnet
+(`stack.is_ip4_broadcast`, RFC 2644 default-off). Source-address
+validation happens ahead of the forward branch: the parser sanity
+check rejects broadcast / multicast / reserved sources, and
+`_phrx_ip4` drops a datagram whose source is a locally-connected
+directed broadcast (`ip4__src_directed_broadcast__drop`) — so a
+martian-source datagram never reaches the forward path. The
+deliver-or-forward decision runs local delivery first, so a
+locally-destined low-TTL datagram is delivered (never Time
+Exceeded). IPv6 link-local scope (source or destination) is
+enforced in the IPv6 forward path (`ip6__forward_scope__drop`, RFC
+4007).
+
+## §5.2.4 IP options on forwarded datagrams (M4)
+
+**Adherence:** met (M4) for **preservation**. The forward path
+re-emits the received IPv4 datagram byte-for-byte apart from the
+TTL decrement and header-checksum recomputation, so header options
+(Record-Route, Timestamp, Router Alert, CIPSO, …) are carried
+across the forward unchanged and the header length is preserved.
+
+**Deferred (a §5.2.4 SHOULD refinement):** active option
+**processing** on forward — appending the router's address to a
+Record-Route option or a timestamp/address pair to a Timestamp
+option — is not yet performed; the options are forwarded
+faithfully but not mutated. LSRR/SSRR **source-route forwarding**
+(pointer advance + destination rewrite) is likewise deferred:
+inbound source-routed datagrams are dropped at the IPv4 RX gate by
+default (`ip4.accept_source_route=False`, Linux parity), so they
+never reach the forward branch.
 
 ---
 
@@ -332,15 +374,31 @@ forward (M4), RPF and multipath — stays Phase 2.
 
 **Status:** locked in (M3 scope).
 
-### Remaining Phase-2 gaps
+### §5.3.5.2 / §5.3.7 / §5.2.4 forward-path filtering + options (M4)
 
-**No test surface yet — later milestones.** The remaining matrix:
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/router/test__router__rfc1812_conformance.py`
+  — directed-broadcast forward-destination drop; local delivery
+  precedes the forward branch (low-TTL local datagram not Time
+  Exceeded); martian-source datagram dropped before forward;
+  IPv4 options preserved byte-for-byte across a forward. IPv6
+  link-local source/destination scope drops in
+  `.../test__router__ip6__forwarding.py`.
+
+**Status:** locked in (M4 scope).
+
+### Remaining Phase-2 gaps (deferred with rationale)
 
 1. Host Unreachable (Code 1) on next-hop resolution hard-failure
-   (Phase-2 refinement — see §4.3.3.1).
-2. Source-route processing (LSRR/SSRR pointer advance, dst
-   rewrite, options preservation across fragments) (M4).
-3. RPF / ingress-filter checks.
+   — needs a neighbor-cache probe-exhaustion callback (see §4.3.3.1).
+2. Active IP-options processing on forward (Record-Route /
+   Timestamp append) and LSRR/SSRR source-route forwarding — a
+   §5.2.4 SHOULD refinement; options are preserved but not mutated,
+   and source-routed datagrams are dropped at the RX gate by
+   default (see §5.2.4).
+3. RPF / ingress-filter checks; §4.2.2.4 TOS routing; §4.2.2.10
+   multi-subnet broadcasts — policy-routing / multi-homing
+   features tracked for later phases.
 
 ### Test coverage summary
 
@@ -362,7 +420,7 @@ forward (M4), RPF and multipath — stays Phase 2.
 
 | Aspect                                              | Status |
 |-----------------------------------------------------|--------|
-| §4.2.2 IP options on forwarded packets              | n/a (Phase 2 — M4) |
+| §4.2.2.1 IP options preserved on forward            | met (M4); active RR/TS append deferred |
 | §4.2.2.5 Header checksum recomputation              | met (M1) |
 | §4.2.2.7 Fragmentation on forward                   | met (M2) |
 | §4.2.2.8 No reassembly in transit                   | met by absence (host-side reassembly intact) |
@@ -374,17 +432,21 @@ forward (M4), RPF and multipath — stays Phase 2.
 | §4.3.3.2 ICMP Redirect (emission + RX accept)       | met (M3) |
 | §4.3.3.4 ICMP Fragmentation Needed (transit PMTU)   | met (M2) |
 | §4.3.3.5 ICMP Time Exceeded emission                | met (M1) |
-| §5 Forwarding plane (unicast)                       | met (M1+M2+M3); options (M4) deferred |
+| §5.3.5.2 / §5.3.7 forward-path filtering            | met (M4) |
+| §5.2.4 IP options on forward (preservation)         | met (M4) |
+| §5 Forwarding plane (unicast)                       | met (M1–M4) |
 
-As of 3.0.9 (M1 + M2 + M3) PyTCP forwards IPv4 unicast transit
-traffic, originates the TTL-expiry (Time Exceeded) and no-route
-(Destination Unreachable) ICMP errors a forwarder must, handles
-oversize transit traffic (fragment a DF=0 datagram or emit an
-ICMPv4 Fragmentation Needed for a DF=1 datagram — transit PMTU),
-and generates ICMP Redirects on a same-interface forward
-(plus host RX-accept of inbound Redirects). The remaining
-RFC 1812 forwarding clauses are deferred to later Phase-2
-milestones with a one-to-one map to where each piece lands:
-IP-options processing on forward (M4), Host Unreachable on
-next-hop hard-failure, plus RPF / multipath. Default-off
+**The IPv4 unicast forwarding plane is complete (M1–M4).** As of
+3.0.9 PyTCP forwards IPv4 unicast transit traffic; decrements the
+TTL and originates Time Exceeded on expiry; emits Destination
+Unreachable on no route; fragments a DF=0 oversize datagram and
+emits Fragmentation Needed (transit PMTU) for a DF=1 one;
+generates ICMP Redirects on a same-interface forward and accepts
+inbound Redirects host-side; filters martian / directed-broadcast
+destinations and martian sources; and preserves IP options across
+a forward. A small set of §5.2.4 SHOULD refinements (active
+Record-Route / Timestamp append, LSRR/SSRR source-route
+forwarding), Host Unreachable on next-hop hard-failure, and the
+policy-routing / RPF / multipath features are deferred with
+rationale (see "Remaining Phase-2 gaps" above). Default-off
 forwarding keeps the Phase-1 host posture byte-for-byte intact.

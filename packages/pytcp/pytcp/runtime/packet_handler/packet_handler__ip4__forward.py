@@ -139,8 +139,19 @@ class Ip4ForwardHandler:
         #    (RFC 1812 §5.3.7): loopback, the unspecified address, the
         #    limited broadcast, a link-local destination (RFC 3927
         #    §2.7), or a multicast group (multicast forwarding is the
-        #    Phase-2 M5 querier/replication work).
-        if dst.is_loopback or dst.is_unspecified or dst.is_limited_broadcast or dst.is_link_local or dst.is_multicast:
+        #    Phase-2 M5 querier/replication work). RFC 1812 §5.3.5.2 /
+        #    RFC 2644: a router MUST NOT forward a datagram toward the
+        #    directed broadcast of a directly-connected subnet by
+        #    default ('stack.is_ip4_broadcast' spans every interface's
+        #    broadcast set); this closes the smurf-amplification vector.
+        if (
+            dst.is_loopback
+            or dst.is_unspecified
+            or dst.is_limited_broadcast
+            or dst.is_link_local
+            or dst.is_multicast
+            or stack.is_ip4_broadcast(dst)
+        ):
             self._if._packet_stats_rx.ip4__forward_martian_dst__drop += 1
             __debug__ and log(
                 "ip4",

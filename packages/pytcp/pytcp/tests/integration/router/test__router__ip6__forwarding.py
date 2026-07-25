@@ -245,6 +245,37 @@ class TestRouterIp6Forwarding(RouterTestCase):
             ip6__forward_scope__drop=1,
         )
 
+    def test__router__ip6__forward__link_local_source_scope_drop(self) -> None:
+        """
+        Ensure an inbound IPv6 transit datagram whose SOURCE is a
+        link-local address is dropped (a link-local source must never be
+        forwarded across interfaces) with no frame emitted.
+
+        Reference: RFC 4007 §9 (link-local scope not forwarded off-link).
+        Reference: RFC 1812 §5.3.7 (scope-based source filtering).
+        """
+
+        self._enable_forwarding()
+
+        emitted = self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_transit_ip6(
+                ingress=self.if1,
+                src_mac=HOST_A__MAC_ADDRESS,
+                src_ip=Ip6Address("fe80::91"),
+                dst_ip=INTERNET__IP6,
+                hop=64,
+            ),
+        )
+
+        self._assert_no_forward(emitted)
+        self._assert_packet_stats_rx(
+            ethernet__pre_parse=1,
+            ethernet__dst_unicast=1,
+            ip6__pre_parse=1,
+            ip6__forward_scope__drop=1,
+        )
+
     def test__router__ip6__forward__next_hop_unresolved_queued(self) -> None:
         """
         Ensure an inbound IPv6 transit datagram whose next hop cannot be

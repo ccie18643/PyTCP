@@ -5,7 +5,7 @@
 | Track        | Phase 2 — router-grade parity (Project North Star)                    |
 | Target       | PyTCP 3.0.9 (unicast forwarding plane: M0–M4)                         |
 | Branch       | `PyTCP_3_0_9`                                                         |
-| Status       | **M0–M3 landed** — unicast forwarding + transit ICMP errors + transit PMTU/fragmentation + ICMP Redirect (gen + RX-accept) shipped; M4 pending |
+| Status       | **COMPLETE (M0–M4)** — IPv4/IPv6 unicast forwarding plane shipped: transit forwarding + ICMP errors + PMTU/fragmentation + ICMP Redirect + RFC 1812 conformance sweep. M5 (multicast querier / FIB ECMP) optional, post-3.0.9 |
 | Follow-up    | M5 (multicast router / querier) + FIB extensions — optional, post-3.0.9 |
 | Precedent    | `routing_table_host_mode.md`, `packet_handler_rewrite_plan.md`, `sysctl_per_interface.md` |
 
@@ -511,7 +511,7 @@ handling) — tracked in the adherence records as "n/a (M5)".
 | **M1** ✅ | `ip_forward` knob + forward branch + Time-Exceeded + no-route Unreachable | M2–M4 |
 | **M2** ✅ | Transit PMTU (Frag-Needed / Packet Too Big) + IPv4 forwarded fragmentation (Host-Unreachable deferred) | M4 |
 | **M3** ✅ | ICMP Redirect generation (+ new ICMPv4 codec, host RX-accept) | M4 |
-| **M4** | RFC 1812 conformance sweep + adherence records flipped | release |
+| **M4** ✅ | RFC 1812 conformance sweep (directed-bcast/martian/source filters, options preservation) + adherence flipped | release |
 | M5 | *(optional follow-up)* multicast querier + FIB ECMP/policy | — |
 
 Each milestone is tests-first (integration-biased), `make lint` +
