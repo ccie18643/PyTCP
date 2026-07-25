@@ -42,7 +42,7 @@ Phase-2 router work and is marked out-of-scope per clause.
 | §3.1     | Per-socket filter mode + source list                     | met |
 | §3.2     | Per-interface state = merge of socket filters            | met |
 | §4       | Messages carried in IPv4, protocol 2, TTL 1, Router Alert | met |
-| §4.1     | Membership Query parsing (v1/v2/v3 by length)            | met (RX) |
+| §4.1     | Membership Query parse + wire assembly (v1/v2/v3)        | met |
 | §4.1.1 / §4.1.7 | Max Resp Code / QQIC floating-point decode        | met |
 | §4       | Inbound IGMP TTL = 1 enforced (drop martian TTL != 1)    | met |
 | §4.1.12  | Accept Query to 224.0.0.1 / any interface address        | met |
@@ -137,12 +137,17 @@ handler catches the validation error and drops the frame
 > Address, Resv|S|QRV, QQIC, Number of Sources, Source
 > Address[]]"
 
-**Adherence:** met (RX). `IgmpMessageQuery.from_buffer`
+**Adherence:** met (RX + wire assembly). `IgmpMessageQuery.from_buffer`
 (`igmp__message__query.py`) decodes the 8-octet v1/v2 form and
 the ≥12-octet v3 form, exposing `group_address`, `s_flag`,
-`qrv`, `qqic`, and the source list. The host is a listener, so
-the Query is RX-only; `assemble` raises (querier emission is
-Phase-2 router work).
+`qrv`, `qqic`, and the source list. As of the Phase-2 M5a
+scaffolding `IgmpMessageQuery.assemble` / `__buffer__` also
+serialise the v1/v2 and v3 Query wire forms (checksum injected by
+the `Igmp` base), tested at
+`test__igmp__message__query__assembler__operation.py`. The
+querier state machine that *drives* this emission — election,
+General-Query timers, the router-side group-membership table — is
+the Phase-2 M5b–M5c router work and remains out of scope here.
 
 ### §4.1.1 / §4.1.7 Max Resp Code / QQIC
 
@@ -412,12 +417,16 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
-### §4.1 / §4.1.1 / §4.1.7 Query parse + float decode
+### §4.1 / §4.1.1 / §4.1.7 Query parse + wire assembly + float decode
 
 - **Unit:**
   `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py`
   v1/v2/v3 version discrimination, field decode, the §4.1.1 /
   §4.1.7 float-code table, the General-Query predicate.
+- **Unit:**
+  `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__assembler__operation.py`
+  v1/v2/v3 Query serialisation, buffer layout, checksum
+  injection, and the assemble→parse round-trip (Phase-2 M5a).
 
 **Status:** locked in.
 

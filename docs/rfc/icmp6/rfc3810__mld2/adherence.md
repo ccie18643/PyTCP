@@ -64,7 +64,7 @@ fall into `__phrx_icmp6__unknown`.
 
 | Section | Topic                                          | Status |
 |---------|------------------------------------------------|--------|
-| §4 wire | Query (type 130) wire format                   | met (parser via `Icmp6Mld2MessageQuery` — codec + RX dispatch; assembly is Phase-2 router) |
+| §4 wire | Query (type 130) wire format                   | met (codec + parser + assembler; querier state machine is Phase-2 M5d) |
 | §4 wire | Report (type 143) wire format                  | met (codec + assembler + parser) |
 | §4 wire | Multicast Address Record wire format           | met |
 | §5      | Listener-side state machine                    | met (source-bearing state-change Reports — `ALLOW`/`BLOCK`/`CHANGE_TO_*` per the §6.1 difference table — with §9.1 robustness retransmission; §5.2.12 / §6.1, tested by `test__icmp6__mld__source_state_change.py` + `test__icmp6__mld2_leave.py`) |
@@ -93,14 +93,16 @@ the ICMPv6 demux:
   `Icmp6Type` at `packages/net_proto/net_proto/protocols/icmp6/message/icmp6__message.py`
   with the codec class `Icmp6Mld2MessageQuery` at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__query.py`
-  (RX-only parser: 28-byte fixed header + N × 16-byte
-  source-address list; the `assemble` / `_pack_header`
-  methods raise NotImplementedError because Phase-1 PyTCP
-  is a host listener and never emits Queries — querier-
-  side emission lands in the Phase-2 router track). The
-  RX path at `packet_handler__icmp6__rx.py:194`
-  dispatches to `__phrx_icmp6__mld_query` (definition at
-  `:1174`) per §5.1.10.
+  (28-byte fixed header + N × 16-byte source-address
+  list; the parser feeds the host handler, and as of the
+  Phase-2 M5a scaffolding `assemble` / `_pack_header` also
+  serialise the Query wire form — tested at
+  `test__icmp6__mld2__message__query__assembler.py`. The
+  querier state machine that drives emission is Phase-2
+  M5d–M5e router work). The RX path at
+  `packet_handler__icmp6__rx.py:194` dispatches to
+  `__phrx_icmp6__mld_query` (definition at `:1174`) per
+  §5.1.10.
 - Type 143 (`MULTICAST_LISTENER_REPORT_V2`) — full codec
   at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__report.py`
@@ -466,7 +468,7 @@ alongside the Phase-2 router-track implementation.
 
 | Aspect                                                | Status |
 |-------------------------------------------------------|--------|
-| §4 Query wire format                                  | met (parser via `Icmp6Mld2MessageQuery`; assembly is Phase-2 router) |
+| §4 Query wire format                                  | met (codec + parser + assembler; querier state machine is Phase-2 M5d) |
 | §4 Report wire format                                 | met    |
 | §4 Multicast Address Record codec                     | met    |
 | §5 Listener-side Report emission on join              | met    |

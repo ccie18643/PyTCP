@@ -97,18 +97,6 @@ class TestIcmp6Mld1MessageQuery(TestCase):
             msg="An MLDv1 Query must be a fixed 24 octets.",
         )
 
-    def test__icmp6__mld1__query__assemble_is_rx_only(self) -> None:
-        """
-        Ensure assembling an MLDv1 Query raises NotImplementedError —
-        PyTCP is a host listener; querier-side emission is Phase-2
-        router work.
-
-        Reference: RFC 2710 §3.1 (querier emits Queries — router role).
-        """
-
-        with self.assertRaises(NotImplementedError):
-            Icmp6Mld1MessageQuery(multicast_address=Ip6Address()).assemble([])
-
     def test__icmp6__mld1__query__integrity_rejects_short_frame(self) -> None:
         """
         Ensure 'validate_integrity' rejects a frame shorter than the

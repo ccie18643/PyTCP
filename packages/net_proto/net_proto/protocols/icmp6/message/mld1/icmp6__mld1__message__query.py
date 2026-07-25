@@ -24,12 +24,12 @@
 
 """
 This module contains the ICMPv6 MLDv1 Multicast Listener Query
-message (type 130, 24-octet form) support class — RX-only at Phase
-1. A host parses an inbound MLDv1 Query to enter MLDv1 compatibility
-mode (RFC 3810 §8.2.1); the querier role that emits Queries is
-Phase-2 router work. The MLDv1 Query is distinguished from the
-larger MLDv2 Query (>= 28 octets) by its fixed 24-octet length
-(RFC 3810 §8.1).
+message (type 130, 24-octet form) support class. A host parses an
+inbound MLDv1 Query to enter MLDv1 compatibility mode (RFC 3810
+§8.2.1); the Phase-2 querier assembles it to emit MLDv1-format
+Queries under an older-version-querier-present interop. The MLDv1
+Query is distinguished from the larger MLDv2 Query (>= 28 octets) by
+its fixed 24-octet length (RFC 3810 §8.1).
 
 net_proto/protocols/icmp6/message/mld1/icmp6__mld1__message__query.py
 
@@ -83,11 +83,11 @@ class Icmp6Mld1QueryCode(Icmp6Code):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6Mld1MessageQuery(Icmp6Message):
     """
-    The ICMPv6 MLDv1 Query message (24-octet form) — RX-only at
-    Phase 1. A General Query carries the unspecified multicast
-    address (::); a Multicast-Address-Specific Query carries the
-    queried group. PyTCP parses it to drive the MLDv1 compatibility
-    timer; querier-side emission is Phase-2 router work.
+    The ICMPv6 MLDv1 Query message (24-octet form). A General Query
+    carries the unspecified multicast address (::); a
+    Multicast-Address-Specific Query carries the queried group. On RX
+    the parser drives the MLDv1 compatibility timer; on TX the Phase-2
+    querier assembles it under an older-version-querier interop.
     """
 
     type: Icmp6Type = field(
@@ -140,12 +140,11 @@ class Icmp6Mld1MessageQuery(Icmp6Message):
     @override
     def __buffer__(self, _: int) -> memoryview:
         """
-        Get the ICMPv6 MLDv1 Query message as a memoryview. PyTCP is
-        a host listener; the TX path is Phase-2 router work, so this
-        returns an empty memoryview (the canonical use is RX-only).
+        Get the ICMPv6 MLDv1 Query message as a memoryview, with the
+        checksum slot left zero for the ICMPv6 base to inject.
         """
 
-        return memoryview(b"")
+        return memoryview(self._pack_header())
 
     @override
     def _pack_header(
@@ -154,10 +153,22 @@ class Icmp6Mld1MessageQuery(Icmp6Message):
         /,
     ) -> bytearray:
         """
-        Phase-1 host listener never assembles MLDv1 Queries.
+        Get the ICMPv6 MLDv1 Query fixed 24-octet header as bytes.
         """
 
-        raise NotImplementedError("MLDv1 Query assembly is Phase-2 router work; PyTCP is a host listener.")
+        struct.pack_into(
+            ICMP6__MLD1__MESSAGE__STRUCT,
+            buffer := bytearray(buffer_len),
+            0,
+            int(self.type),
+            int(self.code),
+            0,
+            self.maximum_response_delay,
+            0,
+            bytes(self.multicast_address),
+        )
+
+        return buffer
 
     @override
     def validate_sanity(self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address) -> None:
@@ -208,7 +219,8 @@ class Icmp6Mld1MessageQuery(Icmp6Message):
     @override
     def assemble(self, buffers: list[Buffer], /) -> None:
         """
-        Phase-1 host listener does not emit MLDv1 Queries.
+        Assemble the ICMPv6 MLDv1 Query message into the buffer list.
         """
 
-        raise NotImplementedError("MLDv1 Query assembly is Phase-2 router work; PyTCP is a host listener.")
+        buffers.append(self._pack_header())
+        buffers.append(bytearray())

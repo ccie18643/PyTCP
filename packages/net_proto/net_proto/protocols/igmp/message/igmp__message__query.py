@@ -23,9 +23,10 @@
 
 
 """
-This module contains the IGMP Membership Query message support class —
-RX-only at Phase 1 (PyTCP is a host listener, not a querier; the
-querier role is Phase-2 router work).
+This module contains the IGMP Membership Query message support class.
+The parser feeds the host Report-on-Query state machine (RFC 3376
+§5.2); the assembler is the querier-side emission path (Phase-2
+router work).
 
 net_proto/protocols/igmp/message/igmp__message__query.py
 
@@ -95,10 +96,10 @@ def decode_igmp_float_code(code: int, /) -> int:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class IgmpMessageQuery(IgmpMessage):
     """
-    The IGMP Membership Query message — RX-only at Phase 1. PyTCP is a
-    host listener; this message class parses inbound Queries for the
-    host Report-on-Query state machine. Phase-2 router work will add
-    full querier-side construction + emission via 'assemble'.
+    The IGMP Membership Query message. On RX the parser feeds the host
+    Report-on-Query state machine; on TX the Phase-2 querier assembles
+    it to emit General / Group-Specific / Group-and-Source-Specific
+    Queries.
     """
 
     type: IgmpType = field(
@@ -190,14 +191,66 @@ class IgmpMessageQuery(IgmpMessage):
     @override
     def __buffer__(self, _: int) -> memoryview:
         """
-        Get the IGMP Membership Query message as a memoryview. The
-        Phase-1 host listener only consumes Queries; an empty
-        memoryview is returned rather than raising so a caller that
-        round-trips through an assembler does not crash (the canonical
-        use is RX-only).
+        Get the IGMP Membership Query message as a memoryview, with the
+        checksum slot left zero for the IGMP base to inject.
         """
 
-        return memoryview(b"")
+        buffer = self._pack_header()
+        buffer += self._pack_sources()
+
+        return memoryview(buffer)
+
+    def _pack_header(self) -> bytearray:
+        """
+        Get the IGMP Membership Query fixed header as bytes (8 octets for
+        the v1/v2 simple form, 12 octets for the v3 form).
+        """
+
+        if self.version is IgmpVersion.V3:
+            struct.pack_into(
+                IGMP__QUERY__SIMPLE__STRUCT,
+                buffer := bytearray(IGMP__QUERY__V3_MIN_LEN),
+                0,
+                int(self.type),
+                self.max_resp_code,
+                0,
+                bytes(self.group_address),
+            )
+            struct.pack_into(
+                IGMP__QUERY__V3_FIXED__STRUCT,
+                buffer,
+                IGMP__QUERY__SIMPLE__LEN,
+                (self.s_flag << 3) | self.qrv,
+                self.qqic,
+                self.number_of_sources,
+            )
+
+            return buffer
+
+        struct.pack_into(
+            IGMP__QUERY__SIMPLE__STRUCT,
+            buffer := bytearray(IGMP__QUERY__SIMPLE__LEN),
+            0,
+            int(self.type),
+            self.max_resp_code,
+            0,
+            bytes(self.group_address),
+        )
+
+        return buffer
+
+    def _pack_sources(self) -> bytearray:
+        """
+        Get the IGMPv3 Query source-address list as bytes (empty for the
+        v1/v2 simple form).
+        """
+
+        buffer = bytearray()
+
+        for source in self.source_addresses:
+            buffer += bytes(source)
+
+        return buffer
 
     @override
     def validate_sanity(self) -> None:
@@ -297,8 +350,7 @@ class IgmpMessageQuery(IgmpMessage):
     def assemble(self, buffers: list[Buffer], /) -> None:
         """
         Assemble the IGMP Membership Query message into the buffer list.
-        The Phase-1 host listener does not emit Queries; raises
-        NotImplementedError if called.
         """
 
-        raise NotImplementedError("IGMP Query assembly is Phase-2 router work; PyTCP is a host listener.")
+        buffers.append(self._pack_header())
+        buffers.append(self._pack_sources())

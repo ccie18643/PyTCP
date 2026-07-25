@@ -23,9 +23,9 @@
 
 
 """
-This module contains the ICMPv6 MLDv2 Query message support
-class — RX-only at Phase 1 (PyTCP is an MLDv2 listener, not a
-querier; the querier role is Phase-2 router work).
+This module contains the ICMPv6 MLDv2 Query message support class. The
+parser feeds the §5.1.10 host Report-on-Query handler; the assembler
+is the querier-side emission path (Phase-2 router work).
 
 net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__query.py
 
@@ -85,11 +85,10 @@ class Icmp6Mld2QueryCode(Icmp6Code):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class Icmp6Mld2MessageQuery(Icmp6Message):
     """
-    The ICMPv6 MLDv2 Query message — RX-only at Phase 1.
-    PyTCP is a host listener; this message class parses
-    inbound Queries for the §5.1.10 Report-on-Query
-    handler. Phase-2 router work will add full querier-
-    side construction + emission via 'assemble'.
+    The ICMPv6 MLDv2 Query message. On RX the parser feeds the
+    §5.1.10 host Report-on-Query handler; on TX the Phase-2 querier
+    assembles it to emit General / Multicast-Address-Specific /
+    Multicast-Address-and-Source-Specific Queries.
     """
 
     type: Icmp6Type = field(
@@ -151,16 +150,14 @@ class Icmp6Mld2MessageQuery(Icmp6Message):
     @override
     def __buffer__(self, _: int) -> memoryview:
         """
-        Get the ICMPv6 MLDv2 Query message as a memoryview.
-        Phase-1 host (listener) only consumes Queries; the
-        TX path is Phase-2 router work.
+        Get the ICMPv6 MLDv2 Query message as a memoryview, with the
+        checksum slot left zero for the ICMPv6 base to inject.
         """
 
-        # Listener does not emit Queries; return an empty
-        # memoryview rather than NotImplementedError so any
-        # caller that round-trips through Icmp6Assembler does
-        # not crash (the canonical use is RX-only).
-        return memoryview(b"")
+        buffer = self._pack_header()
+        buffer[ICMP6__MLD2__QUERY__LEN:] = self._pack_sources()
+
+        return memoryview(buffer)
 
     @override
     def _pack_header(
@@ -169,11 +166,37 @@ class Icmp6Mld2MessageQuery(Icmp6Message):
         /,
     ) -> bytearray:
         """
-        Get the ICMPv6 MLDv2 Query message as bytes.
-        Phase-1 host listener never assembles Queries.
+        Get the ICMPv6 MLDv2 Query fixed 28-octet header as bytes.
         """
 
-        raise NotImplementedError("MLDv2 Query assembly is Phase-2 router work; PyTCP is a host listener.")
+        struct.pack_into(
+            ICMP6__MLD2__QUERY__STRUCT,
+            buffer := bytearray(buffer_len),
+            0,
+            int(self.type),
+            int(self.code),
+            0,
+            self.maximum_response_code,
+            0,
+            bytes(self.multicast_address),
+            (self.s_flag << 3) | self.qrv,
+            self.qqic,
+            len(self.source_addresses),
+        )
+
+        return buffer
+
+    def _pack_sources(self) -> bytearray:
+        """
+        Get the ICMPv6 MLDv2 Query source-address list as bytes.
+        """
+
+        buffer = bytearray()
+
+        for source in self.source_addresses:
+            buffer += bytes(source)
+
+        return buffer
 
     @override
     def validate_sanity(self, *, ip6__hop: int, ip6__src: Ip6Address, ip6__dst: Ip6Address) -> None:
@@ -260,9 +283,8 @@ class Icmp6Mld2MessageQuery(Icmp6Message):
     @override
     def assemble(self, buffers: list[Buffer], /) -> None:
         """
-        Assemble the ICMPv6 MLDv2 Query message into the
-        buffer list. Phase-1 host listener does not emit
-        Queries; raises NotImplementedError if called.
+        Assemble the ICMPv6 MLDv2 Query message into the buffer list.
         """
 
-        raise NotImplementedError("MLDv2 Query assembly is Phase-2 router work; PyTCP is a host listener.")
+        buffers.append(self._pack_header())
+        buffers.append(self._pack_sources())
