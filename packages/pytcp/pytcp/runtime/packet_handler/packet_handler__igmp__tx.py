@@ -74,6 +74,13 @@ IGMP__ALL_SYSTEMS = Ip4Address("224.0.0.1")
 IGMP__ALL_ROUTERS = Ip4Address("224.0.0.2")
 IGMP__ALL_IGMPV3_ROUTERS = Ip4Address("224.0.0.22")
 
+# The IGMP link-local control groups a system never reports membership
+# in (RFC 3376 §6): the all-systems group every host belongs to, and
+# the all-routers / all-IGMPv3-routers groups a querier receives on. An
+# interface may listen on these (for control traffic) without ever
+# emitting a Membership Report for them.
+IGMP__CONTROL_GROUPS = frozenset({IGMP__ALL_SYSTEMS, IGMP__ALL_ROUTERS, IGMP__ALL_IGMPV3_ROUTERS})
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _IgmpPendingChange:
@@ -91,6 +98,38 @@ class _IgmpPendingChange:
     remaining: int
 
 
+@dataclass(kw_only=True, slots=True)
+class _QuerierGroupState:
+    """
+    The querier's router-side reception state for one downstream
+    multicast group (RFC 3376 §6.2): the filter mode, the associated
+    source list, and the Group Membership Interval timer that expires
+    the whole group when no Report refreshes it.
+
+    PyTCP tracks membership at group granularity — the per-source
+    timers of RFC 3376 §6.2.1 (which let individual sources of an
+    EXCLUDE group age out independently) collapse into the single group
+    timer. Phase 2: per-source timers.
+    """
+
+    filter_mode: Ip4MulticastFilterMode
+    sources: frozenset[Ip4Address]
+    group_timer_handle: TimerHandle | None = None
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class IgmpQuerierMembership:
+    """
+    An immutable snapshot of one router-learned multicast group
+    membership — the read-only introspection view of the querier's
+    downstream reception state (the '/proc/net/igmp' router equivalent).
+    """
+
+    group: Ip4Address
+    filter_mode: Ip4MulticastFilterMode
+    sources: frozenset[Ip4Address]
+
+
 class IgmpTxHandler:
     """
     The outbound IGMP packet handler for one interface.
@@ -104,6 +143,7 @@ class IgmpTxHandler:
     _igmp_querier__handle: TimerHandle | None
     _igmp_querier__other_present_handle: TimerHandle | None
     _igmp_querier__startup_remaining: int
+    _igmp_querier__memberships: dict[Ip4Address, _QuerierGroupState]
 
     def __init__(self, *, interface: "PacketHandler") -> None:
         """
@@ -118,6 +158,7 @@ class IgmpTxHandler:
         self._igmp_querier__handle = None
         self._igmp_querier__other_present_handle = None
         self._igmp_querier__startup_remaining = 0
+        self._igmp_querier__memberships = {}
 
     def _current_state_record(self, group: Ip4Address, /) -> IgmpV3GroupRecord | None:
         """
@@ -158,7 +199,7 @@ class IgmpTxHandler:
         records = [
             record
             for group in dict.fromkeys(self._if._ip4_multicast)
-            if group != IGMP__ALL_SYSTEMS and (record := self._current_state_record(group)) is not None
+            if group not in IGMP__CONTROL_GROUPS and (record := self._current_state_record(group)) is not None
         ]
 
         self._emit_v3_report(records)
@@ -178,7 +219,7 @@ class IgmpTxHandler:
         records = [
             IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=group)
             for group in dict.fromkeys(self._if._ip4_multicast)
-            if group != IGMP__ALL_SYSTEMS
+            if group not in IGMP__CONTROL_GROUPS
         ]
 
         self._emit_v3_report(records)
@@ -261,7 +302,7 @@ class IgmpTxHandler:
         (an idempotent re-add) schedules no retransmit.
         """
 
-        if group == IGMP__ALL_SYSTEMS:
+        if group in IGMP__CONTROL_GROUPS:
             return
 
         records = self._state_change_records(group, old, new)
@@ -400,12 +441,41 @@ class IgmpTxHandler:
         of the §8.7 Startup Query Count General Queries and arming the
         re-arming General-Query ticket. Runs under the interface
         multicast lock.
+
+        Phase 2: a querier must also receive Membership Reports on the
+        all-IGMPv3-routers group 224.0.0.22 (a receive-only admission
+        that, unlike a host join, is never itself reported); that RX-group
+        admission is done here — see '_admit_querier_receive_group'.
         """
 
+        self._admit_querier_receive_group()
         self._igmp_querier__active = True
         self._igmp_querier__is_querier = True
         self._igmp_querier__startup_remaining = max(1, igmp__constants.IGMP__STARTUP_QUERY_COUNT)
         self._send_general_query_and_rearm()
+
+    def _admit_querier_receive_group(self) -> None:
+        """
+        Receive-only admission of the all-IGMPv3-routers group 224.0.0.22
+        (the interface's reception filter + Ethernet multicast MAC) so
+        the querier receives inbound v3 Membership Reports. It is an IGMP
+        control group (IGMP__CONTROL_GROUPS) the interface never reports
+        membership in, so — unlike a host join — no Report is emitted for
+        it. Runs under the interface multicast lock.
+        """
+
+        if IGMP__ALL_IGMPV3_ROUTERS not in self._if._ip4_multicast_filters:
+            self._if._assign_ip4_multicast(IGMP__ALL_IGMPV3_ROUTERS)
+
+    def _withdraw_querier_receive_group(self) -> None:
+        """
+        Undo '_admit_querier_receive_group' when the interface stops
+        being a multicast router. Runs under the interface multicast
+        lock.
+        """
+
+        if IGMP__ALL_IGMPV3_ROUTERS in self._if._ip4_multicast_filters:
+            self._if._remove_ip4_multicast(IGMP__ALL_IGMPV3_ROUTERS)
 
     def _stop_querier(self) -> None:
         """
@@ -423,6 +493,11 @@ class IgmpTxHandler:
         if self._igmp_querier__other_present_handle is not None:
             stack.timer.cancel(self._igmp_querier__other_present_handle)
             self._igmp_querier__other_present_handle = None
+        for state in self._igmp_querier__memberships.values():
+            if state.group_timer_handle is not None:
+                stack.timer.cancel(state.group_timer_handle)
+        self._igmp_querier__memberships.clear()
+        self._withdraw_querier_receive_group()
 
     def _fire_general_query(self) -> None:
         """
@@ -520,6 +595,172 @@ class IgmpTxHandler:
         query_response_ms = query.max_response_time * 100 or igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS
 
         return qrv * query_interval_sec * 1000 + query_response_ms // 2
+
+    # --- Router-side group-membership table (RFC 3376 §6.4) ----------
+
+    def observe_report(self, message: IgmpMessage, /) -> None:
+        """
+        Learn downstream multicast reception state from an inbound
+        Membership Report (RFC 3376 §6.4). An IGMPv3 Report contributes
+        one group record per group; a legacy IGMPv1/v2 Membership Report
+        is an EXCLUDE{} join for its group. A no-op on an interface that
+        is not a multicast router. Populated only from inbound Reports —
+        never from this stack's own host joins (which live in the
+        separate '_ip4_multicast_refs' host table).
+
+        Reference: RFC 3376 §6.4 (router action on reception of a Report).
+        """
+
+        with self._if._lock__multicast:
+            if not self._igmp_querier__active:
+                return
+
+            learned = False
+            if isinstance(message, IgmpMessageV3Report):
+                for record in message.records:
+                    learned |= self._process_group_record(
+                        record.multicast_address, record.type, frozenset(record.source_addresses)
+                    )
+            elif isinstance(message, (IgmpMessageV1Report, IgmpMessageV2Report)):
+                # A v1/v2 Membership Report is an EXCLUDE{} join (RFC 3376
+                # §7.3.2 — an older-version host wants the whole group).
+                learned = self._process_group_record(
+                    message.group_address, IgmpV3RecordType.MODE_IS_EXCLUDE, frozenset()
+                )
+            # A v2 Leave Group triggers fast-leave Group-Specific Queries
+            # (Phase-2 M5c); here the group's timer expires the membership.
+
+            if learned:
+                self._if._packet_stats_rx.igmp__querier__member_report += 1
+
+    def _process_group_record(
+        self,
+        group: Ip4Address,
+        record_type: IgmpV3RecordType,
+        sources: frozenset[Ip4Address],
+        /,
+    ) -> bool:
+        """
+        Apply one IGMPv3 group record to the router membership table and
+        report whether it updated reception state. The all-systems group
+        224.0.0.1 is never tracked (RFC 3376 §6). Runs under the
+        interface multicast lock.
+        """
+
+        if group in IGMP__CONTROL_GROUPS:
+            return False
+
+        match record_type:
+            case IgmpV3RecordType.MODE_IS_EXCLUDE | IgmpV3RecordType.CHANGE_TO_EXCLUDE_MODE:
+                self._set_membership(group, Ip4MulticastFilterMode.EXCLUDE, sources)
+                return True
+            case IgmpV3RecordType.MODE_IS_INCLUDE | IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE:
+                # INCLUDE{} is a leave — no sources means no reception.
+                if not sources:
+                    return self._remove_membership(group)
+                self._set_membership(group, Ip4MulticastFilterMode.INCLUDE, sources)
+                return True
+            case IgmpV3RecordType.ALLOW_NEW_SOURCES:
+                state = self._igmp_querier__memberships.get(group)
+                if state is None:
+                    self._set_membership(group, Ip4MulticastFilterMode.INCLUDE, sources)
+                elif state.filter_mode is Ip4MulticastFilterMode.INCLUDE:
+                    self._set_membership(group, Ip4MulticastFilterMode.INCLUDE, state.sources | sources)
+                else:
+                    self._set_membership(group, Ip4MulticastFilterMode.EXCLUDE, state.sources - sources)
+                return True
+            case IgmpV3RecordType.BLOCK_OLD_SOURCES:
+                # Phase 2 (M5c): a BLOCK schedules a Group-and-Source-
+                # Specific Query. Here it only narrows an INCLUDE source
+                # list, without refreshing the group timer.
+                state = self._igmp_querier__memberships.get(group)
+                if state is None or state.filter_mode is not Ip4MulticastFilterMode.INCLUDE:
+                    return False
+                state.sources = state.sources - sources
+                return True
+
+        return False
+
+    def _set_membership(
+        self,
+        group: Ip4Address,
+        filter_mode: Ip4MulticastFilterMode,
+        sources: frozenset[Ip4Address],
+        /,
+    ) -> None:
+        """
+        Install or refresh the router membership entry for 'group' and
+        (re)arm its Group Membership Interval timer. Runs under the
+        interface multicast lock.
+        """
+
+        state = self._igmp_querier__memberships.get(group)
+        if state is None:
+            state = _QuerierGroupState(filter_mode=filter_mode, sources=sources)
+            self._igmp_querier__memberships[group] = state
+        else:
+            state.filter_mode = filter_mode
+            state.sources = sources
+
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        state.group_timer_handle = stack.timer.call_later(
+            self._group_membership_interval_ms(), self._expire_group, group
+        )
+
+    def _remove_membership(self, group: Ip4Address, /) -> bool:
+        """
+        Drop the router membership entry for 'group' and cancel its timer,
+        reporting whether an entry existed. Runs under the interface
+        multicast lock.
+        """
+
+        state = self._igmp_querier__memberships.pop(group, None)
+        if state is None:
+            return False
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        return True
+
+    def _expire_group(self, group: Ip4Address, /) -> None:
+        """
+        Group Membership Interval timer callback: no Report refreshed the
+        group within the interval, so the last listener is assumed gone
+        and the group is pruned (RFC 3376 §6.5). Takes the interface
+        multicast lock.
+        """
+
+        with self._if._lock__multicast:
+            state = self._igmp_querier__memberships.get(group)
+            if state is None:
+                return
+            state.group_timer_handle = None
+            del self._igmp_querier__memberships[group]
+
+    @staticmethod
+    def _group_membership_interval_ms() -> int:
+        """
+        The RFC 3376 §8.4 Group Membership Interval — Robustness Variable
+        × Query Interval + one Query Response Interval — after which a
+        group with no refreshing Report is pruned.
+        """
+
+        return (
+            igmp__constants.IGMP__ROBUSTNESS_VARIABLE * igmp__constants.IGMP__QUERY_INTERVAL__MS
+            + igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS
+        )
+
+    def querier_memberships(self) -> tuple[IgmpQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the router's learned downstream
+        multicast memberships (the read-only introspection surface).
+        """
+
+        with self._if._lock__multicast:
+            return tuple(
+                IgmpQuerierMembership(group=group, filter_mode=state.filter_mode, sources=state.sources)
+                for group, state in self._igmp_querier__memberships.items()
+            )
 
     def _send_general_query_and_rearm(self) -> None:
         """
@@ -653,7 +894,7 @@ class IgmpTxHandler:
         reported (RFC 3376 §6).
         """
 
-        if group == IGMP__ALL_SYSTEMS:
+        if group in IGMP__CONTROL_GROUPS:
             return
 
         if version is IgmpVersion.V2:

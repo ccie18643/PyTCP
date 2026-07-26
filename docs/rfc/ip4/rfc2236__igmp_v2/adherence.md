@@ -41,7 +41,8 @@ selection live in the RFC 3376 audit.
 | §3      | Leave Group to 224.0.0.2 on leave                      | met (v2 compatibility mode) |
 | §3      | Querier General Query emission                         | met (Phase-2 M5b; IGMPv3 form) |
 | §3      | Querier election (lowest address wins)                 | met (Phase-2 M5b) |
-| §3      | Querier specific queries + membership table            | out of scope (later M5b) |
+| §3      | Querier group-membership table from Reports            | met (Phase-2 M5b) |
+| §3      | Querier specific (fast-leave) queries                  | out of scope (M5c) |
 
 ---
 

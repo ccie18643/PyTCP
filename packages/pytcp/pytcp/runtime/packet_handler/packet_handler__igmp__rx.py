@@ -143,6 +143,13 @@ class IgmpRxHandler:
         self._if._packet_stats_rx.igmp__membership_report += 1
 
         message = packet_rx.igmp.message
+
+        # RFC 3376 §6.4 — when this interface is a multicast router, learn
+        # downstream reception state from the Report into the querier
+        # membership table (delegated to the TX querier state machine,
+        # which owns that state; a no-op on a plain host interface).
+        self._if._igmp_tx.observe_report(message)
+
         # Hold the interface IGMP/multicast lock across the query-response
         # state access (the pending-response scalar + suppressed-group
         # set) so the RX and timer threads cannot corrupt it on a no-GIL

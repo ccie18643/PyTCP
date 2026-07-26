@@ -329,10 +329,28 @@ from the IGMP RX Query handler); the Other Querier Present timer
 silent (RFC 3376 §6.6.2). Tested in the same router integration
 file.
 
-Still out of scope (later M5b slice): the router-side
-**group-membership table** built from inbound Reports (§6.4, the
-querier's view of which groups have members, used for
-forwarding).
+**Router group-membership table** — as of the Phase-2 M5b
+membership slice, a querier interface learns downstream reception
+state from inbound Membership Reports into a per-group table
+(`IgmpTxHandler.observe_report`, called from the IGMP RX Report
+handler): the §6.4 action-on-reception maps each group record to a
+filter-mode + source-list entry, refreshed on every Report and
+pruned when its §8.4 Group Membership Interval group timer expires
+(§6.5). The table is populated **only** from inbound Reports,
+never from this stack's own host joins (which stay in the separate
+`_ip4_multicast_refs` host table). The querier receives Reports on
+the all-IGMPv3-routers group 224.0.0.22, admitted receive-only —
+it is an IGMP control group the interface never reports membership
+in (`IGMP__CONTROL_GROUPS`). A read-only snapshot is exposed via
+`PacketHandler.igmp_querier_memberships()` (the router-side
+introspection surface). Tested in the same router integration
+file.
+
+PyTCP tracks membership at group granularity; the RFC 3376 §6.2.1
+per-source timers (independent aging of individual EXCLUDE-group
+sources) and the §6.4 fast-leave Group-and-Source-Specific Query
+generation collapse into the group timer / are Phase-2 M5c
+refinements.
 
 ## §7. Interoperation With Older Versions of IGMP
 
@@ -566,7 +584,7 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
-### §6 / §6.6.2 / §8.2 / §8.5 / §8.6 / §8.7 Querier emission + election
+### §6 / §6.4 / §6.6.2 / §8.2–§8.7 Querier emission + election + membership
 
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`
@@ -576,12 +594,17 @@ candidates the UDP demux already produced).
   advertised Max Resp Code / QQIC / QRV, querier teardown, and
   the §6.6.2 election (lower-address step-down, higher-address
   ignore, Other Querier Present resume).
+- **Integration (§6.4 membership):** the same file learns a group
+  membership from a MODE_IS_EXCLUDE / MODE_IS_INCLUDE Report,
+  removes it on a CHANGE_TO_INCLUDE{} leave, prunes it after the
+  §8.4 Group Membership Interval, and confirms a host interface
+  (mc_forwarding off) learns nothing.
 - **Unit:**
   `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
   the RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder.
 
-**Status:** locked in (Phase-2 M5b slice — election + membership
-table pending).
+**Status:** locked in (Phase-2 M5b — group-granularity membership;
+per-source timers + fast-leave queries are M5c refinements).
 
 ### §8 Timing / robustness sysctls
 
@@ -645,7 +668,8 @@ table pending).
 | §3.1 / §9 data-plane RX source-delivery filter (UDP + RAW) | met (`ip_mc_sf_allow`) |
 | Querier General Query emission (§6/§8.2/§8.6/§8.7) | met (Phase-2 M5b) |
 | Querier election (§6.6.2) + Other Querier Present (§8.5) | met (Phase-2 M5b) |
-| Router group-membership table from Reports (§6.4)  | out of scope (later M5b) |
+| Router group-membership table from Reports (§6.4 / §6.5 / §8.4) | met (Phase-2 M5b; group granularity) |
+| Per-source timers (§6.2.1) + fast-leave queries (§6.4) | out of scope (M5c refinement) |
 
 PyTCP implements the IGMPv3 **host** role including source
 filtering: a group is held per-socket as an INCLUDE / EXCLUDE

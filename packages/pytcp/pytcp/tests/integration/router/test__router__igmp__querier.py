@@ -33,8 +33,14 @@ ver 3.0.9
 """
 
 from net_addr import Ip4Address
+from net_proto import IgmpV3GroupRecord, IgmpV3RecordType
+from pytcp.lib.ip4_multicast_filter import (
+    Ip4MulticastFilter,
+    Ip4MulticastFilterMode,
+)
 from pytcp.protocols.igmp import igmp__constants
 from pytcp.tests.lib.network_testcase import (
+    HOST_A__IP4_ADDRESS,
     HOST_A__MAC_ADDRESS,
     STACK__IP4_HOST,
 )
@@ -45,6 +51,11 @@ from pytcp.tests.lib.router_testcase import RouterTestCase
 # and makes the router step down. A second, higher address loses.
 _LOWER_QUERIER__IP4 = Ip4Address("10.0.1.2")
 _HIGHER_QUERIER__IP4 = Ip4Address("10.0.1.99")
+
+# A downstream multicast group and source for the membership-learning
+# tests: HOST_A on LAN-A reports interest in 239.1.1.1.
+_GROUP = Ip4Address("239.1.1.1")
+_SOURCE = Ip4Address("192.0.2.1")
 
 
 class TestRouterIgmpQuerier(RouterTestCase):
@@ -294,3 +305,183 @@ class TestRouterIgmpQuerierElection(RouterTestCase):
             msg="The router must resume emitting a General Query once the other querier goes silent.",
         )
         self._assert_igmp_general_query(resumed[self.if1.ifindex][0], source=STACK__IP4_HOST.address)
+
+
+class TestRouterIgmpQuerierMembership(RouterTestCase):
+    """
+    The M5b IGMPv3 querier group-membership-table tests (RFC 3376 §6.4).
+    """
+
+    def _memberships(self) -> dict[Ip4Address, Ip4MulticastFilterMode]:
+        """Map the router-learned memberships on if1 to their filter mode."""
+
+        return {m.group: m.filter_mode for m in self.if1.handler.igmp_querier_memberships()}
+
+    def test__router__igmp_querier__learns_exclude_membership(self) -> None:
+        """
+        Ensure a MODE_IS_EXCLUDE Report for a group installs an
+        EXCLUDE-mode router membership entry for it.
+
+        Reference: RFC 3376 §6.4 (router action on a MODE_IS_EXCLUDE record).
+        """
+
+        self._enable_igmp_querier(self.if1)
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+
+        self.assertEqual(
+            self._memberships().get(_GROUP),
+            Ip4MulticastFilterMode.EXCLUDE,
+            msg="A MODE_IS_EXCLUDE Report must install an EXCLUDE router membership.",
+        )
+        self.assertEqual(
+            self.if1.handler.packet_stats_rx.igmp__querier__member_report,
+            1,
+            msg="Learning a membership from a Report must bump the member-report counter once.",
+        )
+
+    def test__router__igmp_querier__learns_include_membership_with_source(self) -> None:
+        """
+        Ensure a MODE_IS_INCLUDE Report with a source list installs an
+        INCLUDE-mode router membership carrying those sources.
+
+        Reference: RFC 3376 §6.4 (router action on a MODE_IS_INCLUDE record).
+        """
+
+        self._enable_igmp_querier(self.if1)
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[
+                    IgmpV3GroupRecord(
+                        type=IgmpV3RecordType.MODE_IS_INCLUDE,
+                        multicast_address=_GROUP,
+                        source_addresses=[_SOURCE],
+                    )
+                ],
+            ),
+        )
+
+        memberships = {m.group: m for m in self.if1.handler.igmp_querier_memberships()}
+        self.assertIn(
+            _GROUP,
+            memberships,
+            msg="A MODE_IS_INCLUDE Report with sources must install a router membership.",
+        )
+        self.assertEqual(
+            memberships[_GROUP].filter_mode,
+            Ip4MulticastFilterMode.INCLUDE,
+            msg="A MODE_IS_INCLUDE Report must install an INCLUDE router membership.",
+        )
+        self.assertEqual(
+            memberships[_GROUP].sources,
+            frozenset({_SOURCE}),
+            msg="The INCLUDE router membership must carry the reported source list.",
+        )
+
+    def test__router__igmp_querier__to_include_empty_is_leave(self) -> None:
+        """
+        Ensure a CHANGE_TO_INCLUDE_MODE Report with an empty source list
+        removes an existing router membership — the IGMPv3 leave.
+
+        Reference: RFC 3376 §6.4 (INCLUDE{} is a group leave).
+        """
+
+        self._enable_igmp_querier(self.if1)
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+        self.assertIn(_GROUP, self._memberships(), msg="Precondition: the group must be learned first.")
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
+            ),
+        )
+
+        self.assertNotIn(
+            _GROUP,
+            self._memberships(),
+            msg="A CHANGE_TO_INCLUDE_MODE Report with no sources must remove the membership.",
+        )
+
+    def test__router__igmp_querier__membership_expires_after_gmi(self) -> None:
+        """
+        Ensure a learned membership is pruned once the Group Membership
+        Interval elapses with no refreshing Report.
+
+        Reference: RFC 3376 §6.5 (group timer expiry prunes membership).
+        Reference: RFC 3376 §8.4 (Group Membership Interval).
+        """
+
+        self._enable_igmp_querier(self.if1)
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+        self.assertIn(_GROUP, self._memberships(), msg="Precondition: the group must be learned first.")
+
+        group_membership_interval_ms = (
+            igmp__constants.IGMP__ROBUSTNESS_VARIABLE * igmp__constants.IGMP__QUERY_INTERVAL__MS
+            + igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS
+        )
+        self._advance_frames(ms=group_membership_interval_ms)
+
+        self.assertNotIn(
+            _GROUP,
+            self._memberships(),
+            msg="A membership with no refreshing Report must expire after the Group Membership Interval.",
+        )
+
+    def test__router__igmp_querier__host_interface_learns_nothing(self) -> None:
+        """
+        Ensure an interface that is not a multicast router does not build
+        a querier membership table from inbound Reports.
+
+        Reference: RFC 3376 §6.4 (only a multicast router tracks membership).
+        """
+
+        # Admit the all-IGMPv3-routers group (receive filter + MAC) so the
+        # Report reaches the IGMP RX handler — the learning gate under test
+        # is the querier-active check, not the L2 / L3 receive filter.
+        group = Ip4Address("224.0.0.22")
+        self.if1.handler._ip4_multicast_filters[group] = Ip4MulticastFilter(Ip4MulticastFilterMode.EXCLUDE)
+        self.if1.handler._mac_multicast.append(group.multicast_mac)
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+
+        self.assertEqual(
+            self.if1.handler.igmp_querier_memberships(),
+            (),
+            msg="A host interface (mc_forwarding off) must learn no querier memberships.",
+        )

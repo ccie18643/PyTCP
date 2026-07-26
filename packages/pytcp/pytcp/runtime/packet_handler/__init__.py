@@ -133,7 +133,7 @@ from .packet_handler__icmp4__tx import Icmp4TxHandler
 from .packet_handler__icmp6__rx import Icmp6RxHandler
 from .packet_handler__icmp6__tx import Icmp6TxHandler
 from .packet_handler__igmp__rx import IgmpGroupQueryPending, IgmpRxHandler
-from .packet_handler__igmp__tx import IgmpTxHandler
+from .packet_handler__igmp__tx import IgmpQuerierMembership, IgmpTxHandler
 from .packet_handler__ip4__rx import Ip4RxHandler
 from .packet_handler__ip4__tx import Ip4TxHandler
 from .packet_handler__ip6__rx import Ip6RxHandler
@@ -2867,6 +2867,15 @@ class PacketHandler(Subsystem, ABC):
 
         with self._lock__multicast:
             self._igmp_tx._stop_querier()
+
+    def igmp_querier_memberships(self) -> tuple[IgmpQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the multicast group memberships
+        this interface has learned as an IGMP querier (the read-only
+        '/proc/net/igmp' router-side introspection surface).
+        """
+
+        return self._igmp_tx.querier_memberships()
 
     def send_mld_leave_all(self) -> None:
         """

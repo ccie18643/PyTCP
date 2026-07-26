@@ -64,6 +64,8 @@ from net_proto import (
     Icmp6NdMessageRedirect,
     IgmpAssembler,
     IgmpMessageQuery,
+    IgmpMessageV3Report,
+    IgmpV3GroupRecord,
     IgmpVersion,
     Ip4OptionRouterAlert,
     Ip4Options,
@@ -261,10 +263,10 @@ class RouterTestCase(IcmpTestCase):
 
         sysctl_module.set("igmp.default.mc_forwarding", True)
 
-        # A querier listens on the all-systems group 224.0.0.1 to receive
-        # competing Queries for the election; admit its Ethernet multicast
-        # MAC so the RX path accepts them (the mock harness does not run
-        # the real bring-up that assigns 224.0.0.1).
+        # A querier receives competing election Queries on the all-systems
+        # group 224.0.0.1 (address pre-seeded; admit its MAC here). The
+        # all-IGMPv3-routers group 224.0.0.22 (Membership Reports) is
+        # admitted receive-only by '_start_querier' itself.
         all_systems_mac = Ip4Address("224.0.0.1").multicast_mac
 
         before = {interface.ifindex: len(interface.frames_tx) for interface in self._interfaces}
@@ -322,6 +324,35 @@ class RouterTestCase(IcmpTestCase):
                         qqic=qqic,
                     )
                 ),
+            ),
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
+    def _build_igmp_v3_report(
+        self,
+        *,
+        src_ip: Ip4Address,
+        src_mac: MacAddress,
+        records: list[IgmpV3GroupRecord],
+    ) -> bytes:
+        """
+        Build an inbound IGMPv3 Membership Report from a downstream host —
+        carried in Ethernet/IPv4 to the all-IGMPv3-routers group
+        224.0.0.22 with the Router Alert option and TTL 1 — for the
+        querier membership-learning tests.
+        """
+
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=Ip4Address("224.0.0.22").multicast_mac,
+            ethernet__payload=Ip4Assembler(
+                ip4__src=src_ip,
+                ip4__dst=Ip4Address("224.0.0.22"),
+                ip4__ttl=1,
+                ip4__options=Ip4Options(Ip4OptionRouterAlert()),
+                ip4__payload=IgmpAssembler(igmp__message=IgmpMessageV3Report(records=records)),
             ),
         )
         buffers: list[Buffer] = []
