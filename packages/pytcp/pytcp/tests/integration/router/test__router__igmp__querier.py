@@ -32,9 +32,19 @@ pytcp/tests/integration/router/test__router__igmp__querier.py
 ver 3.0.9
 """
 
+from net_addr import Ip4Address
 from pytcp.protocols.igmp import igmp__constants
-from pytcp.tests.lib.network_testcase import STACK__IP4_HOST
+from pytcp.tests.lib.network_testcase import (
+    HOST_A__MAC_ADDRESS,
+    STACK__IP4_HOST,
+)
 from pytcp.tests.lib.router_testcase import RouterTestCase
+
+# A competing querier on LAN-A with an address numerically below the
+# router's own LAN-A address (10.0.1.7) — its Query wins the election
+# and makes the router step down. A second, higher address loses.
+_LOWER_QUERIER__IP4 = Ip4Address("10.0.1.2")
+_HIGHER_QUERIER__IP4 = Ip4Address("10.0.1.99")
 
 
 class TestRouterIgmpQuerier(RouterTestCase):
@@ -184,3 +194,103 @@ class TestRouterIgmpQuerier(RouterTestCase):
 
         emitted = self._advance_frames(ms=igmp__constants.IGMP__QUERY_INTERVAL__MS * 2)
         self._assert_no_forward(emitted)
+
+
+class TestRouterIgmpQuerierElection(RouterTestCase):
+    """
+    The M5b IGMPv3 querier-election tests (RFC 3376 §6.6.2).
+    """
+
+    def test__router__igmp_querier__lower_ip_query_steps_down(self) -> None:
+        """
+        Ensure a General Query from a source address lower than the
+        router's own makes the router step down to Non-Querier — it stops
+        emitting General Queries.
+
+        Reference: RFC 3376 §6.6.2 (querier election — lowest address wins).
+        """
+
+        self._enable_igmp_querier(self.if1)  # startup query 1 emitted.
+        before = self.if1.handler.packet_stats_tx.igmp__general_query__send
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_general_query(src_ip=_LOWER_QUERIER__IP4, src_mac=HOST_A__MAC_ADDRESS),
+        )
+
+        self.assertEqual(
+            self.if1.handler.packet_stats_rx.igmp__querier__election_lost,
+            1,
+            msg="A lower-address Query must make the router lose the election exactly once.",
+        )
+
+        # Having stepped down, the router emits no further General Query.
+        emitted = self._advance_frames(ms=igmp__constants.IGMP__QUERY_INTERVAL__MS * 2)
+        self._assert_no_forward(emitted)
+        self.assertEqual(
+            self.if1.handler.packet_stats_tx.igmp__general_query__send,
+            before,
+            msg="A stepped-down (Non-Querier) router must emit no further General Query.",
+        )
+
+    def test__router__igmp_querier__higher_ip_query_ignored(self) -> None:
+        """
+        Ensure a General Query from a source address higher than the
+        router's own does not affect the election — the router stays
+        Querier and keeps emitting General Queries.
+
+        Reference: RFC 3376 §6.6.2 (querier election — higher address loses).
+        """
+
+        self._enable_igmp_querier(self.if1)  # startup query 1 emitted.
+
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_general_query(src_ip=_HIGHER_QUERIER__IP4, src_mac=HOST_A__MAC_ADDRESS),
+        )
+
+        self.assertEqual(
+            self.if1.handler.packet_stats_rx.igmp__querier__election_lost,
+            0,
+            msg="A higher-address Query must not cause the router to lose the election.",
+        )
+
+        # Still Querier — the second startup query fires on schedule.
+        second = self._advance_frames(ms=igmp__constants.IGMP__STARTUP_QUERY_INTERVAL__MS)
+        self.assertEqual(
+            len(second[self.if1.ifindex]),
+            1,
+            msg="A router that stays Querier must keep emitting startup General Queries.",
+        )
+
+    def test__router__igmp_querier__resumes_after_other_querier_present(self) -> None:
+        """
+        Ensure a stepped-down router resumes the Querier role once the
+        elected querier has been silent for the Other Querier Present
+        Interval, emitting a General Query again.
+
+        Reference: RFC 3376 §6.6.2 (resume Querier on Other Querier Present expiry).
+        Reference: RFC 3376 §8.5 (Other Querier Present Interval).
+        """
+
+        self._enable_igmp_querier(self.if1)
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_general_query(src_ip=_LOWER_QUERIER__IP4, src_mac=HOST_A__MAC_ADDRESS),
+        )
+
+        # Other Querier Present Interval for a Query advertising the
+        # default QRV / Query Interval / Query Response Interval:
+        # Robustness x Query Interval + Query Response Interval / 2.
+        interval_ms = (
+            igmp__constants.IGMP__ROBUSTNESS_VARIABLE * igmp__constants.IGMP__QUERY_INTERVAL__MS
+            + igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS // 2
+        )
+
+        resumed = self._advance_frames(ms=interval_ms)
+        self.assertEqual(
+            len(resumed[self.if1.ifindex]),
+            1,
+            msg="The router must resume emitting a General Query once the other querier goes silent.",
+        )
+        self._assert_igmp_general_query(resumed[self.if1.ifindex][0], source=STACK__IP4_HOST.address)

@@ -100,7 +100,9 @@ class IgmpTxHandler:
     _igmp_state_change__pending: dict[Ip4Address, _IgmpPendingChange]
     _igmp_state_change__handle: TimerHandle | None
     _igmp_querier__active: bool
+    _igmp_querier__is_querier: bool
     _igmp_querier__handle: TimerHandle | None
+    _igmp_querier__other_present_handle: TimerHandle | None
     _igmp_querier__startup_remaining: int
 
     def __init__(self, *, interface: "PacketHandler") -> None:
@@ -112,7 +114,9 @@ class IgmpTxHandler:
         self._igmp_state_change__pending = {}
         self._igmp_state_change__handle = None
         self._igmp_querier__active = False
+        self._igmp_querier__is_querier = False
         self._igmp_querier__handle = None
+        self._igmp_querier__other_present_handle = None
         self._igmp_querier__startup_remaining = 0
 
     def _current_state_record(self, group: Ip4Address, /) -> IgmpV3GroupRecord | None:
@@ -391,44 +395,131 @@ class IgmpTxHandler:
 
     def _start_querier(self) -> None:
         """
-        Take up the querier role: send the first of the RFC 3376 §8.7
-        Startup Query Count General Queries and arm the re-arming
-        General-Query ticket. Runs under the interface multicast lock.
+        Become a multicast router and take up the querier role: a router
+        begins in the Querier state (RFC 3376 §6.6.2), sending the first
+        of the §8.7 Startup Query Count General Queries and arming the
+        re-arming General-Query ticket. Runs under the interface
+        multicast lock.
         """
 
         self._igmp_querier__active = True
+        self._igmp_querier__is_querier = True
         self._igmp_querier__startup_remaining = max(1, igmp__constants.IGMP__STARTUP_QUERY_COUNT)
         self._send_general_query_and_rearm()
 
     def _stop_querier(self) -> None:
         """
-        Relinquish the querier role: cancel the pending General-Query
-        ticket and clear the querier state. Runs under the interface
-        multicast lock.
+        Stop being a multicast router: cancel the pending General-Query
+        and Other-Querier-Present tickets and clear the querier state.
+        Runs under the interface multicast lock.
         """
 
         self._igmp_querier__active = False
+        self._igmp_querier__is_querier = False
         self._igmp_querier__startup_remaining = 0
         if self._igmp_querier__handle is not None:
             stack.timer.cancel(self._igmp_querier__handle)
             self._igmp_querier__handle = None
+        if self._igmp_querier__other_present_handle is not None:
+            stack.timer.cancel(self._igmp_querier__other_present_handle)
+            self._igmp_querier__other_present_handle = None
 
     def _fire_general_query(self) -> None:
         """
         Timer callback: emit one periodic General Query and re-arm.
         Takes the interface multicast lock so a concurrent
-        'refresh_querier' / stop on another thread cannot tear the
-        querier state, and bails when the role was relinquished while
-        the ticket was in flight.
+        'refresh_querier' / stop / election step-down on another thread
+        cannot tear the querier state, and bails when the role was
+        relinquished or lost while the ticket was in flight.
 
         Reference: RFC 3376 §6 (querier General Query interval).
         """
 
         with self._if._lock__multicast:
             self._igmp_querier__handle = None
-            if not self._igmp_querier__active:
+            if not (self._igmp_querier__active and self._igmp_querier__is_querier):
                 return
             self._send_general_query_and_rearm()
+
+    def observe_query(self, source: Ip4Address, query: IgmpMessageQuery, /) -> None:
+        """
+        Apply the RFC 3376 §6.6.2 / RFC 2236 §3 querier-election rule to
+        an inbound Query seen on this interface: the router with the
+        numerically lowest interface address on the link is the Querier.
+        When a Query arrives from a source lower than our own address we
+        step down to Non-Querier and (re)arm the Other Querier Present
+        timer. A no-op on an interface that is not a multicast router.
+
+        Reference: RFC 3376 §6.6.2 (querier election — lowest address wins).
+        Reference: RFC 3376 §8.5 (Other Querier Present Interval).
+        """
+
+        with self._if._lock__multicast:
+            if not self._igmp_querier__active:
+                return
+
+            our_address = self._if._ip4_unicast[0] if self._if._ip4_unicast else Ip4Address()
+            if int(source) >= int(our_address):
+                return
+
+            self._become_non_querier(query)
+
+    def _become_non_querier(self, query: IgmpMessageQuery, /) -> None:
+        """
+        Step down to the Non-Querier state: stop emitting General Queries
+        and (re)arm the Other Querier Present timer from the electing
+        Query's advertised values. Runs under the interface multicast
+        lock.
+        """
+
+        self._igmp_querier__is_querier = False
+        self._igmp_querier__startup_remaining = 0
+        if self._igmp_querier__handle is not None:
+            stack.timer.cancel(self._igmp_querier__handle)
+            self._igmp_querier__handle = None
+
+        if self._igmp_querier__other_present_handle is not None:
+            stack.timer.cancel(self._igmp_querier__other_present_handle)
+
+        self._igmp_querier__other_present_handle = stack.timer.call_later(
+            self._other_querier_present_interval_ms(query),
+            self._fire_other_querier_present,
+        )
+        self._if._packet_stats_rx.igmp__querier__election_lost += 1
+
+    def _fire_other_querier_present(self) -> None:
+        """
+        Timer callback: the elected querier has gone silent for the Other
+        Querier Present Interval, so resume the Querier role (RFC 3376
+        §6.6.2). Takes the interface multicast lock and bails if this
+        interface is no longer a multicast router.
+        """
+
+        with self._if._lock__multicast:
+            self._igmp_querier__other_present_handle = None
+            if not self._igmp_querier__active:
+                return
+            self._igmp_querier__is_querier = True
+            self._igmp_querier__startup_remaining = max(1, igmp__constants.IGMP__STARTUP_QUERY_COUNT)
+            self._send_general_query_and_rearm()
+
+    @staticmethod
+    def _other_querier_present_interval_ms(query: IgmpMessageQuery, /) -> int:
+        """
+        Compute the RFC 3376 §8.5 Other Querier Present Interval — the
+        Robustness Variable × Query Interval + one half of the Query
+        Response Interval — from the electing Query's advertised QRV /
+        QQIC / Max Resp Code, falling back to the configured defaults for
+        an IGMPv1/v2 Query that carries none.
+        """
+
+        qrv = query.qrv or igmp__constants.IGMP__ROBUSTNESS_VARIABLE
+        query_interval_sec = query.querier_query_interval or (igmp__constants.IGMP__QUERY_INTERVAL__MS // 1000)
+        # Max Resp Code decodes to units of 1/10 s; the RX Query Response
+        # Interval is that value in ms.
+        query_response_ms = query.max_response_time * 100 or igmp__constants.IGMP__QUERY_RESPONSE_INTERVAL__MS
+
+        return qrv * query_interval_sec * 1000 + query_response_ms // 2
 
     def _send_general_query_and_rearm(self) -> None:
         """

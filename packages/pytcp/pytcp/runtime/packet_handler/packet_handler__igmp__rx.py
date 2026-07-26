@@ -193,6 +193,12 @@ class IgmpRxHandler:
         message = packet_rx.igmp.message
         assert isinstance(message, IgmpMessageQuery)
 
+        # RFC 3376 §6.6.2 querier election — when this interface is a
+        # multicast router, a Query from a lower source address makes us
+        # step down to Non-Querier (delegated to the TX querier state
+        # machine, which owns the election / Other-Querier-Present state).
+        self._if._igmp_tx.observe_query(packet_rx.ip4.src, message)
+
         # Hold the interface IGMP/multicast lock across the whole
         # query-response scheduling (compatibility-mode update + pending
         # scalar / per-group map writes + timer arming) so the RX and

@@ -320,11 +320,19 @@ Startup Query Interval, then settle to the §8.2 steady-state
 interval via the self-re-arming General-Query ticket. Tested at
 `tests/integration/router/test__router__igmp__querier.py`.
 
-Still out of scope (later M5b slices): querier **election**
-(RFC 3376 §6.6.2 — non-querier suppression on hearing a lower-IP
-Query) and the router-side **group-membership table** built from
-inbound Reports (§6.4, the querier's view of which groups have
-members, used for forwarding).
+**Querier election** — as of the Phase-2 M5b election slice, an
+inbound Query from a source address lower than our interface
+address makes the router step down to Non-Querier and stop
+emitting General Queries (`IgmpTxHandler.observe_query`, called
+from the IGMP RX Query handler); the Other Querier Present timer
+(§8.5) resumes the Querier role when the elected querier goes
+silent (RFC 3376 §6.6.2). Tested in the same router integration
+file.
+
+Still out of scope (later M5b slice): the router-side
+**group-membership table** built from inbound Reports (§6.4, the
+querier's view of which groups have members, used for
+forwarding).
 
 ## §7. Interoperation With Older Versions of IGMP
 
@@ -558,14 +566,16 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
-### §6 / §8.2 / §8.6 / §8.7 Querier General Query emission
+### §6 / §6.6.2 / §8.2 / §8.5 / §8.6 / §8.7 Querier emission + election
 
 - **Integration:**
   `packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`
   The `igmp.mc_forwarding` activation gate, the startup
   General-Query burst spacing (Startup Query Count / Interval),
   the steady-state periodic Query (Query Interval), the
-  advertised Max Resp Code / QQIC / QRV, and querier teardown.
+  advertised Max Resp Code / QQIC / QRV, querier teardown, and
+  the §6.6.2 election (lower-address step-down, higher-address
+  ignore, Other Querier Present resume).
 - **Unit:**
   `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
   the RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder.
@@ -634,7 +644,8 @@ table pending).
 | §9 source-specific multicast (control plane)    | met   |
 | §3.1 / §9 data-plane RX source-delivery filter (UDP + RAW) | met (`ip_mc_sf_allow`) |
 | Querier General Query emission (§6/§8.2/§8.6/§8.7) | met (Phase-2 M5b) |
-| Querier election (§6.6.2) + membership table (§6.4) | out of scope (later M5b) |
+| Querier election (§6.6.2) + Other Querier Present (§8.5) | met (Phase-2 M5b) |
+| Router group-membership table from Reports (§6.4)  | out of scope (later M5b) |
 
 PyTCP implements the IGMPv3 **host** role including source
 filtering: a group is held per-socket as an INCLUDE / EXCLUDE

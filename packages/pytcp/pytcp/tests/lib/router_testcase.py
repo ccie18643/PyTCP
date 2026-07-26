@@ -62,7 +62,11 @@ from net_proto import (
     Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
     Icmp6NdMessageRedirect,
+    IgmpAssembler,
     IgmpMessageQuery,
+    IgmpVersion,
+    Ip4OptionRouterAlert,
+    Ip4Options,
     IpProto,
 )
 from net_proto.lib.enums import EtherType
@@ -257,8 +261,16 @@ class RouterTestCase(IcmpTestCase):
 
         sysctl_module.set("igmp.default.mc_forwarding", True)
 
+        # A querier listens on the all-systems group 224.0.0.1 to receive
+        # competing Queries for the election; admit its Ethernet multicast
+        # MAC so the RX path accepts them (the mock harness does not run
+        # the real bring-up that assigns 224.0.0.1).
+        all_systems_mac = Ip4Address("224.0.0.1").multicast_mac
+
         before = {interface.ifindex: len(interface.frames_tx) for interface in self._interfaces}
         for iface in ifaces:
+            if all_systems_mac not in iface.handler._mac_multicast:
+                iface.handler._mac_multicast.append(all_systems_mac)
             iface.handler.refresh_igmp_querier()
         return {
             interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
@@ -276,6 +288,45 @@ class RouterTestCase(IcmpTestCase):
         return {
             interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
         }
+
+    def _build_igmp_general_query(
+        self,
+        *,
+        src_ip: Ip4Address,
+        src_mac: MacAddress,
+        qrv: int = 2,
+        max_resp_code: int = 100,
+        qqic: int = 125,
+    ) -> bytes:
+        """
+        Build an inbound IGMPv3 General Query (group 0.0.0.0) from a
+        competing querier — carried in Ethernet/IPv4 to the all-systems
+        group 224.0.0.1 with the Router Alert option and TTL 1 — for the
+        querier-election tests.
+        """
+
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=Ip4Address("224.0.0.1").multicast_mac,
+            ethernet__payload=Ip4Assembler(
+                ip4__src=src_ip,
+                ip4__dst=Ip4Address("224.0.0.1"),
+                ip4__ttl=1,
+                ip4__options=Ip4Options(Ip4OptionRouterAlert()),
+                ip4__payload=IgmpAssembler(
+                    igmp__message=IgmpMessageQuery(
+                        version=IgmpVersion.V3,
+                        max_resp_code=max_resp_code,
+                        group_address=Ip4Address(),
+                        qrv=qrv,
+                        qqic=qqic,
+                    )
+                ),
+            ),
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
 
     def _assert_igmp_general_query(self, frame: bytes, /, *, source: Ip4Address) -> IgmpMessageQuery:
         """
