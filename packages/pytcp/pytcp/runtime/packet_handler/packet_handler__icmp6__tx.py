@@ -42,6 +42,7 @@ from net_proto import (
     Icmp6Assembler,
     Icmp6DestinationUnreachableCode,
     Icmp6Message,
+    Icmp6Mld2MessageQuery,
     Icmp6Mld2MessageReport,
     Icmp6Mld2MulticastAddressRecord,
     Icmp6Mld2MulticastAddressRecordType,
@@ -56,6 +57,8 @@ from net_proto import (
     Icmp6Type,
     IpProto,
     Tracker,
+    decode_igmp_float_code,
+    encode_igmp_float_code,
 )
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__done import (
     Icmp6Mld1MessageDone,
@@ -92,6 +95,14 @@ if TYPE_CHECKING:
 # never reported (RFC 3810 §6).
 MLD__ALL_MLDV2_ROUTERS = Ip6Address("ff02::16")
 MLD__ALL_NODES = Ip6Address("ff02::1")
+MLD__ALL_ROUTERS = Ip6Address("ff02::2")
+
+# The MLD link-local control groups a system never reports listener
+# state for (RFC 3810 §6): the all-nodes group every host belongs to,
+# and the all-routers / all-MLDv2-routers groups a querier receives on.
+# An interface may listen on these without ever emitting a Report for
+# them.
+MLD__CONTROL_GROUPS = frozenset({MLD__ALL_NODES, MLD__ALL_ROUTERS, MLD__ALL_MLDV2_ROUTERS})
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -111,6 +122,34 @@ class _MldPendingChange:
     remaining: int
 
 
+@dataclass(kw_only=True, slots=True)
+class _MldQuerierGroupState:
+    """
+    The MLDv2 querier's router-side reception state for one downstream
+    multicast group (RFC 3810 §7.2) — the IPv6 analogue of
+    '_QuerierGroupState'. Membership is tracked at group granularity;
+    the §7.2 per-source timers collapse into the single group timer.
+    Phase 2: per-source timers.
+    """
+
+    filter_mode: Ip6MulticastFilterMode
+    sources: frozenset[Ip6Address]
+    group_timer_handle: TimerHandle | None = None
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class MldQuerierMembership:
+    """
+    An immutable snapshot of one router-learned MLD group membership —
+    the read-only introspection view of the querier's downstream
+    reception state (the IPv6 '/proc/net/igmp6' router equivalent).
+    """
+
+    group: Ip6Address
+    filter_mode: Ip6MulticastFilterMode
+    sources: frozenset[Ip6Address]
+
+
 class Icmp6TxHandler:
     """
     The outbound ICMPv6 packet handler for one interface.
@@ -119,6 +158,12 @@ class Icmp6TxHandler:
     _if: PacketHandler
     _mld_state_change__pending: dict[Ip6Address, _MldPendingChange]
     _mld_state_change__handle: TimerHandle | None
+    _mld_querier__active: bool
+    _mld_querier__is_querier: bool
+    _mld_querier__handle: TimerHandle | None
+    _mld_querier__other_present_handle: TimerHandle | None
+    _mld_querier__startup_remaining: int
+    _mld_querier__memberships: dict[Ip6Address, _MldQuerierGroupState]
 
     def __init__(self, *, interface: PacketHandler) -> None:
         """
@@ -128,6 +173,424 @@ class Icmp6TxHandler:
         self._if = interface
         self._mld_state_change__pending = {}
         self._mld_state_change__handle = None
+        self._mld_querier__active = False
+        self._mld_querier__is_querier = False
+        self._mld_querier__handle = None
+        self._mld_querier__other_present_handle = None
+        self._mld_querier__startup_remaining = 0
+        self._mld_querier__memberships = {}
+
+    # --- MLDv2 querier role (RFC 3810 §7) ----------------------------
+
+    def refresh_querier(self) -> None:
+        """
+        Reconcile the interface's MLD querier role with its
+        'mld.mc_forwarding' switch: start the querier when the interface
+        is (newly) a multicast router, stop it when the switch is
+        cleared. The IPv6 analogue of 'IgmpTxHandler.refresh_querier'.
+
+        Reference: RFC 3810 §7 (a multicast router acts as querier).
+        """
+
+        with self._if._lock__multicast:
+            enabled = bool(sysctl_iface.get_for_iface("mld.mc_forwarding", self._if._interface_name))
+            if enabled and not self._mld_querier__active:
+                self._start_querier()
+            elif not enabled and self._mld_querier__active:
+                self._stop_querier()
+
+    def _start_querier(self) -> None:
+        """
+        Become a multicast router and take up the MLD querier role: a
+        router begins in the Querier state (RFC 3810 §7.6.2), sending the
+        first of the §9.7 Startup Query Count General Queries. Admits the
+        all-MLDv2-routers group receive-only so inbound Reports arrive.
+        Runs under the interface multicast lock.
+        """
+
+        self._admit_querier_receive_group()
+        self._mld_querier__active = True
+        self._mld_querier__is_querier = True
+        self._mld_querier__startup_remaining = max(1, mld__constants.MLD__STARTUP_QUERY_COUNT)
+        self._send_general_query_and_rearm()
+
+    def _stop_querier(self) -> None:
+        """
+        Stop being a multicast router: cancel the General-Query and
+        Other-Querier-Present tickets, prune the membership table, and
+        withdraw the receive-group admission. Runs under the interface
+        multicast lock.
+        """
+
+        self._mld_querier__active = False
+        self._mld_querier__is_querier = False
+        self._mld_querier__startup_remaining = 0
+        if self._mld_querier__handle is not None:
+            stack.timer.cancel(self._mld_querier__handle)
+            self._mld_querier__handle = None
+        if self._mld_querier__other_present_handle is not None:
+            stack.timer.cancel(self._mld_querier__other_present_handle)
+            self._mld_querier__other_present_handle = None
+        for state in self._mld_querier__memberships.values():
+            if state.group_timer_handle is not None:
+                stack.timer.cancel(state.group_timer_handle)
+        self._mld_querier__memberships.clear()
+        self._withdraw_querier_receive_group()
+
+    def _fire_general_query(self) -> None:
+        """
+        Timer callback: emit one periodic General Query and re-arm. Bails
+        under the interface multicast lock if the role was relinquished
+        or lost while the ticket was in flight.
+
+        Reference: RFC 3810 §7 (querier General Query interval).
+        """
+
+        with self._if._lock__multicast:
+            self._mld_querier__handle = None
+            if not (self._mld_querier__active and self._mld_querier__is_querier):
+                return
+            self._send_general_query_and_rearm()
+
+    def _send_general_query_and_rearm(self) -> None:
+        """
+        Emit one General Query and schedule the next: at the Startup
+        Query Interval while the startup burst drains (RFC 3810 §9.6 /
+        §9.7), then at the steady-state Query Interval (§9.2). Runs under
+        the interface multicast lock.
+        """
+
+        self._send_mld_general_query()
+
+        if self._mld_querier__startup_remaining > 1:
+            self._mld_querier__startup_remaining -= 1
+            delay_ms = mld__constants.MLD__STARTUP_QUERY_INTERVAL__MS
+        else:
+            self._mld_querier__startup_remaining = 0
+            delay_ms = mld__constants.MLD__QUERY_INTERVAL__MS
+
+        self._mld_querier__handle = stack.timer.call_later(delay_ms, self._fire_general_query)
+
+    def _send_mld_general_query(self) -> None:
+        """
+        Emit an MLDv2 General Query (multicast address ::, no sources) to
+        the all-nodes group ff02::1, Hop Limit 1, carrying the querier's
+        advertised Maximum Response Code (Query Response Interval), QRV
+        (Robustness Variable), and QQIC (Query Interval).
+
+        Reference: RFC 3810 §5.1 (General Query fields).
+        Reference: RFC 3810 §9.3 (Query Response Interval — Max Resp Code).
+        """
+
+        message = Icmp6Mld2MessageQuery(
+            maximum_response_code=self._mld_mrd_to_mrc(mld__constants.MLD__QUERY_RESPONSE_INTERVAL__MS),
+            multicast_address=Ip6Address(),
+            qrv=mld__constants.MLD__ROBUSTNESS_VARIABLE & 0x07,
+            qqic=encode_igmp_float_code(mld__constants.MLD__QUERY_INTERVAL__MS // 1000),
+        )
+
+        self._if._packet_stats_tx.icmp6__mld_general_query__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(
+            Icmp6Assembler(icmp6__message=message),
+            ip6__dst=MLD__ALL_NODES,
+        )
+
+    def observe_query(self, source: Ip6Address, query: Icmp6Mld2MessageQuery, /) -> None:
+        """
+        Apply the RFC 3810 §7.6.2 querier-election rule to an inbound
+        Query: the router with the numerically lowest interface address
+        on the link is the Querier. A Query from a source lower than our
+        own address steps us down to Non-Querier and (re)arms the Other
+        Querier Present timer. A no-op on a non-router interface.
+
+        Reference: RFC 3810 §7.6.2 (querier election — lowest address wins).
+        Reference: RFC 3810 §9.5 (Other Querier Present Timeout).
+        """
+
+        with self._if._lock__multicast:
+            if not self._mld_querier__active:
+                return
+
+            our_address = self._if.ip6_unicast[0] if self._if.ip6_unicast else Ip6Address()
+            if int(source) >= int(our_address):
+                return
+
+            self._become_non_querier(query)
+
+    def _become_non_querier(self, query: Icmp6Mld2MessageQuery, /) -> None:
+        """
+        Step down to the Non-Querier state: stop emitting General Queries
+        and (re)arm the Other Querier Present timer from the electing
+        Query's advertised values. Runs under the interface multicast
+        lock.
+        """
+
+        self._mld_querier__is_querier = False
+        self._mld_querier__startup_remaining = 0
+        if self._mld_querier__handle is not None:
+            stack.timer.cancel(self._mld_querier__handle)
+            self._mld_querier__handle = None
+
+        if self._mld_querier__other_present_handle is not None:
+            stack.timer.cancel(self._mld_querier__other_present_handle)
+
+        self._mld_querier__other_present_handle = stack.timer.call_later(
+            self._other_querier_present_interval_ms(query),
+            self._fire_other_querier_present,
+        )
+        self._if._packet_stats_rx.icmp6__mld_query__election_lost += 1
+
+    def _fire_other_querier_present(self) -> None:
+        """
+        Timer callback: the elected querier has gone silent for the Other
+        Querier Present Interval, so resume the Querier role (RFC 3810
+        §7.6.2). Runs under the interface multicast lock.
+        """
+
+        with self._if._lock__multicast:
+            self._mld_querier__other_present_handle = None
+            if not self._mld_querier__active:
+                return
+            self._mld_querier__is_querier = True
+            self._mld_querier__startup_remaining = max(1, mld__constants.MLD__STARTUP_QUERY_COUNT)
+            self._send_general_query_and_rearm()
+
+    @staticmethod
+    def _other_querier_present_interval_ms(query: Icmp6Mld2MessageQuery, /) -> int:
+        """
+        The RFC 3810 §9.5 Other Querier Present Timeout — Robustness
+        Variable × Query Interval + one half of the Query Response
+        Interval — computed from the electing Query's advertised QRV /
+        QQIC / Max Resp Code, falling back to the configured defaults
+        where the Query carries none.
+        """
+
+        qrv = query.qrv or mld__constants.MLD__ROBUSTNESS_VARIABLE
+        query_interval_sec = decode_igmp_float_code(query.qqic) or (mld__constants.MLD__QUERY_INTERVAL__MS // 1000)
+        query_response_ms = (
+            Icmp6TxHandler._mld_mrc_to_mrd_ms(query.maximum_response_code)
+            or mld__constants.MLD__QUERY_RESPONSE_INTERVAL__MS
+        )
+
+        return qrv * query_interval_sec * 1000 + query_response_ms // 2
+
+    @staticmethod
+    def _mld_mrc_to_mrd_ms(mrc: int, /) -> int:
+        """
+        Decode a 16-bit MLDv2 Maximum Response Code to its Maximum
+        Response Delay in milliseconds (RFC 3810 §5.1.3) — the inverse of
+        '_mld_mrd_to_mrc'.
+        """
+
+        if mrc < 32768:
+            return mrc
+        exp = (mrc >> 12) & 0x7
+        mant = mrc & 0xFFF
+        return (mant | 0x1000) << (exp + 3)
+
+    def observe_report(self, message: Icmp6Message, /) -> None:
+        """
+        Learn downstream multicast reception state from an inbound MLDv2
+        Report (RFC 3810 §7.4) into the router membership table. A no-op
+        on a non-router interface. Populated only from inbound Reports —
+        never from this stack's own host joins (which live in the
+        separate '_ip6_multicast_refs' host table).
+
+        Reference: RFC 3810 §7.4 (router action on reception of a Report).
+        """
+
+        with self._if._lock__multicast:
+            if not self._mld_querier__active:
+                return
+
+            if not isinstance(message, Icmp6Mld2MessageReport):
+                return
+
+            learned = False
+            for record in message.records:
+                learned |= self._process_multicast_address_record(
+                    record.multicast_address, record.type, frozenset(record.source_addresses)
+                )
+            if learned:
+                self._if._packet_stats_rx.icmp6__mld2_report__querier_learn += 1
+
+    def _process_multicast_address_record(
+        self,
+        group: Ip6Address,
+        record_type: Icmp6Mld2MulticastAddressRecordType,
+        sources: frozenset[Ip6Address],
+        /,
+    ) -> bool:
+        """
+        Apply one MLDv2 Multicast Address Record to the router membership
+        table and report whether it updated reception state. The MLD
+        control groups are never tracked. Runs under the interface
+        multicast lock.
+        """
+
+        if group in MLD__CONTROL_GROUPS:
+            return False
+
+        match record_type:
+            case (
+                Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE
+                | Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE
+            ):
+                self._set_membership(group, Ip6MulticastFilterMode.EXCLUDE, sources)
+                return True
+            case (
+                Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE
+                | Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE
+            ):
+                if not sources:
+                    return self._remove_membership(group)
+                self._set_membership(group, Ip6MulticastFilterMode.INCLUDE, sources)
+                return True
+            case Icmp6Mld2MulticastAddressRecordType.ALLOW_NEW_SOURCES:
+                state = self._mld_querier__memberships.get(group)
+                if state is None:
+                    self._set_membership(group, Ip6MulticastFilterMode.INCLUDE, sources)
+                elif state.filter_mode is Ip6MulticastFilterMode.INCLUDE:
+                    self._set_membership(group, Ip6MulticastFilterMode.INCLUDE, state.sources | sources)
+                else:
+                    self._set_membership(group, Ip6MulticastFilterMode.EXCLUDE, state.sources - sources)
+                return True
+            case Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES:
+                # Phase 2 (M5e): a BLOCK schedules a fast-leave query;
+                # here it only narrows an INCLUDE source list.
+                state = self._mld_querier__memberships.get(group)
+                if state is None or state.filter_mode is not Ip6MulticastFilterMode.INCLUDE:
+                    return False
+                state.sources = state.sources - sources
+                return True
+
+        return False
+
+    def _set_membership(
+        self,
+        group: Ip6Address,
+        filter_mode: Ip6MulticastFilterMode,
+        sources: frozenset[Ip6Address],
+        /,
+    ) -> None:
+        """
+        Install or refresh the router membership entry for 'group' and
+        (re)arm its Multicast Address Listening Interval timer. Runs
+        under the interface multicast lock.
+        """
+
+        state = self._mld_querier__memberships.get(group)
+        if state is None:
+            state = _MldQuerierGroupState(filter_mode=filter_mode, sources=sources)
+            self._mld_querier__memberships[group] = state
+        else:
+            state.filter_mode = filter_mode
+            state.sources = sources
+
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        state.group_timer_handle = stack.timer.call_later(
+            self._multicast_address_listening_interval_ms(), self._expire_group, group
+        )
+
+    def _remove_membership(self, group: Ip6Address, /) -> bool:
+        """
+        Drop the router membership entry for 'group' and cancel its timer,
+        reporting whether an entry existed. Runs under the interface
+        multicast lock.
+        """
+
+        state = self._mld_querier__memberships.pop(group, None)
+        if state is None:
+            return False
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        return True
+
+    def _expire_group(self, group: Ip6Address, /) -> None:
+        """
+        Multicast Address Listening Interval timer callback: no Report
+        refreshed the group, so the last listener is assumed gone and the
+        group is pruned (RFC 3810 §7.2.4). Runs under the interface
+        multicast lock.
+        """
+
+        with self._if._lock__multicast:
+            state = self._mld_querier__memberships.get(group)
+            if state is None:
+                return
+            state.group_timer_handle = None
+            del self._mld_querier__memberships[group]
+
+    @staticmethod
+    def _multicast_address_listening_interval_ms() -> int:
+        """
+        The RFC 3810 §9.4 Multicast Address Listening Interval —
+        Robustness Variable × Query Interval + one Query Response
+        Interval — after which a group with no refreshing Report is
+        pruned.
+        """
+
+        return (
+            mld__constants.MLD__ROBUSTNESS_VARIABLE * mld__constants.MLD__QUERY_INTERVAL__MS
+            + mld__constants.MLD__QUERY_RESPONSE_INTERVAL__MS
+        )
+
+    def querier_memberships(self) -> tuple[MldQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the router's learned downstream
+        MLD memberships (the read-only introspection surface).
+        """
+
+        with self._if._lock__multicast:
+            return tuple(
+                MldQuerierMembership(group=group, filter_mode=state.filter_mode, sources=state.sources)
+                for group, state in self._mld_querier__memberships.items()
+            )
+
+    def _admit_querier_receive_group(self) -> None:
+        """
+        Receive-only admission of the all-MLDv2-routers group ff02::16 so
+        the querier receives inbound Reports. It is an MLD control group
+        (MLD__CONTROL_GROUPS) the interface never reports listener state
+        for, so — unlike a host join — no Report is emitted for it. Runs
+        under the interface multicast lock.
+        """
+
+        if MLD__ALL_MLDV2_ROUTERS not in self._if._ip6_multicast_filters:
+            self._if.assign_ip6_multicast(MLD__ALL_MLDV2_ROUTERS)
+
+    def _withdraw_querier_receive_group(self) -> None:
+        """
+        Undo '_admit_querier_receive_group' when the interface stops being
+        a multicast router. Runs under the interface multicast lock.
+        """
+
+        if MLD__ALL_MLDV2_ROUTERS in self._if._ip6_multicast_filters:
+            self._if.remove_ip6_multicast(MLD__ALL_MLDV2_ROUTERS)
+
+    @staticmethod
+    def _mld_mrd_to_mrc(mrd_ms: int, /) -> int:
+        """
+        Encode a Maximum Response Delay (ms) to a 16-bit MLDv2 Maximum
+        Response Code (RFC 3810 §5.1.3) — the inverse of the RX decode:
+        a value below 32768 encodes to itself, a larger value to the
+        floating-point form 1|exp|mant, saturating at 0xffff.
+        """
+
+        if mrd_ms < 32768:
+            return mrd_ms
+
+        mant = mrd_ms >> 3
+        exp = 0
+        while mant > 0x1FFF:
+            mant >>= 1
+            exp += 1
+
+        if exp > 0x07:
+            return 0xFFFF
+
+        return 0x8000 | (exp << 12) | (mant & 0xFFF)
 
     def _phtx_icmp6(
         self,
@@ -266,7 +729,7 @@ class Icmp6TxHandler:
 
         # All-Multicast-Nodes (ff02::1) is never advertised (RFC 3810
         # §6); a 'set' deduplicates the membership list.
-        groups = {group for group in self._if._ip6_multicast if group != Ip6Address("ff02::1")}
+        groups = {group for group in self._if._ip6_multicast if group not in MLD__CONTROL_GROUPS}
         if not groups:
             return
 
@@ -342,7 +805,7 @@ class Icmp6TxHandler:
         CHANGE_TO_INCLUDE record per group.
         """
 
-        groups = {group for group in self._if._ip6_multicast if group != Ip6Address("ff02::1")}
+        groups = {group for group in self._if._ip6_multicast if group not in MLD__CONTROL_GROUPS}
         if not groups:
             return
 
@@ -473,7 +936,7 @@ class Icmp6TxHandler:
         of '_send_igmp_state_change'.
         """
 
-        if group == MLD__ALL_NODES:
+        if group in MLD__CONTROL_GROUPS:
             return
 
         records = self._mld_state_change_records(group, old, new)

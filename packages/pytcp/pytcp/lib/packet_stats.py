@@ -293,7 +293,9 @@ class PacketStatsRx(PacketStats):
     icmp6__nd_redirect__accept_redirects_zero__drop: int = 0
     icmp6__nd_message__fragmented__drop: int = 0
     icmp6__mld2_report: int = 0
+    icmp6__mld2_report__querier_learn: int = 0
     icmp6__mld2_query: int = 0
+    icmp6__mld_query__election_lost: int = 0
     icmp6__mld2_query__scheduled: int = 0
     icmp6__mld2_query__superseded: int = 0
     icmp6__mld2_query__respond: int = 0
@@ -448,6 +450,7 @@ class PacketStatsTx(PacketStats):
     icmp6__nd__neighbor_solicitation__send: int = 0
     icmp6__nd__neighbor_advertisement__send: int = 0
     icmp6__mld2__report__send: int = 0
+    icmp6__mld_general_query__send: int = 0
     icmp6__mld1__report__send: int = 0
     icmp6__mld1__done__send: int = 0
     icmp6__unknown__drop: int = 0

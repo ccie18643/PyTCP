@@ -1148,21 +1148,15 @@ class Icmp6RxHandler:
         Handle inbound ICMPv6 MLDv2 Report packets.
 
         Reference: RFC 3810 §5 (MLDv2 querier processing model).
+        Reference: RFC 3810 §7.4 (router action on reception of a Report).
 
-        Host-stack scope (Phase 1): Reports are processed by an
-        MLDv2 querier — typically a multicast-aware router. PyTCP
-        is a host: it sends Reports (see
-        '_send_icmp6_multicast_listener_report') but takes no
-        action on inbound Reports beyond accounting. The
-        'icmp6__mld2_report' counter records every received
-        Report so an operator can observe the link's multicast
-        activity.
-
-        # Phase 2: MLDv2 querier role goes here. A router-grade
-        # PyTCP would maintain per-multicast-group state, run
-        # the General/Multicast-Address-Specific/Multicast-
-        # Address-and-Source-Specific Query timers, and update
-        # group memberships from inbound Reports.
+        As a host PyTCP sends Reports (see
+        '_send_icmp6_multicast_listener_report') and only accounts for
+        inbound ones. As a Phase-2 MLDv2 querier (an interface with
+        'mld.mc_forwarding' set) it also learns downstream reception
+        state from inbound Reports into the router membership table
+        (delegated to the TX querier state machine via 'observe_report';
+        a no-op on a plain host interface).
         """
 
         self._if._packet_stats_rx.icmp6__mld2_report += 1
@@ -1170,6 +1164,8 @@ class Icmp6RxHandler:
             "icmp6",
             f"{packet_rx.tracker} - Received ICMPv6 MLDv2 Report packet " f"from {packet_rx.ip6.src}",
         )
+
+        self._if._icmp6_tx.observe_report(packet_rx.icmp6.message)
 
     def __phrx_icmp6__mld_query(self, packet_rx: PacketRx) -> None:
         """
@@ -1210,6 +1206,11 @@ class Icmp6RxHandler:
             mrd_ms = message.maximum_response_delay
         else:
             assert isinstance(message, Icmp6Mld2MessageQuery)
+            # RFC 3810 §7.6.2 querier election — when this interface is a
+            # multicast router, an MLDv2 Query from a lower source address
+            # makes us step down (delegated to the TX querier state
+            # machine that owns the election / Other-Querier-Present state).
+            self._if._icmp6_tx.observe_query(packet_rx.ip6.src, message)
             mrd_ms = _mld2_mrc_to_mrd_ms(message.maximum_response_code)
 
         self._mld_query__schedule_response(mrd_ms)

@@ -131,7 +131,7 @@ from .packet_handler__ethernet__tx import EthernetTxHandler
 from .packet_handler__icmp4__rx import Icmp4RxHandler
 from .packet_handler__icmp4__tx import Icmp4TxHandler
 from .packet_handler__icmp6__rx import Icmp6RxHandler
-from .packet_handler__icmp6__tx import Icmp6TxHandler
+from .packet_handler__icmp6__tx import Icmp6TxHandler, MldQuerierMembership
 from .packet_handler__igmp__rx import IgmpGroupQueryPending, IgmpRxHandler
 from .packet_handler__igmp__tx import IgmpQuerierMembership, IgmpTxHandler
 from .packet_handler__ip4__rx import Ip4RxHandler
@@ -800,11 +800,13 @@ class PacketHandler(Subsystem, ABC):
 
         self._log_stack_address_info()
 
-        # Take up the IGMP querier role when this interface is
-        # configured as a multicast router ('igmp.mc_forwarding');
-        # a no-op for a plain host. Phase 2: a runtime control API
-        # re-drives this when the switch flips after bring-up.
+        # Take up the IGMP / MLD querier role when this interface is
+        # configured as a multicast router ('igmp.mc_forwarding' /
+        # 'mld.mc_forwarding'); a no-op for a plain host. Phase 2: a
+        # runtime control API re-drives this when the switch flips
+        # after bring-up.
         self.refresh_igmp_querier()
+        self.refresh_mld_querier()
 
     def _thread__packet_handler__acquire_ip6_addresses(self) -> None:
         """
@@ -2876,6 +2878,34 @@ class PacketHandler(Subsystem, ABC):
         """
 
         return self._igmp_tx.querier_memberships()
+
+    def refresh_mld_querier(self) -> None:
+        """
+        Reconcile the interface's MLD querier role with its
+        'mld.mc_forwarding' switch (delegates to the ICMPv6 TX
+        sub-handler). Public surface for the interface bring-up path.
+        """
+
+        self._icmp6_tx.refresh_querier()
+
+    def stop_mld_querier(self) -> None:
+        """
+        Relinquish the MLD querier role and cancel its timers (delegates
+        to the ICMPv6 TX sub-handler). Public surface for the
+        stack-shutdown lifecycle path.
+        """
+
+        with self._lock__multicast:
+            self._icmp6_tx._stop_querier()
+
+    def mld_querier_memberships(self) -> tuple[MldQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the multicast group memberships
+        this interface has learned as an MLD querier (the read-only
+        '/proc/net/igmp6' router-side introspection surface).
+        """
+
+        return self._icmp6_tx.querier_memberships()
 
     def send_mld_leave_all(self) -> None:
         """

@@ -58,10 +58,15 @@ from net_proto import (
     Icmp4MessageDestinationUnreachable,
     Icmp4MessageRedirect,
     Icmp4MessageTimeExceeded,
+    Icmp6Assembler,
     Icmp6MessageDestinationUnreachable,
     Icmp6MessagePacketTooBig,
     Icmp6MessageTimeExceeded,
+    Icmp6Mld2MessageQuery,
+    Icmp6Mld2MessageReport,
+    Icmp6Mld2MulticastAddressRecord,
     Icmp6NdMessageRedirect,
+    Icmp6Type,
     IgmpAssembler,
     IgmpMessageQuery,
     IgmpMessageV3Report,
@@ -401,6 +406,133 @@ class RouterTestCase(IcmpTestCase):
             msg="Emitted Query must be a General Query (group 0.0.0.0, no sources).",
         )
         return message
+
+    def _enable_mld_querier(self, *ifaces: AddedInterface) -> dict[int, list[bytes]]:
+        """
+        Enable the MLD querier role ('mld.mc_forwarding') and bring it up
+        on each named interface, returning the frames each emitted (the
+        first startup General Query). The IPv6 analogue of
+        '_enable_igmp_querier'; admits the all-nodes multicast MAC so
+        election Queries are received (the all-MLDv2-routers group for
+        Reports is admitted receive-only by '_start_querier').
+        """
+
+        sysctl_module.set("mld.default.mc_forwarding", True)
+        all_nodes_mac = Ip6Address("ff02::1").multicast_mac
+
+        before = {interface.ifindex: len(interface.frames_tx) for interface in self._interfaces}
+        for iface in ifaces:
+            if all_nodes_mac not in iface.handler._mac_multicast:
+                iface.handler._mac_multicast.append(all_nodes_mac)
+            iface.handler.refresh_mld_querier()
+        return {
+            interface.ifindex: list(interface.frames_tx[before[interface.ifindex] :]) for interface in self._interfaces
+        }
+
+    def _build_mld2_general_query(
+        self,
+        *,
+        src_ip: Ip6Address,
+        src_mac: MacAddress,
+        qrv: int = 2,
+        max_resp_code: int = 10000,
+        qqic: int = 125,
+    ) -> bytes:
+        """
+        Build an inbound MLDv2 General Query (multicast address ::) from a
+        competing querier — carried in Ethernet/IPv6 to the all-nodes
+        group ff02::1 with Hop Limit 1 — for the querier-election tests.
+        """
+
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=Ip6Address("ff02::1").multicast_mac,
+            ethernet__payload=Ip6Assembler(
+                ip6__src=src_ip,
+                ip6__dst=Ip6Address("ff02::1"),
+                ip6__hop=1,
+                ip6__payload=Icmp6Assembler(
+                    icmp6__message=Icmp6Mld2MessageQuery(
+                        maximum_response_code=max_resp_code,
+                        multicast_address=Ip6Address(),
+                        qrv=qrv,
+                        qqic=qqic,
+                    )
+                ),
+            ),
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
+    def _build_mld2_report(
+        self,
+        *,
+        src_ip: Ip6Address,
+        src_mac: MacAddress,
+        records: list[Icmp6Mld2MulticastAddressRecord],
+    ) -> bytes:
+        """
+        Build an inbound MLDv2 Report from a downstream host — carried in
+        Ethernet/IPv6 to the all-MLDv2-routers group ff02::16 with Hop
+        Limit 1 — for the querier membership-learning tests.
+        """
+
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=Ip6Address("ff02::16").multicast_mac,
+            ethernet__payload=Ip6Assembler(
+                ip6__src=src_ip,
+                ip6__dst=Ip6Address("ff02::16"),
+                ip6__hop=1,
+                ip6__payload=Icmp6Assembler(icmp6__message=Icmp6Mld2MessageReport(records=records)),
+            ),
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
+    def _assert_mld_general_query(self, frame: bytes, /, *, source: Ip6Address) -> Icmp6Mld2MessageQuery:
+        """
+        Assert that 'frame' is an MLDv2 General Query emitted by the
+        querier — carried in IPv6 to the all-nodes group ff02::1 with Hop
+        Limit 1 (RFC 3810 §5.1), sourced from 'source', with the
+        unspecified multicast address (::) — and return the decoded Query.
+        """
+
+        probe = self._parse_tx_icmp6(frame)
+
+        self.assertEqual(
+            probe.icmp_type,
+            int(Icmp6Type.MULTICAST_LISTENER_QUERY),
+            msg=f"Emitted ICMPv6 message must be a Multicast Listener Query; got type {probe.icmp_type}.",
+        )
+        self.assertEqual(
+            probe.ip_dst,
+            Ip6Address("ff02::1"),
+            msg=f"General Query must be sent to the all-nodes group ff02::1; got {probe.ip_dst}.",
+        )
+        self.assertEqual(
+            probe.ip_hop,
+            1,
+            msg=f"General Query must be sent with Hop Limit 1; got {probe.ip_hop}.",
+        )
+        self.assertEqual(
+            probe.ip_src,
+            source,
+            msg=f"General Query must be sourced from {source}; got {probe.ip_src}.",
+        )
+        self.assertIsInstance(
+            probe.message,
+            Icmp6Mld2MessageQuery,
+            msg=f"Emitted message must be an MLDv2 Query; got {type(probe.message).__name__}.",
+        )
+        assert isinstance(probe.message, Icmp6Mld2MessageQuery)
+        self.assertTrue(
+            probe.message.multicast_address.is_unspecified,
+            msg="Emitted Query must be a General Query (multicast address ::).",
+        )
+        return probe.message
 
     def _assert_single_egress(self, emitted: dict[int, list[bytes]], /, *, egress: AddedInterface) -> bytes:
         """
