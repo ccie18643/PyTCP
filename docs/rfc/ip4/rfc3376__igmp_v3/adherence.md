@@ -599,27 +599,115 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
-### §6 / §6.4 / §6.6.2 / §8.2–§8.7 Querier emission + election + membership
+### §6 / §8.2 / §8.6 / §8.7 Querier General-Query emission
 
-- **Integration:**
-  `packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`
-  The `igmp.mc_forwarding` activation gate, the startup
-  General-Query burst spacing (Startup Query Count / Interval),
-  the steady-state periodic Query (Query Interval), the
-  advertised Max Resp Code / QQIC / QRV, querier teardown, and
-  the §6.6.2 election (lower-address step-down, higher-address
-  ignore, Other Querier Present resume).
-- **Integration (§6.4 membership):** the same file learns a group
-  membership from a MODE_IS_EXCLUDE / MODE_IS_INCLUDE Report,
-  removes it on a CHANGE_TO_INCLUDE{} leave, prunes it after the
-  §8.4 Group Membership Interval, and confirms a host interface
-  (mc_forwarding off) learns nothing.
-- **Unit:**
-  `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
-  the RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder.
+All in
+`packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`:
 
-**Status:** locked in (Phase-2 M5b — group-granularity membership;
-per-source timers + fast-leave queries are M5c refinements).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__disabled_interface_is_silent`
+  — an `igmp.mc_forwarding`-off interface emits no Query over
+  two Query Intervals (the activation gate).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__startup_emits_first_general_query`
+  — bring-up immediately emits one General Query to 224.0.0.1
+  from the interface address, and a non-refreshed interface
+  stays silent.
+- `TestRouterIgmpQuerier::test__router__igmp_querier__startup_burst_spacing`
+  — exactly Startup Query Count (§8.7) General Queries fire,
+  spaced one Startup Query Interval (§8.6).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__steady_state_periodic_query`
+  — after the burst drains, one General Query recurs every
+  Query Interval (§8.2).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__general_query_advertises_timers`
+  — the Query advertises the Query Response Interval (Max Resp
+  Code), Query Interval (QQIC), and Robustness Variable (QRV).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__stop_cancels_queries`
+  — querier teardown cancels the pending General-Query ticket.
+
+**Status:** locked in.
+
+### §6.6.2 / §8.5 Querier election
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__lower_ip_query_steps_down`
+  — a Query from a lower source address makes the router lose
+  the election once and stop emitting General Queries.
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__higher_ip_query_ignored`
+  — a higher-address Query does not cost the election; startup
+  Queries continue.
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__resumes_after_other_querier_present`
+  — the router resumes emitting after the §8.5 Other Querier
+  Present Interval of silence.
+
+**Status:** locked in.
+
+### §6.4 / §6.5 / §8.4 Router membership table from Reports
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__learns_exclude_membership`
+  — a MODE_IS_EXCLUDE Report installs an EXCLUDE entry and bumps
+  the querier-learn counter once.
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__learns_include_membership_with_source`
+  — a MODE_IS_INCLUDE Report installs an INCLUDE entry carrying
+  the reported source list.
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__membership_expires_after_gmi`
+  — a group with no refreshing Report is pruned after the §8.4
+  Group Membership Interval (§6.5).
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__host_interface_learns_nothing`
+  — an interface that is not a multicast router builds no table
+  (the §6.4 active-router gate).
+
+**Status:** locked in (group-granularity membership).
+
+### §6.4.2 / §8.8 / §8.9 Fast-leave Group-Specific Queries
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__to_include_empty_is_leave`
+  — a CHANGE_TO_INCLUDE{} leave retains the group pending
+  re-assertion, then prunes it after the Last Member Query Time.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__to_include_empty_sends_group_query`
+  — the leave emits a Group-Specific Query for the group and
+  retains the membership.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__fast_leave_query_burst`
+  — Last Member Query Count (§8.9) Group-Specific Queries fire,
+  spaced one Last Member Query Interval (§8.8).
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__fast_leave_prunes_after_last_member_time`
+  — an un-re-asserted group is pruned after the Last Member
+  Query Time (LMQI × LMQC).
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__reassert_cancels_fast_leave`
+  — a fresh Report during the window retains the group past the
+  Last Member Query Time.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__v2_leave_triggers_fast_leave`
+  — an IGMPv2 Leave Group (received on 224.0.0.2) triggers the
+  Group-Specific Query.
+
+**Status:** locked in.
+
+### §4.1.1 / §4.1.7 Max Resp Code / QQIC float-code encoder
+
+- `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
+  — linear form, exactly-representable round-trip through
+  decode, and the floor / saturate cases of `encode_igmp_float_code`.
+
+**Status:** locked in.
+
+### §5.2.4 Multicast forwarding (last hop)
+
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip4__mforward.py`:
+
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__replicates_to_listeners`
+  — a transit multicast datagram is replicated (TTL decremented)
+  out each interface with a listener and not the ingress.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__no_listeners_dropped`
+  — no downstream listener → dropped, not replicated.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__rpf_failure_dropped`
+  — a datagram arriving off the RPF interface is dropped.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__link_local_group_not_forwarded`
+  — a 224.0.0.0/24 link-local group is never forwarded.
+
+**Status:** locked in.
 
 ### §8 Timing / robustness sysctls
 
@@ -659,10 +747,17 @@ per-source timers + fast-leave queries are M5c refinements).
 | §5.1 State-change Report (incl. source deltas) + robustness retransmit | locked in |
 | §5.2 Query response (general / group / group-and-source) | locked in |
 | §6 all-systems never reported                  | locked in |
+| §4.1.1 / §4.1.7 Max Resp Code / QQIC encoder   | locked in |
+| §6 / §8.2 / §8.6 / §8.7 querier General-Query emission | locked in |
+| §6.6.2 / §8.5 querier election                 | locked in |
+| §6.4 / §6.5 / §8.4 router membership table      | locked in |
+| §6.4.2 / §8.8 / §8.9 fast-leave Group-Specific Queries | locked in |
+| §5.2.4 multicast forwarding — last hop (IPv4)  | locked in |
 | §8 timing / robustness sysctls                 | locked in |
 | §7 older-version querier interop               | locked in |
 | §9 source-specific filtering (control plane)   | locked in |
 | §3.1 / §9 data-plane RX source-delivery filter (UDP) | locked in |
+| §6.2.1 per-source timers + §7.3 querier-emit interop | n/a (deferred) |
 
 ---
 

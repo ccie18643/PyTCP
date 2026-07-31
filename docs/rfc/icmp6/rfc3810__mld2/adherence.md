@@ -474,20 +474,83 @@ end-to-end behaviour via wire observation).
 
 **Status:** locked in.
 
-### §5 / §7 / §8 MLDv2 querier role
+### §5 / §7.6.2 / §9 MLDv2 querier emission + election
 
-- **Integration:**
-  `packages/pytcp/pytcp/tests/integration/router/test__router__mld__querier.py`
-  The `mld.mc_forwarding` activation gate, the startup
-  General-Query burst + steady-state periodic Query, the
-  §7.6.2 election (lower-source step-down, higher-source
-  ignore, Other Querier Present resume), and the §7.4
-  membership table (EXCLUDE / INCLUDE learning + §9.4
-  Multicast Address Listening Interval expiry).
+All in
+`packages/pytcp/pytcp/tests/integration/router/test__router__mld__querier.py`:
 
-**Status:** locked in (Phase-2 M5d — group-granularity
-membership; MLDv1 querier interop + fast-leave queries are
-M5e).
+- `TestRouterMldQuerier::test__router__mld_querier__disabled_interface_is_silent`
+  — an `mld.mc_forwarding`-off interface emits no Query (the
+  activation gate).
+- `TestRouterMldQuerier::test__router__mld_querier__startup_emits_general_query`
+  — bring-up emits one General Query to ff02::1 from the
+  interface address.
+- `TestRouterMldQuerier::test__router__mld_querier__steady_state_periodic_query`
+  — a second startup Query fires after the Startup Query
+  Interval, then one per Query Interval (§9.2 / §9.6).
+- `TestRouterMldQuerier::test__router__mld_querier__lower_source_query_steps_down`
+  — a lower-source Query costs the election (§7.6.2); no further
+  General Query is emitted.
+- `TestRouterMldQuerier::test__router__mld_querier__higher_source_query_ignored`
+  — a higher-source Query does not cost the election.
+- `TestRouterMldQuerier::test__router__mld_querier__resumes_after_other_querier_present`
+  — the router resumes after the §9.5 Other Querier Present
+  Interval.
+
+**Status:** locked in.
+
+### §7.4 / §9.4 Router membership table from Reports
+
+`test__router__mld__querier.py`:
+
+- `TestRouterMldQuerierMembership::test__router__mld_querier__learns_exclude_membership`
+  — a MODE_IS_EXCLUDE Report installs an EXCLUDE entry and bumps
+  the querier-learn counter.
+- `TestRouterMldQuerierMembership::test__router__mld_querier__learns_include_membership_with_source`
+  — a MODE_IS_INCLUDE Report installs an INCLUDE entry with the
+  reported source list.
+- `TestRouterMldQuerierMembership::test__router__mld_querier__membership_expires_after_interval`
+  — a group with no refreshing Report is pruned after the §9.4
+  Multicast Address Listening Interval.
+
+**Status:** locked in (group-granularity membership).
+
+### §7.6.3 / §9.8 / §9.9 Fast-leave Multicast-Address-Specific Queries
+
+`test__router__mld__querier.py`:
+
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__leave_sends_address_query`
+  — a CHANGE_TO_INCLUDE{} leave emits a Multicast-Address-
+  Specific Query and retains the group.
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__fast_leave_query_burst`
+  — Last Listener Query Count (§9.9) Queries fire, spaced one
+  Last Listener Query Interval (§9.8).
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__fast_leave_prunes_after_last_listener_time`
+  — an un-re-asserted group is pruned after the Last Listener
+  Query Time.
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__reassert_cancels_fast_leave`
+  — a fresh Report retains the group past the Last Listener
+  Query Time.
+
+**Status:** locked in.
+
+### Multicast forwarding (last hop)
+
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip6__mforward.py`:
+
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__replicates_to_listeners`
+  — a transit multicast datagram is replicated (Hop Limit
+  decremented) out each listener interface, not the ingress.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__no_listeners_dropped`
+  — no listener → dropped.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__rpf_failure_dropped`
+  — an off-RPF-interface datagram is dropped.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__link_scoped_group_not_forwarded`
+  — a scope-2 (link-local) group is never forwarded.
+
+**Status:** locked in. MLDv1 querier interop + per-source
+Address-and-Source-Specific Queries are deferred refinements
+(no test surface).
 
 ### Test coverage summary
 
@@ -500,7 +563,11 @@ M5e).
 | Query → Report response (wire format)               | locked in |
 | §5.1.3 MRC → MRD decoder                            | locked in |
 | §5.1.10 MRC random-delay window + coalescing        | locked in |
-| MLDv2 querier (emission + election + membership)     | met (Phase-2 M5d) |
+| Querier General-Query emission + election (§5 / §7.6.2) | locked in |
+| Querier membership table from Reports (§7.4 / §9.4) | locked in |
+| Querier fast-leave Address-Specific Queries (§7.6.3) | locked in |
+| Multicast forwarding — last hop (IPv6)              | locked in |
+| MLDv1 querier interop (§8) + per-source timers      | n/a (deferred) |
 
 ---
 
