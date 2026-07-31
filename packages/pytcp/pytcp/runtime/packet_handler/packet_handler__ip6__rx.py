@@ -69,6 +69,9 @@ from pytcp.protocols.ip6.ip6__ext_hdr_limits import (
     check_ext_hdr_option_caps,
 )
 from pytcp.runtime.packet_handler.packet_handler__ip6__forward import Ip6ForwardHandler
+from pytcp.runtime.packet_handler.packet_handler__ip6__mforward import (
+    Ip6MulticastForwardHandler,
+)
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.raw__socket import RawSocket
 
@@ -109,6 +112,7 @@ class Ip6RxHandler:
 
         self._if = interface
         self._forward = Ip6ForwardHandler(interface=interface)
+        self._mforward = Ip6MulticastForwardHandler(interface=interface)
 
     def _forward_or_deliver_ip6(self, packet_rx: PacketRx, /) -> bool:
         """
@@ -126,6 +130,14 @@ class Ip6RxHandler:
 
         if self._if._accepts_local_dst_ip6(packet_rx.ip6.dst):
             return True
+
+        # A transit multicast datagram (a group we have not joined) is
+        # replicated to downstream listeners by the multicast forward
+        # plane (Phase-2 M5f); a unicast one is forwarded toward its next
+        # hop by the unicast forward plane (M1).
+        if packet_rx.ip6.dst.is_multicast:
+            self._mforward.try_mforward_ip6(packet_rx)
+            return False
 
         self._forward.try_forward_ip6(packet_rx)
         return False

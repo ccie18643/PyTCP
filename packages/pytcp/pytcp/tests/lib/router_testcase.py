@@ -1024,6 +1024,60 @@ class RouterTestCase(IcmpTestCase):
         eth.assemble(buffers)
         return b"".join(bytes(buffer) for buffer in buffers)
 
+    def _build_transit_multicast_ip4(
+        self,
+        *,
+        src_mac: MacAddress,
+        src_ip: Ip4Address,
+        group: Ip4Address,
+        ttl: int = 10,
+        payload: bytes = b"mcast-forward-test",
+    ) -> bytes:
+        """
+        Build an Ethernet/IPv4/UDP transit multicast datagram addressed
+        to 'group' (its Ethernet destination is the group's own multicast
+        MAC) from an off-link source — the datagram a multicast router
+        replicates to downstream listeners.
+        """
+
+        udp = UdpAssembler(udp__sport=40000, udp__dport=40000, udp__payload=payload)
+        ip4 = Ip4Assembler(ip4__src=src_ip, ip4__dst=group, ip4__ttl=ttl, ip4__payload=udp)
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=group.multicast_mac,
+            ethernet__payload=ip4,
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
+    def _build_transit_multicast_ip6(
+        self,
+        *,
+        src_mac: MacAddress,
+        src_ip: Ip6Address,
+        group: Ip6Address,
+        hop: int = 10,
+        payload: bytes = b"mcast-forward-test",
+    ) -> bytes:
+        """
+        Build an Ethernet/IPv6/UDP transit multicast datagram addressed
+        to 'group' (its Ethernet destination is the group's own multicast
+        MAC) from an off-link source — the datagram a multicast router
+        replicates to downstream listeners.
+        """
+
+        udp = UdpAssembler(udp__sport=40000, udp__dport=40000, udp__payload=payload)
+        ip6 = Ip6Assembler(ip6__src=src_ip, ip6__dst=group, ip6__hop=hop, ip6__payload=udp)
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=group.multicast_mac,
+            ethernet__payload=ip6,
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
     def _build_transit_ip6(
         self,
         *,

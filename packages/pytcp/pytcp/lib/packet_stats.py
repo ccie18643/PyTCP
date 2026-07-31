@@ -170,6 +170,15 @@ class PacketStatsRx(PacketStats):
     ip4__forward_martian_dst__drop: int = 0
     ip4__forward_too_big__drop: int = 0
 
+    # Phase-2 multicast forwarding (replication) counters (M5f):
+    # 'ip4__mforward' bumps once per replica emitted; the '*__drop'
+    # variants pin the RPF failure, no-listener, and link-scope
+    # rejections.
+    ip4__mforward: int = 0
+    ip4__mforward_rpf__drop: int = 0
+    ip4__mforward_no_listeners__drop: int = 0
+    ip4__mforward_scope__drop: int = 0
+
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0
     ip6__no_proto_support__drop: int = 0
@@ -190,6 +199,13 @@ class PacketStatsRx(PacketStats):
     ip6__forward_no_neighbor__drop: int = 0
     ip6__forward_scope__drop: int = 0
     ip6__forward_too_big__drop: int = 0
+
+    # Phase-2 multicast forwarding (replication) counters (M5f) —
+    # the IPv6 parallel of the 'ip4__mforward*' set.
+    ip6__mforward: int = 0
+    ip6__mforward_rpf__drop: int = 0
+    ip6__mforward_no_listeners__drop: int = 0
+    ip6__mforward_scope__drop: int = 0
 
     ip6_frag__pre_parse: int = 0
     ip6_frag__failed_parse: int = 0

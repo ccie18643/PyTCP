@@ -268,7 +268,7 @@ behaviour).
 
 **Adherence:** met (M4). The forward-destination martian filter in
 `Ip4ForwardHandler.try_forward_ip4` drops loopback / unspecified /
-limited-broadcast / link-local / multicast destinations **and** the
+limited-broadcast / link-local destinations **and** the
 directed broadcast of any directly-connected subnet
 (`stack.is_ip4_broadcast`, RFC 2644 default-off). Source-address
 validation happens ahead of the forward branch: the parser sanity
@@ -281,6 +281,45 @@ locally-destined low-TTL datagram is delivered (never Time
 Exceeded). IPv6 link-local scope (source or destination) is
 enforced in the IPv6 forward path (`ip6__forward_scope__drop`, RFC
 4007).
+
+## §5.2.1 Multicast forwarding — last hop (M5f)
+
+> "A router that supports multicast ... forwards a multicast
+> datagram out every interface with a group member, subject to the
+> RPF check and the datagram's TTL scope."
+
+**Adherence:** met (M5f) for the **last-hop** case. A transit IPv4
+multicast datagram (a group the router has not itself joined,
+arriving on a `igmp.mc_forwarding` interface) is dispatched from the
+`_forward_or_deliver_ip4` seam to `Ip4MulticastForwardHandler`, which:
+
+1. drops link-scoped traffic — the 224.0.0.0/24 control block and any
+   TTL-1 datagram (`ip4__mforward_scope__drop`, RFC 5771 / RFC 1112
+   §6.1);
+2. runs the **RPF check** — accept only if the datagram arrived on
+   the interface the unicast FIB would use to reach its source
+   (`ip4__mforward_rpf__drop`, the standard multicast loop-prevention
+   check);
+3. computes the egress interfaces on-demand from each interface's
+   IGMP querier membership table (M5b), honouring the §6.3
+   INCLUDE / EXCLUDE source filter, and drops when none have a
+   listener (`ip4__mforward_no_listeners__drop`);
+4. replicates the byte-identical datagram (TTL decremented, header
+   checksum recomputed) out each egress toward the group's Ethernet
+   multicast MAC (`ip4__mforward`).
+
+A multicast-router interface receives multicast promiscuously
+(`PacketHandler.is_multicast_router`) so a transit group's frame is
+not dropped at the Ethernet MAC filter. The IPv6 parallel
+(`Ip6MulticastForwardHandler`, scope from the RFC 4291 §2.7 nibble,
+no header checksum) is audited under the icmp6 RFC 3810 record.
+Tested at
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip4__mforward.py`.
+
+**Out of scope (CLAUDE.md non-goals):** any multicast routing
+protocol (PIM / DVMRP) and the `MRT_*` mrouted socket API — PyTCP is
+a last-hop multicast router; the MFIB is populated purely from local
+querier state, not a routing protocol.
 
 ## §5.2.4 IP options on forwarded datagrams (M4)
 

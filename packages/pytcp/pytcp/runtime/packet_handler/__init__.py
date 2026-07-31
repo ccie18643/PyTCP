@@ -2907,6 +2907,21 @@ class PacketHandler(Subsystem, ABC):
 
         return self._icmp6_tx.querier_memberships()
 
+    @property
+    def is_multicast_router(self) -> bool:
+        """
+        Whether this interface acts as a multicast router — the read-time
+        OR of the IPv4 ('igmp.mc_forwarding') and IPv6
+        ('mld.mc_forwarding') per-interface switches. A multicast router
+        receives multicast promiscuously (to forward transit groups it
+        has not itself joined) and runs the IGMP / MLD querier.
+        """
+
+        return bool(
+            sysctl_iface.get_for_iface("igmp.mc_forwarding", self._interface_name)
+            or sysctl_iface.get_for_iface("mld.mc_forwarding", self._interface_name)
+        )
+
     def send_mld_leave_all(self) -> None:
         """
         Emit a graceful MLD Leave for every joined IPv6 multicast group

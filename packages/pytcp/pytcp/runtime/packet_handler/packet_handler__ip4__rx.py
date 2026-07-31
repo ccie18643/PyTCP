@@ -54,6 +54,9 @@ from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
 from pytcp.protocols.ip.ip_frag import IpFragFlowId
 from pytcp.protocols.ip.ip_frag_table import IpFragAddOutcome
 from pytcp.runtime.packet_handler.packet_handler__ip4__forward import Ip4ForwardHandler
+from pytcp.runtime.packet_handler.packet_handler__ip4__mforward import (
+    Ip4MulticastForwardHandler,
+)
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.raw__socket import RawSocket
 from pytcp.stack import sysctl_iface
@@ -76,6 +79,7 @@ class Ip4RxHandler:
 
         self._if = interface
         self._forward = Ip4ForwardHandler(interface=interface)
+        self._mforward = Ip4MulticastForwardHandler(interface=interface)
 
     def _forward_or_deliver_ip4(self, packet_rx: PacketRx, /) -> bool:
         """
@@ -95,6 +99,14 @@ class Ip4RxHandler:
 
         if self._if._accepts_local_dst_ip4(packet_rx.ip4.dst):
             return True
+
+        # A transit multicast datagram (a group we have not joined) is
+        # replicated to downstream listeners by the multicast forward
+        # plane (Phase-2 M5f); a unicast one is forwarded toward its next
+        # hop by the unicast forward plane (M1).
+        if packet_rx.ip4.dst.is_multicast:
+            self._mforward.try_mforward_ip4(packet_rx)
+            return False
 
         self._forward.try_forward_ip4(packet_rx)
         return False
