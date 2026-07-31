@@ -467,6 +467,7 @@ class PacketStatsTx(PacketStats):
     icmp6__nd__neighbor_advertisement__send: int = 0
     icmp6__mld2__report__send: int = 0
     icmp6__mld_general_query__send: int = 0
+    icmp6__mld_address_query__send: int = 0
     icmp6__mld1__report__send: int = 0
     icmp6__mld1__done__send: int = 0
     icmp6__unknown__drop: int = 0
@@ -477,6 +478,7 @@ class PacketStatsTx(PacketStats):
     igmp__v1_report__send: int = 0
     igmp__v2_leave__send: int = 0
     igmp__general_query__send: int = 0
+    igmp__group_query__send: int = 0
 
     tcp__pre_assemble: int = 0
     tcp__flag_ns: int = 0

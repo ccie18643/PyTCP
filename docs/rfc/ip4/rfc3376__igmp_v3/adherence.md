@@ -346,11 +346,26 @@ in (`IGMP__CONTROL_GROUPS`). A read-only snapshot is exposed via
 introspection surface). Tested in the same router integration
 file.
 
+**Fast-leave Group-Specific Queries** — as of Phase-2 M5c, a leave
+(a `CHANGE_TO_INCLUDE{}` record, a `BLOCK` that empties an INCLUDE
+set, or an IGMPv2 Leave Group) triggers the RFC 3376 §6.4.2
+fast-leave rather than an immediate prune:
+`IgmpTxHandler._start_group_fast_leave` lowers the group timer to
+the Last Member Query Time (§8.8 × §8.9), sends the first of the
+§8.9 Last Member Query Count Group-Specific Queries to the group
+address, and arms the rest at the §8.8 Last Member Query Interval; a
+refreshing Report cancels the train and restores the full group
+timer. The querier receives IGMPv2 Leaves on the all-routers group
+224.0.0.2, admitted receive-only alongside 224.0.0.22. Tested in the
+same router integration file.
+
 PyTCP tracks membership at group granularity; the RFC 3376 §6.2.1
-per-source timers (independent aging of individual EXCLUDE-group
-sources) and the §6.4 fast-leave Group-and-Source-Specific Query
-generation collapse into the group timer / are Phase-2 M5c
-refinements.
+per-source timers (independent aging of EXCLUDE-group sources), the
+per-source Group-and-Source-Specific Query for a partial `BLOCK`, and
+the §7.3 IGMPv1/v2 querier-emit interop (a querier emitting
+older-version-format Queries) are deferred refinements — niche for a
+last-hop router, whose value is the group-level membership the
+forwarding plane (M5f) consumes.
 
 ## §7. Interoperation With Older Versions of IGMP
 
@@ -669,7 +684,8 @@ per-source timers + fast-leave queries are M5c refinements).
 | Querier General Query emission (§6/§8.2/§8.6/§8.7) | met (Phase-2 M5b) |
 | Querier election (§6.6.2) + Other Querier Present (§8.5) | met (Phase-2 M5b) |
 | Router group-membership table from Reports (§6.4 / §6.5 / §8.4) | met (Phase-2 M5b; group granularity) |
-| Per-source timers (§6.2.1) + fast-leave queries (§6.4) | out of scope (M5c refinement) |
+| Fast-leave Group-Specific Queries (§6.4.2 / §8.8 / §8.9) | met (Phase-2 M5c) |
+| Per-source timers (§6.2.1) + IGMPv1/v2 querier-emit interop (§7.3) | out of scope (deferred refinement) |
 
 PyTCP implements the IGMPv3 **host** role including source
 filtering: a group is held per-socket as an INCLUDE / EXCLUDE

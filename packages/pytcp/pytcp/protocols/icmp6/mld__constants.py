@@ -75,6 +75,17 @@ MLD__STARTUP_QUERY_INTERVAL__MS = 31_250
 # Variable]). Phase 2: per-interface.
 MLD__STARTUP_QUERY_COUNT = 2
 
+# RFC 3810 §9.8 Last Listener Query Interval, in milliseconds — the Max
+# Resp Code the querier advertises in the Multicast-Address-Specific
+# Queries it sends on a leave, and their spacing (RFC default 1 s).
+# Phase 2: per-interface.
+MLD__LAST_LISTENER_QUERY_INTERVAL__MS = 1000
+
+# RFC 3810 §9.9 Last Listener Query Count — the number of Multicast-
+# Address-Specific Queries the querier sends on a leave before pruning
+# (RFC default [Robustness Variable]). Phase 2: per-interface.
+MLD__LAST_LISTENER_QUERY_COUNT = 2
+
 # Linux 'net.ipv6.conf.<iface>.mc_forwarding' — per-interface multicast
 # router switch. When set, the interface takes the MLD querier role
 # (election, General Queries, downstream group-membership state). A
@@ -147,6 +158,22 @@ register(
     default=MLD__STARTUP_QUERY_COUNT,
     validator=is_positive_int("mld.startup_query_count"),
     description="RFC 3810 §9.7 Startup Query Count — number of startup General Queries a new querier sends.",
+)
+register(
+    key="mld.last_listener_query_interval",
+    module_name=__name__,
+    attr="MLD__LAST_LISTENER_QUERY_INTERVAL__MS",
+    default=MLD__LAST_LISTENER_QUERY_INTERVAL__MS,
+    validator=is_positive_int("mld.last_listener_query_interval"),
+    description="RFC 3810 §9.8 Last Listener Query Interval (ms) — Address-Specific Query max-resp + spacing on leave.",
+)
+register(
+    key="mld.last_listener_query_count",
+    module_name=__name__,
+    attr="MLD__LAST_LISTENER_QUERY_COUNT",
+    default=MLD__LAST_LISTENER_QUERY_COUNT,
+    validator=is_positive_int("mld.last_listener_query_count"),
+    description="RFC 3810 §9.9 Last Listener Query Count — Address-Specific Queries sent on leave before pruning.",
 )
 register(
     key="mld.mc_forwarding",

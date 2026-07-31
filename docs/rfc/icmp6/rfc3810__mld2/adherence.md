@@ -312,9 +312,22 @@ of the IGMPv3 querier):
    `PacketHandler.mld_querier_memberships()`. Tested at
    `tests/integration/router/test__router__mld__querier.py`.
 
-Group-granularity membership; the §7.2 per-source timers
-and §7.6.3 fast-leave Multicast-Address-(and-Source-)
-Specific Queries are M5e refinements.
+**Fast-leave Multicast-Address-Specific Queries** — as of
+Phase-2 M5e, an MLDv2 leave (a `CHANGE_TO_INCLUDE{}` record
+or a `BLOCK` that empties an INCLUDE set) triggers the RFC
+3810 §7.6.3 fast-leave rather than an immediate prune:
+`Icmp6TxHandler._start_group_fast_leave` lowers the group
+timer to the Last Listener Query Time (§9.8 × §9.9), sends
+the first of the §9.9 Last Listener Query Count Multicast-
+Address-Specific Queries to the group, and arms the rest at
+the §9.8 Last Listener Query Interval; a refreshing Report
+cancels the train. Tested in the same router integration
+file.
+
+Group-granularity membership; the §7.2 per-source timers,
+the per-source Address-and-Source-Specific Query for a
+partial `BLOCK`, and the §8 MLDv1 querier-emit interop are
+deferred refinements (niche for a last-hop router).
 
 ---
 

@@ -81,6 +81,17 @@ IGMP__STARTUP_QUERY_INTERVAL__MS = 31_250
 # Interval (RFC default [Robustness Variable]). Phase 2: per-interface.
 IGMP__STARTUP_QUERY_COUNT = 2
 
+# RFC 3376 §8.8 Last Member Query Interval, in milliseconds — the Max
+# Resp Time the querier advertises in the Group-Specific Queries it
+# sends on a leave, and their spacing (RFC default 1 s). Phase 2:
+# per-interface.
+IGMP__LAST_MEMBER_QUERY_INTERVAL__MS = 1000
+
+# RFC 3376 §8.9 Last Member Query Count — the number of Group-Specific
+# Queries the querier sends on a leave before pruning the group (RFC
+# default [Robustness Variable]). Phase 2: per-interface.
+IGMP__LAST_MEMBER_QUERY_COUNT = 2
+
 # Linux 'net.ipv4.conf.<iface>.mc_forwarding' — per-interface multicast
 # router switch. When set, the interface takes the IGMP querier role
 # (election, General Queries, downstream group-membership state). A
@@ -162,6 +173,22 @@ register(
     default=IGMP__STARTUP_QUERY_COUNT,
     validator=is_positive_int("igmp.startup_query_count"),
     description="RFC 3376 §8.7 Startup Query Count — number of startup General Queries a new querier sends.",
+)
+register(
+    key="igmp.last_member_query_interval",
+    module_name=__name__,
+    attr="IGMP__LAST_MEMBER_QUERY_INTERVAL__MS",
+    default=IGMP__LAST_MEMBER_QUERY_INTERVAL__MS,
+    validator=is_positive_int("igmp.last_member_query_interval"),
+    description="RFC 3376 §8.8 Last Member Query Interval (ms) — Group-Specific Query max-resp + spacing on leave.",
+)
+register(
+    key="igmp.last_member_query_count",
+    module_name=__name__,
+    attr="IGMP__LAST_MEMBER_QUERY_COUNT",
+    default=IGMP__LAST_MEMBER_QUERY_COUNT,
+    validator=is_positive_int("igmp.last_member_query_count"),
+    description="RFC 3376 §8.9 Last Member Query Count — Group-Specific Queries sent on leave before pruning.",
 )
 register(
     key="igmp.mc_forwarding",

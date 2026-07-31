@@ -335,3 +335,147 @@ class TestRouterMldQuerierMembership(RouterTestCase):
             self._memberships(),
             msg="A membership with no refreshing Report must expire after the listening interval.",
         )
+
+
+class TestRouterMldQuerierFastLeave(RouterTestCase):
+    """
+    The M5e MLDv2 querier fast-leave Multicast-Address-Specific-Query
+    tests (RFC 3810 §7.6.3).
+    """
+
+    def _leave_record(self) -> Icmp6Mld2MulticastAddressRecord:
+        """A CHANGE_TO_INCLUDE (empty) record — the MLDv2 group leave."""
+
+        return Icmp6Mld2MulticastAddressRecord(
+            type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE,
+            multicast_address=_GROUP,
+        )
+
+    def _enable_and_leave(self) -> None:
+        """Enable the querier, learn _GROUP as EXCLUDE, then drive a leave Report."""
+
+        self._enable_mld_querier(self.if1)
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_mld2_report(
+                src_ip=STACK__IP6_HOST.address,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE,
+                        multicast_address=_GROUP,
+                    )
+                ],
+            ),
+        )
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_mld2_report(
+                src_ip=STACK__IP6_HOST.address,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[self._leave_record()],
+            ),
+        )
+
+    def _memberships(self) -> set[Ip6Address]:
+        """The set of groups if1's MLD querier currently tracks."""
+
+        return {m.group for m in self.if1.handler.mld_querier_memberships()}
+
+    def test__router__mld_querier__leave_sends_address_query(self) -> None:
+        """
+        Ensure a CHANGE_TO_INCLUDE leave triggers a Multicast-Address-
+        Specific Query (fast leave) and the group is retained pending
+        re-assertion.
+
+        Reference: RFC 3810 §7.6.3 (fast leave — Address-Specific Query).
+        """
+
+        self._enable_and_leave()
+
+        self.assertEqual(
+            self.if1.handler.packet_stats_tx.icmp6__mld_address_query__send,
+            1,
+            msg="A leave must trigger one Multicast-Address-Specific Query.",
+        )
+        self.assertIn(
+            _GROUP,
+            self._memberships(),
+            msg="Fast leave must retain the group pending re-assertion, not prune it immediately.",
+        )
+
+    def test__router__mld_querier__fast_leave_query_burst(self) -> None:
+        """
+        Ensure the querier sends Last Listener Query Count Multicast-
+        Address-Specific Queries spaced by the Last Listener Query
+        Interval on a leave.
+
+        Reference: RFC 3810 §9.8 (Last Listener Query Interval).
+        Reference: RFC 3810 §9.9 (Last Listener Query Count).
+        """
+
+        self._enable_and_leave()  # first Address-Specific Query.
+
+        self._advance_frames(ms=mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS)
+        self.assertEqual(
+            self.if1.handler.packet_stats_tx.icmp6__mld_address_query__send,
+            mld__constants.MLD__LAST_LISTENER_QUERY_COUNT,
+            msg="The querier must send exactly Last Listener Query Count Address-Specific Queries.",
+        )
+
+    def test__router__mld_querier__fast_leave_prunes_after_last_listener_time(self) -> None:
+        """
+        Ensure a group with no re-asserting Report is pruned after the
+        Last Listener Query Time, far sooner than the full Multicast
+        Address Listening Interval.
+
+        Reference: RFC 3810 §7.6.3 (group timer lowered to Last Listener Query Time).
+        """
+
+        self._enable_and_leave()
+
+        last_listener_time_ms = (
+            mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS * mld__constants.MLD__LAST_LISTENER_QUERY_COUNT
+        )
+        self._advance_frames(ms=last_listener_time_ms)
+
+        self.assertNotIn(
+            _GROUP,
+            self._memberships(),
+            msg="An un-re-asserted group must be pruned after the Last Listener Query Time.",
+        )
+
+    def test__router__mld_querier__reassert_cancels_fast_leave(self) -> None:
+        """
+        Ensure a fresh Report during the fast-leave window re-asserts
+        interest — the group is retained beyond the Last Listener Query
+        Time.
+
+        Reference: RFC 3810 §7.6.3 (re-assertion refreshes the group timer).
+        """
+
+        self._enable_and_leave()
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_mld2_report(
+                src_ip=STACK__IP6_HOST.address,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE,
+                        multicast_address=_GROUP,
+                    )
+                ],
+            ),
+        )
+
+        last_listener_time_ms = (
+            mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS * mld__constants.MLD__LAST_LISTENER_QUERY_COUNT
+        )
+        self._advance_frames(ms=last_listener_time_ms)
+
+        self.assertIn(
+            _GROUP,
+            self._memberships(),
+            msg="A re-asserted group must be retained beyond the Last Listener Query Time.",
+        )

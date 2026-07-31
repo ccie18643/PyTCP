@@ -392,9 +392,11 @@ class TestRouterIgmpQuerierMembership(RouterTestCase):
     def test__router__igmp_querier__to_include_empty_is_leave(self) -> None:
         """
         Ensure a CHANGE_TO_INCLUDE_MODE Report with an empty source list
-        removes an existing router membership — the IGMPv3 leave.
+        is a group leave — the membership is retained pending fast-leave
+        re-assertion, then pruned after the Last Member Query Time.
 
         Reference: RFC 3376 §6.4 (INCLUDE{} is a group leave).
+        Reference: RFC 3376 §6.4.2 (fast leave — lowered group timer).
         """
 
         self._enable_igmp_querier(self.if1)
@@ -417,11 +419,20 @@ class TestRouterIgmpQuerierMembership(RouterTestCase):
                 records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
             ),
         )
+        self.assertIn(
+            _GROUP,
+            self._memberships(),
+            msg="A leave triggers fast-leave — the group is retained pending re-assertion, not pruned immediately.",
+        )
 
+        last_member_time_ms = (
+            igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS * igmp__constants.IGMP__LAST_MEMBER_QUERY_COUNT
+        )
+        self._advance_frames(ms=last_member_time_ms)
         self.assertNotIn(
             _GROUP,
             self._memberships(),
-            msg="A CHANGE_TO_INCLUDE_MODE Report with no sources must remove the membership.",
+            msg="An un-re-asserted group must be pruned after the Last Member Query Time.",
         )
 
     def test__router__igmp_querier__membership_expires_after_gmi(self) -> None:
@@ -485,3 +496,154 @@ class TestRouterIgmpQuerierMembership(RouterTestCase):
             (),
             msg="A host interface (mc_forwarding off) must learn no querier memberships.",
         )
+
+
+class TestRouterIgmpQuerierFastLeave(RouterTestCase):
+    """
+    The M5c IGMPv3 querier fast-leave Group-Specific-Query tests
+    (RFC 3376 §6.4.2).
+    """
+
+    def test__router__igmp_querier__to_include_empty_sends_group_query(self) -> None:
+        """
+        Ensure a CHANGE_TO_INCLUDE_MODE leave triggers a Group-Specific
+        Query for the group (fast leave) rather than an immediate prune,
+        and the group is retained pending re-assertion.
+
+        Reference: RFC 3376 §6.4.2 (fast leave — Group-Specific Query on leave).
+        """
+
+        leave = self._build_igmp_v3_report(
+            src_ip=HOST_A__IP4_ADDRESS,
+            src_mac=HOST_A__MAC_ADDRESS,
+            records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
+        )
+        emitted = self._enable_and_leave(leave)
+
+        self._assert_igmp_group_specific_query(self._only_group_query(emitted), group=_GROUP)
+        self.assertIn(
+            _GROUP,
+            {m.group for m in self.if1.handler.igmp_querier_memberships()},
+            msg="Fast leave must retain the group pending re-assertion, not prune it immediately.",
+        )
+
+    def test__router__igmp_querier__fast_leave_query_burst(self) -> None:
+        """
+        Ensure the querier sends Last Member Query Count Group-Specific
+        Queries spaced by the Last Member Query Interval on a leave.
+
+        Reference: RFC 3376 §8.8 (Last Member Query Interval).
+        Reference: RFC 3376 §8.9 (Last Member Query Count).
+        """
+
+        leave = self._build_igmp_v3_report(
+            src_ip=HOST_A__IP4_ADDRESS,
+            src_mac=HOST_A__MAC_ADDRESS,
+            records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
+        )
+        self._enable_and_leave(leave)  # first Group-Specific Query.
+
+        self._advance_frames(ms=igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS)
+        self.assertEqual(
+            self.if1.handler.packet_stats_tx.igmp__group_query__send,
+            igmp__constants.IGMP__LAST_MEMBER_QUERY_COUNT,
+            msg="The querier must send exactly Last Member Query Count Group-Specific Queries.",
+        )
+
+    def test__router__igmp_querier__fast_leave_prunes_after_last_member_time(self) -> None:
+        """
+        Ensure a group with no re-asserting Report is pruned after the
+        Last Member Query Time (Last Member Query Interval × Count), far
+        sooner than the full Group Membership Interval.
+
+        Reference: RFC 3376 §6.4.2 (group timer lowered to Last Member Query Time).
+        """
+
+        leave = self._build_igmp_v3_report(
+            src_ip=HOST_A__IP4_ADDRESS,
+            src_mac=HOST_A__MAC_ADDRESS,
+            records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
+        )
+        self._enable_and_leave(leave)
+
+        last_member_time_ms = (
+            igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS * igmp__constants.IGMP__LAST_MEMBER_QUERY_COUNT
+        )
+        self._advance_frames(ms=last_member_time_ms)
+
+        self.assertNotIn(
+            _GROUP,
+            {m.group for m in self.if1.handler.igmp_querier_memberships()},
+            msg="A group with no re-assertion must be pruned after the Last Member Query Time.",
+        )
+
+    def test__router__igmp_querier__reassert_cancels_fast_leave(self) -> None:
+        """
+        Ensure a fresh Report during the fast-leave window re-asserts
+        interest — the group is retained beyond the Last Member Query
+        Time.
+
+        Reference: RFC 3376 §6.4.2 (re-assertion refreshes the group timer).
+        """
+
+        leave = self._build_igmp_v3_report(
+            src_ip=HOST_A__IP4_ADDRESS,
+            src_mac=HOST_A__MAC_ADDRESS,
+            records=[IgmpV3GroupRecord(type=IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE, multicast_address=_GROUP)],
+        )
+        self._enable_and_leave(leave)
+
+        # Re-assert interest, then advance past the Last Member Query Time.
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+        last_member_time_ms = (
+            igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS * igmp__constants.IGMP__LAST_MEMBER_QUERY_COUNT
+        )
+        self._advance_frames(ms=last_member_time_ms)
+
+        self.assertIn(
+            _GROUP,
+            {m.group for m in self.if1.handler.igmp_querier_memberships()},
+            msg="A re-asserted group must be retained beyond the Last Member Query Time.",
+        )
+
+    def test__router__igmp_querier__v2_leave_triggers_fast_leave(self) -> None:
+        """
+        Ensure an IGMPv2 Leave Group triggers the fast-leave Group-Specific
+        Query for the group being left.
+
+        Reference: RFC 2236 §3 (v2 Leave triggers Group-Specific Queries).
+        """
+
+        leave = self._build_igmp_v2_leave(src_ip=HOST_A__IP4_ADDRESS, src_mac=HOST_A__MAC_ADDRESS, group=_GROUP)
+        emitted = self._enable_and_leave(leave)
+
+        self._assert_igmp_group_specific_query(self._only_group_query(emitted), group=_GROUP)
+
+    def _enable_and_leave(self, leave_frame: bytes) -> dict[int, list[bytes]]:
+        """Enable the querier, learn _GROUP as EXCLUDE, then drive 'leave_frame'; return the leave's emitted frames."""
+
+        self._enable_igmp_querier(self.if1)
+        self._drive_forward(
+            ingress=self.if1,
+            frame=self._build_igmp_v3_report(
+                src_ip=HOST_A__IP4_ADDRESS,
+                src_mac=HOST_A__MAC_ADDRESS,
+                records=[IgmpV3GroupRecord(type=IgmpV3RecordType.MODE_IS_EXCLUDE, multicast_address=_GROUP)],
+            ),
+        )
+        return self._drive_forward(ingress=self.if1, frame=leave_frame)
+
+    @staticmethod
+    def _only_group_query(emitted: dict[int, list[bytes]]) -> bytes:
+        """Return the single frame the leave emitted on the boot interface."""
+
+        frames = [frame for frames in emitted.values() for frame in frames]
+        assert len(frames) == 1, f"expected exactly one emitted frame, got {len(frames)}"
+        return frames[0]

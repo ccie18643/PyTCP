@@ -115,6 +115,8 @@ class _QuerierGroupState:
     filter_mode: Ip4MulticastFilterMode
     sources: frozenset[Ip4Address]
     group_timer_handle: TimerHandle | None = None
+    fast_leave_handle: TimerHandle | None = None
+    fast_leave_remaining: int = 0
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -456,16 +458,19 @@ class IgmpTxHandler:
 
     def _admit_querier_receive_group(self) -> None:
         """
-        Receive-only admission of the all-IGMPv3-routers group 224.0.0.22
-        (the interface's reception filter + Ethernet multicast MAC) so
-        the querier receives inbound v3 Membership Reports. It is an IGMP
-        control group (IGMP__CONTROL_GROUPS) the interface never reports
-        membership in, so — unlike a host join — no Report is emitted for
-        it. Runs under the interface multicast lock.
+        Receive-only admission of the router control groups the querier
+        receives on (the interface's reception filter + Ethernet
+        multicast MAC): the all-IGMPv3-routers group 224.0.0.22 (v3
+        Membership Reports) and the all-routers group 224.0.0.2 (v2 Leave
+        Group / Report). They are IGMP control groups (IGMP__CONTROL_GROUPS)
+        the interface never reports membership in, so — unlike a host join
+        — no Report is emitted for them. Runs under the interface
+        multicast lock.
         """
 
-        if IGMP__ALL_IGMPV3_ROUTERS not in self._if._ip4_multicast_filters:
-            self._if._assign_ip4_multicast(IGMP__ALL_IGMPV3_ROUTERS)
+        for group in (IGMP__ALL_IGMPV3_ROUTERS, IGMP__ALL_ROUTERS):
+            if group not in self._if._ip4_multicast_filters:
+                self._if._assign_ip4_multicast(group)
 
     def _withdraw_querier_receive_group(self) -> None:
         """
@@ -474,8 +479,9 @@ class IgmpTxHandler:
         lock.
         """
 
-        if IGMP__ALL_IGMPV3_ROUTERS in self._if._ip4_multicast_filters:
-            self._if._remove_ip4_multicast(IGMP__ALL_IGMPV3_ROUTERS)
+        for group in (IGMP__ALL_IGMPV3_ROUTERS, IGMP__ALL_ROUTERS):
+            if group in self._if._ip4_multicast_filters:
+                self._if._remove_ip4_multicast(group)
 
     def _stop_querier(self) -> None:
         """
@@ -496,6 +502,8 @@ class IgmpTxHandler:
         for state in self._igmp_querier__memberships.values():
             if state.group_timer_handle is not None:
                 stack.timer.cancel(state.group_timer_handle)
+            if state.fast_leave_handle is not None:
+                stack.timer.cancel(state.fast_leave_handle)
         self._igmp_querier__memberships.clear()
         self._withdraw_querier_receive_group()
 
@@ -627,8 +635,12 @@ class IgmpTxHandler:
                 learned = self._process_group_record(
                     message.group_address, IgmpV3RecordType.MODE_IS_EXCLUDE, frozenset()
                 )
-            # A v2 Leave Group triggers fast-leave Group-Specific Queries
-            # (Phase-2 M5c); here the group's timer expires the membership.
+            elif isinstance(message, IgmpMessageV2Leave):
+                # RFC 2236 §3 — a v2 Leave Group triggers fast-leave
+                # Group-Specific Queries for the group being left.
+                if self._igmp_querier__memberships.get(message.group_address) is not None:
+                    self._start_group_fast_leave(message.group_address)
+                    learned = True
 
             if learned:
                 self._if._packet_stats_rx.igmp__querier__member_report += 1
@@ -655,9 +667,14 @@ class IgmpTxHandler:
                 self._set_membership(group, Ip4MulticastFilterMode.EXCLUDE, sources)
                 return True
             case IgmpV3RecordType.MODE_IS_INCLUDE | IgmpV3RecordType.CHANGE_TO_INCLUDE_MODE:
-                # INCLUDE{} is a leave — no sources means no reception.
+                # INCLUDE{} is a leave — trigger fast-leave Group-Specific
+                # Queries rather than pruning immediately, so another
+                # listener on the link can re-assert (RFC 3376 §6.4.2).
                 if not sources:
-                    return self._remove_membership(group)
+                    if self._igmp_querier__memberships.get(group) is None:
+                        return False
+                    self._start_group_fast_leave(group)
+                    return True
                 self._set_membership(group, Ip4MulticastFilterMode.INCLUDE, sources)
                 return True
             case IgmpV3RecordType.ALLOW_NEW_SOURCES:
@@ -670,13 +687,18 @@ class IgmpTxHandler:
                     self._set_membership(group, Ip4MulticastFilterMode.EXCLUDE, state.sources - sources)
                 return True
             case IgmpV3RecordType.BLOCK_OLD_SOURCES:
-                # Phase 2 (M5c): a BLOCK schedules a Group-and-Source-
-                # Specific Query. Here it only narrows an INCLUDE source
-                # list, without refreshing the group timer.
+                # A BLOCK narrows an INCLUDE source list; blocking the last
+                # source is a group leave, so it triggers fast-leave
+                # (RFC 3376 §6.4.2). Phase 2: per-source Group-and-Source-
+                # Specific Queries for a partial block.
                 state = self._igmp_querier__memberships.get(group)
                 if state is None or state.filter_mode is not Ip4MulticastFilterMode.INCLUDE:
                     return False
-                state.sources = state.sources - sources
+                remaining = state.sources - sources
+                if remaining:
+                    state.sources = remaining
+                else:
+                    self._start_group_fast_leave(group)
                 return True
 
         return False
@@ -708,11 +730,86 @@ class IgmpTxHandler:
             self._group_membership_interval_ms(), self._expire_group, group
         )
 
+        # A refreshing Report re-asserts interest — cancel any in-flight
+        # fast-leave Group-Specific Query train (RFC 3376 §6.4.2).
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
+            state.fast_leave_handle = None
+        state.fast_leave_remaining = 0
+
+    def _start_group_fast_leave(self, group: Ip4Address, /) -> None:
+        """
+        Begin the RFC 3376 §6.4.2 fast-leave for 'group': lower its group
+        timer to the Last Member Query Time (§8.8 × §8.9) so it is pruned
+        quickly if no listener re-asserts, then send the first of the
+        §8.9 Last Member Query Count Group-Specific Queries and arm the
+        rest at the §8.8 Last Member Query Interval. Runs under the
+        interface multicast lock.
+        """
+
+        state = self._igmp_querier__memberships.get(group)
+        if state is None:
+            return
+
+        lmqi = igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS
+        lmqc = max(1, igmp__constants.IGMP__LAST_MEMBER_QUERY_COUNT)
+
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        state.group_timer_handle = stack.timer.call_later(lmqi * lmqc, self._expire_group, group)
+
+        self._send_igmp_group_specific_query(group)
+        state.fast_leave_remaining = lmqc - 1
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
+            state.fast_leave_handle = None
+        if state.fast_leave_remaining > 0:
+            state.fast_leave_handle = stack.timer.call_later(lmqi, self._fire_group_fast_leave, group)
+
+    def _fire_group_fast_leave(self, group: Ip4Address, /) -> None:
+        """
+        Timer callback: emit one more Group-Specific Query of the
+        fast-leave train and re-arm while any remain. Takes the interface
+        multicast lock and bails if the group was pruned or re-asserted.
+        """
+
+        with self._if._lock__multicast:
+            state = self._igmp_querier__memberships.get(group)
+            if state is None:
+                return
+            state.fast_leave_handle = None
+            if state.fast_leave_remaining <= 0:
+                return
+            self._send_igmp_group_specific_query(group)
+            state.fast_leave_remaining -= 1
+            if state.fast_leave_remaining > 0:
+                state.fast_leave_handle = stack.timer.call_later(
+                    igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS, self._fire_group_fast_leave, group
+                )
+
+    def _send_igmp_group_specific_query(self, group: Ip4Address, /) -> None:
+        """
+        Emit an IGMPv3 Group-Specific Query for 'group' to the group
+        address itself, advertising the Last Member Query Interval as its
+        Max Resp Code (RFC 3376 §4.1 / §6.4.2).
+        """
+
+        message = IgmpMessageQuery(
+            version=IgmpVersion.V3,
+            max_resp_code=encode_igmp_float_code(igmp__constants.IGMP__LAST_MEMBER_QUERY_INTERVAL__MS // 100),
+            group_address=group,
+            qrv=igmp__constants.IGMP__ROBUSTNESS_VARIABLE & 0x07,
+            qqic=encode_igmp_float_code(igmp__constants.IGMP__QUERY_INTERVAL__MS // 1000),
+        )
+
+        self._if._packet_stats_tx.igmp__group_query__send += 1
+        self._emit_igmp(message, group)
+
     def _remove_membership(self, group: Ip4Address, /) -> bool:
         """
-        Drop the router membership entry for 'group' and cancel its timer,
-        reporting whether an entry existed. Runs under the interface
-        multicast lock.
+        Drop the router membership entry for 'group' and cancel its
+        timers, reporting whether an entry existed. Runs under the
+        interface multicast lock.
         """
 
         state = self._igmp_querier__memberships.pop(group, None)
@@ -720,6 +817,8 @@ class IgmpTxHandler:
             return False
         if state.group_timer_handle is not None:
             stack.timer.cancel(state.group_timer_handle)
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
         return True
 
     def _expire_group(self, group: Ip4Address, /) -> None:
@@ -735,6 +834,9 @@ class IgmpTxHandler:
             if state is None:
                 return
             state.group_timer_handle = None
+            if state.fast_leave_handle is not None:
+                stack.timer.cancel(state.fast_leave_handle)
+                state.fast_leave_handle = None
             del self._igmp_querier__memberships[group]
 
     @staticmethod

@@ -135,6 +135,8 @@ class _MldQuerierGroupState:
     filter_mode: Ip6MulticastFilterMode
     sources: frozenset[Ip6Address]
     group_timer_handle: TimerHandle | None = None
+    fast_leave_handle: TimerHandle | None = None
+    fast_leave_remaining: int = 0
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -234,6 +236,8 @@ class Icmp6TxHandler:
         for state in self._mld_querier__memberships.values():
             if state.group_timer_handle is not None:
                 stack.timer.cancel(state.group_timer_handle)
+            if state.fast_leave_handle is not None:
+                stack.timer.cancel(state.fast_leave_handle)
         self._mld_querier__memberships.clear()
         self._withdraw_querier_receive_group()
 
@@ -442,8 +446,14 @@ class Icmp6TxHandler:
                 Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE
                 | Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_INCLUDE
             ):
+                # INCLUDE{} is a leave — trigger fast-leave Multicast-
+                # Address-Specific Queries rather than pruning immediately
+                # (RFC 3810 §7.6.3).
                 if not sources:
-                    return self._remove_membership(group)
+                    if self._mld_querier__memberships.get(group) is None:
+                        return False
+                    self._start_group_fast_leave(group)
+                    return True
                 self._set_membership(group, Ip6MulticastFilterMode.INCLUDE, sources)
                 return True
             case Icmp6Mld2MulticastAddressRecordType.ALLOW_NEW_SOURCES:
@@ -456,15 +466,89 @@ class Icmp6TxHandler:
                     self._set_membership(group, Ip6MulticastFilterMode.EXCLUDE, state.sources - sources)
                 return True
             case Icmp6Mld2MulticastAddressRecordType.BLOCK_OLD_SOURCES:
-                # Phase 2 (M5e): a BLOCK schedules a fast-leave query;
-                # here it only narrows an INCLUDE source list.
+                # A BLOCK narrows an INCLUDE source list; blocking the last
+                # source is a leave, so it triggers fast-leave (RFC 3810
+                # §7.6.3). Phase 2: per-source Address-and-Source-Specific
+                # Queries for a partial block.
                 state = self._mld_querier__memberships.get(group)
                 if state is None or state.filter_mode is not Ip6MulticastFilterMode.INCLUDE:
                     return False
-                state.sources = state.sources - sources
+                remaining = state.sources - sources
+                if remaining:
+                    state.sources = remaining
+                else:
+                    self._start_group_fast_leave(group)
                 return True
 
         return False
+
+    def _start_group_fast_leave(self, group: Ip6Address, /) -> None:
+        """
+        Begin the RFC 3810 §7.6.3 fast-leave for 'group': lower its group
+        timer to the Last Listener Query Time (§9.8 × §9.9) so it is
+        pruned quickly if no listener re-asserts, then send the first of
+        the §9.9 Last Listener Query Count Multicast-Address-Specific
+        Queries and arm the rest at the §9.8 Last Listener Query Interval.
+        Runs under the interface multicast lock.
+        """
+
+        state = self._mld_querier__memberships.get(group)
+        if state is None:
+            return
+
+        llqi = mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS
+        llqc = max(1, mld__constants.MLD__LAST_LISTENER_QUERY_COUNT)
+
+        if state.group_timer_handle is not None:
+            stack.timer.cancel(state.group_timer_handle)
+        state.group_timer_handle = stack.timer.call_later(llqi * llqc, self._expire_group, group)
+
+        self._send_mld_address_query(group)
+        state.fast_leave_remaining = llqc - 1
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
+            state.fast_leave_handle = None
+        if state.fast_leave_remaining > 0:
+            state.fast_leave_handle = stack.timer.call_later(llqi, self._fire_group_fast_leave, group)
+
+    def _fire_group_fast_leave(self, group: Ip6Address, /) -> None:
+        """
+        Timer callback: emit one more Multicast-Address-Specific Query of
+        the fast-leave train and re-arm while any remain. Takes the
+        interface multicast lock and bails if the group was pruned or
+        re-asserted.
+        """
+
+        with self._if._lock__multicast:
+            state = self._mld_querier__memberships.get(group)
+            if state is None:
+                return
+            state.fast_leave_handle = None
+            if state.fast_leave_remaining <= 0:
+                return
+            self._send_mld_address_query(group)
+            state.fast_leave_remaining -= 1
+            if state.fast_leave_remaining > 0:
+                state.fast_leave_handle = stack.timer.call_later(
+                    mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS, self._fire_group_fast_leave, group
+                )
+
+    def _send_mld_address_query(self, group: Ip6Address, /) -> None:
+        """
+        Emit an MLDv2 Multicast-Address-Specific Query for 'group' to the
+        group address itself, advertising the Last Listener Query Interval
+        as its Maximum Response Code (RFC 3810 §5.1 / §7.6.3).
+        """
+
+        message = Icmp6Mld2MessageQuery(
+            maximum_response_code=self._mld_mrd_to_mrc(mld__constants.MLD__LAST_LISTENER_QUERY_INTERVAL__MS),
+            multicast_address=group,
+            qrv=mld__constants.MLD__ROBUSTNESS_VARIABLE & 0x07,
+            qqic=encode_igmp_float_code(mld__constants.MLD__QUERY_INTERVAL__MS // 1000),
+        )
+
+        self._if._packet_stats_tx.icmp6__mld_address_query__send += 1
+        self.__send_icmp6_mld_via_hbh_ra(Icmp6Assembler(icmp6__message=message), ip6__dst=group)
 
     def _set_membership(
         self,
@@ -493,11 +577,18 @@ class Icmp6TxHandler:
             self._multicast_address_listening_interval_ms(), self._expire_group, group
         )
 
+        # A refreshing Report re-asserts interest — cancel any in-flight
+        # fast-leave query train (RFC 3810 §7.6.3).
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
+            state.fast_leave_handle = None
+        state.fast_leave_remaining = 0
+
     def _remove_membership(self, group: Ip6Address, /) -> bool:
         """
-        Drop the router membership entry for 'group' and cancel its timer,
-        reporting whether an entry existed. Runs under the interface
-        multicast lock.
+        Drop the router membership entry for 'group' and cancel its
+        timers, reporting whether an entry existed. Runs under the
+        interface multicast lock.
         """
 
         state = self._mld_querier__memberships.pop(group, None)
@@ -505,6 +596,8 @@ class Icmp6TxHandler:
             return False
         if state.group_timer_handle is not None:
             stack.timer.cancel(state.group_timer_handle)
+        if state.fast_leave_handle is not None:
+            stack.timer.cancel(state.fast_leave_handle)
         return True
 
     def _expire_group(self, group: Ip6Address, /) -> None:
@@ -520,6 +613,9 @@ class Icmp6TxHandler:
             if state is None:
                 return
             state.group_timer_handle = None
+            if state.fast_leave_handle is not None:
+                stack.timer.cancel(state.fast_leave_handle)
+                state.fast_leave_handle = None
             del self._mld_querier__memberships[group]
 
     @staticmethod

@@ -69,6 +69,7 @@ from net_proto import (
     Icmp6Type,
     IgmpAssembler,
     IgmpMessageQuery,
+    IgmpMessageV2Leave,
     IgmpMessageV3Report,
     IgmpV3GroupRecord,
     IgmpVersion,
@@ -335,6 +336,36 @@ class RouterTestCase(IcmpTestCase):
         eth.assemble(buffers)
         return b"".join(bytes(buffer) for buffer in buffers)
 
+    def _build_igmp_v2_leave(
+        self,
+        *,
+        src_ip: Ip4Address,
+        src_mac: MacAddress,
+        group: Ip4Address,
+    ) -> bytes:
+        """
+        Build an inbound IGMPv2 Leave Group for 'group' from a downstream
+        host — carried in Ethernet/IPv4 to the all-routers group
+        224.0.0.2 with the Router Alert option and TTL 1 — for the
+        querier fast-leave tests.
+        """
+
+        all_routers = Ip4Address("224.0.0.2")
+        eth = EthernetAssembler(
+            ethernet__src=src_mac,
+            ethernet__dst=all_routers.multicast_mac,
+            ethernet__payload=Ip4Assembler(
+                ip4__src=src_ip,
+                ip4__dst=all_routers,
+                ip4__ttl=1,
+                ip4__options=Ip4Options(Ip4OptionRouterAlert()),
+                ip4__payload=IgmpAssembler(igmp__message=IgmpMessageV2Leave(group_address=group)),
+            ),
+        )
+        buffers: list[Buffer] = []
+        eth.assemble(buffers)
+        return b"".join(bytes(buffer) for buffer in buffers)
+
     def _build_igmp_v3_report(
         self,
         *,
@@ -404,6 +435,45 @@ class RouterTestCase(IcmpTestCase):
         self.assertTrue(
             message.is_general_query,
             msg="Emitted Query must be a General Query (group 0.0.0.0, no sources).",
+        )
+        return message
+
+    def _assert_igmp_group_specific_query(self, frame: bytes, /, *, group: Ip4Address) -> IgmpMessageQuery:
+        """
+        Assert that 'frame' is an IGMPv3 Group-Specific Query for 'group'
+        — carried in IPv4 to the group address itself with TTL 1 (RFC
+        3376 §4.1 / §6.4.2) — and return the decoded Query.
+        """
+
+        packet_rx = PacketRx(frame)
+        EthernetParser(packet_rx)
+        Ip4Parser(packet_rx)
+
+        self.assertEqual(
+            packet_rx.ip4.dst,
+            group,
+            msg=f"Group-Specific Query must be sent to the group {group}; got {packet_rx.ip4.dst}.",
+        )
+        self.assertEqual(
+            packet_rx.ip4.ttl, 1, msg=f"Group-Specific Query must be sent with TTL 1; got {packet_rx.ip4.ttl}."
+        )
+
+        IgmpParser(packet_rx)
+        message = packet_rx.igmp.message
+        self.assertIsInstance(
+            message,
+            IgmpMessageQuery,
+            msg=f"Emitted IGMP message must be a Membership Query; got {type(message).__name__}.",
+        )
+        assert isinstance(message, IgmpMessageQuery)
+        self.assertEqual(
+            message.group_address,
+            group,
+            msg=f"Group-Specific Query must carry group {group}; got {message.group_address}.",
+        )
+        self.assertFalse(
+            message.is_general_query,
+            msg="A Group-Specific Query must not report as a General Query.",
         )
         return message
 
