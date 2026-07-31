@@ -10,6 +10,15 @@ version. Releases before 3.0.8 are on the
 
 _Development in progress._
 
+### Added
+
+- **IGMP / MLD Query assemblers.** The `IgmpMessageQuery`,
+  `Icmp6Mld2MessageQuery`, and `Icmp6Mld1MessageQuery` codecs now
+  serialise their wire forms (previously RX-parse-only), plus the
+  RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder
+  (`encode_igmp_float_code`) — the wire support the Phase-2 IGMPv3 /
+  MLDv2 multicast-router querier emits in `PyTCP` 3.0.9.
+
 ## 3.0.8 — 2026-07-23
 
 ### Added

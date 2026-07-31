@@ -8,7 +8,45 @@ version. Releases before 3.0.8 are on the
 
 ## 3.0.9 — Unreleased
 
-_Development in progress._
+_Development in progress._ The Phase-2 router track — 3.0.9 turns the
+multi-homed host into a router.
+
+### Added
+
+- **IGMPv3 / MLDv2 multicast-router querier.** An interface configured
+  as a multicast router (`igmp.mc_forwarding` / `mld.mc_forwarding`)
+  takes the querier role on its link, for both IPv4 (IGMP) and IPv6
+  (MLD):
+  - emits periodic **General Queries** — a startup burst (Startup Query
+    Count / Interval) settling into the steady-state Query Interval;
+  - runs **querier election** (RFC 3376 §6.6.2 / RFC 3810 §7.6.2, lowest
+    interface address wins) with the Other Querier Present timeout that
+    resumes the role when the elected querier goes silent;
+  - learns **downstream reception state** from inbound Reports into a
+    per-group membership table (filter mode + source list), pruned by
+    the Group Membership / Multicast Address Listening Interval;
+  - on a leave, sends **fast-leave** Group-Specific / Multicast-Address-
+    Specific Queries (RFC 3376 §6.4.2 / RFC 3810 §7.6.3) that prune the
+    group in the Last Member/Listener Query Time instead of the full
+    interval.
+
+  Read-only introspection via
+  `PacketHandler.{igmp,mld}_querier_memberships()`.
+- **Multicast forwarding — last-hop replication.** A transit multicast
+  datagram that passes the Reverse Path Forwarding check is replicated
+  out every interface with a downstream listener, for both families:
+  scope filtering (IPv4 224.0.0.0/24 + TTL 1, IPv6 scope nibble ≤ 2 +
+  Hop Limit 1), the RPF check against the unicast FIB, an on-demand
+  egress set computed from the querier membership tables (honouring the
+  INCLUDE / EXCLUDE source filter), and byte-identical re-emit to the
+  group's Ethernet multicast MAC. A multicast-router interface receives
+  multicast promiscuously. No multicast routing protocol (PIM / DVMRP)
+  and no `MRT_*` mrouted API — last-hop only, the forwarding table is
+  built purely from local querier state.
+- **Querier sysctls** — per-interface `{igmp,mld}.mc_forwarding`, plus
+  `{igmp,mld}.query_response_interval`, `.startup_query_interval`,
+  `.startup_query_count`, and `igmp.last_member_query_interval` /
+  `igmp.last_member_query_count` (`mld.last_listener_query_*`).
 
 ## 3.0.8 — 2026-07-23
 
