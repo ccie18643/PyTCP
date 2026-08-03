@@ -4,7 +4,7 @@
 |----------|-------------------------------------------------------------------|
 | Kind     | Test-infrastructure proposal (scoping doc, not yet implemented)    |
 | Target   | A small, root-gated smoke suite that runs the real stack over an actual TAP |
-| Status   | **Phase 1 shipped** — the IPv4 smoke suite (5 tests) runs green over a real tap; IPv6 variant deferred (§7b) |
+| Status   | **Phase 1 shipped** — the IPv4 smoke suite (5 tests) runs green over a real tap; IPv6 variant unblocked after the §7b multicast-lock deadlock fix |
 | Precedent| `tests/integration/ipc/` (real `IpcServer` + drop-in), `tests/integration/loopback/` |
 
 ---
@@ -242,16 +242,42 @@ resolved during the build:
    `_resolve_interface` accepts only `tap` / `tun` name prefixes, so the
    harness names the tap `tap<pid>`.
 
-**IPv6 finding (deferred, worth a follow-up):** booting the daemon with
-a **static `ip6_host`** on a router-less tap did **not** reach readiness
-within 40 s — the interface logged an *empty* IPv6-unicast list and
-`stack.start()` did not complete. A static IPv6 address should not
-depend on a router (DAD alone completes in ~1 s), so this looks like a
-real bring-up stall on a router-less link, not just slowness. Filed as
-the blocker for a dual-stack real-TAP variant; the IPv4 smoke suite is
-unaffected. **This is exactly the class of bug the real-TAP layer exists
-to surface** — the wire-level tests (mocked clock + injected frames)
-cannot see it.
+**IPv6 finding — ROOT-CAUSED & FIXED (was a real cross-thread
+deadlock):** booting the daemon with a **static `ip6_host`** on a
+router-less tap did **not** reach readiness within 40 s — the interface
+logged an *empty* IPv6-unicast list and `stack.start()` never
+completed. A `faulthandler` all-thread dump pinpointed a classic
+lock-ordering deadlock, not slowness:
+
+- The DAD worker, assigning the solicited-node multicast group inside
+  `assign_ip6_multicast(...)`, held the interface multicast lock
+  (`_lock__multicast`, an `RLock`) and emitted the RFC 3810 §6.1
+  state-change Report via the **blocking** TX dispatch
+  (`_marshal_tx` → `TxRing.dispatch` → `wait`), so it blocked on the
+  TX worker thread *while holding the lock*.
+- The TX worker, dispatching that very Report, re-entered
+  `_lock__multicast` (via `__validate_src_ip6_address` →
+  `_ip6_multicast`) — held by the blocked DAD worker.
+- Neither released; the boot thread then piled onto the same lock in
+  `_log_stack_address_info`, so `on_ready` never fired.
+
+**Fix:** route every IGMP/MLD control-message send through the
+**fire-and-forget** `_marshal_tx_async` (they are best-effort and
+Linux queues them on send anyway), so the mutating thread queues the
+Report and returns without waiting on the TX worker. All ten
+`_lock__multicast` critical sections that emit a state-change Report
+are covered by fixing the two family send helpers
+(`_emit_igmp`, `__send_icmp6_mld_via_hbh_ra`). After the fix the
+same router-less tap boots to readiness in ~11 s (normal DAD
+serialization: link-local → solicited-node → static global). Pinned
+by
+`tests/integration/packet_handler/test__packet_handler__multicast_send_nonblocking.py`.
+
+**This is exactly the class of bug the real-TAP layer exists to
+surface** — the wire-level tests mock the TX ring (no real worker
+thread) and run every dispatch inline on one thread, where the
+`RLock` re-entry is harmless, so they *cannot* see this deadlock.
+A dual-stack real-TAP variant is now unblocked.
 
 **One refinement the spike surfaced:** the tap must be **persistent**
 (`ip tuntap add name <tap> mode tap`, exactly like `make tap7`) so the

@@ -1190,7 +1190,14 @@ class Icmp6TxHandler:
 
         self._if._packet_stats_tx.icmp6__pre_assemble += 1
 
-        tx_status = self._if._marshal_tx(
+        # Fire-and-forget: MLD control messages are best-effort, and the
+        # caller (an application join / leave, the DAD worker assigning a
+        # solicited-node group, or the timer querier fire) may hold the
+        # interface multicast lock while emitting. A blocking dispatch
+        # would wedge that thread on the TX worker, which itself re-enters
+        # the multicast lock to validate the report source — a cross-thread
+        # deadlock. Queue-and-return breaks the cycle.
+        self._if._marshal_tx_async(
             lambda: self._if._phtx_ip6(
                 ip6__src=ip6__src,
                 ip6__dst=ip6__dst,
@@ -1199,13 +1206,7 @@ class Icmp6TxHandler:
             )
         )
 
-        if tx_status in {TxStatus.PASSED__ETHERNET__TO_TX_RING, TxStatus.PASSED__IP6__TO_TX_RING}:
-            __debug__ and log("stack", f"Sent out ICMPv6 Multicast Listener Report (HBH+RA) to {ip6__dst}")
-        else:
-            __debug__ and log(
-                "stack",
-                f"Failed to send out ICMPv6 Multicast Listener Report (HBH+RA) to {ip6__dst}, tx_status: {tx_status}",
-            )
+        __debug__ and log("stack", f"Queued ICMPv6 Multicast Listener message (HBH+RA) to {ip6__dst}")
 
     def _send_icmp6_nd_router_solicitation(self) -> None:
         """

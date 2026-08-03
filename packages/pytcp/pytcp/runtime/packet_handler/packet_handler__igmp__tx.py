@@ -922,7 +922,13 @@ class IgmpTxHandler:
 
         ip4__src = self._if._ip4_unicast[0] if self._if._ip4_unicast else Ip4Address()
 
-        self._if._marshal_tx(
+        # Fire-and-forget: IGMP control messages are best-effort, and the
+        # caller (an application join / leave, or the timer querier fire)
+        # may hold the interface multicast lock while emitting. A blocking
+        # dispatch would wedge that thread on the TX worker, which itself
+        # re-enters the multicast lock to validate the report source —
+        # a cross-thread deadlock. Queue-and-return breaks the cycle.
+        self._if._marshal_tx_async(
             lambda: self._if._phtx_ip4(
                 ip4__src=ip4__src,
                 ip4__dst=ip4__dst,

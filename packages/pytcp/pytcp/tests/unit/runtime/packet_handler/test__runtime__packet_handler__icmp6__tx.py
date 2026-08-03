@@ -101,6 +101,16 @@ class _StubInterface:
         # with no TX worker under test, run the callable inline.
         return run()
 
+    def _marshal_tx_async(
+        self, run: Callable[[], TxStatus], /, *, on_complete: Callable[[], None] | None = None
+    ) -> None:
+        # Fire-and-forget marshaled entry (IGMP / MLD control messages);
+        # with no TX worker under test, run the callable inline and fire
+        # the completion hook, discarding the 'TxStatus'.
+        run()
+        if on_complete is not None:
+            on_complete()
+
     def __init__(self, *, ip6_multicast: list[Ip6Address] | None = None) -> None:
         self._packet_stats_tx = PacketStatsTx()
         self._mac_unicast = STACK__MAC_UNICAST
