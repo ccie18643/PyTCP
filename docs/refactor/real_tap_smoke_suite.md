@@ -4,7 +4,7 @@
 |----------|-------------------------------------------------------------------|
 | Kind     | Test-infrastructure proposal (scoping doc, not yet implemented)    |
 | Target   | A small, root-gated smoke suite that runs the real stack over an actual TAP |
-| Status   | **Phase 1 shipped** — the dual-stack smoke suite (7 tests: IPv4 + IPv6) runs green over a real tap after the §7b multicast-lock deadlock fix |
+| Status   | **Phase 1 + 2 shipped** — dual-stack smoke (7 tests) + two-tap router (4 tests) run green over real taps; 11 total, skip off the default gate |
 | Precedent| `tests/integration/ipc/` (real `IpcServer` + drop-in), `tests/integration/loopback/` |
 
 ---
@@ -295,6 +295,40 @@ wait on the ready file → peer via `AF_PACKET` bound to the tap using
 the `net_proto` assemblers/parsers → teardown via SIGTERM + `ip tuntap
 del`.
 
+## §7c. Phase-2 build — DONE (two-tap router suite green)
+
+Built and validated on real taps (root + `PYTCP_REAL_TAP=1`):
+
+- **Harness** `packages/pytcp/pytcp/tests/lib/real_tap_router_testcase.py`
+  (`RealTapRouterTestCase`) — two persistent taps (subnet A
+  `10.77.1.0/24` + `fd77:1::/64`, subnet B `10.77.2.0/24` +
+  `fd77:2::/64`), **one** real daemon booted as a router between them,
+  one `AF_PACKET` peer per tap. `run_daemon` cannot express per-NIC
+  static addresses for a multi-interface daemon (it autoconfigures every
+  NIC), so the runner drives `stack.add_interface(...)` directly per tap
+  and sets the `ip4.ip_forward` / `ip6.all.forwarding` /
+  `igmp.default.mc_forwarding` / `mld.default.mc_forwarding` sysctls
+  before `stack.start()`. Egress next-hop resolution is answered on
+  demand (`_answer_arp_request` / `_answer_nd_solicitation`) so the
+  queued transit datagram flushes — deterministic, no timing race.
+- **4 router tests**
+  `packages/pytcp/pytcp/tests/integration/real_tap/test__real_tap__router.py`:
+  IPv4 unicast transit forwarded (TTL 64→63), IPv6 unicast transit
+  forwarded (Hop 64→63), IPv4 TTL=1 → ICMPv4 Time Exceeded back to the
+  source, IPv4 multicast replicated to a learned IGMPv3 listener
+  (TTL 10→9). All green (~77 s wall; two-interface daemon boot per test
+  dominates).
+- **Auto-included** in `make test-realtap` (the target globs the
+  `real_tap/` dir); the combined suite is 11 tests, still skips cleanly
+  off the default gate. Lint clean; §7.2 audit clean.
+
+**What it proves that the mocked `RouterTestCase` cannot:** the transit
+path runs over real `/dev/net/tun` I/O with real Tx/Rx rings, real
+neighbor resolution on the egress interface, real per-interface FIB
+connected routes, and the real multicast-router promiscuous-reception +
+querier-membership-learning + replication path — all on live wall-clock
+timers across two interfaces.
+
 ## §8. Deliverables & phasing
 
 - **Phase 0 — spike:** ✅ done (see §7a). AF_PACKET chosen; recipe
@@ -302,14 +336,17 @@ del`.
 - **Phase 1 — harness + dual-stack smoke (7 tests) + `make test-realtap`:**
   ✅ done (see §7b). Green over a real tap; skips off the default gate.
   Covers IPv4 (ARP, ICMPv4 Echo, UDP) and IPv6 (ND NS→NA, ICMPv6 Echo).
-- **Phase 2 — router/multicast stretch (optional):** the two-tap
-  two-daemon variant validating unicast forwarding + an IGMP/MLD
-  join / General Query / replicated multicast datagram on a real wire —
-  the only end-to-end proof of the 3.0.9 router work.
+- **Phase 2 — router/multicast stretch:** ✅ done (see §7c). The
+  two-tap router variant: one real daemon forwarding between two
+  directly-connected subnets, validating IPv4 + IPv6 unicast transit
+  forwarding, TTL-expiry ICMP Time Exceeded, and multicast replication
+  to a learned IGMPv3 listener on a real wire — the only end-to-end
+  proof of the 3.0.9 router work.
 
 Phase 1 is the recommended cut: ~6 tests, one harness, one make target,
 gated off by default. It closes the "does the real path work at all"
-gap without touching the exhaustive wire-level suite.
+gap without touching the exhaustive wire-level suite. Phase 2 adds the
+router proof on top with a second harness (four tests), same gating.
 
 ## §9. What it will and will not prove
 
