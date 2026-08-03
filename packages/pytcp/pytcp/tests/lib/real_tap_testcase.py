@@ -52,7 +52,13 @@ import unittest
 from collections.abc import Callable
 from typing import override
 
-from net_addr import Buffer, Ip4Address, Ip4IfAddr, MacAddress
+from net_addr import Buffer, Ip4Address, Ip4IfAddr, Ip6Address, Ip6IfAddr, MacAddress
+from net_proto import (
+    Icmp6Assembler,
+    Icmp6NdMessageNeighborSolicitation,
+    Icmp6NdOptions,
+    Icmp6NdOptionSlla,
+)
 from net_proto.lib.enums import EtherType
 from net_proto.lib.packet_rx import PacketRx
 from net_proto.protocols.arp.arp__assembler import ArpAssembler
@@ -61,6 +67,7 @@ from net_proto.protocols.arp.arp__parser import ArpParser
 from net_proto.protocols.ethernet.ethernet__assembler import EthernetAssembler
 from net_proto.protocols.ethernet.ethernet__parser import EthernetParser
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
+from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
 from pytcp.client.client_stack import ClientStack, connect
 
 # The AF_PACKET protocol number for "capture every ethertype" and the
@@ -89,23 +96,27 @@ class RealTapTestCase(unittest.TestCase):
     Base class for the real-TAP end-to-end smoke tests.
 
     'setUp' creates a persistent TAP, boots the real daemon on it (static
-    IPv4 address, no DHCP) in a subprocess, waits for readiness, and opens
-    an AF_PACKET peer bound to the tap. The test drives the stack either
-    from the wire (peer frames) or from above (the drop-in 'ClientStack'
-    over the daemon's AF_UNIX control socket), and asserts on the real
-    frames the daemon emits. Every resource is torn down via 'addCleanup'
-    so a mid-'setUp' failure cannot leak a tap.
+    dual-stack IPv4 + IPv6 address, no DHCP) in a subprocess, waits for
+    readiness, and opens an AF_PACKET peer bound to the tap. The test
+    drives the stack either from the wire (peer frames) or from above (the
+    drop-in 'ClientStack' over the daemon's AF_UNIX control socket), and
+    asserts on the real frames the daemon emits. Every resource is torn
+    down via 'addCleanup' so a mid-'setUp' failure cannot leak a tap.
 
-    The suite is IPv4-only: a static IPv6 address on a router-less tap
-    does not reach daemon readiness within a bounded time (the IPv6
-    bring-up appears to block on a router-less link — a separate
-    finding to investigate before a dual-stack real-TAP variant; see
-    docs/refactor/real_tap_smoke_suite.md §7b).
+    Dual-stack boot on a router-less tap takes a few seconds of DAD
+    serialization (link-local -> solicited-node -> static global) before
+    readiness — the '_wait_ready' timeout is sized for it. (The earlier
+    "IPv6 never reaches readiness" symptom was a real cross-thread
+    membership-lock deadlock, fixed by routing IGMP/MLD state-change
+    reports through the fire-and-forget TX path; see
+    docs/refactor/real_tap_smoke_suite.md §7b.)
     """
 
     STACK_IP4: Ip4IfAddr = Ip4IfAddr("10.99.0.7/24")
+    STACK_IP6: Ip6IfAddr = Ip6IfAddr("fd00:99::7/64")
     STACK_MAC: MacAddress = MacAddress("02:00:00:00:99:07")
     PEER_IP4: Ip4Address = Ip4Address("10.99.0.99")
+    PEER_IP6: Ip6Address = Ip6Address("fd00:99::99")
     PEER_MAC: MacAddress = MacAddress("02:00:00:00:99:99")
 
     _tap: str
@@ -138,7 +149,9 @@ class RealTapTestCase(unittest.TestCase):
         self._ready_path = os.path.join(tmp_dir, "daemon.ready")
         self._daemon = self._start_daemon()
         self.addCleanup(self._stop_daemon)
-        self._wait_ready(timeout=20.0)
+        # Dual-stack DAD (link-local -> solicited-node -> static global)
+        # plus IPv4 ACD serializes over a few seconds on a router-less tap.
+        self._wait_ready(timeout=30.0)
 
         self._peer = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(_ETH_P_ALL))
         self.addCleanup(self._peer.close)
@@ -153,13 +166,14 @@ class RealTapTestCase(unittest.TestCase):
 
         runner = (
             "from pytcp.daemon.daemon import run_daemon\n"
-            "from net_addr import Ip4IfAddr, MacAddress\n"
+            "from net_addr import Ip4IfAddr, Ip6IfAddr, MacAddress\n"
             "run_daemon(\n"
             f"    socket_path={self._sock_path!r},\n"
             f"    interfaces=[{self._tap!r}],\n"
             f"    mac_address=MacAddress({str(self.STACK_MAC)!r}),\n"
             f"    ip4_host=Ip4IfAddr({str(self.STACK_IP4)!r}),\n"
-            "    ip6_support=False,\n"
+            f"    ip6_host=Ip6IfAddr({str(self.STACK_IP6)!r}),\n"
+            "    ip6_support=True,\n"
             f"    on_ready=lambda _p: open({self._ready_path!r}, 'w').close(),\n"
             ")\n"
         )
@@ -255,11 +269,11 @@ class RealTapTestCase(unittest.TestCase):
         self,
         *,
         dst: MacAddress,
-        payload: ArpAssembler | Ip4Assembler,
+        payload: ArpAssembler | Ip4Assembler | Ip6Assembler,
     ) -> bytes:
         """
-        Assemble an Ethernet frame from an ARP / IPv4 'payload' sourced
-        from the peer MAC.
+        Assemble an Ethernet frame from an ARP / IPv4 / IPv6 'payload'
+        sourced from the peer MAC.
         """
 
         eth = EthernetAssembler(ethernet__src=self.PEER_MAC, ethernet__dst=dst, ethernet__payload=payload)
@@ -305,6 +319,41 @@ class RealTapTestCase(unittest.TestCase):
             arp__tpa=self.STACK_IP4.address,
         )
         self._peer_send(self._build_eth(dst=self.STACK_MAC, payload=reply))
+
+    def _ns_to_stack_frame(self) -> bytes:
+        """
+        Build a unicast Neighbor Solicitation from the peer for the
+        stack's IPv6 address, carrying the peer's Source Link-Layer
+        Address option so the stack both replies (it owns the target)
+        and learns the peer's IPv6 -> MAC binding (RFC 4861 §7.2.3).
+        """
+
+        ns = Icmp6Assembler(
+            icmp6__message=Icmp6NdMessageNeighborSolicitation(
+                target_address=self.STACK_IP6.address,
+                options=Icmp6NdOptions(Icmp6NdOptionSlla(slla=self.PEER_MAC)),
+            )
+        )
+        return self._build_eth(
+            dst=self.STACK_MAC,
+            payload=Ip6Assembler(
+                ip6__src=self.PEER_IP6,
+                ip6__dst=self.STACK_IP6.address,
+                ip6__hop=255,
+                ip6__payload=ns,
+            ),
+        )
+
+    def _prime_peer_neighbor6(self) -> None:
+        """
+        Populate the stack's Neighbor Cache with the peer's IPv6 -> MAC
+        binding by sending a Neighbor Solicitation carrying the peer's
+        SLLA option (RFC 4861 §7.2.3 creates a STALE entry for the NS
+        source), so a stack-originated IPv6 send toward the peer resolves
+        without a round trip.
+        """
+
+        self._peer_send(self._ns_to_stack_frame())
 
     # --- Control-plane helper (the drop-in over the daemon) ----------
 

@@ -40,6 +40,10 @@ from net_proto import (
     Icmp4Assembler,
     Icmp4MessageEchoReply,
     Icmp4MessageEchoRequest,
+    Icmp6Assembler,
+    Icmp6MessageEchoReply,
+    Icmp6MessageEchoRequest,
+    Icmp6NdMessageNeighborAdvertisement,
     UdpAssembler,
 )
 from net_proto.lib.enums import EtherType, IpProto
@@ -48,8 +52,11 @@ from net_proto.protocols.arp.arp__assembler import ArpAssembler
 from net_proto.protocols.arp.arp__enums import ArpOperation
 from net_proto.protocols.arp.arp__parser import ArpParser
 from net_proto.protocols.icmp4.icmp4__parser import Icmp4Parser
+from net_proto.protocols.icmp6.icmp6__parser import Icmp6Parser
 from net_proto.protocols.ip4.ip4__assembler import Ip4Assembler
 from net_proto.protocols.ip4.ip4__parser import Ip4Parser
+from net_proto.protocols.ip6.ip6__assembler import Ip6Assembler
+from net_proto.protocols.ip6.ip6__parser import Ip6Parser
 from net_proto.protocols.udp.udp__parser import UdpParser
 from pytcp.client.client__datagram_socket import ClientUdpSocket
 from pytcp.runtime.socket import AddressFamily, SocketType
@@ -136,6 +143,67 @@ class TestRealTapSmoke(RealTapTestCase):
             bytes(cast(Icmp4MessageEchoReply, reply.icmp4.message).data),
             b"real-tap-ping",
             msg="The Echo Reply must echo the request payload.",
+        )
+
+    def test__real_tap__icmp6_nd_solicitation_elicits_advertisement(self) -> None:
+        """
+        Ensure a Neighbor Solicitation for the stack's IPv6 address
+        elicits a real Neighbor Advertisement on the wire (real RxRing ->
+        NdCache -> real TxRing -> /dev/net/tun).
+
+        Reference: RFC 4861 §7.2.4 (Neighbor Advertisement sent in response to a solicitation).
+        """
+
+        self._peer_send(self._ns_to_stack_frame())
+
+        def _is_na(packet_rx: PacketRx) -> bool:
+            if packet_rx.ethernet.type is not EtherType.IP6:
+                return False
+            Ip6Parser(packet_rx)
+            if packet_rx.ip6.next is not IpProto.ICMP6:
+                return False
+            Icmp6Parser(packet_rx)
+            message = packet_rx.icmp6.message
+            return (
+                isinstance(message, Icmp6NdMessageNeighborAdvertisement)
+                and message.target_address == self.STACK_IP6.address
+            )
+
+        reply = self._peer_expect(_is_na, timeout=5.0)
+        self.assertEqual(
+            cast(Icmp6NdMessageNeighborAdvertisement, reply.icmp6.message).target_address,
+            self.STACK_IP6.address,
+            msg="The Neighbor Advertisement must advertise the stack's solicited IPv6 address.",
+        )
+
+    def test__real_tap__icmp6_echo_request_elicits_reply(self) -> None:
+        """
+        Ensure an ICMPv6 Echo Request to the stack elicits a real Echo
+        Reply on the wire, resolving the peer's neighbor entry first.
+
+        Reference: RFC 4443 §4.2 (Echo Reply).
+        """
+
+        self._prime_peer_neighbor6()
+
+        echo = Icmp6Assembler(icmp6__message=Icmp6MessageEchoRequest(id=0x4321, seq=1, data=b"real-tap-ping6"))
+        ip6 = Ip6Assembler(ip6__src=self.PEER_IP6, ip6__dst=self.STACK_IP6.address, ip6__payload=echo)
+        self._peer_send(self._build_eth(dst=self.STACK_MAC, payload=ip6))
+
+        def _is_echo6_reply(packet_rx: PacketRx) -> bool:
+            if packet_rx.ethernet.type is not EtherType.IP6:
+                return False
+            Ip6Parser(packet_rx)
+            if packet_rx.ip6.next is not IpProto.ICMP6:
+                return False
+            Icmp6Parser(packet_rx)
+            return isinstance(packet_rx.icmp6.message, Icmp6MessageEchoReply)
+
+        reply = self._peer_expect(_is_echo6_reply, timeout=5.0)
+        self.assertEqual(
+            bytes(cast(Icmp6MessageEchoReply, reply.icmp6.message).data),
+            b"real-tap-ping6",
+            msg="The ICMPv6 Echo Reply must echo the request payload.",
         )
 
     def test__real_tap__udp_send_resolves_neighbor_via_real_arp(self) -> None:

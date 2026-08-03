@@ -4,7 +4,7 @@
 |----------|-------------------------------------------------------------------|
 | Kind     | Test-infrastructure proposal (scoping doc, not yet implemented)    |
 | Target   | A small, root-gated smoke suite that runs the real stack over an actual TAP |
-| Status   | **Phase 1 shipped** — the IPv4 smoke suite (5 tests) runs green over a real tap; IPv6 variant unblocked after the §7b multicast-lock deadlock fix |
+| Status   | **Phase 1 shipped** — the dual-stack smoke suite (7 tests: IPv4 + IPv6) runs green over a real tap after the §7b multicast-lock deadlock fix |
 | Precedent| `tests/integration/ipc/` (real `IpcServer` + drop-in), `tests/integration/loopback/` |
 
 ---
@@ -217,28 +217,31 @@ is resolved:
    risks #2 (lifecycle), #3 (static addressing, no DHCP), #4
    (readiness handshake).
 
-## §7b. Phase-1 build — DONE (IPv4 smoke suite green)
+## §7b. Phase-1 build — DONE (dual-stack smoke suite green)
 
 Built and validated on a real tap (root + `PYTCP_REAL_TAP=1`):
 
 - **Harness** `packages/pytcp/pytcp/tests/lib/real_tap_testcase.py`
   (`RealTapTestCase`) — persistent tap, subprocess daemon via
   `run_daemon(..., on_ready=<ready-file>)`, `AF_PACKET` peer, real-clock
-  bounded `_peer_expect` / `select` waits, `addCleanup` teardown.
-- **5 smoke tests**
+  bounded `_peer_expect` / `select` waits, `addCleanup` teardown. Boots
+  a **static dual-stack** address (`10.99.0.7/24` + `fd00:99::7/64`);
+  the IPv6 neighbor is primed via a peer NS carrying an SLLA option
+  (RFC 4861 §7.2.3 STALE entry), the IPv4 via gratuitous ARP.
+- **7 smoke tests**
   `packages/pytcp/pytcp/tests/integration/real_tap/test__real_tap__smoke.py`:
   daemon-boots-and-serves-IPC, ARP request→reply, ICMPv4 Echo→reply,
+  **ICMPv6 NS→NA**, **ICMPv6 Echo→reply**,
   UDP-send-resolves-neighbor-via-real-ARP, UDP-echo-round-trip.
-  All green (~50 s wall; per-test daemon boot dominates).
+  All green (~70 s wall; per-test daemon boot — now including ~11 s
+  dual-stack DAD — dominates).
 - **`make test-realtap`** target (sets `PYTCP_REAL_TAP=1`); the suite
-  **skips cleanly** under a normal `make test` (`OK (skipped=5)`), so it
+  **skips cleanly** under a normal `make test` (`OK (skipped=7)`), so it
   never breaks the default gate. Lint clean; §7.2 audit clean.
 
-**The suite is IPv4-only.** Two deviations from the §3 inventory,
-resolved during the build:
+One deviation from the §3 inventory, resolved during the build:
 
-1. **Test 3 (ICMPv6 NS→NA) dropped** — see the IPv6 finding below.
-2. **Tap-name prefix** must be `tap…` — `run_daemon`'s
+1. **Tap-name prefix** must be `tap…` — `run_daemon`'s
    `_resolve_interface` accepts only `tap` / `tun` name prefixes, so the
    harness names the tap `tap<pid>`.
 
@@ -277,7 +280,8 @@ by
 surface** — the wire-level tests mock the TX ring (no real worker
 thread) and run every dispatch inline on one thread, where the
 `RLock` re-entry is harmless, so they *cannot* see this deadlock.
-A dual-stack real-TAP variant is now unblocked.
+The dual-stack real-TAP variant (ICMPv6 NS→NA + ICMPv6 Echo, 7 tests
+total) shipped once the deadlock was fixed.
 
 **One refinement the spike surfaced:** the tap must be **persistent**
 (`ip tuntap add name <tap> mode tap`, exactly like `make tap7`) so the
@@ -295,11 +299,9 @@ del`.
 
 - **Phase 0 — spike:** ✅ done (see §7a). AF_PACKET chosen; recipe
   proven.
-- **Phase 1 — harness + IPv4 smoke (5 tests) + `make test-realtap`:**
+- **Phase 1 — harness + dual-stack smoke (7 tests) + `make test-realtap`:**
   ✅ done (see §7b). Green over a real tap; skips off the default gate.
-- **Phase 1 — harness + core smoke (tests 1–6):** `RealTapTestCase`,
-  the `make test-realtap` target, the skip gating, and the six tests in
-  §3. This is the shippable unit.
+  Covers IPv4 (ARP, ICMPv4 Echo, UDP) and IPv6 (ND NS→NA, ICMPv6 Echo).
 - **Phase 2 — router/multicast stretch (optional):** the two-tap
   two-daemon variant validating unicast forwarding + an IGMP/MLD
   join / General Query / replicated multicast datagram on a real wire —
