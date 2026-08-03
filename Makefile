@@ -128,6 +128,15 @@ test: venv
 	@echo '<<< UNITTEST ALL'
 	@PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/net_addr/net_addr/tests' 'packages/net_proto/net_proto/tests' 'packages/pytcp/pytcp/tests' -name 'test__*.py')
 
+# Real-TAP end-to-end smoke suite — boots the real daemon on an actual
+# TAP and drives it over the wire. Needs root / CAP_NET_ADMIN and
+# /dev/net/tun, so it is NOT part of 'make test' (the suite skips there).
+# Run it explicitly: 'sudo make test-realtap' (or in a privileged CI job
+# with '--cap-add=NET_ADMIN' and '/dev/net/tun' mapped in).
+test-realtap: venv
+	@echo '<<< UNITTEST REAL-TAP SMOKE (root)'
+	@PYTCP_REAL_TAP=1 PYTHONPATH=$(ROOT_PATH) ./$(VENV)/bin/python tests_runner.py $(shell find 'packages/pytcp/pytcp/tests/integration/real_tap' -name 'test__*.py')
+
 validate: lint test
 
 # RX-ring micro-benchmark — measures per-frame overhead of the

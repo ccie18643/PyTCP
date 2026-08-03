@@ -4,7 +4,7 @@
 |----------|-------------------------------------------------------------------|
 | Kind     | Test-infrastructure proposal (scoping doc, not yet implemented)    |
 | Target   | A small, root-gated smoke suite that runs the real stack over an actual TAP |
-| Status   | **PROPOSED** — scope only                                          |
+| Status   | **Phase 1 shipped** — the IPv4 smoke suite (5 tests) runs green over a real tap; IPv6 variant deferred (§7b) |
 | Precedent| `tests/integration/ipc/` (real `IpcServer` + drop-in), `tests/integration/loopback/` |
 
 ---
@@ -198,11 +198,79 @@ manual sudo steps.
    this suite is the natural home for a future concurrency smoke, but
    keep the first cut single-flow.
 
+## §7a. Phase-0 spike — DONE (mechanism validated)
+
+Two throwaway spikes confirmed the approach end-to-end; every §7 risk
+is resolved:
+
+1. **AF_PACKET-on-tap is viable (risk #1).** A single `AF_PACKET`
+   socket bound to the tap both sees the daemon's TX (as an incoming
+   frame, `sll_pkttype=1`) and injects the daemon's RX. **No bridge and
+   no second tap** — the §4 "recommended" path stands; the fallback is
+   unnecessary.
+2. **Real daemon on a real tap does a real ARP round trip.** A
+   subprocess `run_daemon(socket_path=…, interfaces=[tap],
+   mac_address=…, ip4_host=Ip4IfAddr("10.0.0.7/24"), ip6_support=False,
+   on_ready=<ready-file>)` booted, reached readiness, answered an
+   `AF_PACKET`-injected ARP Request (`10.0.0.7 is-at 02:…:07`) read back
+   off the wire, and **stopped cleanly on SIGTERM (rc=0)** — resolving
+   risks #2 (lifecycle), #3 (static addressing, no DHCP), #4
+   (readiness handshake).
+
+## §7b. Phase-1 build — DONE (IPv4 smoke suite green)
+
+Built and validated on a real tap (root + `PYTCP_REAL_TAP=1`):
+
+- **Harness** `packages/pytcp/pytcp/tests/lib/real_tap_testcase.py`
+  (`RealTapTestCase`) — persistent tap, subprocess daemon via
+  `run_daemon(..., on_ready=<ready-file>)`, `AF_PACKET` peer, real-clock
+  bounded `_peer_expect` / `select` waits, `addCleanup` teardown.
+- **5 smoke tests**
+  `packages/pytcp/pytcp/tests/integration/real_tap/test__real_tap__smoke.py`:
+  daemon-boots-and-serves-IPC, ARP request→reply, ICMPv4 Echo→reply,
+  UDP-send-resolves-neighbor-via-real-ARP, UDP-echo-round-trip.
+  All green (~50 s wall; per-test daemon boot dominates).
+- **`make test-realtap`** target (sets `PYTCP_REAL_TAP=1`); the suite
+  **skips cleanly** under a normal `make test` (`OK (skipped=5)`), so it
+  never breaks the default gate. Lint clean; §7.2 audit clean.
+
+**The suite is IPv4-only.** Two deviations from the §3 inventory,
+resolved during the build:
+
+1. **Test 3 (ICMPv6 NS→NA) dropped** — see the IPv6 finding below.
+2. **Tap-name prefix** must be `tap…` — `run_daemon`'s
+   `_resolve_interface` accepts only `tap` / `tun` name prefixes, so the
+   harness names the tap `tap<pid>`.
+
+**IPv6 finding (deferred, worth a follow-up):** booting the daemon with
+a **static `ip6_host`** on a router-less tap did **not** reach readiness
+within 40 s — the interface logged an *empty* IPv6-unicast list and
+`stack.start()` did not complete. A static IPv6 address should not
+depend on a router (DAD alone completes in ~1 s), so this looks like a
+real bring-up stall on a router-less link, not just slowness. Filed as
+the blocker for a dual-stack real-TAP variant; the IPv4 smoke suite is
+unaffected. **This is exactly the class of bug the real-TAP layer exists
+to surface** — the wire-level tests (mocked clock + injected frames)
+cannot see it.
+
+**One refinement the spike surfaced:** the tap must be **persistent**
+(`ip tuntap add name <tap> mode tap`, exactly like `make tap7`) so the
+daemon attaches it *by name* while the peer uses `AF_PACKET` — the
+harness must not itself hold the `/dev/net/tun` fd (that would conflict
+with the daemon's attach on a non-multiqueue tap).
+
+**Proven recipe for the harness:** persistent tap via `ip tuntap add`
+→ daemon subprocess via `run_daemon(... on_ready=ready-file ...)` →
+wait on the ready file → peer via `AF_PACKET` bound to the tap using
+the `net_proto` assemblers/parsers → teardown via SIGTERM + `ip tuntap
+del`.
+
 ## §8. Deliverables & phasing
 
-- **Phase 0 — spike (½ day):** a throwaway script that creates a tap,
-  boots the daemon, AF_PACKET-injects an ARP Request, and reads the
-  Reply. Resolves risk #1 and #2; decides AF_PACKET vs. bridge.
+- **Phase 0 — spike:** ✅ done (see §7a). AF_PACKET chosen; recipe
+  proven.
+- **Phase 1 — harness + IPv4 smoke (5 tests) + `make test-realtap`:**
+  ✅ done (see §7b). Green over a real tap; skips off the default gate.
 - **Phase 1 — harness + core smoke (tests 1–6):** `RealTapTestCase`,
   the `make test-realtap` target, the skip gating, and the six tests in
   §3. This is the shippable unit.
