@@ -43,9 +43,11 @@ PyTCP **meets** the host-side posture for RFC 6398:
 
 The router-side BCP guidance (filtering, rate-limiting,
 fast-path forwarding of unknown-protocol RAO, selective
-processing by Value field) is **Phase 2** — PyTCP does not
-forward today and so cannot exhibit DoS susceptibility to RAO
-floods.
+processing by Value field) is **Phase 2** — PyTCP now forwards
+unicast (3.0.9), but the forward path preserves RAO options
+byte-for-byte and does not implement RAO-specific fast-path /
+slow-path / rate-limit processing, so the DoS-protection guidance is
+still not exercised.
 
 | Section | Topic                                                          | Status |
 |---------|----------------------------------------------------------------|--------|
@@ -91,9 +93,10 @@ receipt) is met as noted above.
 > next level protocol that is not a protocol of interest to that
 > router."
 
-**Adherence:** n/a (Phase 2). All three are router-side
-requirements that PyTCP cannot meet because PyTCP does not
-forward. When forwarding lands the natural fix points are:
+**Adherence:** not implemented (Phase-2 refinement). PyTCP forwards
+unicast as of 3.0.9, but the forward path does no RAO-specific
+processing — options are preserved verbatim, no fast-path / slow-path
+split, no RAO rate-limiter. The natural fix points are:
 
 1. In the forward decision (post-routing-table-lookup), check
    `packet_rx.ip4.router_alert is not None`. If True and the
@@ -165,6 +168,7 @@ one-line assertion if needed.
 
 RFC 6398 is a router-grade BCP. PyTCP meets the host-side
 "do not break, do not divert delivery" implied requirement
-inherited from RFC 2113. When PyTCP gains a forwarding plane
-the Phase-2 hooks listed in §5 above are the natural place to
-add the BCP's recommended protections.
+inherited from RFC 2113. PyTCP has gained a unicast forwarding
+plane (3.0.9); the RAO-specific hooks listed in §5 above are the
+natural place to add the BCP's recommended protections and remain a
+Phase-2 refinement.

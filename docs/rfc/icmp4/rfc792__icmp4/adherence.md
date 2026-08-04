@@ -21,7 +21,7 @@ host-requirements work:
 | 0     | Echo Reply              | met (RX + RAW socket delivery)                    |
 | 3     | Destination Unreachable | met (parser + emitter; demux to TCP/UDP/PMTUD)    |
 | 4     | Source Quench           | deliberate non-implementation (RFC 6633)          |
-| 5     | Redirect                | not implemented (parsed as Unknown)               |
+| 5     | Redirect                | met (codec + host RX-accept + router emission, M3)|
 | 8     | Echo Request            | met (Smurf gate at v4 echo handler)               |
 | 11    | Time Exceeded           | met (parser + RFC 5927 §6 soft-error plumbing)    |
 | 12    | Parameter Problem       | met (parser + RFC 5927 §6 soft-error plumbing)    |

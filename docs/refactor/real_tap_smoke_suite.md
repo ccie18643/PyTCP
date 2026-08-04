@@ -2,7 +2,7 @@
 
 | Field    | Value                                                              |
 |----------|-------------------------------------------------------------------|
-| Kind     | Test-infrastructure proposal (scoping doc, not yet implemented)    |
+| Kind     | Test-infrastructure — shipped (harnesses + suites live; started as a scoping doc) |
 | Target   | A small, root-gated smoke suite that runs the real stack over an actual TAP |
 | Status   | **Phase 1 + 2 shipped** — dual-stack smoke (7 tests) + two-tap router (4 tests) run green over real taps; 11 total, skip off the default gate |
 | Precedent| `tests/integration/ipc/` (real `IpcServer` + drop-in), `tests/integration/loopback/` |

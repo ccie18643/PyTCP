@@ -3,10 +3,10 @@
 | Field        | Value                                                                 |
 |--------------|-----------------------------------------------------------------------|
 | Track        | Phase 2 — router-grade parity (Project North Star)                    |
-| Target       | PyTCP 3.0.9 (unicast forwarding plane: M0–M4)                         |
+| Target       | PyTCP 3.0.9 (unicast forwarding plane M0–M4 + multicast querier/forwarding M5a–M5f) |
 | Branch       | `PyTCP_3_0_9`                                                         |
-| Status       | **COMPLETE (M0–M4)** — IPv4/IPv6 unicast forwarding plane shipped: transit forwarding + ICMP errors + PMTU/fragmentation + ICMP Redirect + RFC 1812 conformance sweep. M5 (multicast querier / FIB ECMP) optional, post-3.0.9 |
-| Follow-up    | M5 (multicast router / querier) + FIB extensions — optional, post-3.0.9 |
+| Status       | **COMPLETE (M0–M4 + M5a–M5f)** — IPv4/IPv6 unicast forwarding plane + multicast querier/forwarding shipped: transit forwarding + ICMP errors + PMTU/fragmentation + ICMP Redirect + RFC 1812 sweep + IGMP/MLD querier + last-hop multicast forwarding. Only M5g/M5h (FIB ECMP / policy routing) remain, optional |
+| Follow-up    | M5g/M5h (FIB ECMP + policy routing) — optional; M5a–M5f (querier + multicast forwarding) shipped |
 | Precedent    | `routing_table_host_mode.md`, `packet_handler_rewrite_plan.md`, `sysctl_per_interface.md` |
 
 ---
@@ -62,10 +62,10 @@ is a router" story: it forwards IPv4/IPv6 unicast, decrements the
 lifetime field, and originates every ICMP error a forwarder must,
 with the RFC 1812 audit closed.
 
-**M5 (multicast router / IGMP+MLD querier role) and the FIB
-extensions (ECMP/multipath, policy routing / multiple tables) are an
-optional follow-up, deferred past 3.0.9** — see §8. Neither blocks
-the 3.0.9 story; the querier is the most separable piece and the FIB
+**The multicast querier + last-hop forwarding (M5a–M5f) shipped in
+3.0.9 after the unicast plane stabilized. The FIB extensions
+(M5g ECMP/multipath, M5h policy routing / multiple tables) remain an
+optional follow-up, deferred past 3.0.9** — see §8. The FIB
 extensions are already `# Phase 2:` tagged in `fib.py`.
 
 ---
@@ -459,38 +459,44 @@ RFC 1191 / 8201 (transit PMTU), 792 / 4443 (transit ICMP + Redirect).
 
 ---
 
-## §8. M5 — optional follow-up (post-3.0.9)
+## §8. M5 — multicast router (M5a–M5f shipped; M5g/M5h deferred)
 
-**Deferred; not in the 3.0.9 cut.** Opened as its own plan/commit
-series when the 3.0.9 unicast plane has landed and stabilized.
+**M5a–M5f shipped in 3.0.9** (querier control plane + last-hop
+multicast forwarding — see
+[`multicast_router_querier.md`](multicast_router_querier.md)). The two
+FIB extensions (M5g/M5h) remain deferred, to be opened when a
+consumer appears.
 
-> **Detailed plan:** the M5 scope below is decomposed into eight
+> **Detailed plan:** the M5 scope is decomposed into eight
 > tests-first milestones (M5a–M5h) in
 > [`multicast_router_querier.md`](multicast_router_querier.md) —
 > Query assemblers + querier sysctls (M5a), the IGMP querier
 > (M5b–M5c), the MLD querier (M5d–M5e), the multicast forwarding
-> data plane (M5f), and the two independent FIB extensions
-> (M5g ECMP, M5h policy routing). This section is the scoping
-> summary; that doc is the turn-the-crank decomposition.
+> data plane (M5f) — **all shipped** — plus the two independent FIB
+> extensions (M5g ECMP, M5h policy routing), still deferred.
 
-### 8.1 Multicast router / querier role
+### 8.1 Multicast router / querier role — SHIPPED (M5a–M5f)
 
 PyTCP has the full IGMP/MLD **host/member** side (membership reporting,
-version fallback, SSM). The router side is the **querier**:
+version fallback, SSM) and now runs the **querier** role and replicates
+transit multicast last-hop:
 
-- IGMP querier — send General/Group-Specific Membership Queries,
-  querier election (lowest-IP wins), the query/response timers,
-  per-group membership state as a router. Query codecs already exist
-  (`igmp__message__query.py`) and are marked "RX-only… querier role is
-  Phase-2 router work".
+- IGMP querier — General/Group-Specific Membership Queries, querier
+  election (lowest-IP wins + Other-Querier-Present timer), the
+  query/response timers, and a router-side per-group membership table
+  learned from inbound Reports. The Query `assemble` codecs are
+  implemented; the "RX-only / Phase-2" markers are gone
+  (`packet_handler__igmp__tx.py`).
 - MLDv1/MLDv2 querier — the IPv6 parallel
-  (`icmp6__mld{1,2}__message__query.py`).
-- Multicast forwarding / replication + RPF (needs ≥3 interfaces in the
-  harness — the parameterizable M0 topology already supports this).
+  (`packet_handler__icmp6__tx.py`,
+  `icmp6__mld{1,2}__message__query.py`).
+- Multicast forwarding / replication + RPF
+  (`packet_handler__ip{4,6}__mforward.py`) — on-demand egress from the
+  querier membership tables, RPF against the unicast FIB, no separate
+  MFIB.
 
-This is the largest and most separable Phase-2 chunk; bundling it into
-3.0.9 would bloat the release with a self-contained feature that has no
-dependency on the unicast plane.
+Proven end-to-end on a real wire by the two-tap router real-TAP suite
+(`tests/integration/real_tap/test__real_tap__router.py`).
 
 ### 8.2 FIB extensions
 
@@ -521,7 +527,8 @@ handling) — tracked in the adherence records as "n/a (M5)".
 | **M2** ✅ | Transit PMTU (Frag-Needed / Packet Too Big) + IPv4 forwarded fragmentation (Host-Unreachable deferred) | M4 |
 | **M3** ✅ | ICMP Redirect generation (+ new ICMPv4 codec, host RX-accept) | M4 |
 | **M4** ✅ | RFC 1812 conformance sweep (directed-bcast/martian/source filters, options preservation) + adherence flipped | release |
-| M5 | *(optional follow-up)* multicast querier + FIB ECMP/policy | — |
+| **M5a–M5f** ✅ | Multicast querier (IGMP/MLD election, Queries, membership table, fast-leave) + last-hop multicast forwarding | — |
+| M5g / M5h | *(optional)* FIB ECMP/multipath + policy routing | — |
 
 Each milestone is tests-first (integration-biased), `make lint` +
 `make test` clean per commit, adherence updated in lockstep, and

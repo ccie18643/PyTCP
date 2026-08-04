@@ -23,9 +23,10 @@ one multicast-aware router per link). PyTCP is a host stack:
 - **Listener role**: PyTCP emits Reports when its multicast
   group membership changes; this lets the local querier
   learn what groups are interested on this link.
-- **Querier role**: MLDv2 querier met (Phase-2 M5d — emission + election + membership); MLDv1 querier interop is M5e
-  Project North Star (router-grade parity). A Phase-1 host
-  has no need to send Queries.
+- **Querier role**: MLDv2 querier met (Phase-2 M5d — emission +
+  election + membership + fast-leave M5e); only the MLDv1
+  older-version querier-emit interop remains deferred
+  (Project North Star, router-grade parity).
 
 Sections without normative content — Abstract, §1
 Introduction, §2 Terminology (informational definitions),
@@ -61,13 +62,13 @@ interface with `mld.mc_forwarding` set emits General Queries
 Present expiry), and learns downstream reception state from
 inbound Reports into a per-group membership table (§7.4),
 pruned by the §9.4 Multicast Address Listening Interval. The
-MLDv1 querier interop (older-version-querier compat +
-fast-leave Multicast-Address-Specific Queries) is Phase-2
-M5e. See the §7 / §8 section below.
+fast-leave Multicast-Address-Specific Queries shipped in Phase-2
+M5e; only the MLDv1 older-version querier-emit interop remains
+deferred. See the §7 / §8 section below.
 
 | Section | Topic                                          | Status |
 |---------|------------------------------------------------|--------|
-| §4 wire | Query (type 130) wire format                   | met (codec + parser + assembler; querier state machine is Phase-2 M5d) |
+| §4 wire | Query (type 130) wire format                   | met (codec + parser + assembler; querier state machine shipped Phase-2 M5d) |
 | §4 wire | Report (type 143) wire format                  | met (codec + assembler + parser) |
 | §4 wire | Multicast Address Record wire format           | met |
 | §5      | Listener-side state machine                    | met (source-bearing state-change Reports — `ALLOW`/`BLOCK`/`CHANGE_TO_*` per the §6.1 difference table — with §9.1 robustness retransmission; §5.2.12 / §6.1, tested by `test__icmp6__mld__source_state_change.py` + `test__icmp6__mld2_leave.py`) |
@@ -101,8 +102,9 @@ the ICMPv6 demux:
   Phase-2 M5a scaffolding `assemble` / `_pack_header` also
   serialise the Query wire form — tested at
   `test__icmp6__mld2__message__query__assembler.py`. The
-  querier state machine that drives emission is Phase-2
-  M5d–M5e router work). The RX path at
+  querier state machine that drives emission shipped in Phase-2
+  M5d (General Query + election + membership); only the MLDv1
+  querier-emit interop (M5e) is deferred. The RX path at
   `packet_handler__icmp6__rx.py:194` dispatches to
   `__phrx_icmp6__mld_query` (definition at `:1174`) per
   §5.1.10.
@@ -112,9 +114,10 @@ the ICMPv6 demux:
   (Header / Base / Parser / Assembler + multi-record
   payload). The RX path at
   `packet_handler__icmp6__rx.py:192` dispatches to
-  `__phrx_icmp6__mld2_report` which counts the Report but
-  takes no state-update action (host-side; querier role
-  deferred).
+  `__phrx_icmp6__mld2_report` which, as of Phase-2 M5d,
+  delegates to the querier state machine via `observe_report`
+  (learning the downstream membership table on a router interface;
+  a no-op on a host interface).
 
 > "A Multicast Address Record is a block of fields that
 >  contain information on the sender listening to a single
@@ -390,7 +393,9 @@ preserving the immediate-response behaviour the RFC's
 [0, MRD] interval permits at its zero endpoint.
 
 The querier-role items (§7 timers; §8 inbound-Report
-processing) remain Phase-2 router work.
+processing) are implemented as of Phase-2 M5d, audited in the
+§7 / §8 sections above; only the MLDv1 querier-emit interop (M5e)
+remains deferred.
 
 ---
 
@@ -575,7 +580,7 @@ Address-and-Source-Specific Queries are deferred refinements
 
 | Aspect                                                | Status |
 |-------------------------------------------------------|--------|
-| §4 Query wire format                                  | met (codec + parser + assembler; querier state machine is Phase-2 M5d) |
+| §4 Query wire format                                  | met (codec + parser + assembler; querier state machine shipped Phase-2 M5d) |
 | §4 Report wire format                                 | met    |
 | §4 Multicast Address Record codec                     | met    |
 | §5 Listener-side Report emission on join              | met    |
@@ -585,20 +590,25 @@ Address-and-Source-Specific Queries are deferred refinements
 | §5.2.14 Destination = `ff02::16` + RA-option HBH      | met    |
 | §6 Per-interface multicast state                      | met (EXCLUDE-source-list-empty default) |
 | §7 / §8 Querier timers + Action on Reception          | met (Phase-2 M5d) |
-| §5.1.10 MLDv1 compatibility mode                      | n/a (PyTCP is MLDv2-only) |
+| §5.1.10 MLDv1 compatibility mode                      | met (RFC 3810 §8 fallback — see `../rfc2710__mld_v1/adherence.md`) |
 
 PyTCP fully satisfies the listener-side requirements that
 matter for a multicast-using host. Remaining items:
 
-1. **§5-§8 querier role** (Phase-2 router). Lands when the
-   forwarding plane / multicast routing arrives.
+1. **§5-§8 querier role** — implemented (Phase-2 M5d): General-Query
+   emission, §7.6.2 election, the §7.4 Report-learned membership
+   table, and §7.6.3 fast-leave Multicast-Address-Specific Queries,
+   consumed by the last-hop multicast forwarding plane (M5f).
+   Deferred refinements: §7.2 per-source timers and the §8 MLDv1
+   querier-emit interop.
 
 ## Cross-references
 
 - IPv4 parallel: [`../../ip4/rfc1112__ip4_multicasting/adherence.md`](../../ip4/rfc1112__ip4_multicasting/adherence.md)
   (RFC 1112 IPv4 multicasting; IGMPv2 / IGMPv3 — RFCs 2236
-  / 3376 — are tracked as item E in the IPv4 audit punch
-  list and are not yet shipped).
+  / 3376 — are shipped, audited at
+  `../../ip4/rfc2236__igmp_v2/adherence.md` and
+  `../../ip4/rfc3376__igmp_v3/adherence.md`).
 - HBH Router-Alert option carrier: RFC 2711 (referenced
   here; no standalone audit yet).
 - IPv6 ND / SLAAC adherence audits in this folder cover

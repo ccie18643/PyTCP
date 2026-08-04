@@ -33,8 +33,10 @@ processing. Header parsing, assembly, on-receive validation,
 on-send fragmentation, options framework, and ICMP error
 generation on header violations are all in place. Specific
 gaps: source-route option processing is gated behind a Linux-
-parallel `IP4__ACCEPT_SOURCE_ROUTE` knob (off by default),
-forwarding is Phase 2.
+parallel `IP4__ACCEPT_SOURCE_ROUTE` knob (off by default);
+forward-path TTL decrement + ICMP Time Exceeded shipped in 3.0.9
+(RFC 1812 M1), so only full LSRR/SSRR source-route processing
+stays Phase 2.
 
 | Section | Topic                              | Status      | Implementing file(s) |
 |---------|------------------------------------|-------------|----------------------|
@@ -43,7 +45,7 @@ forwarding is Phase 2.
 | §3.1    | Options framework + nine options   | shipped     | `packages/net_proto/net_proto/protocols/ip4/options/` (10 files) |
 | §3.2    | Fragmentation on send              | shipped     | `packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip4__tx.py:288-323` |
 | §3.2    | Reassembly on receive              | shipped     | `packages/pytcp/pytcp/protocols/ip/ip_frag.py`, `ip_frag_table.py`, plus RFC 815 audit |
-| §3.2    | TTL decrement / TTL=0 drop         | partial     | RX enforces `ttl > 0`; forwarding decrement is Phase 2 |
+| §3.2    | TTL decrement / TTL=0 drop         | met         | RX enforces `ttl > 0`; forward-path decrement + Time Exceeded shipped (RFC 1812 M1) — `packet_handler__ip4__forward.py` |
 | Appendix B | Network byte order              | shipped     | `struct` format strings prefixed `! `                |
 
 ---
@@ -168,19 +170,20 @@ the payload at MTU-aligned 8-byte boundaries
 > "Time to Live: 8 bits. ... If this field contains the value
 > zero, then the datagram must be destroyed."
 
-**Adherence:** partial. On RX, `Ip4Parser._validate_sanity`
+**Adherence:** met. On RX, `Ip4Parser._validate_sanity`
 rejects `ttl == 0` and the handler emits ICMPv4 Parameter
 Problem with pointer = 8 (`ip4__parser.py:162-166`,
 `packet_handler__ip4__rx.py:309-354`). This is the host-side
 "refuse delivery of a TTL=0 datagram" half of the rule.
 
-The forwarding half ("each module decrements TTL by at least
-1") is **Phase 2** — PyTCP today is a host stack and never
-forwards. Outbound TTL is set to `IP4__DEFAULT_TTL = 64`
-(matching Linux's `net.ipv4.ip_default_ttl`) unless the caller
-overrides (`packet_handler__ip4__tx.py:100`). `# Phase 2:`
-forwarding decrement and ICMP Time Exceeded generation will
-land with the router track.
+The forwarding half ("each module decrements TTL by at least 1")
+shipped in 3.0.9 as RFC 1812 M1: `Ip4ForwardHandler.try_forward_ip4`
+decrements the TTL by one and recomputes the header checksum before
+re-emission, and drops a TTL≤1 transit datagram with an ICMPv4 Time
+Exceeded (Type 11, Code 0). Audited under RFC 1812 §4.2.2.9.
+Outbound origination TTL is still `IP4__DEFAULT_TTL = 64` (matching
+Linux's `net.ipv4.ip_default_ttl`) unless the caller overrides
+(`packet_handler__ip4__tx.py:100`).
 
 ## §3.1 Protocol
 
@@ -570,16 +573,21 @@ octet field in PyTCP wire codecs is network-order.
 
 **Status:** locked in.
 
-### Phase 2 gaps (forwarding TTL decrement, ICMP Time Exceeded, full source-route processing)
+### Forward-path TTL decrement / Time Exceeded (M1) — shipped
 
-**No test surface — Phase 2.** When the forwarder lands, the
-natural tests are:
+- **Integration:**
+  `packages/pytcp/pytcp/tests/integration/router/test__router__ip4__forwarding.py`
+  drives a frame addressed to a non-stack destination and asserts the
+  forward path decrements TTL by one, and drops a TTL=1 transit
+  datagram with an ICMPv4 Time Exceeded.
 
-1. A frame addressed to a non-stack destination → forward path
-   decrements TTL by 1; emits ICMPv4 Time Exceeded when TTL
-   reaches 0 on decrement.
-2. A frame with LSRR `pointer < length` → rewrite dst, update
-   route data, decrement TTL, forward.
+**Status:** locked in (RFC 1812 M1).
+
+### Full source-route (LSRR/SSRR) processing — Phase 2
+
+**No test surface — Phase 2.** When full source-route processing
+lands, the natural test is a frame with LSRR `pointer < length` →
+rewrite dst, update route data, decrement TTL, forward.
 
 ### Test coverage summary
 
@@ -595,7 +603,7 @@ natural tests are:
 | TTL=0 host drop + ICMP Parameter Problem              | locked in |
 | RFC 6724-style source-address selection (IPv4 subset) | locked in |
 | Source-route gate (`IP4__ACCEPT_SOURCE_ROUTE`)        | locked in |
-| Forwarding TTL decrement / Time Exceeded              | n/a (Phase 2) |
+| Forwarding TTL decrement / Time Exceeded              | locked in (RFC 1812 M1) |
 | Option copy-bit on fragmentation                      | locked in (shipped) |
 
 ---
@@ -615,11 +623,10 @@ natural tests are:
 | §3.1 Options — Stream ID                              | not implemented (deprecated by RFC 6814) |
 | §3.2 Fragmentation on send                            | met    |
 | §3.2 Reassembly on receive                            | met (audited under RFC 815) |
-| §3.1 / forwarding TTL decrement + Time Exceeded       | not implemented (Phase 2) |
+| §3.1 / forwarding TTL decrement + Time Exceeded       | met (RFC 1812 M1) |
 | Appendix B — network byte order                       | met    |
 
-All §3.1 host-side normative requirements are met. The
-remaining items are Phase-2 forwarder work tracked under
-RFC 1812: forward-path TTL decrement, ICMP Time Exceeded
-emission, and full source-route (LSRR/SSRR) pointer
-advancement.
+All §3.1 host-side normative requirements are met. Forward-path
+TTL decrement and ICMP Time Exceeded emission shipped in 3.0.9
+(RFC 1812 M1, audited there). The one remaining item is full
+source-route (LSRR/SSRR) pointer advancement, which stays Phase 2.

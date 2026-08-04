@@ -44,10 +44,10 @@ The §6 gateway broadcast-forwarding rules are Phase 2.
 | Section | Topic                                              | Status |
 |---------|----------------------------------------------------|--------|
 | §5      | Host MUST recognise broadcast destinations         | met    |
-| §6      | Gateway broadcast forwarding rules                 | n/a (Phase 2) |
+| §6      | Gateway broadcast forwarding rules                 | met by refusal (broadcasts not forwarded; RFC 1812 §5.3.5.2) |
 | §7      | All-ones host-number = broadcast                   | met    |
 | §7      | `255.255.255.255` = local hardware broadcast       | met    |
-| §7      | `255.255.255.255` MUST NOT be forwarded            | n/a (no forwarding) |
+| §7      | `255.255.255.255` MUST NOT be forwarded            | met — forward path drops limited-broadcast destinations |
 
 ---
 
@@ -83,10 +83,12 @@ separately against `_if._ip4_unicast` (`:183`),
 > "The address 255.255.255.255 denotes a broadcast on a local
 > hardware network, which must not be forwarded."
 
-**Adherence:** met for the host-side half: PyTCP does not
-forward, so the "must not be forwarded" constraint is
-vacuously satisfied. The receive path admits frames addressed
-to `255.255.255.255` when it appears in `_ip4_broadcast`.
+**Adherence:** met. As of 3.0.9 PyTCP forwards, and the forward
+path explicitly refuses to forward toward `255.255.255.255` (and any
+directed broadcast) — `Ip4ForwardHandler.try_forward_ip4` drops it
+with `ip4__forward_martian_dst__drop` (RFC 1812 §5.3.5.2 / RFC 2644
+default-off). The receive path still admits frames addressed to
+`255.255.255.255` when it appears in `_ip4_broadcast`.
 
 On send, `255.255.255.255` is the canonical DHCPv4
 broadcast address; the TX path admits it as a destination
@@ -125,9 +127,13 @@ possible the frame is dropped with the documented counter.
 > primary rule for avoiding loops is 'never broadcast a
 > datagram on the hardware network it was received on'."
 
-**Adherence:** n/a (PyTCP does not forward). When forwarding
-lands, these rules become relevant. See RFC 1812 audit (Phase
-2) for the router-grade broadcast handling.
+**Adherence:** met by refusal. As of 3.0.9 PyTCP forwards unicast,
+but the forward path drops every broadcast destination (limited +
+directed) by default, so a broadcast datagram is never re-broadcast
+onto another interface — the §6 loop-prevention concern is satisfied
+by non-forwarding of broadcasts. Directed-broadcast forwarding
+(opt-in, RFC 2644) remains out of scope. Audited under RFC 1812
+§5.3.5.2.
 
 ---
 
@@ -188,7 +194,7 @@ lands, these rules become relevant. See RFC 1812 audit (Phase
 | §7 Limited-broadcast source rejection (RX)          | locked in |
 | §7 Broadcast source replacement (TX)                | locked in |
 | TX broadcast policy gate (`ip4.allow_broadcast`)    | locked in (unit + integration) |
-| §6 Gateway broadcast forwarding                     | n/a (Phase 2) |
+| §6 Gateway broadcast forwarding                     | met by refusal (broadcasts not forwarded; RFC 1812 §5.3.5.2) |
 
 ---
 
@@ -199,7 +205,7 @@ lands, these rules become relevant. See RFC 1812 audit (Phase
 | §5 Host-side broadcast reception                    | met    |
 | §7 All-ones broadcast address recognised            | met    |
 | §7 Limited-broadcast source ban                     | met    |
-| §6 Gateway broadcast forwarding rules               | n/a (Phase 2) |
+| §6 Gateway broadcast forwarding rules               | met by refusal (broadcasts not forwarded; RFC 1812 §5.3.5.2) |
 
 RFC 919 is fully covered for the host-stack portion. The
 subnetting refinement in RFC 922 (audited separately) extends

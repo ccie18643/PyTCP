@@ -45,11 +45,14 @@ Architecture, §3 Link Layer, Appendices) is omitted.
 
 ## Top-line adherence
 
-PyTCP implements the **IPv4 unicast forwarding plane** as of
-3.0.9 M1; the transit PMTU (M2), Redirect (M3), and IP-options
-(M4) clauses remain deferred. The audit enumerates both what M1
-now satisfies and the remaining Phase-2 gaps so the migration
-path is greppable.
+PyTCP implements the **complete IPv4 unicast forwarding plane**
+across Phase-2 milestones M1–M4 as of 3.0.9: forward-or-deliver +
+TTL decrement + no-route / Time-Exceeded ICMP (M1), transit PMTU +
+forwarded fragmentation (M2), ICMP Redirect generation + host
+RX-accept (M3), and forward-path martian / directed-broadcast /
+source filtering + IP-options preservation (M4). The residual
+§5.2.4 SHOULD refinements and policy-routing / RPF / multipath
+features stay deferred with rationale.
 
 | Section group | Topic                                            | Status |
 |---------------|--------------------------------------------------|--------|
@@ -72,7 +75,7 @@ path is greppable.
 | §4.3.3.4      | ICMP Frag-Needed (transit PMTU emission)         | met (M2) |
 | §4.3.3.5      | ICMP Time Exceeded (emission)                    | met (M1) |
 | §4.3.3.7      | ICMP Echo Reply                                  | met (RFC 1122 / icmp4 audit) |
-| §5            | Forwarding plane                                 | partial — unicast forwarding + PMTU/frag met (M1+M2); Redirect (M3), options (M4) deferred |
+| §5            | Forwarding plane                                 | met (M1–M4) — unicast forward, transit PMTU/frag, Redirect, martian/directed-bcast filtering + options preservation |
 
 ---
 
@@ -106,12 +109,13 @@ egress MTU, `Ip4ForwardHandler.try_forward_ip4`
 > reassemble datagrams in transit unless it is the final
 > destination."
 
-**Adherence:** met by absence. PyTCP only reassembles
-datagrams **destined for itself** (the destination filter at
-`packet_handler__ip4__rx.py:149-153` happens **before**
-the fragmentation branch at line 171). A datagram in transit
-would never reach the fragmentation branch in PyTCP because
-forwarding is not implemented.
+**Adherence:** met. PyTCP only reassembles datagrams
+**destined for itself**: a transit datagram is consumed by
+`_forward_or_deliver_ip4` → `Ip4ForwardHandler.try_forward_ip4`
+(`packet_handler__ip4__rx.py:186`) **before** the reassembly
+branch (`:198-204`), so it never reaches reassembly — the router
+forwards it whole (or fragments it on the egress path per §4.2.2.7),
+it is never reassembled in transit.
 
 ## §4.2.2.9 Time to Live
 
@@ -451,7 +455,8 @@ never reach the forward branch.
 | §4.2.2.7 / §4.3.3.4 transit PMTU + fragmentation (M2) | locked in |
 | §4.3.2.8 ICMP error rate limiting                   | locked in |
 | §4.2.2.8 No in-transit reassembly                   | locked in by code structure |
-| §4.3.3.2 (M3) / §4.2.2.1-2 (M4)                      | n/a (Phase 2) |
+| §4.3.3.2 ICMP Redirect gen + RX-accept (M3)         | locked in |
+| §5.3.5.2 / §5.2.4 forward filtering + options (M4)   | locked in |
 
 ---
 

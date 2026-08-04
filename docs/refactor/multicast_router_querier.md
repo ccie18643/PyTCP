@@ -3,9 +3,9 @@
 | Field        | Value                                                                 |
 |--------------|-----------------------------------------------------------------------|
 | Track        | Phase 2 — router-grade parity (Project North Star)                    |
-| Target       | Post-3.0.9 (optional follow-up to the unicast forwarding plane)       |
-| Branch       | new `PyTCP_3_1_x` dev branch (own release cycle; does NOT block 3.0.9) |
-| Status       | **PLANNED** — not started. Decomposes the parent plan's §8 into M5a–M5h |
+| Target       | PyTCP 3.0.9 — M5a–M5f SHIPPED; M5g/M5h optional, add-when-needed       |
+| Branch       | `PyTCP_3_0_9` (M5a–M5f shipped here; M5g/M5h whenever a consumer appears) |
+| Status       | **M5a–M5f SHIPPED** — querier control plane + last-hop multicast forwarding complete; only M5g/M5h (FIB ECMP / policy routing) not started |
 | Parent       | [`router_forwarding_plane.md`](router_forwarding_plane.md) §8 (M5)     |
 | Precedent    | `router_forwarding_plane.md` (M0–M4 shipped), `sysctl_per_interface.md`, `routing_table_host_mode.md` |
 
@@ -35,8 +35,8 @@ stubs — it is not a multicast rewrite.
 
 | Capability | Where | State |
 |---|---|---|
-| IGMP wire codecs — Query/Report(v1/v2/v3)/Leave parse + assemble (Query `assemble` is a `NotImplementedError` stub) | `net_proto/protocols/igmp/` (`igmp__message__query.py`, `…__v{1,2,3}_report.py`, `…__v2_leave.py`, `igmp__v3_group_record.py`) | shipped host-side |
-| MLD wire codecs — MLDv1 Query/Report/Done + MLDv2 Query/Report/record parse (both Query `assemble`s are `NotImplementedError` stubs) | `net_proto/protocols/icmp6/message/mld1/`, `…/mld2/` | shipped host-side |
+| IGMP wire codecs — Query/Report(v1/v2/v3)/Leave parse **+ assemble** (Query `assemble` implemented in M5a) | `net_proto/protocols/igmp/` (`igmp__message__query.py`, `…__v{1,2,3}_report.py`, `…__v2_leave.py`, `igmp__v3_group_record.py`) | shipped |
+| MLD wire codecs — MLDv1 Query/Report/Done + MLDv2 Query/Report/record parse **+ assemble** (both Query `assemble`s implemented in M5a) | `net_proto/protocols/icmp6/message/mld1/`, `…/mld2/` | shipped |
 | Query float-code decode (RFC 3376 §4.1 / RFC 3810 §5.1) | `igmp__message__query.py::decode_igmp_float_code`, `packet_handler__icmp6__rx.py::_mld2_mrc_to_mrd_ms` | shipped |
 | IGMP host state machine (RX Report-on-Query §5.2, TX state-change §5.1, v1/v2 compat §7.2.1) | `packet_handler__igmp__{rx,tx}.py` | shipped |
 | MLD host state machine (RX §6 response, TX §6.1 state-change, MLDv1 compat §8) | `packet_handler__icmp6__{rx,tx}.py` (`_mld_*`) | shipped |
@@ -51,50 +51,51 @@ stubs — it is not a multicast rewrite.
 
 ### The genuine gaps this plan closes
 
-1. **No querier at all.** `IgmpRxHandler` and `Icmp6RxHandler` treat
-   PyTCP as a host listener: an inbound Query only drives the *host*
-   Report-on-Query machine; an inbound Report is counter-only. There
-   is no querier election, no General-Query emission, no router-side
-   group-membership table.
-2. **Query `assemble` is unimplemented** in all three Query codecs
-   (`IgmpMessageQuery.assemble`, `Icmp6Mld2MessageQuery` assembly,
-   and the MLDv1 Query which shares the stub) — the one deliberate
-   wire gap a querier must fill.
-3. **No querier-side sysctls** — Query Response Interval, Startup
-   Query Interval/Count, Last-Member Query Interval/Count are read
-   off the wire on the host side but not configurable for emission.
-4. **No multicast forwarding data plane** — a transit multicast
-   datagram is not replicated to downstream listeners; there is no
-   MFIB, no RPF check.
-5. **Two `# Phase 2:` FIB shortcuts** — no ECMP/multipath
-   (`fib.py` has no nexthop-group concept), no policy routing
-   (`Route` carries no table id; only the Linux `main`/254 table
-   exists).
-6. Adherence records mark the querier role "n/a (Phase 2)" across
-   RFC 2236 §3, RFC 3376 §6/§7/§8, RFC 2710 §3, RFC 3810 §5/§7/§8.
+Items 1–4 **shipped in M5a–M5f**; items 5–6 remain the deferred
+remainder.
+
+1. ✅ **Querier role (M5b/M5d).** `IgmpTxHandler` / `Icmp6TxHandler`
+   now run the querier: election (lowest-IP wins + Other-Querier-
+   Present timer), General-Query emission, and a router-side
+   group-membership table learned from inbound Reports (separate from
+   the host `_ip{4,6}_multicast_*` state).
+2. ✅ **Query `assemble` implemented (M5a)** in all three Query codecs
+   (`IgmpMessageQuery.assemble`, `Icmp6Mld2MessageQuery`, and the
+   MLDv1 Query) — the deliberate wire gap is filled.
+3. ✅ **Querier-side sysctls (M5a)** — Query Response Interval, Startup
+   Query Interval/Count, Last-Member/Listener Query Interval/Count are
+   now configurable for emission (per-interface `{igmp,mld}` namespace).
+4. ✅ **Multicast forwarding data plane (M5f)** — a transit multicast
+   datagram is replicated to downstream listeners via the querier
+   membership table + an RPF check against the unicast FIB
+   (`packet_handler__ip{4,6}__mforward.py`); on-demand egress, no
+   separate MFIB.
+5. **Two `# Phase 2:` FIB shortcuts** (still deferred — M5g/M5h) — no
+   ECMP/multipath (`fib.py` has no nexthop-group concept), no policy
+   routing (`Route` carries no table id; only the Linux `main`/254
+   table exists).
+6. Adherence records: the querier-role requirements across RFC 2236,
+   RFC 3376, RFC 2710, RFC 3810 are now audited as met (see those
+   records); only the M5g/M5h FIB items remain "n/a (deferred)".
 
 ### Cut line
 
-M5 is **optional and post-3.0.9**. It is a self-contained feature
-with **zero dependency on the unicast plane** — it can ship on its
-own release cycle. Within M5 there are three independent tracks that
-can ship (or not) separately:
+**M5a–M5f shipped in 3.0.9**, delivering the recommended "PyTCP is a
+multicast router" cut. The three tracks were independent; two shipped,
+one remains:
 
-- **Querier control plane (M5a–M5e)** — the bulk. Makes PyTCP a
+- ✅ **Querier control plane (M5a–M5e)** — the bulk. Made PyTCP a
   standards-conformant IGMP/MLD querier: election, Queries,
-  router-side membership table. **No forwarding required** — a
-  querier is useful on its own (it is what maintains the membership
-  state a downstream switch's snooping consumes).
-- **Multicast forwarding data plane (M5f)** — the heaviest single
-  milestone. Replicates transit multicast using the M5a–M5e
-  membership table + an RPF check against the unicast FIB. Depends on
-  the querier table.
-- **FIB extensions (M5g, M5h)** — independent of everything above.
-  Small, add-when-a-consumer-appears.
+  router-side membership table. (No forwarding required — a querier
+  maintains the membership state a downstream switch's snooping
+  consumes.)
+- ✅ **Multicast forwarding data plane (M5f)** — replicates transit
+  multicast using the M5a–M5e membership table + an RPF check against
+  the unicast FIB.
+- **FIB extensions (M5g, M5h)** — still deferred, independent of
+  everything above. Small, add-when-a-consumer-appears.
 
-**Recommended minimum cut for a "PyTCP is a multicast router"
-claim: M5a–M5e (querier) + M5f (forwarding).** M5g/M5h are orthogonal
-and can land whenever a consumer needs them.
+M5g/M5h are orthogonal and can land whenever a consumer needs them.
 
 ---
 
@@ -157,12 +158,12 @@ records update **in lockstep** (never a separate phase).
 
 | Milestone | Deliverable | Depends on |
 |---|---|---|
-| **M5a** | Query **assemblers** (net_proto) + querier sysctls + `RouterTestCase` querier scaffolding | — |
-| **M5b** | IGMPv3 querier: election, periodic General Query, router membership table from Reports, group timers | M5a |
-| **M5c** | IGMP Group-/Group-and-Source-Specific Queries (fast-leave) + IGMPv1/v2 querier interop | M5b |
-| **M5d** | MLDv2 querier: election, General Query, membership table (IPv6 mirror of M5b) | M5a |
-| **M5e** | MLD Address-/Address-and-Source-Specific Queries + MLDv1 querier interop (mirror of M5c) | M5d |
-| **M5f** | Multicast forwarding data plane — MFIB + RPF + replication | M5b, M5d, (M5g optional) |
+| **M5a** ✅ | Query **assemblers** (net_proto) + querier sysctls + `RouterTestCase` querier scaffolding | — |
+| **M5b** ✅ | IGMPv3 querier: election, periodic General Query, router membership table from Reports, group timers | M5a |
+| **M5c** ✅ | IGMP Group-/Group-and-Source-Specific Queries (fast-leave) + IGMPv1/v2 querier interop | M5b |
+| **M5d** ✅ | MLDv2 querier: election, General Query, membership table (IPv6 mirror of M5b) | M5a |
+| **M5e** ✅ | MLD Address-/Address-and-Source-Specific Queries + MLDv1 querier interop (mirror of M5c) | M5d |
+| **M5f** ✅ | Multicast forwarding data plane — on-demand egress + RPF + replication | M5b, M5d |
 | **M5g** | FIB ECMP / multipath (nexthop groups) | — (independent) |
 | **M5h** | FIB policy routing / multiple tables | — (independent) |
 
@@ -615,8 +616,8 @@ single biggest reason the querier is testable at all.
 
 Every milestone that adds a `PacketStats{Rx,Tx}` counter updates the
 field-count assertions in `test__lib__packet_stats.py` **in the same
-commit** — the recurring M0–M4 breakage. Current baseline: RX=213,
-TX=123.
+commit** — the recurring M0–M4 breakage. Current baseline (post-M5f):
+RX=225, TX=127.
 
 ### 11.4 Adherence-in-lockstep
 
@@ -644,12 +645,12 @@ not just the impl).
 
 | Milestone | Deliverable | Blocks | Independent? |
 |---|---|---|---|
-| **M5a** | Query assemblers + querier sysctls + harness scaffolding | M5b–M5e | — |
-| **M5b** | IGMPv3 querier core (election, General Query, membership table) | M5c, M5f | — |
-| **M5c** | IGMP specific queries + v1/v2 interop | — | — |
-| **M5d** | MLDv2 querier core (IPv6 mirror of M5b) | M5e, M5f | — |
-| **M5e** | MLD specific queries + MLDv1 interop | — | — |
-| **M5f** | Multicast forwarding (MFIB + RPF + replication) | — | needs M5b+M5d |
+| **M5a** ✅ | Query assemblers + querier sysctls + harness scaffolding | M5b–M5e | — |
+| **M5b** ✅ | IGMPv3 querier core (election, General Query, membership table) | M5c, M5f | — |
+| **M5c** ✅ | IGMP specific queries + v1/v2 interop | — | — |
+| **M5d** ✅ | MLDv2 querier core (IPv6 mirror of M5b) | M5e, M5f | — |
+| **M5e** ✅ | MLD specific queries + MLDv1 interop | — | — |
+| **M5f** ✅ | Multicast forwarding (on-demand egress + RPF + replication) | — | needs M5b+M5d |
 | **M5g** | FIB ECMP / multipath | — | ✅ fully independent |
 | **M5h** | FIB policy routing / multiple tables | — | ✅ fully independent |
 

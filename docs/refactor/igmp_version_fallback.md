@@ -165,8 +165,10 @@ need no changes.
   the mode timers fire (unlike the stateless `NetworkTestCase`; use
   `IcmpTestCase` + FakeTimer for the timing tests).
 - The IGMPv3 **router/querier** role and **source-specific filtering**
-  (§9, `IP_ADD_SOURCE_MEMBERSHIP`) remain out of this track (Phase-2 /
-  future).
+  (§9, `IP_ADD_SOURCE_MEMBERSHIP`) are outside *this* track — SSM
+  shipped separately (`igmp_source_specific_multicast.md`), and the
+  router/querier role shipped in the Phase-2 multicast router
+  (`router_forwarding_plane.md`).
 
 ## 6. Cross-references
 

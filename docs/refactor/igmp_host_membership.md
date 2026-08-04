@@ -264,9 +264,9 @@ Group-Specific Query, the IGMPv1 default Max Resp Time, and the
 `docs/refactor/igmp_version_fallback.md`; the source-filter leg landed
 in `docs/refactor/igmp_source_specific_multicast.md`.
 
-**Still deferred (Phase-2 / router-grade only):** the IGMPv3
-router/querier role and MLDv2/MLDv1 leave-reporting — out of scope for
-host parity.
+**Shipped since:** the IGMPv3 router/querier role (Phase-2 multicast
+router, M5b–M5f) and MLDv2/MLDv1 leave-reporting. No IGMP host-parity
+item remains deferred.
 
 **Moved here from Phase 4** (gated by the knobs this phase introduces):
 the RFC 3376 §5.1 Robustness-Variable retransmission of the

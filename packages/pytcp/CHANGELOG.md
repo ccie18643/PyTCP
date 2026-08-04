@@ -13,6 +13,29 @@ multi-homed host into a router.
 
 ### Added
 
+- **IPv4 / IPv6 unicast forwarding plane.** A multi-homed stack with
+  `ip4.ip_forward` / `ip6.all.forwarding` enabled forwards transit
+  unicast between interfaces: a forward-or-deliver decision on the RX
+  path, TTL / Hop-Limit decrement (with IPv4 header-checksum recompute),
+  a destination-keyed FIB longest-prefix next-hop lookup, and egress
+  neighbor resolution on the outgoing interface. A TTL / Hop Limit that
+  reaches zero in transit is dropped with an ICMP Time Exceeded; a
+  datagram with no route is dropped with an ICMP Destination Unreachable
+  (RFC 1812 M1).
+- **Transit Path-MTU + forwarded fragmentation.** A transit datagram
+  too large for the egress MTU elicits an ICMPv4 Fragmentation-Needed /
+  ICMPv6 Packet-Too-Big; an over-MTU forwarded IPv4 datagram with DF=0
+  is fragmented on egress (RFC 1812 M2).
+- **ICMP Redirect generation.** When a packet is forwarded back out its
+  ingress interface toward an on-link next hop, the router emits an
+  ICMPv4 Redirect (Type 5, new codec) or ICMPv6 ND Redirect, gated by
+  `ip4.send_redirects`; the host accepts inbound Redirects
+  (`ip4.accept_redirects`) and installs the redirected route (RFC 1812
+  M3).
+- **RFC 1812 forward-path conformance.** The forward path drops martian
+  and directed- / limited-broadcast destinations, applies source-address
+  filters, and preserves IP options byte-for-byte across the forward
+  (RFC 1812 M4).
 - **IGMPv3 / MLDv2 multicast-router querier.** An interface configured
   as a multicast router (`igmp.mc_forwarding` / `mld.mc_forwarding`)
   takes the querier role on its link, for both IPv4 (IGMP) and IPv6
@@ -47,6 +70,38 @@ multi-homed host into a router.
   `{igmp,mld}.query_response_interval`, `.startup_query_interval`,
   `.startup_query_count`, and `igmp.last_member_query_interval` /
   `igmp.last_member_query_count` (`mld.last_listener_query_*`).
+
+### Fixed
+
+- **IGMP/MLD membership-lock TX deadlock.** Group-membership
+  state-change Reports are now dispatched fire-and-forget
+  (`_marshal_tx_async`) instead of via the blocking TX path, so the
+  mutating thread does not wedge on the TX worker while holding the
+  interface multicast lock — the TX worker re-enters that same lock to
+  validate the Report source, a cross-thread lock-ordering deadlock that
+  previously stalled bring-up of a static IPv6 address on a router-less
+  link.
+- **`stack.timer` test isolation.** Three TCP fixtures that patch
+  `stack.timer` now pass `create=True`, so the full-suite `make test`
+  no longer fails order-dependently when no earlier test has
+  materialized the singleton.
+
+### Tests
+
+- **Root-gated real-TAP end-to-end suite.** A new `make test-realtap`
+  suite boots the real daemon on actual TAP interfaces over
+  `/dev/net/tun` and drives traffic from an `AF_PACKET` peer: 7
+  dual-stack host smoke tests plus a 4-test two-tap router variant
+  (IPv4 / IPv6 unicast transit forwarding, TTL-expiry Time Exceeded,
+  multicast replication) — 11 tests exercising the real Tx/Rx rings,
+  threads, and wall-clock timers the mocked suites cannot reach. Skips
+  cleanly off the default gate (needs root + `PYTCP_REAL_TAP=1`).
+
+### Tooling
+
+- **CI real-TAP job.** A separate root-gated CI job runs the real-TAP
+  suite under `sudo` on every push, isolated from the unprivileged main
+  test gate.
 
 ## 3.0.8 — 2026-07-23
 

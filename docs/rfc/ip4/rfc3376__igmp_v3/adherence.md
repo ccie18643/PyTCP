@@ -29,9 +29,13 @@ datagram from a non-admitted source before socket delivery,
 Linux `ip_mc_sf_allow`) is implemented for both UDP and RAW
 sockets, mirroring Linux which gates both delivery paths
 (`__udp4_lib_mcast_deliver` and `raw_v4_input`). The IGMPv3
-**router / querier** role (sending Queries, maintaining group
-membership state for forwarding, the querier election) is
-Phase-2 router work and is marked out-of-scope per clause.
+**router / querier** role — General-Query emission, the
+Report-learned group-membership table, querier election, and
+fast-leave Group-Specific Queries — is implemented as of the Phase-2
+multicast router (M5b/M5c), gated per-interface by
+`igmp.mc_forwarding` and audited per clause below. The per-source
+timers (§6.2.1) and IGMPv1/v2 querier-emit interop (§7.3) remain
+deferred refinements.
 
 ---
 
@@ -51,7 +55,7 @@ Phase-2 router work and is marked out-of-scope per clause.
 | §4.2.14  | Reports sent to 224.0.0.22                               | met |
 | §5.1     | State-change Report on join/leave/source-delta + robustness retransmit | met |
 | §5.2     | Random-delay response to a Query (general / group / group-and-source) | met |
-| §6       | Host state — all-systems group never reported            | met (host); router state out of scope |
+| §6       | Host state — all-systems group never reported            | met (host + Phase-2 M5b router membership table) |
 | §7       | Older-version (v1/v2) querier interoperation             | met |
 | §8       | Timing / robustness constants                            | met (sysctls) |
 | §9       | Source-Specific Multicast (INCLUDE / source filters)     | met (control plane + UDP data-plane RX filter) |
@@ -146,8 +150,8 @@ serialise the v1/v2 and v3 Query wire forms (checksum injected by
 the `Igmp` base), tested at
 `test__igmp__message__query__assembler__operation.py`. The
 querier state machine that *drives* this emission — election,
-General-Query timers, the router-side group-membership table — is
-the Phase-2 M5b–M5c router work and remains out of scope here.
+General-Query timers, the router-side group-membership table —
+shipped in Phase-2 M5b–M5c (see the §6 querier sections below).
 
 ### §4.1.1 / §4.1.7 Max Resp Code / QQIC
 
@@ -800,5 +804,8 @@ source-delivery filter (`ip_mc_sf_allow`) is enforced for both
 UDP and RAW sockets — a received multicast datagram reaches a
 socket only from a source the socket's filter admits — mirroring
 Linux, which gates both `__udp4_lib_mcast_deliver` and
-`raw_v4_input`. The IGMPv3 router/querier role is out of scope
-(Phase 2).
+`raw_v4_input`. The IGMPv3 router/querier role is implemented as of
+the Phase-2 multicast router (M5b/M5c): General-Query emission,
+election, the Report-learned membership table, and fast-leave
+Group-Specific Queries, consumed by the last-hop multicast
+forwarding plane (M5f).

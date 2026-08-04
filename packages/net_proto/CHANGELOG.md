@@ -18,6 +18,11 @@ _Development in progress._
   RFC 3376 §4.1.1 Max Resp Code / QQIC float-code encoder
   (`encode_igmp_float_code`) — the wire support the Phase-2 IGMPv3 /
   MLDv2 multicast-router querier emits in `PyTCP` 3.0.9.
+- **ICMPv4 Redirect message codec.** A new `Icmp4Type.REDIRECT = 5`
+  message class (`icmp4__message__redirect.py`) with `Icmp4RedirectCode`
+  and the full parser / assembler / unit-test matrix — the wire support
+  the Phase-2 IPv4 router emits (ICMP Redirect generation) in `PyTCP`
+  3.0.9.
 
 ## 3.0.8 — 2026-07-23
 

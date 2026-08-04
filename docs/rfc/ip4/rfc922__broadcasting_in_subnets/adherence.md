@@ -40,7 +40,7 @@ modern posture (no all-subnets handling).
 | §6      | Subnet-directed broadcast `{net, subnet, -1}` recognition | met (via Ip4Network.broadcast) |
 | §6      | All-subnets broadcast `{net, -1, -1}` recognition     | not implemented (operationally deprecated) |
 | §6      | Subnet broadcasts MUST be received                    | met for `{net, subnet, -1}` |
-| §7      | Gateway forwarding of subnet-directed broadcasts      | n/a (Phase 2) |
+| §7      | Gateway forwarding of subnet-directed broadcasts      | met by refusal — forward path drops directed-broadcast destinations (RFC 2644 default-off) |
 
 ---
 
@@ -86,8 +86,12 @@ broadcasts the host owns.
 > be a request to be forwarded ... [with appropriate loop
 > protection]."
 
-**Adherence:** n/a (Phase 2 router). PyTCP does not forward;
-the all-subnets enumeration / forwarding logic is router work.
+**Adherence:** met by refusal for the subnet-directed form. PyTCP
+forwards unicast as of 3.0.9, and its forward path drops any datagram
+whose destination is a directly-connected subnet's directed broadcast
+(`stack.is_ip4_broadcast`), the RFC 2644 smurf-prevention default.
+All-subnets enumeration / replication remains unimplemented
+(deprecated).
 
 ---
 
@@ -140,7 +144,7 @@ the all-subnets enumeration / forwarding logic is router work.
 | §6 Subnet broadcast source replacement (TX)         | locked in |
 | §6 Subnet broadcast destination gate (TX)           | locked in (sysctl `ip4.allow_broadcast`) |
 | §6 All-subnets broadcast                            | n/a (not implemented) |
-| §7 Gateway forwarding                               | n/a (Phase 2) |
+| §7 Gateway forwarding                               | met by refusal (directed broadcasts not forwarded; RFC 2644) |
 
 ---
 
@@ -150,7 +154,7 @@ the all-subnets enumeration / forwarding logic is router work.
 |-----------------------------------------------------|--------|
 | §6 Subnet-directed broadcast {net, subnet, -1}      | met    |
 | §6 All-subnets broadcast {net, -1, -1}              | not implemented (operationally deprecated; Phase 2 if needed) |
-| §7 Gateway forwarding of broadcasts                 | n/a (Phase 2) |
+| §7 Gateway forwarding of broadcasts                 | met by refusal (directed broadcasts not forwarded; RFC 2644) |
 
 RFC 922 is fully covered for the subnet-directed form. The
 all-subnets broadcast is operationally deprecated and not on

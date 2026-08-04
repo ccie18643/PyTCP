@@ -127,8 +127,13 @@ selected by `_igmp_host_compatibility_mode()`.
 > Group-Specific Queries on Leave, the Group Membership
 > Interval]."
 
-**Adherence:** out of scope. The querier (router) role is Phase-2
-router work. PyTCP is a host (group member) only.
+**Adherence:** met via the IGMPv3-form querier (Phase-2 M5b–M5c).
+An `igmp.mc_forwarding` interface emits General Queries, runs
+lowest-address election with the Other Querier Present timer, learns
+a group-membership table from inbound Reports, and sends fast-leave
+Group-Specific Queries on a v2 Leave (received on 224.0.0.2). Only the
+IGMPv1/v2 older-format querier-emit interop remains deferred. The
+detail lives in the RFC 3376 record §6.
 
 ---
 
@@ -198,7 +203,7 @@ router work. PyTCP is a host (group member) only.
 | §3 join/leave reporting (IGMPv3)    | locked in |
 | §3 v2-form report / Leave-to-224.0.0.2 | locked in (`test__igmp__version_fallback.py`) |
 | §3 report suppression               | locked in (`test__igmp__v2_report_suppression.py`) |
-| §3 querier role                     | n/a (Phase 2 router) |
+| §3 querier role                     | met (IGMPv3-form querier, M5b/M5c; older-format emit interop deferred) |
 
 ---
 
@@ -211,7 +216,7 @@ router work. PyTCP is a host (group member) only.
 | §3 join/leave reporting                 | met via IGMPv3 |
 | §3 IGMPv2-form reports / Leave (224.0.0.2) | met (RFC 3376 §7 compatibility mode) |
 | §3 report suppression                   | met (in v1/v2 compatibility mode) |
-| §3 querier / router role                | out of scope (Phase 2) |
+| §3 querier / router role                | met (IGMPv3-form querier, M5b/M5c; older-format emit interop deferred) |
 
 PyTCP supersedes IGMPv2 with IGMPv3 (RFC 3376) and implements the
 IGMPv2 message wire forms required for interoperation. The
@@ -221,4 +226,6 @@ implemented as the RFC 3376 §7 older-version Host Compatibility
 Mode: an older-version Query flips the interface into IGMPv2 (or
 IGMPv1) mode, `_igmp_host_compatibility_mode()` selects the v2
 report / Leave forms, and report suppression fires while a v2
-timer runs. The querier role is Phase-2 router work.
+timer runs. The querier role is implemented via the IGMPv3-form
+querier (M5b/M5c); only IGMPv2 older-format querier emission remains
+deferred.
