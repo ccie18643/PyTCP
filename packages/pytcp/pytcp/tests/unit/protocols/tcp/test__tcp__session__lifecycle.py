@@ -64,6 +64,7 @@ class _TcpSessionFixture(TestCase):
         self._timer_patch = patch(
             "pytcp.protocols.tcp.session.tcp__session.stack.timer",
             self._timer,
+            create=True,
         )
         self._timer_patch.start()
 
