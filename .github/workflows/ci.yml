@@ -35,3 +35,34 @@ jobs:
 
       - name: Test (full unittest suite)
         run: make test
+
+  # Root-gated end-to-end suite: boots the real daemon on real TAP
+  # interfaces and drives forwarding / host traffic over /dev/net/tun.
+  # It needs CAP_NET_ADMIN, so it runs as its own job under 'sudo' — kept
+  # OUT of the 'validate' gate above (which stays unprivileged and fully
+  # deterministic). The build runs as the runner user so setup-python is
+  # on PATH; only the test step is elevated, and by then the venv
+  # prerequisite is already satisfied so 'sudo make' does not rebuild it
+  # (and thus never needs python on the reduced sudo PATH).
+  real-tap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build venv + install deps
+        run: make venv
+
+      - name: Ensure the TUN device is available
+        run: sudo modprobe tun || true
+
+      - name: Real-TAP end-to-end suite (root)
+        run: sudo make test-realtap
