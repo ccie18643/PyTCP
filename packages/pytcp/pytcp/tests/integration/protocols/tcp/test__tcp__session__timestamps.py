@@ -54,7 +54,7 @@ Reference RFCs:
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__timestamps.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip4Address

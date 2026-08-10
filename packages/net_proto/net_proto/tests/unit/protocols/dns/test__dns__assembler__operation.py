@@ -27,7 +27,7 @@ This module contains tests for the DNS message assembler operation.
 
 net_proto/tests/unit/protocols/dns/test__dns__assembler__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

@@ -39,7 +39,7 @@ The suite is skipped unless run as root with 'PYTCP_REAL_TAP=1'; it needs
 
 pytcp/tests/lib/real_tap_router_testcase.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

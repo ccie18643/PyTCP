@@ -27,7 +27,7 @@ This module contains the IPv6 HBH Router Alert option support code.
 
 net_proto/protocols/ip6_hbh/options/ip6_hbh__option__router_alert.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

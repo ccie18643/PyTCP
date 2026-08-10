@@ -27,7 +27,7 @@ This module contains the ICMPv6 message base class.
 
 net_proto/protocols/icmp6/message/icmp6__message.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from abc import abstractmethod

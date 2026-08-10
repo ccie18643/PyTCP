@@ -28,7 +28,7 @@ value type and the RFC 3810 §4.2 per-interface state merge.
 
 pytcp/tests/unit/lib/test__lib__ip6_multicast_filter.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

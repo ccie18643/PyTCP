@@ -31,7 +31,7 @@ Integration tests for the out-of-process activity introspection API.
 
 pytcp/tests/integration/ipc/test__ipc__control__activity_introspect.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

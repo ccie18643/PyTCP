@@ -27,7 +27,7 @@ Integration tests for the loopback RX local-delivery acceptance hook.
 
 pytcp/tests/integration/loopback/test__loopback__rx_acceptance.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -30,7 +30,7 @@ example's injectable socket factory (no daemon required).
 
 pytcp/tests/integration/examples/test__examples__udp_echo.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import asyncio

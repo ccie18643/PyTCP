@@ -32,7 +32,7 @@ gates both UDP and RAW multicast delivery through the same filter
 
 pytcp/tests/integration/protocols/igmp/test__igmp__source_data_filter__raw.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

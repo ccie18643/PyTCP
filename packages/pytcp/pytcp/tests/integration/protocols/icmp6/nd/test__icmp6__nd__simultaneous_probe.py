@@ -35,7 +35,7 @@ its own DAD claim.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__simultaneous_probe.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -32,7 +32,7 @@ they are golden-tested directly.
 
 pytcp/cli/cli__format.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import json

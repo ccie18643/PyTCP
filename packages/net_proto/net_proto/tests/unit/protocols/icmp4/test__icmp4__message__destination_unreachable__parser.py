@@ -27,7 +27,7 @@ Module contains tests for the ICMPv4 Destination Unreachable message parser.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__destination_unreachable__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

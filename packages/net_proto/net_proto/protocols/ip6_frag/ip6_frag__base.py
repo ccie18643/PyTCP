@@ -27,7 +27,7 @@ This module contains the IPv6 Frag protocol base class.
 
 net_proto/protocols/ip6_frag/ip6_frag__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -27,7 +27,7 @@ This module contains tests for the 'Dhcp4Client'.
 
 pytcp/tests/unit/protocols/dhcp4/test__dhcp4__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

@@ -27,7 +27,7 @@ This module contains unit tests for the 'PacketHandlerIcmp4Tx' mixin.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp4__tx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Callable

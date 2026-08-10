@@ -29,7 +29,7 @@ top-level 'tcp_fsm' dispatch.
 
 pytcp/tests/unit/protocols/tcp/fsm/test__tcp__fsm.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

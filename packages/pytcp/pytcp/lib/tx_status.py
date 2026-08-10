@@ -27,7 +27,7 @@ This module contains the definition of the TX status codes.
 
 pytcp/lib/tx_status.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import auto

@@ -27,7 +27,7 @@ This module contains the ICMPv6 protocol base class.
 
 net_proto/protocols/icmp6/icmp6__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

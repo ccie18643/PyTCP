@@ -35,7 +35,7 @@ into a standalone dist (see docs/refactor/kernel_userspace_separation.md
 
 pytcp/ipc/ipc__frame.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

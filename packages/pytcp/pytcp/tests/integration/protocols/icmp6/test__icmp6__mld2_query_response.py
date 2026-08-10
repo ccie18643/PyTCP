@@ -30,7 +30,7 @@ the wire.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__mld2_query_response.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

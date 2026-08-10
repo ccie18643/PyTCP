@@ -27,7 +27,7 @@ This module contains the IPv4 Router Alert option support code.
 
 net_proto/protocols/ip4/options/ip4__option__router_alert.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

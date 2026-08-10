@@ -28,7 +28,7 @@ fragmentation over IPv4.
 
 pytcp/tests/integration/protocols/udp/test__udp__fragmentation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

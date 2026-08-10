@@ -43,7 +43,7 @@ distribution via the secret-keyed hash.
 
 pytcp/protocols/ip6/ip6__flow_label.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import hashlib

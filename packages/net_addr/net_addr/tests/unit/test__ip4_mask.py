@@ -27,7 +27,7 @@ This module contains tests for the NetAddr package IPv4 mask support class.
 
 net_addr/tests/unit/test__ip4_mask.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

@@ -32,7 +32,7 @@ flag bits.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__router_advertisement__prf.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, cast, override

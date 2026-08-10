@@ -46,7 +46,7 @@ The tests cover the natural edge cases of this formula:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__newreno.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

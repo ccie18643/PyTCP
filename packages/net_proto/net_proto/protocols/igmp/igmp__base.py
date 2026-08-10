@@ -27,7 +27,7 @@ This module contains the IGMP protocol base class.
 
 net_proto/protocols/igmp/igmp__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

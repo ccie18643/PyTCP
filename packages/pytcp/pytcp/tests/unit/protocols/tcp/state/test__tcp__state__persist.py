@@ -27,7 +27,7 @@ Unit tests for PersistState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__persist.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import inspect

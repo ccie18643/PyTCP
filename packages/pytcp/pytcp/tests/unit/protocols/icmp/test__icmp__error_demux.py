@@ -31,7 +31,7 @@ seq is exposed via 'embedded_seq').
 
 pytcp/tests/unit/protocols/icmp/test__icmp__error_demux.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

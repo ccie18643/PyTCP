@@ -30,7 +30,7 @@ socket still holds.
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__socket_membership_refcount.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

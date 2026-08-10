@@ -31,7 +31,7 @@ interface forever.
 
 pytcp/tests/integration/protocols/igmp/test__igmp__socket_gc_release.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import gc

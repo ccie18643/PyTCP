@@ -27,7 +27,7 @@ Tests for the IPC control-channel message envelope codec.
 
 pytcp/tests/unit/ipc/test__ipc__message.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

@@ -45,7 +45,7 @@ docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__dgram_frame.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Buffer

@@ -34,7 +34,7 @@ martian-source tests can rely on the harness shape.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__harness_smoke.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip6Address, Ip6IfAddr

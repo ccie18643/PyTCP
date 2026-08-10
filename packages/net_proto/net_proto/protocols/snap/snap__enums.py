@@ -31,7 +31,7 @@ on switched-Ethernet links as 802.3+LLC+SNAP frames.
 
 net_proto/protocols/snap/snap__enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import IntEnum

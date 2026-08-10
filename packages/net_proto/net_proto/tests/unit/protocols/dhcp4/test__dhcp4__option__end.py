@@ -27,7 +27,7 @@ Module contains tests for the DHCPv4 End option code.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__end.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

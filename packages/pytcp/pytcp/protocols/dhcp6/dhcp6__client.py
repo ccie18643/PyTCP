@@ -32,7 +32,7 @@ land in a later phase.
 
 pytcp/protocols/dhcp6/dhcp6__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import math

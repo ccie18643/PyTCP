@@ -38,7 +38,7 @@ TTL / Hop Limit as an 'IP_TTL' / 'IPV6_HOPLIMIT' cmsg when 'IP_RECVTTL' /
 
 pytcp/runtime/socket/ping__socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

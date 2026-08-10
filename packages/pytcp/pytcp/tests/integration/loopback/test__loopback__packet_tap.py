@@ -31,7 +31,7 @@ external capture tool (watching the TAP device) is structurally blind to.
 
 pytcp/tests/integration/loopback/test__loopback__packet_tap.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

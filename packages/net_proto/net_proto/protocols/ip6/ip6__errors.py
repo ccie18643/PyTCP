@@ -27,7 +27,7 @@ This module contains the IPv6 protocol error classes.
 
 net_proto/protocols/ip6/ip6__errors.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -32,7 +32,7 @@ filters select correctly — the out-of-process 'ss' surface.
 
 pytcp/tests/integration/ipc/test__ipc__control__socket_introspect.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

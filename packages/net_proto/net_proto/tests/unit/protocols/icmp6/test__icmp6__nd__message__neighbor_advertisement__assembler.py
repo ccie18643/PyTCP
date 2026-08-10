@@ -28,7 +28,7 @@ assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__neighbor_advertisement__assembler.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, cast, override

@@ -27,7 +27,7 @@ This module contains the shared protocol enums.
 
 net_proto/lib/enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

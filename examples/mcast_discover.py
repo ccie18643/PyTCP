@@ -44,7 +44,7 @@ Needs a running daemon that owns the TAP interface, e.g.:
 
 examples/mcast_discover.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import socket

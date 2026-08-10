@@ -34,7 +34,7 @@ octets after the four record sections.
 
 net_proto/protocols/dns/dns__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

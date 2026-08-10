@@ -27,7 +27,7 @@ This module contains IPv6 address support class.
 
 net_addr/ip6_address.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import socket

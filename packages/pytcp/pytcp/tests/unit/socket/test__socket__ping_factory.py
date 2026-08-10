@@ -34,7 +34,7 @@ attributes the socket never set.
 
 pytcp/tests/unit/socket/test__socket__ping_factory.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

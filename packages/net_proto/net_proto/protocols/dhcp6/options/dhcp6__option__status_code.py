@@ -27,7 +27,7 @@ This module contains the DHCPv6 Status Code option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__status_code.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

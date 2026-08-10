@@ -34,7 +34,7 @@ docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__server.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

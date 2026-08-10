@@ -36,7 +36,7 @@ legitimate — see docs/refactor/real_tap_smoke_suite.md.
 
 pytcp/tests/lib/real_tap_testcase.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

@@ -34,7 +34,7 @@ methods are daemon-internal socket plumbing (token-keyed, carrying an
 
 pytcp/client/client__membership.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

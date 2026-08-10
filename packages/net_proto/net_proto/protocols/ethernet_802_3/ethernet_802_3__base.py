@@ -27,7 +27,7 @@ This module contains the Ethernet 802.3 protocol base class.
 
 net_proto/protocols/ethernet_802_3/ethernet_802_3__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -54,7 +54,7 @@ Needs a running daemon that owns the TAP interface, e.g.:
 
 examples/udp_echo_server__async.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import asyncio

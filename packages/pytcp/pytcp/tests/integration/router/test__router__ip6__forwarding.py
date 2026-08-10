@@ -33,7 +33,7 @@ drop paths.
 
 pytcp/tests/integration/router/test__router__ip6__forwarding.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip6Address, Ip6Network

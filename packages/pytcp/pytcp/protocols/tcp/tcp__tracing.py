@@ -28,7 +28,7 @@ This module contains the TCP session tracing decorators.
 
 pytcp/protocols/tcp/tcp__tracing.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import functools

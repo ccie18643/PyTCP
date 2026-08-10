@@ -29,7 +29,7 @@ RFC 3971 §5.3.2 (Nonce wire format) as referenced by RFC 7527
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__nonce.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

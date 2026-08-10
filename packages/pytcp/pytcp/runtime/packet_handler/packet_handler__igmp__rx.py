@@ -29,7 +29,7 @@ This module contains the inbound IGMP packet handler for one interface.
 
 pytcp/runtime/packet_handler/packet_handler__igmp__rx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import random

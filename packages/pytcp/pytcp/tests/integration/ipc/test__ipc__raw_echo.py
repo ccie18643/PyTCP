@@ -38,7 +38,7 @@ via the IPv4 raw-socket path.
 
 pytcp/tests/integration/ipc/test__ipc__raw_echo.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

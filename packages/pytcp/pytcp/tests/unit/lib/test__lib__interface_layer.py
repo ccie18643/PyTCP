@@ -27,7 +27,7 @@ This module contains tests for the 'InterfaceLayer' enum.
 
 pytcp/tests/unit/lib/test__lib__interface_layer.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import Enum

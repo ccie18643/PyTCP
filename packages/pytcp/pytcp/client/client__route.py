@@ -32,7 +32,7 @@ in-process 'RouteApi'.
 
 pytcp/client/client__route.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

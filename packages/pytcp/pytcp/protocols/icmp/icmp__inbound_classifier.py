@@ -29,7 +29,7 @@ an outbound ICMP error may be sent in response.
 
 pytcp/protocols/icmp/icmp__inbound_classifier.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import IpVersion

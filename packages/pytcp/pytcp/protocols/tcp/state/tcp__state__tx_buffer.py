@@ -30,7 +30,7 @@ fast-retransmit dup-ACK request counter.
 
 pytcp/protocols/tcp/state/tcp__state__tx_buffer.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass, field

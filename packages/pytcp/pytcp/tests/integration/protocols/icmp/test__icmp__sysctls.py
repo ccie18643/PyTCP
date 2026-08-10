@@ -30,7 +30,7 @@ ICMPv6.
 
 pytcp/tests/integration/protocols/icmp/test__icmp__sysctls.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from pytcp.protocols.icmp import icmp__constants

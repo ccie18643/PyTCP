@@ -27,7 +27,7 @@ This module contains the Raw protocol assembler.
 
 net_proto/protocols/raw/raw__assembler.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

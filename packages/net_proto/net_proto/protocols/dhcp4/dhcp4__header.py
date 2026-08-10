@@ -27,7 +27,7 @@ This module contains the DHCPv4 header class.
 
 net_proto/protocols/dhcp4/dhcp4__header.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

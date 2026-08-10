@@ -27,7 +27,7 @@ This module contains the unknown IPv6 Hop-by-Hop Options option support code.
 
 net_proto/protocols/ip6_hbh/options/ip6_hbh__option__unknown.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

@@ -48,7 +48,7 @@ inner-drain optimisation targets.
 
 tools/bench_rx_ring.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import argparse

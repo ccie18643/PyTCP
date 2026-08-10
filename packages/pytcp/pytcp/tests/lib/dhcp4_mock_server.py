@@ -31,7 +31,7 @@ path rather than 'SimpleNamespace' stand-ins.
 
 pytcp/tests/lib/dhcp4_mock_server.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections import deque

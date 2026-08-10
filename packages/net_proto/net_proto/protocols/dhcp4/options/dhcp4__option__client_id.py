@@ -27,7 +27,7 @@ This module contains the DHCPv4 Client Identifier option support code.
 
 net_proto/protocols/dhcp4/options/dhcp4__option__client_id.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

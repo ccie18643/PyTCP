@@ -27,7 +27,7 @@ This module contains the DNS header class.
 
 net_proto/protocols/dns/dns__header.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

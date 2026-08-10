@@ -43,7 +43,7 @@ came from somewhere other than RA SLAAC, e.g. static config).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__multi_prefix_router.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

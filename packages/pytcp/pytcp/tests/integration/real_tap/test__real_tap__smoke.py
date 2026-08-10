@@ -31,7 +31,7 @@ PYTCP_REAL_TAP=1.
 
 pytcp/tests/integration/real_tap/test__real_tap__smoke.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

@@ -27,7 +27,7 @@ Tests for the IPC datagram data-channel frame codec.
 
 pytcp/tests/unit/ipc/test__ipc__dgram_frame.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

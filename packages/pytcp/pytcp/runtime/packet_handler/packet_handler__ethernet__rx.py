@@ -29,7 +29,7 @@ This module contains packet handler for the inbound Ethernet II packets.
 
 pytcp/runtime/packet_handler/packet_handler__ethernet__rx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import TYPE_CHECKING

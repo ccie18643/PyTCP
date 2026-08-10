@@ -35,7 +35,7 @@ tests can rely on the harness shape.
 
 pytcp/tests/integration/protocols/ethernet_802_3/test__ethernet_802_3__harness_smoke.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_proto import SnapCiscoProtocol

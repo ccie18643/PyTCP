@@ -27,7 +27,7 @@ Module contains tests for the IPv4 Timestamp option code (RFC 791 §3.1).
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__timestamp.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

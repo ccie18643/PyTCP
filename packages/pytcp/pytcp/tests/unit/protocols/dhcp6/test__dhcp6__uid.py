@@ -28,7 +28,7 @@ This module contains tests for the DHCPv6 DUID / IAID helpers in
 
 pytcp/tests/unit/protocols/dhcp6/test__dhcp6__uid.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

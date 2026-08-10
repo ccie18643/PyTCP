@@ -27,7 +27,7 @@ This module contains the Ethernet II packet parser class.
 
 net_proto/protocols/ethernet/ethernet__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

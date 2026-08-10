@@ -29,7 +29,7 @@ the stack TX path reads when emitting IPv4 datagrams.
 
 pytcp/protocols/ip4/ip4__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 # RFC 1122 §3.2.1.7 host-default TTL for outbound IPv4 unicast

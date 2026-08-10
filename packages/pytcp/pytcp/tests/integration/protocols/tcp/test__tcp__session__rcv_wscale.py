@@ -36,7 +36,7 @@ yields a larger shift so DRS can advertise past 8 MiB.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__rcv_wscale.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

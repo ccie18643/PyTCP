@@ -31,7 +31,7 @@ valid header.
 
 net_proto/tests/unit/protocols/llc/test__llc__parser__integrity_checks.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

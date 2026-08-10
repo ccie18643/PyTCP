@@ -27,7 +27,7 @@ This module contains the LLC protocol error classes.
 
 net_proto/protocols/llc/llc__errors.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

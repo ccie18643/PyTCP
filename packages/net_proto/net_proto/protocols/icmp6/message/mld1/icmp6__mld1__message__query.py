@@ -33,7 +33,7 @@ its fixed 24-octet length (RFC 3810 §8.1).
 
 net_proto/protocols/icmp6/message/mld1/icmp6__mld1__message__query.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

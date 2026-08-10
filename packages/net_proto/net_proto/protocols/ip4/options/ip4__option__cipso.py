@@ -34,7 +34,7 @@ because PyTCP has no NetLabel/SELinux MLS consumer to feed.
 
 net_proto/protocols/ip4/options/ip4__option__cipso.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

@@ -28,7 +28,7 @@ Report message (type 131) support class.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld1__message__report.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

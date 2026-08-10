@@ -30,7 +30,7 @@ thread membership changes cannot corrupt it on a free-threaded build.
 
 packages/pytcp/pytcp/tests/integration/protocols/igmp/test__igmp__thread_safety.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

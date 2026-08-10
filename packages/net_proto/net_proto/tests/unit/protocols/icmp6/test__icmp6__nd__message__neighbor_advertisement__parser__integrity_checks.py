@@ -28,7 +28,7 @@ integrity checks.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__neighbor_advertisement__parser__integrity_checks.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

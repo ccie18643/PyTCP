@@ -32,7 +32,7 @@ path needs a driven TCP wire and lands in the echo test.
 
 pytcp/tests/integration/ipc/test__ipc__client_tcp_socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

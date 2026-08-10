@@ -29,7 +29,7 @@ This module contains the TCP FSM LISTEN state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__listen.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import TYPE_CHECKING

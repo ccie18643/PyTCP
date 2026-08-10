@@ -27,7 +27,7 @@ This module contains tests for the NetProto ProtoEnum base enum class.
 
 net_proto/tests/unit/lib/test__lib__proto_enum.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import enum

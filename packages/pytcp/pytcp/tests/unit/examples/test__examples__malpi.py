@@ -29,7 +29,7 @@ ASCII-art monkey easter-egg selection ('malpka' / 'malpa' / 'malpi').
 
 pytcp/tests/unit/examples/test__examples__malpi.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

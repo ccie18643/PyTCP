@@ -28,7 +28,7 @@ Report parser.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__message__v3_report__integrity_checks.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

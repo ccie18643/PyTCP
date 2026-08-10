@@ -27,7 +27,7 @@ This module contains tests for the DHCPv4 packet parser sanity checks.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__parser__sanity_checks.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

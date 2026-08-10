@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Neighbor Solicitation message support class.
 
 net_proto/protocols/icmp6/message/nd/icmp6__nd__message__neighbor_solicitation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

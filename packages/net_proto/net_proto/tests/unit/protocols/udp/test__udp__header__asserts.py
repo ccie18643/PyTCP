@@ -27,7 +27,7 @@ This module contains tests for the UDP header fields asserts.
 
 net_proto/tests/unit/protocols/udp/test__udp__header__asserts.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

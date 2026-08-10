@@ -37,7 +37,7 @@ management traffic on the wire.
 
 pytcp/tests/integration/protocols/ethernet_802_3/test__ethernet_802_3__llc_snap.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_proto import SnapCiscoProtocol

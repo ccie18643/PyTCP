@@ -47,7 +47,7 @@ remaining is already <= 2 hours.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__slaac_address_state.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest.mock import patch

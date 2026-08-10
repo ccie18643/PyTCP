@@ -27,7 +27,7 @@ This module contains the ICMPv4 Redirect message support class.
 
 net_proto/protocols/icmp4/message/icmp4__message__redirect.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

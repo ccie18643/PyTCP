@@ -41,7 +41,7 @@ removing rule 6 from the selector would flip the outcome.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc6724_source_selection_rule_6.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip6Address, Ip6IfAddr

@@ -29,7 +29,7 @@ This module contains packet handler for the outbound IPv4 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip4__tx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Callable

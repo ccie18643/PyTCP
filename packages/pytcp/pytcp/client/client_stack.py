@@ -34,7 +34,7 @@ across the boundary. 'connect()' is the entry point.
 
 pytcp/client/client_stack.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

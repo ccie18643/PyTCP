@@ -34,7 +34,7 @@ through the pure formatters in 'cli__format'.
 
 pytcp/cli/__main__.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import argparse

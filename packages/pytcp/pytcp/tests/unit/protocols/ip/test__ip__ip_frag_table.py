@@ -27,7 +27,7 @@ This module contains tests for the 'IpFragTable' shared flow store.
 
 pytcp/tests/unit/protocols/ip/test__ip__ip_frag_table.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

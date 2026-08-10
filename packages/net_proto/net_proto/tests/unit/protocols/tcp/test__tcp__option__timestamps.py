@@ -27,7 +27,7 @@ Module contains tests for the TCP Timestamps option code.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__option__timestamps.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

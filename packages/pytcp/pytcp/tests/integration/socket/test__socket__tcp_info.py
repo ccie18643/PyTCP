@@ -42,7 +42,7 @@ stdlib socket pattern see the bytes they expect.
 
 pytcp/tests/integration/socket/test__socket__tcp_info.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

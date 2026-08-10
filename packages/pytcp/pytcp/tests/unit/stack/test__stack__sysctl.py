@@ -29,7 +29,7 @@ plan at 'docs/refactor/sysctl_framework.md'.
 
 pytcp/tests/unit/stack/test__stack__sysctl.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import inspect

@@ -42,7 +42,7 @@ so it completes without deadlock.
 
 pytcp/tests/integration/ipc/test__ipc__accept.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

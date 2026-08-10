@@ -29,7 +29,7 @@ plan at 'docs/refactor/nud_state_machine.md'.
 
 pytcp/tests/unit/lib/test__lib__neighbor.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

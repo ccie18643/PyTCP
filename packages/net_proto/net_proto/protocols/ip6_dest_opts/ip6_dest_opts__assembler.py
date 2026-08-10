@@ -27,7 +27,7 @@ This module contains the IPv6 Destination Options packet assembler.
 
 net_proto/protocols/ip6_dest_opts/ip6_dest_opts__assembler.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

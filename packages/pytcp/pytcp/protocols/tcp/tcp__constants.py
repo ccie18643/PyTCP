@@ -40,7 +40,7 @@ constants without creating a circular import with 'tcp__session.py'.
 
 pytcp/protocols/tcp/tcp__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 # RFC 6298 §2.1 initial RTO. The first transmission of a fresh segment

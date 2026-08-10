@@ -27,7 +27,7 @@ This package contains classes representing network protocols.
 
 net_proto/__init__.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_proto.lib.enums import EtherType, IpProto
@@ -673,7 +673,7 @@ from net_proto.protocols.udp.udp__errors import (
 from net_proto.protocols.udp.udp__header import UDP__HEADER__LEN, UdpHeader
 from net_proto.protocols.udp.udp__parser import UdpParser
 
-__version__: str = "3.0.9"
+__version__: str = "3.0.10"
 
 __all__ = [
     "ARP__HARDWARE_LEN__ETHERNET",

@@ -35,7 +35,7 @@ gate, and Pipe's in-flight-minus-sacked accounting.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__loss_recovery.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

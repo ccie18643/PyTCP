@@ -28,7 +28,7 @@ integration tests in place of the real 'pytcp.runtime.timer.Timer'.
 
 pytcp/tests/lib/fake_timer.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import heapq

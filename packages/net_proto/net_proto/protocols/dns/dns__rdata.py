@@ -38,7 +38,7 @@ their dedicated 'DnsResourceRecord.address' accessor and decode to
 
 net_proto/protocols/dns/dns__rdata.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

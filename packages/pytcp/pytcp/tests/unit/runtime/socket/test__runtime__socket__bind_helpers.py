@@ -27,7 +27,7 @@ This module contains tests for the IP helper functions.
 
 pytcp/tests/unit/runtime/socket/test__runtime__socket__bind_helpers.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

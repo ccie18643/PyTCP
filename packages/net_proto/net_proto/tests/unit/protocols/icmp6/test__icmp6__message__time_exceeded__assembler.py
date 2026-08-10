@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 Time Exceeded message assembler.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__message__time_exceeded__assembler.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

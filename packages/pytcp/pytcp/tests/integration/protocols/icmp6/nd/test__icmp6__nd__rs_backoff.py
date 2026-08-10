@@ -42,7 +42,7 @@ exiting early on the first RA receipt.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__rs_backoff.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -27,7 +27,7 @@ This module contains tests for the faithful socket-error wire round trip.
 
 pytcp/tests/unit/ipc/test__ipc__socket_error_wire.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

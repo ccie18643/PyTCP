@@ -33,7 +33,7 @@ the add with the callback defaulted to None.
 
 pytcp/client/client__address.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

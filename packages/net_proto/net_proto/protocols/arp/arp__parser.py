@@ -27,7 +27,7 @@ This module contains the ARP packet parser class.
 
 net_proto/protocols/arp/arp__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

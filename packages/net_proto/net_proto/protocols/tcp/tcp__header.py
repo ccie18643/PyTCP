@@ -27,7 +27,7 @@ This module contains the TCP packet header.
 
 net_proto/protocols/tcp/tcp__header.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

@@ -29,7 +29,7 @@ copy of each matching frame to every bound packet socket.
 
 pytcp/runtime/socket/packet__socket_table.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

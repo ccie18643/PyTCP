@@ -39,7 +39,7 @@ is dropped in M1 pending the M2 Packet Too Big response.
 
 pytcp/runtime/packet_handler/packet_handler__ip6__forward.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time as time_module

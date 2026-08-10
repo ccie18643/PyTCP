@@ -27,7 +27,7 @@ This module contains unit tests for the 'PacketHandler' base classes.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__init.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

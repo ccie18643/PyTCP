@@ -42,7 +42,7 @@ Covers:
 
 pytcp/tests/integration/protocols/udp/test__udp__socket_api.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

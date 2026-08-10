@@ -32,7 +32,7 @@ these tests pin the registration, defaults, and cross-field validators.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

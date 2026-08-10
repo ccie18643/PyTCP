@@ -27,7 +27,7 @@ This module contains tests for the DHCPv4 header fields and asserts.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__header__asserts.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import FrozenInstanceError

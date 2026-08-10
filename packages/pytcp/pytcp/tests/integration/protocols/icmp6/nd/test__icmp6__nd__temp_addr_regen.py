@@ -42,7 +42,7 @@ REGEN_ADVANCE defaults to 5 seconds (RFC 8981 §3.8 formula
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__temp_addr_regen.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

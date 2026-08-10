@@ -36,7 +36,7 @@ the run loop stays output-free and testable; the '__main__' CLI prints it.
 
 pytcp/daemon/daemon.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

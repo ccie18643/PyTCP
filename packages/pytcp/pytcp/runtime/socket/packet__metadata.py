@@ -29,7 +29,7 @@ plus the 'sockaddr_ll' describing how it arrived.
 
 pytcp/runtime/socket/packet__metadata.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass

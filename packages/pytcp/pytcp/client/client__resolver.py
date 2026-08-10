@@ -35,7 +35,7 @@ as 'socket.gethostbyname' / 'socket.getaddrinfo'.
 
 pytcp/client/client__resolver.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

@@ -32,7 +32,7 @@ frames and no running daemon.
 
 pytcp/tests/unit/daemon/test__daemon__capture.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import io

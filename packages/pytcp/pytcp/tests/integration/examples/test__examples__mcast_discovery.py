@@ -31,7 +31,7 @@ to it — mirroring the IGMP group-delivery tests.
 
 pytcp/tests/integration/examples/test__examples__mcast_discovery.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

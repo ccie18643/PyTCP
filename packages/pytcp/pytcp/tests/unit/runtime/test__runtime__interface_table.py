@@ -29,7 +29,7 @@ the daemon mutates at runtime as interfaces are added / removed.
 
 pytcp/tests/unit/runtime/test__runtime__interface_table.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

@@ -27,7 +27,7 @@ Unit tests for the per-session TFO state container.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__fastopen.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

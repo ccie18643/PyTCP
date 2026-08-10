@@ -29,7 +29,7 @@ state container, covering the RFC 9293 §3.8.6.1 persist timer's
 
 pytcp/protocols/tcp/state/tcp__state__persist.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass

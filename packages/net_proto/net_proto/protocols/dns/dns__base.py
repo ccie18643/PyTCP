@@ -32,7 +32,7 @@ preserving, and the host resolver never re-emits a parsed response).
 
 net_proto/protocols/dns/dns__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

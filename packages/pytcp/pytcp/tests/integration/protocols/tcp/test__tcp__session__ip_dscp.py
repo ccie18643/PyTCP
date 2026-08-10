@@ -34,7 +34,7 @@ ECN (low 2 bits) stays RFC-3168 stack-driven.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__ip_dscp.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

@@ -32,7 +32,7 @@ grow policy can compare the current per-RTT throughput against the last.
 
 pytcp/protocols/tcp/state/tcp__state__rcv_space.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass

@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Routing assembler operation.
 
 net_proto/tests/unit/protocols/ip6_routing/test__ip6_routing__assembler__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

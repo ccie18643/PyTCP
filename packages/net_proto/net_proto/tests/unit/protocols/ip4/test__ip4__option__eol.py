@@ -27,7 +27,7 @@ Module contains tests for the IPv4 Eol (End of Option List) option code.
 
 net_proto/tests/unit/protocols/ip4/test__ip4__option__eol.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

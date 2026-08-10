@@ -43,7 +43,7 @@ as 'nc' does.
 
 packages/pytcp/pytcp/cli/cli__nc.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import sys

@@ -27,7 +27,7 @@ This module contains the in-process loopback delivery queue.
 
 pytcp/runtime/loopback_ring.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import collections

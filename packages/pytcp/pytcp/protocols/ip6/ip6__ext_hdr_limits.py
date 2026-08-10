@@ -32,7 +32,7 @@ to mount a resource-exhaustion attack on the parser.
 
 pytcp/protocols/ip6/ip6__ext_hdr_limits.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Iterable

@@ -43,7 +43,7 @@ structural protocol error).
 
 pytcp/ipc/ipc__message.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

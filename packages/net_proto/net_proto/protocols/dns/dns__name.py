@@ -36,7 +36,7 @@ the offset of the first octet after the name in the linear stream.
 
 net_proto/protocols/dns/dns__name.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Buffer

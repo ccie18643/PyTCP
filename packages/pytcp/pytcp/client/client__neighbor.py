@@ -31,7 +31,7 @@ channel to the daemon's 'pytcp.stack.neighbor' API, mirroring its
 
 pytcp/client/client__neighbor.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast

@@ -42,7 +42,7 @@ would be a cycle.
 
 pytcp/ipc/ipc__remote_error.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import builtins

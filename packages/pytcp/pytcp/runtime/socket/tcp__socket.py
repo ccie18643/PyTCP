@@ -27,7 +27,7 @@ This module contains the BSD-like TCP socket interface for the stack.
 
 pytcp/runtime/socket/tcp__socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

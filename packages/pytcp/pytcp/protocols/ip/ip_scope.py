@@ -33,7 +33,7 @@ regardless of address family.
 
 pytcp/protocols/ip/ip_scope.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import IntEnum

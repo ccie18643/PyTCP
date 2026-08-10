@@ -34,7 +34,7 @@ plan at 'docs/refactor/sysctl_per_interface.md'.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__sysctl_per_interface.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 MLDv2 Query message (RX-only).
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__query__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

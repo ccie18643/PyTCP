@@ -34,7 +34,7 @@ routers) layers on top of the group state this API maintains. The IPv6
 
 pytcp/stack/membership6.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import TYPE_CHECKING

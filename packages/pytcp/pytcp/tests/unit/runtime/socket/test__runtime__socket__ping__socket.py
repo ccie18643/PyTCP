@@ -27,7 +27,7 @@ This module contains tests for the 'PingSocket' ICMP Echo datagram socket.
 
 pytcp/tests/unit/runtime/socket/test__runtime__socket__ping__socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

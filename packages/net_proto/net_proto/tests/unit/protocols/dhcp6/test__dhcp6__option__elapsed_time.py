@@ -27,7 +27,7 @@ Module contains tests for the DHCPv6 Elapsed Time option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__elapsed_time.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import FrozenInstanceError

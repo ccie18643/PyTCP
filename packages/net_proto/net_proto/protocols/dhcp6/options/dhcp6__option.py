@@ -31,7 +31,7 @@ Host Configuration Protocol for IPv6 (DHCPv6) > Option Codes".
 
 net_proto/protocols/dhcp6/options/dhcp6__option.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass

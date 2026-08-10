@@ -31,7 +31,7 @@ This module contains integration tests for IPv6 fragmentation on the TX path.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__fragmentation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

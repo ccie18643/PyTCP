@@ -42,7 +42,7 @@ observed an RA carrying the corresponding non-zero value.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__ra_parameter_consumers.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

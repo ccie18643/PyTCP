@@ -29,7 +29,7 @@ script entry point.
 
 pytcp/__main__.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from pytcp.cli.__main__ import main

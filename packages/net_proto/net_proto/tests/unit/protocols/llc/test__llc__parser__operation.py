@@ -27,7 +27,7 @@ Operation unit tests for the IEEE 802.2 LLC U-frame parser.
 
 net_proto/tests/unit/protocols/llc/test__llc__parser__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

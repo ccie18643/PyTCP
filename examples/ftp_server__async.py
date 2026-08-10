@@ -56,7 +56,7 @@ recipe is in 'docs/refactor/daemon_socket_library_and_cli.md' (§9).
 
 examples/ftp_server__async.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import asyncio

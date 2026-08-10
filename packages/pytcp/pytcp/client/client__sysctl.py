@@ -32,7 +32,7 @@ in-process module functions ('get' / 'set' / 'list_keys' / 'describe' /
 
 pytcp/client/client__sysctl.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, cast

@@ -27,7 +27,7 @@ Unit tests for AdvertiseState.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__advertise.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

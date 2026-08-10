@@ -28,7 +28,7 @@ interfaces, keyed by ifindex.
 
 pytcp/runtime/interface_table.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

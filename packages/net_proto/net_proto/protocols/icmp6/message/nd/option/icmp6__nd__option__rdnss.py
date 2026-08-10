@@ -28,7 +28,7 @@ option support code (RFC 8106 §5.1).
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__rdnss.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

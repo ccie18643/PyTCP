@@ -28,7 +28,7 @@ and its stdlib-parity bare aliases (SO_REUSEADDR / SO_ERROR / ...).
 
 pytcp/tests/unit/runtime/socket/test__runtime__socket__sol_socket_option.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import IntEnum

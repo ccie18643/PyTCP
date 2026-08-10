@@ -28,7 +28,7 @@ monkeys echoed over IPv6 TCP with a graceful service-side close.
 
 tools/capture/scenarios/ip6_tcp_monkeys.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

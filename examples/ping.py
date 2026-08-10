@@ -45,7 +45,7 @@ Needs a running daemon (it owns the TAP interface), e.g.:
 
 examples/ping.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

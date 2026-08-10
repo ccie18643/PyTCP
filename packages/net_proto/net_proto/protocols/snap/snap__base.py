@@ -27,7 +27,7 @@ This module contains the SNAP protocol base class.
 
 net_proto/protocols/snap/snap__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

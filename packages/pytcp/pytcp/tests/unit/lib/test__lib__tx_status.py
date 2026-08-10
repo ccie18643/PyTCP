@@ -27,7 +27,7 @@ This module contains tests for the 'TxStatus' enum.
 
 pytcp/tests/unit/lib/test__lib__tx_status.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import IntEnum

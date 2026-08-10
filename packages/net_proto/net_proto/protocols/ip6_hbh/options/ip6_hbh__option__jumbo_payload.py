@@ -27,7 +27,7 @@ This module contains the IPv6 HBH Jumbo Payload option support code.
 
 net_proto/protocols/ip6_hbh/options/ip6_hbh__option__jumbo_payload.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

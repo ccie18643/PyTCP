@@ -27,7 +27,7 @@ This module contains the IPv6 Hop-by-Hop Options packet parser class.
 
 net_proto/protocols/ip6_hbh/ip6_hbh__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

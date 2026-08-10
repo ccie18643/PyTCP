@@ -29,7 +29,7 @@ router work).
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld1__message__query__assembler.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

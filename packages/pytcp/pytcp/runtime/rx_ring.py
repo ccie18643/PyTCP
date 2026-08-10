@@ -27,7 +27,7 @@ This module contains class supporting stack RX Ring operations.
 
 pytcp/runtime/rx_ring.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import collections

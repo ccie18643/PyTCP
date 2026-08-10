@@ -27,7 +27,7 @@ Module contains tests for the function computing Internet Checksum.
 
 net_proto/tests/unit/lib/test__lib__inet_cksum.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

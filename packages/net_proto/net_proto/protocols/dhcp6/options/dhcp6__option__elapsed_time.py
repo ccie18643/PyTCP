@@ -27,7 +27,7 @@ This module contains the DHCPv6 Elapsed Time option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__elapsed_time.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

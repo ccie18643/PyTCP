@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 MLDv2 Multicast Address Record parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__multicast_address_record__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

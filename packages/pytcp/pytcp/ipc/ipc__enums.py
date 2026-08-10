@@ -32,7 +32,7 @@ the socket syscalls and the control APIs over the channel.
 
 pytcp/ipc/ipc__enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from enum import IntEnum

@@ -28,7 +28,7 @@ This module contains the ICMPv6 Packet Too Big message support class
 
 net_proto/protocols/icmp6/message/icmp6__message__packet_too_big.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

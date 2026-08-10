@@ -32,7 +32,7 @@ subcommands.
 
 pytcp/tests/integration/ipc/test__ipc__cli.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import contextlib

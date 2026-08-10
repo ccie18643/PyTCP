@@ -27,7 +27,7 @@ This module contains tests for the NetProto Proto abstract base class.
 
 net_proto/tests/unit/lib/test__lib__proto.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

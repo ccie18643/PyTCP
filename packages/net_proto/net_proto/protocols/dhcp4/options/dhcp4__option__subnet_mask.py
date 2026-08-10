@@ -27,7 +27,7 @@ This module contains the DHCPv4 Subnet Mask option support code.
 
 net_proto/protocols/dhcp4/options/dhcp4__option__subnet_mask.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

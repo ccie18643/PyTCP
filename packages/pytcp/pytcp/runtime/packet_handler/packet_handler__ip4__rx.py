@@ -29,7 +29,7 @@ This module contains packet handler for the inbound IPv4 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip4__rx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

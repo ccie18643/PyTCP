@@ -29,7 +29,7 @@ This module contains packet handler for the inbound ARP packets.
 
 pytcp/runtime/packet_handler/packet_handler__arp__rx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import TYPE_CHECKING

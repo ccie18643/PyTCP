@@ -28,7 +28,7 @@ round-trip, plus all exposed accessor properties).
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__parser__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

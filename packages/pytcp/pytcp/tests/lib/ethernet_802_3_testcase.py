@@ -42,7 +42,7 @@ real-world traffic patterns on a switched local network:
 
 pytcp/tests/lib/ethernet_802_3_testcase.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import MacAddress

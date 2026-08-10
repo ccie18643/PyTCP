@@ -27,7 +27,7 @@ Module contains tests for the DHCPv6 DNS Recursive Name Server option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__dns_servers.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import FrozenInstanceError

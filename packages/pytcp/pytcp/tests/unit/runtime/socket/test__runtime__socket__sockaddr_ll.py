@@ -29,7 +29,7 @@ type ('SockAddrLl'), the 'PacketType' enum, and the 'ETH_P_*' /
 
 pytcp/tests/unit/runtime/socket/test__runtime__socket__sockaddr_ll.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import dataclasses

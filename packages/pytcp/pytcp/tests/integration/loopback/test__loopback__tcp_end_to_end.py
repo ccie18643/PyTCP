@@ -27,7 +27,7 @@ End-to-end TCP handshake integration tests over the loopback interface.
 
 pytcp/tests/integration/loopback/test__loopback__tcp_end_to_end.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast, override

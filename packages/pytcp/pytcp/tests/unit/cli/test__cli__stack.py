@@ -27,7 +27,7 @@ This module contains tests for the 'pytcp stack' subcommand (start / stop / stat
 
 pytcp/tests/unit/cli/test__cli__stack.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import contextlib

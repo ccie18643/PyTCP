@@ -29,7 +29,7 @@ helpers.
 
 pytcp/tests/unit/stack/test__stack__init.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

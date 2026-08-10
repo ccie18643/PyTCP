@@ -33,7 +33,7 @@ reach-in (see docs/refactor/kernel_userspace_separation.md §2).
 
 pytcp/ipc/ipc__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

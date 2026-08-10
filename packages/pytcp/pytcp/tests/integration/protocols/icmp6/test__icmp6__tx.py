@@ -34,7 +34,7 @@ the 'IcmpTestCase' harness.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast, override

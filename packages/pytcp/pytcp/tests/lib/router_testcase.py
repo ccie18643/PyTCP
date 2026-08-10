@@ -39,7 +39,7 @@ inevitability, which a two-interface topology cannot test.
 
 pytcp/tests/lib/router_testcase.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

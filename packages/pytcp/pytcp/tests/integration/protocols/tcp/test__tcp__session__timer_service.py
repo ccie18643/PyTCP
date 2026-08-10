@@ -36,7 +36,7 @@ on a free-threaded build. Closes the no-GIL backlog item T2.
 
 packages/pytcp/pytcp/tests/integration/protocols/tcp/test__tcp__session__timer_service.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

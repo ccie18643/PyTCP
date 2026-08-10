@@ -37,7 +37,7 @@ IPv4 TX mixin because it needs the runtime address book.
 
 pytcp/protocols/ip4/ip4__source_selection.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip4Address

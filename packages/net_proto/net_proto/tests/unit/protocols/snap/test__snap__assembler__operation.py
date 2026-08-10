@@ -28,7 +28,7 @@ Protocol) packet assembler.
 
 net_proto/tests/unit/protocols/snap/test__snap__assembler__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

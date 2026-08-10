@@ -27,7 +27,7 @@ This module contains the TCP Fast Open (TFO) option support code.
 
 net_proto/protocols/tcp/options/tcp__option__fastopen.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

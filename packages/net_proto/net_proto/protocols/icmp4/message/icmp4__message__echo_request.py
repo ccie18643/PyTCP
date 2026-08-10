@@ -27,7 +27,7 @@ This module contains the ICMPv4 Echo Request message support class.
 
 net_proto/protocols/icmp4/message/icmp4__message__echo_request.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

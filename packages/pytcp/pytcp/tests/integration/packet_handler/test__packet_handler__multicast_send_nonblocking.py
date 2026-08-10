@@ -31,7 +31,7 @@ multicast lock while it holds that lock.
 
 packages/pytcp/pytcp/tests/integration/packet_handler/test__packet_handler__multicast_send_nonblocking.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import cast, override

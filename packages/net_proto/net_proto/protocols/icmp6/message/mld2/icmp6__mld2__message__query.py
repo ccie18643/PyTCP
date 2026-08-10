@@ -29,7 +29,7 @@ is the querier-side emission path (Phase-2 router work).
 
 net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__query.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

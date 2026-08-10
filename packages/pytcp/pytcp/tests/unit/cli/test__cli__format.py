@@ -27,7 +27,7 @@ This module contains golden tests for the CLI output formatters.
 
 pytcp/tests/unit/cli/test__cli__format.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import json

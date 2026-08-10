@@ -27,7 +27,7 @@ This module contains tests for the TCP packet assembler constructor argument ass
 
 net_proto/tests/unit/protocols/tcp/test__tcp__assembler__asserts.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

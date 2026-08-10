@@ -27,7 +27,7 @@ This module contains the ICMPv6 MLDv2 Multicast Address Record support class.
 
 net_proto/protocols/icmp6/message/mld2/icmp6__mld2__multicast_address_record.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

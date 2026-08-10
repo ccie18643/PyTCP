@@ -28,7 +28,7 @@ Unit tests for the IPv4 runtime configuration constants
 
 pytcp/tests/unit/protocols/ip4/test__ip4__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

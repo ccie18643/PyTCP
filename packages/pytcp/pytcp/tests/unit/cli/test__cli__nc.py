@@ -30,7 +30,7 @@ socketpair), and the connect / scan / listen helpers.
 
 packages/pytcp/pytcp/tests/unit/cli/test__cli__nc.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import io

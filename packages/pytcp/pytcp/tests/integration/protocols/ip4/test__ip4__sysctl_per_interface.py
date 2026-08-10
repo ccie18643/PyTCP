@@ -36,7 +36,7 @@ ip4 knobs Linux exposes per-interface
 
 pytcp/tests/integration/protocols/ip4/test__ip4__sysctl_per_interface.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

@@ -32,7 +32,7 @@ control API (stack.membership6) — the MLDv2 analogue of stack.membership.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__mld__membership6_api.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip6Address

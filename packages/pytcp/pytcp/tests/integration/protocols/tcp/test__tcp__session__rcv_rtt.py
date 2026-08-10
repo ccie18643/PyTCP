@@ -35,7 +35,7 @@ never gets a sample). Timestamps-gated for the first pass.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__rcv_rtt.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from pytcp.protocols.tcp.session import TcpSession

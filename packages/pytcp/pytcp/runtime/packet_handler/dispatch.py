@@ -27,7 +27,7 @@ This module contains the per-interface RX protocol-dispatch registry.
 
 pytcp/runtime/packet_handler/dispatch.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Callable

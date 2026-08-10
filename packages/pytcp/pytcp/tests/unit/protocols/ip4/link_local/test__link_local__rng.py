@@ -29,7 +29,7 @@ candidate generator at
 
 pytcp/tests/unit/protocols/ip4/link_local/test__link_local__rng.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

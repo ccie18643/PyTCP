@@ -28,7 +28,7 @@ option (RFC 2132 §9.8) wire-format codec.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__option__rebinding_time.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

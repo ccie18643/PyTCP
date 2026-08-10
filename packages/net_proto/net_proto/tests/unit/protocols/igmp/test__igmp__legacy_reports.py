@@ -28,7 +28,7 @@ messages (IGMPv2 Report, IGMPv2 Leave Group, IGMPv1 Report).
 
 net_proto/tests/unit/protocols/igmp/test__igmp__legacy_reports.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

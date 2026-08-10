@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Tlla (Target Link Layer Address) option suppo
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__option__tlla.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

@@ -27,7 +27,7 @@ This module contains tests for the IPv6 packet parser operation.
 
 net_proto/tests/unit/protocols/ip6/test__ip6__parser__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

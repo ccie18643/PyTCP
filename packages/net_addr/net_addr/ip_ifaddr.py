@@ -27,7 +27,7 @@ This module contains IP interface address base class.
 
 net_addr/ip_ifaddr.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from abc import ABC, abstractmethod

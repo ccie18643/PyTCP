@@ -27,7 +27,7 @@ This module contains unit tests for the 'TcpTxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__tcp__tx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Callable

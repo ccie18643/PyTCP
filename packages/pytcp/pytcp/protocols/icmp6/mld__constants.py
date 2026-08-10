@@ -28,7 +28,7 @@ RFC 3810 §8 host compatibility defaults, exposed as policy sysctls.
 
 pytcp/protocols/icmp6/mld__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 # RFC 3810 §8 forced MLD Host Compatibility Mode (the IPv6 analogue of

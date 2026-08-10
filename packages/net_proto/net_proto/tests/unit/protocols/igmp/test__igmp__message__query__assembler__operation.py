@@ -28,7 +28,7 @@ the querier-side emission path (Phase-2 router work).
 
 net_proto/tests/unit/protocols/igmp/test__igmp__message__query__assembler__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

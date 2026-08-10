@@ -46,7 +46,7 @@ This is the final phase of the TcpSession decomposition.
 
 packages/pytcp/pytcp/protocols/tcp/session/tcp__session__retransmit.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

@@ -27,7 +27,7 @@ This module contains tests for the ICMP outbound-error eligibility gates.
 
 pytcp/tests/unit/protocols/icmp/test__icmp__error_emitter__gates.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

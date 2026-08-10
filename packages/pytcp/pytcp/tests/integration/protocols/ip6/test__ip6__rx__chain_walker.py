@@ -37,7 +37,7 @@ the correct codes and pointer offsets.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rx__chain_walker.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

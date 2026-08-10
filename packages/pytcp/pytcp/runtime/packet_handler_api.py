@@ -35,7 +35,7 @@ guard, and the concrete handler satisfies the Protocol structurally
 
 pytcp/runtime/packet_handler_api.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Callable

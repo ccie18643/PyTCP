@@ -27,7 +27,7 @@ This module contains the IGMP packet parser.
 
 net_proto/protocols/igmp/igmp__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

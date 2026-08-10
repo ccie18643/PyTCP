@@ -27,7 +27,7 @@ This module contains the DNS protocol error classes.
 
 net_proto/protocols/dns/dns__errors.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

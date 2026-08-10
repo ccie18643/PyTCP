@@ -34,7 +34,7 @@ tests can rely on the harness shape.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__harness_smoke.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip4Address, Ip4IfAddr

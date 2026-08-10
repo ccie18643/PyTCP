@@ -30,7 +30,7 @@ and the router group-membership table learned from Reports (§7.4).
 
 pytcp/tests/integration/router/test__router__mld__querier.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import Ip6Address

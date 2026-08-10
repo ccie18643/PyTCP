@@ -63,7 +63,7 @@ content is documented in '.claude/rules/source_files.md'
 
 pytcp/protocols/tcp/fsm/__init__.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from pytcp.protocols.tcp.fsm.tcp__fsm import (

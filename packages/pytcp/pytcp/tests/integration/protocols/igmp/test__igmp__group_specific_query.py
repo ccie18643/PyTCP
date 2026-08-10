@@ -29,7 +29,7 @@ Current-State Record for only the queried group.
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__group_specific_query.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

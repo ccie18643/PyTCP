@@ -27,7 +27,7 @@ Module contains tests for the DNS resource-record 'address' accessor.
 
 net_proto/tests/unit/protocols/dns/test__dns__resource_record.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

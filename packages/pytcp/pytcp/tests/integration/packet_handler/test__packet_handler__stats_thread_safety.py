@@ -32,7 +32,7 @@ build, while introspection still reports exact totals.
 
 packages/pytcp/pytcp/tests/integration/packet_handler/test__packet_handler__stats_thread_safety.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

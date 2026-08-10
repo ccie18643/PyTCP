@@ -28,7 +28,7 @@ base classes so the 'NotImplementedError' fallback lines are covered.
 
 net_addr/tests/unit/test__abstract_stubs.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import inspect

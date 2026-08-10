@@ -31,7 +31,7 @@ This module contains integration tests for IPv6 fragment reassembly.
 
 pytcp/tests/integration/protocols/ip6/test__ip6__reassembly.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_proto.lib.packet_rx import PacketRx

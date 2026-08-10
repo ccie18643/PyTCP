@@ -27,7 +27,7 @@ Module contains tests for the UDP packet sanity checks.
 
 net_proto/tests/unit/protocols/udp/test__udp__parser__sanity_checks.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

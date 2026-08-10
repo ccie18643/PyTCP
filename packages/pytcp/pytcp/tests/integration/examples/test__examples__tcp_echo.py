@@ -31,7 +31,7 @@ not stall the server's event loop.
 
 pytcp/tests/integration/examples/test__examples__tcp_echo.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import asyncio

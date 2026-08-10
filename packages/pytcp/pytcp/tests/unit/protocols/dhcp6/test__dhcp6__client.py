@@ -28,7 +28,7 @@ This module contains tests for the DHCPv6 stateless client in
 
 pytcp/tests/unit/protocols/dhcp6/test__dhcp6__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

@@ -30,7 +30,7 @@ compatibility mode (RFC 3810 §8.3.1).
 
 net_proto/protocols/icmp6/message/mld1/icmp6__mld1__message__report.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

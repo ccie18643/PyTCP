@@ -40,7 +40,7 @@ module, regardless of when a consuming module is first imported.
 
 pytcp/ipc/ipc__stdlib_socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import socket

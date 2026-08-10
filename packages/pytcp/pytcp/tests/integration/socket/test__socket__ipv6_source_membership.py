@@ -35,7 +35,7 @@ struct. The IPv6 analogue of the IPv4 'IP_ADD_SOURCE_MEMBERSHIP' family.
 
 pytcp/tests/integration/socket/test__socket__ipv6_source_membership.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

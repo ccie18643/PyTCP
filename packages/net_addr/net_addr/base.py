@@ -27,7 +27,7 @@ This module contains the base class for all NetAddr objects.
 
 net_addr/base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from abc import ABC, abstractmethod

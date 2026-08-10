@@ -27,7 +27,7 @@ This module contains the DHCPv4 protocol base class.
 
 net_proto/protocols/dhcp4/dhcp4__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

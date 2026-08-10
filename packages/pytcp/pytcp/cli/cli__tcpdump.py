@@ -34,7 +34,7 @@ is unit-tested with crafted frames and no daemon.
 
 pytcp/cli/cli__tcpdump.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import shutil

@@ -27,7 +27,7 @@ This module contains tests for the DNS header field assertions.
 
 net_proto/tests/unit/protocols/dns/test__dns__header__asserts.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

@@ -6,6 +6,10 @@ lockstep with `PyTCP-net_proto` and `PyTCP-net_addr` — they share a
 version. Releases before 3.0.8 are on the
 [GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
 
+## 3.0.10 — Unreleased
+
+_Development in progress._
+
 ## 3.0.9 — 2026-08-09
 
 The Phase-2 router track — 3.0.9 turns the multi-homed host into a

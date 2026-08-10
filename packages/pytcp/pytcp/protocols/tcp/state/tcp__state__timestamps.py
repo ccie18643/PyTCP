@@ -30,7 +30,7 @@ last-update timestamp.
 
 pytcp/protocols/tcp/state/tcp__state__timestamps.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass

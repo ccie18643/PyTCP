@@ -49,7 +49,7 @@ not session state.
 
 pytcp/protocols/tcp/state/tcp__state__cc.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from dataclasses import dataclass, field

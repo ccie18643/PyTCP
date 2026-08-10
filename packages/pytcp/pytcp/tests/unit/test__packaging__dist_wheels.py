@@ -33,7 +33,7 @@ glob.
 
 pytcp/tests/unit/test__packaging__dist_wheels.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import shutil

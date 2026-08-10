@@ -27,7 +27,7 @@ This module contains the base class for all of the subsystems used by the stack.
 
 pytcp/runtime/subsystem.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

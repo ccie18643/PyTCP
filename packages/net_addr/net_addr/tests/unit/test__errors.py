@@ -27,7 +27,7 @@ This module contains the NetAddr error-hierarchy tests.
 
 net_addr/tests/unit/test__errors.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

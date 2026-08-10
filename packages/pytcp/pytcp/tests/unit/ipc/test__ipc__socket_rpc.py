@@ -27,7 +27,7 @@ Tests for the IPC socket-syscall RPC body codec.
 
 pytcp/tests/unit/ipc/test__ipc__socket_rpc.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

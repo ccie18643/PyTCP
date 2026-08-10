@@ -31,7 +31,7 @@ constants in 'pytcp/protocols/tcp/tcp__constants.py'.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

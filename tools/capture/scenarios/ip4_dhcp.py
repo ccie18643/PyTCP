@@ -29,7 +29,7 @@ DHCPv4 server on the bridge.
 
 tools/capture/scenarios/ip4_dhcp.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

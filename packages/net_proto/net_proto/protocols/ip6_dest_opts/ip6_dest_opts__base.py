@@ -27,7 +27,7 @@ This module contains the IPv6 Destination Options protocol base class.
 
 net_proto/protocols/ip6_dest_opts/ip6_dest_opts__base.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

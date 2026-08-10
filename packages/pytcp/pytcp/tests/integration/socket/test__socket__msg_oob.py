@@ -47,7 +47,7 @@ silently failing.
 
 pytcp/tests/integration/socket/test__socket__msg_oob.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

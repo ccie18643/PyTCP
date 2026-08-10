@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 ND Redirect message (RFC 4861 §4.5).
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__message__redirect.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

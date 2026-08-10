@@ -33,7 +33,7 @@ probe helpers on top of 'NetworkTestCase'.
 
 pytcp/tests/lib/tcp_testcase.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from collections.abc import Iterable

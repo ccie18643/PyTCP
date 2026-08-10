@@ -36,7 +36,7 @@ directions run inline on the main thread.
 
 pytcp/tests/integration/ipc/test__ipc__socket_dropin_udp.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

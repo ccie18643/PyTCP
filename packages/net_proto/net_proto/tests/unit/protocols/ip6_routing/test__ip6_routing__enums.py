@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Routing Header enums.
 
 net_proto/tests/unit/protocols/ip6_routing/test__ip6_routing__enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

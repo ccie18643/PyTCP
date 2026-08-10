@@ -27,7 +27,7 @@ Integration tests for the IPC AF_UNIX server + client PING round-trip.
 
 pytcp/tests/integration/ipc/test__ipc__server__ping.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import os

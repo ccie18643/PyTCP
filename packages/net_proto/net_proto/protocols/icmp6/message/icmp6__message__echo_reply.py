@@ -27,7 +27,7 @@ This module contains the ICMPv6 Echo Reply message support class.
 
 net_proto/protocols/icmp6/message/icmp6__message__echo_reply.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import struct

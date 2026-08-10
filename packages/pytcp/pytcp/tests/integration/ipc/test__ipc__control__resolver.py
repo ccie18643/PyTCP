@@ -32,7 +32,7 @@ with an autospec'd fake, so name resolution is exercised end to end
 
 pytcp/tests/integration/ipc/test__ipc__control__resolver.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

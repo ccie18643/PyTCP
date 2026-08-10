@@ -28,7 +28,7 @@ address-selection helpers.
 
 pytcp/tests/unit/protocols/ip4/test__ip4__source_selection.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

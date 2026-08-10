@@ -31,7 +31,7 @@ and the plain-text formatters.
 
 pytcp/tests/unit/cli/test__cli__ping.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import io

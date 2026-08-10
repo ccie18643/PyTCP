@@ -27,7 +27,7 @@ This module contains unit tests for the 'EthernetTxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ethernet__tx.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import TYPE_CHECKING, cast, override

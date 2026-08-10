@@ -37,7 +37,7 @@ preference), 2 (enabled, prefer temporary).
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc6724_source_selection_rule_7.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

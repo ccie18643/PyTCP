@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 MLDv2 Report message parser.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld2__message__report__parser.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

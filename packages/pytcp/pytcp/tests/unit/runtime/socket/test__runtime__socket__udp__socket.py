@@ -28,7 +28,7 @@ implementation.
 
 pytcp/tests/unit/runtime/socket/test__runtime__socket__udp__socket.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import errno

@@ -27,7 +27,7 @@ This module contains tests for the TCP packet parser operation.
 
 net_proto/tests/unit/protocols/tcp/test__tcp__parser__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from types import SimpleNamespace

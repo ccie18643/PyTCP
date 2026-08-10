@@ -27,7 +27,7 @@ This module contains the DHCPv6 protocol enum classes.
 
 net_proto/protocols/dhcp6/dhcp6__enums.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

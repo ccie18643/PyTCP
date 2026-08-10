@@ -28,7 +28,7 @@ constructor asserts and 'from_buffer()' invariants.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__message__parameter_problem__asserts.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

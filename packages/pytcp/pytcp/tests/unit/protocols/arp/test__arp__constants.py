@@ -28,7 +28,7 @@ Unit tests for the ARP runtime configuration constants
 
 pytcp/tests/unit/protocols/arp/test__arp__constants.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

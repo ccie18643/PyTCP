@@ -44,7 +44,7 @@ predicate.
 
 pytcp/protocols/ip4/link_local/link_local__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import time

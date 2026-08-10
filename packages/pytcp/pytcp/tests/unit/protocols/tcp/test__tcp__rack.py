@@ -45,7 +45,7 @@ Reference RFCs:
 
 pytcp/tests/unit/protocols/tcp/test__tcp__rack.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest import TestCase

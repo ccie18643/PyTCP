@@ -41,7 +41,7 @@ not raise.
 
 pytcp/tests/unit/lib/test__lib__dad_slot_registry.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

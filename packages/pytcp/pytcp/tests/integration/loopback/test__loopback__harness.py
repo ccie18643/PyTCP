@@ -27,7 +27,7 @@ Integration tests for the loopback test-harness affordances.
 
 pytcp/tests/integration/loopback/test__loopback__harness.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from unittest.mock import patch

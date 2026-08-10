@@ -39,7 +39,7 @@ attribute off a stack object.
 
 pytcp/ipc/ipc__control.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any

@@ -31,7 +31,7 @@ via the 'dhcp.duid' sysctl for operator-managed stable identity.
 
 pytcp/protocols/dhcp4/dhcp4__uid.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from net_addr import MacAddress

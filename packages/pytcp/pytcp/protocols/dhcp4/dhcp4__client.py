@@ -27,7 +27,7 @@ This module contains the DHCPv4 client (RFC 2131 §4.4 FSM).
 
 pytcp/protocols/dhcp4/dhcp4__client.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import random

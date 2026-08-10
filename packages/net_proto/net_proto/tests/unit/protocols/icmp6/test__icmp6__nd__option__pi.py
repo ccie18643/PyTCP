@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 ND Pi (Prefix Information) option.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__pi.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override

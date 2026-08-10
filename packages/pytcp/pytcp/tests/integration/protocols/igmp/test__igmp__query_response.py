@@ -28,7 +28,7 @@ RX path (the host Query-response state machine).
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__query_response.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import override

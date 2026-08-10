@@ -43,7 +43,7 @@ covers it for free.
 
 pytcp/protocols/tcp/tcp__stack.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 import threading

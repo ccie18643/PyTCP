@@ -27,7 +27,7 @@ This module contains tests for the IGMP Membership Query parser.
 
 net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py
 
-ver 3.0.9
+ver 3.0.10
 """
 
 from typing import Any, override
