@@ -27,7 +27,7 @@ This module contains tests for the IPv6 packet sanity checks.
 
 net_proto/tests/unit/protocols/ip6/test__ip6__parser__sanity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

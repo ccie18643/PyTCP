@@ -32,7 +32,7 @@ to 'run_daemon'. Needs a TAP/TUN interface and the privileges to open it.
 
 pytcp/daemon/__main__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import argparse

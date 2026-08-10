@@ -27,7 +27,7 @@ This module contains tests for the IPv6 HBH CALIPSO option.
 
 net_proto/tests/unit/protocols/ip6_hbh/test__ip6_hbh__option__calipso.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any

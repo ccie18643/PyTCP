@@ -23,9 +23,10 @@ one multicast-aware router per link). PyTCP is a host stack:
 - **Listener role**: PyTCP emits Reports when its multicast
   group membership changes; this lets the local querier
   learn what groups are interested on this link.
-- **Querier role**: deferred to Phase 2 per CLAUDE.md
-  Project North Star (router-grade parity). A Phase-1 host
-  has no need to send Queries.
+- **Querier role**: MLDv2 querier met (Phase-2 M5d — emission +
+  election + membership + fast-leave M5e); only the MLDv1
+  older-version querier-emit interop remains deferred
+  (Project North Star, router-grade parity).
 
 Sections without normative content — Abstract, §1
 Introduction, §2 Terminology (informational definitions),
@@ -54,29 +55,32 @@ reception state, source-bearing state-change Reports
 with §9.1 robustness retransmission, and the §4.1 data-plane
 source-delivery gate for UDP and RAW receive.
 
-The querier role (§5 Querier processing of inbound Reports;
-§7 Querier-side timers and General / Multicast-Address-
-Specific / Multicast-Address-and-Source-Specific Queries) is
-**deferred to Phase 2** (router track). On the RX side,
-inbound Reports are accepted and counted but no
-querier-side state-machine update happens; inbound Queries
-fall into `__phrx_icmp6__unknown`.
+The **MLDv2 querier role** is met as of Phase-2 M5d: an
+interface with `mld.mc_forwarding` set emits General Queries
+(startup burst then steady state), runs the §7.6.2 election
+(step down on a lower-source Query, resume on Other Querier
+Present expiry), and learns downstream reception state from
+inbound Reports into a per-group membership table (§7.4),
+pruned by the §9.4 Multicast Address Listening Interval. The
+fast-leave Multicast-Address-Specific Queries shipped in Phase-2
+M5e; only the MLDv1 older-version querier-emit interop remains
+deferred. See the §7 / §8 section below.
 
 | Section | Topic                                          | Status |
 |---------|------------------------------------------------|--------|
-| §4 wire | Query (type 130) wire format                   | met (parser via `Icmp6Mld2MessageQuery` — codec + RX dispatch; assembly is Phase-2 router) |
+| §4 wire | Query (type 130) wire format                   | met (codec + parser + assembler; querier state machine shipped Phase-2 M5d) |
 | §4 wire | Report (type 143) wire format                  | met (codec + assembler + parser) |
 | §4 wire | Multicast Address Record wire format           | met |
 | §5      | Listener-side state machine                    | met (source-bearing state-change Reports — `ALLOW`/`BLOCK`/`CHANGE_TO_*` per the §6.1 difference table — with §9.1 robustness retransmission; §5.2.12 / §6.1, tested by `test__icmp6__mld__source_state_change.py` + `test__icmp6__mld2_leave.py`) |
-| §5      | Querier-side state machine                     | deferred (Phase-2 router role) |
+| §5      | Querier General Query emission                 | met (Phase-2 M5d) |
 | §5.1.10 | Listener responds to Query with Report         | met (MRC random-delay window, `stack.timer`-scheduled) |
 | §5.2.13 | Hop Limit = 1 on outbound MLDv2 messages       | met |
 | §5.2.13 | Source = link-local address                    | met |
 | §5.2.14 | Destination = `ff02::16` (all-MLDv2-routers)   | met (for Reports) |
 | §5.2.14 | Router Alert option (RFC 2711) in HBH          | met |
 | §6      | Multicast Listener Discovery state transitions | met for the host (full INCLUDE / EXCLUDE source filters via `MCAST_*` socket options + data-plane source-delivery gate for UDP / RAW) |
-| §7      | Timers and constants (querier-side)            | deferred (Phase-2 router role) |
-| §8      | Action on reception (querier processing)       | deferred (Phase-2 router role) |
+| §7      | Querier election + timers (§7.4 / §7.6.2)      | met (Phase-2 M5d) |
+| §8      | Action on reception (membership from Reports)  | met (Phase-2 M5d; group granularity) |
 
 ---
 
@@ -93,23 +97,27 @@ the ICMPv6 demux:
   `Icmp6Type` at `packages/net_proto/net_proto/protocols/icmp6/message/icmp6__message.py`
   with the codec class `Icmp6Mld2MessageQuery` at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__query.py`
-  (RX-only parser: 28-byte fixed header + N × 16-byte
-  source-address list; the `assemble` / `_pack_header`
-  methods raise NotImplementedError because Phase-1 PyTCP
-  is a host listener and never emits Queries — querier-
-  side emission lands in the Phase-2 router track). The
-  RX path at `packet_handler__icmp6__rx.py:194`
-  dispatches to `__phrx_icmp6__mld_query` (definition at
-  `:1174`) per §5.1.10.
+  (28-byte fixed header + N × 16-byte source-address
+  list; the parser feeds the host handler, and as of the
+  Phase-2 M5a scaffolding `assemble` / `_pack_header` also
+  serialise the Query wire form — tested at
+  `test__icmp6__mld2__message__query__assembler.py`. The
+  querier state machine that drives emission shipped in Phase-2
+  M5d (General Query + election + membership); only the MLDv1
+  querier-emit interop (M5e) is deferred. The RX path at
+  `packet_handler__icmp6__rx.py:194` dispatches to
+  `__phrx_icmp6__mld_query` (definition at `:1174`) per
+  §5.1.10.
 - Type 143 (`MULTICAST_LISTENER_REPORT_V2`) — full codec
   at
   `packages/net_proto/net_proto/protocols/icmp6/message/mld2/icmp6__mld2__message__report.py`
   (Header / Base / Parser / Assembler + multi-record
   payload). The RX path at
   `packet_handler__icmp6__rx.py:192` dispatches to
-  `__phrx_icmp6__mld2_report` which counts the Report but
-  takes no state-update action (host-side; querier role
-  deferred).
+  `__phrx_icmp6__mld2_report` which, as of Phase-2 M5d,
+  delegates to the querier state machine via `observe_report`
+  (learning the downstream membership table on a router interface;
+  a no-op on a host interface).
 
 > "A Multicast Address Record is a block of fields that
 >  contain information on the sender listening to a single
@@ -278,24 +286,51 @@ new address is joined automatically by `_assign_ip6_host`.
 >  Queries periodically ... and processes inbound Reports
 >  to update per-group / per-source state."
 
-**Adherence:** deferred (Phase-2 router role). PyTCP is a
-host stack today; the multicast-aware querier role is part
-of the Phase-2 forwarding plane. A Phase-2 querier would:
+**Adherence:** met (Phase-2 M5d) for the General-Query
+querier; MLDv1 querier interop is M5e. An interface
+configured as a multicast router (`mld.mc_forwarding`)
+takes the querier role (`Icmp6TxHandler`, the IPv6 mirror
+of the IGMPv3 querier):
 
-1. Maintain per-multicast-group filter-mode + source-list
-   state.
-2. Run the General-Query timer, Multicast-Address-Specific-
-   Query timer, and Multicast-Address-and-Source-Specific-
-   Query timer per §7.
-3. Process inbound Reports to update group memberships per
-   §8 (`MODE_IS_INCLUDE` / `MODE_IS_EXCLUDE` /
-   `CHANGE_TO_INCLUDE_MODE` / `CHANGE_TO_EXCLUDE_MODE` /
-   `ALLOW_NEW_SOURCES` / `BLOCK_OLD_SOURCES`).
+1. **General Query emission** — `_send_mld_general_query`
+   builds an MLDv2 General Query (multicast address ::)
+   advertising the §9.3 Query Response Interval (Max Resp
+   Code), §9.1 Robustness Variable (QRV), and §9.2 Query
+   Interval (QQIC) to ff02::1, Hop Limit 1. Startup burst
+   (§9.6 / §9.7) then steady state (§9.2) via a self-
+   re-arming ticket.
+2. **Election (§7.6.2)** — `observe_query` steps the router
+   down to Non-Querier on a lower-source Query and arms the
+   §9.5 Other Querier Present timer; expiry resumes the
+   Querier role.
+3. **Membership table (§7.4)** — `observe_report` replaces
+   the former counter-only `__phrx_icmp6__mld2_report`,
+   mapping each Multicast Address Record (`MODE_IS_INCLUDE`
+   / `MODE_IS_EXCLUDE` / `CHANGE_TO_*` / `ALLOW_NEW_SOURCES`
+   / `BLOCK_OLD_SOURCES`) to a per-group filter-mode +
+   source-list entry, pruned by its §9.4 Multicast Address
+   Listening Interval group timer. The querier receives
+   Reports on ff02::16, admitted receive-only (an MLD
+   control group never reported). Snapshot via
+   `PacketHandler.mld_querier_memberships()`. Tested at
+   `tests/integration/router/test__router__mld__querier.py`.
 
-The Phase-2 RX path will replace the current
-"counter-only" handler `__phrx_icmp6__mld2_report` at
-`packet_handler__icmp6__rx.py:1146` with a state-machine
-that consults / updates a per-group dictionary.
+**Fast-leave Multicast-Address-Specific Queries** — as of
+Phase-2 M5e, an MLDv2 leave (a `CHANGE_TO_INCLUDE{}` record
+or a `BLOCK` that empties an INCLUDE set) triggers the RFC
+3810 §7.6.3 fast-leave rather than an immediate prune:
+`Icmp6TxHandler._start_group_fast_leave` lowers the group
+timer to the Last Listener Query Time (§9.8 × §9.9), sends
+the first of the §9.9 Last Listener Query Count Multicast-
+Address-Specific Queries to the group, and arms the rest at
+the §9.8 Last Listener Query Interval; a refreshing Report
+cancels the train. Tested in the same router integration
+file.
+
+Group-granularity membership; the §7.2 per-source timers,
+the per-source Address-and-Source-Specific Query for a
+partial `BLOCK`, and the §8 MLDv1 querier-emit interop are
+deferred refinements (niche for a last-hop router).
 
 ---
 
@@ -358,7 +393,9 @@ preserving the immediate-response behaviour the RFC's
 [0, MRD] interval permits at its zero endpoint.
 
 The querier-role items (§7 timers; §8 inbound-Report
-processing) remain Phase-2 router work.
+processing) are implemented as of Phase-2 M5d, audited in the
+§7 / §8 sections above; only the MLDv1 querier-emit interop (M5e)
+remains deferred.
 
 ---
 
@@ -442,10 +479,83 @@ end-to-end behaviour via wire observation).
 
 **Status:** locked in.
 
-### §7 / §8 Querier role
+### §5 / §7.6.2 / §9 MLDv2 querier emission + election
 
-**No test surface — Phase-2 deferred.** Tests will land
-alongside the Phase-2 router-track implementation.
+All in
+`packages/pytcp/pytcp/tests/integration/router/test__router__mld__querier.py`:
+
+- `TestRouterMldQuerier::test__router__mld_querier__disabled_interface_is_silent`
+  — an `mld.mc_forwarding`-off interface emits no Query (the
+  activation gate).
+- `TestRouterMldQuerier::test__router__mld_querier__startup_emits_general_query`
+  — bring-up emits one General Query to ff02::1 from the
+  interface address.
+- `TestRouterMldQuerier::test__router__mld_querier__steady_state_periodic_query`
+  — a second startup Query fires after the Startup Query
+  Interval, then one per Query Interval (§9.2 / §9.6).
+- `TestRouterMldQuerier::test__router__mld_querier__lower_source_query_steps_down`
+  — a lower-source Query costs the election (§7.6.2); no further
+  General Query is emitted.
+- `TestRouterMldQuerier::test__router__mld_querier__higher_source_query_ignored`
+  — a higher-source Query does not cost the election.
+- `TestRouterMldQuerier::test__router__mld_querier__resumes_after_other_querier_present`
+  — the router resumes after the §9.5 Other Querier Present
+  Interval.
+
+**Status:** locked in.
+
+### §7.4 / §9.4 Router membership table from Reports
+
+`test__router__mld__querier.py`:
+
+- `TestRouterMldQuerierMembership::test__router__mld_querier__learns_exclude_membership`
+  — a MODE_IS_EXCLUDE Report installs an EXCLUDE entry and bumps
+  the querier-learn counter.
+- `TestRouterMldQuerierMembership::test__router__mld_querier__learns_include_membership_with_source`
+  — a MODE_IS_INCLUDE Report installs an INCLUDE entry with the
+  reported source list.
+- `TestRouterMldQuerierMembership::test__router__mld_querier__membership_expires_after_interval`
+  — a group with no refreshing Report is pruned after the §9.4
+  Multicast Address Listening Interval.
+
+**Status:** locked in (group-granularity membership).
+
+### §7.6.3 / §9.8 / §9.9 Fast-leave Multicast-Address-Specific Queries
+
+`test__router__mld__querier.py`:
+
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__leave_sends_address_query`
+  — a CHANGE_TO_INCLUDE{} leave emits a Multicast-Address-
+  Specific Query and retains the group.
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__fast_leave_query_burst`
+  — Last Listener Query Count (§9.9) Queries fire, spaced one
+  Last Listener Query Interval (§9.8).
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__fast_leave_prunes_after_last_listener_time`
+  — an un-re-asserted group is pruned after the Last Listener
+  Query Time.
+- `TestRouterMldQuerierFastLeave::test__router__mld_querier__reassert_cancels_fast_leave`
+  — a fresh Report retains the group past the Last Listener
+  Query Time.
+
+**Status:** locked in.
+
+### Multicast forwarding (last hop)
+
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip6__mforward.py`:
+
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__replicates_to_listeners`
+  — a transit multicast datagram is replicated (Hop Limit
+  decremented) out each listener interface, not the ingress.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__no_listeners_dropped`
+  — no listener → dropped.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__rpf_failure_dropped`
+  — an off-RPF-interface datagram is dropped.
+- `TestRouterIp6MulticastForward::test__router__ip6__mforward__link_scoped_group_not_forwarded`
+  — a scope-2 (link-local) group is never forwarded.
+
+**Status:** locked in. MLDv1 querier interop + per-source
+Address-and-Source-Specific Queries are deferred refinements
+(no test surface).
 
 ### Test coverage summary
 
@@ -458,7 +568,11 @@ alongside the Phase-2 router-track implementation.
 | Query → Report response (wire format)               | locked in |
 | §5.1.3 MRC → MRD decoder                            | locked in |
 | §5.1.10 MRC random-delay window + coalescing        | locked in |
-| Querier-side state machine + timers                 | n/a (Phase-2 router) |
+| Querier General-Query emission + election (§5 / §7.6.2) | locked in |
+| Querier membership table from Reports (§7.4 / §9.4) | locked in |
+| Querier fast-leave Address-Specific Queries (§7.6.3) | locked in |
+| Multicast forwarding — last hop (IPv6)              | locked in |
+| MLDv1 querier interop (§8) + per-source timers      | n/a (deferred) |
 
 ---
 
@@ -466,7 +580,7 @@ alongside the Phase-2 router-track implementation.
 
 | Aspect                                                | Status |
 |-------------------------------------------------------|--------|
-| §4 Query wire format                                  | met (parser via `Icmp6Mld2MessageQuery`; assembly is Phase-2 router) |
+| §4 Query wire format                                  | met (codec + parser + assembler; querier state machine shipped Phase-2 M5d) |
 | §4 Report wire format                                 | met    |
 | §4 Multicast Address Record codec                     | met    |
 | §5 Listener-side Report emission on join              | met    |
@@ -475,21 +589,26 @@ alongside the Phase-2 router-track implementation.
 | §5.2.13 Source = link-local                           | met    |
 | §5.2.14 Destination = `ff02::16` + RA-option HBH      | met    |
 | §6 Per-interface multicast state                      | met (EXCLUDE-source-list-empty default) |
-| §7 / §8 Querier timers + Action on Reception          | deferred (Phase-2 router) |
-| §5.1.10 MLDv1 compatibility mode                      | n/a (PyTCP is MLDv2-only) |
+| §7 / §8 Querier timers + Action on Reception          | met (Phase-2 M5d) |
+| §5.1.10 MLDv1 compatibility mode                      | met (RFC 3810 §8 fallback — see `../rfc2710__mld_v1/adherence.md`) |
 
 PyTCP fully satisfies the listener-side requirements that
 matter for a multicast-using host. Remaining items:
 
-1. **§5-§8 querier role** (Phase-2 router). Lands when the
-   forwarding plane / multicast routing arrives.
+1. **§5-§8 querier role** — implemented (Phase-2 M5d): General-Query
+   emission, §7.6.2 election, the §7.4 Report-learned membership
+   table, and §7.6.3 fast-leave Multicast-Address-Specific Queries,
+   consumed by the last-hop multicast forwarding plane (M5f).
+   Deferred refinements: §7.2 per-source timers and the §8 MLDv1
+   querier-emit interop.
 
 ## Cross-references
 
 - IPv4 parallel: [`../../ip4/rfc1112__ip4_multicasting/adherence.md`](../../ip4/rfc1112__ip4_multicasting/adherence.md)
   (RFC 1112 IPv4 multicasting; IGMPv2 / IGMPv3 — RFCs 2236
-  / 3376 — are tracked as item E in the IPv4 audit punch
-  list and are not yet shipped).
+  / 3376 — are shipped, audited at
+  `../../ip4/rfc2236__igmp_v2/adherence.md` and
+  `../../ip4/rfc3376__igmp_v3/adherence.md`).
 - HBH Router-Alert option carrier: RFC 2711 (referenced
   here; no standalone audit yet).
 - IPv6 ND / SLAAC adherence audits in this folder cover

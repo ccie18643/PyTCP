@@ -29,7 +29,7 @@ This module contains packet handler for the inbound Ethernet II packets.
 
 pytcp/runtime/packet_handler/packet_handler__ethernet__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING
@@ -95,11 +95,14 @@ class EthernetRxHandler:
         self._deliver_to_packet_sockets(packet_rx, frame)
 
         # Check if received packet matches any of stack MAC addresses.
+        # A multicast router additionally accepts any multicast MAC
+        # promiscuously (Phase-2 M5f), so a transit multicast group it
+        # has not itself joined reaches the multicast forward plane.
         if packet_rx.ethernet.dst not in {
             self._if._mac_unicast,
             *self._if._mac_multicast,
             self._if._mac_broadcast,
-        }:
+        } and not (packet_rx.ethernet.dst.is_multicast and self._if.is_multicast_router):
             self._if._packet_stats_rx.ethernet__dst_unknown__drop += 1
             __debug__ and log(
                 "ether",

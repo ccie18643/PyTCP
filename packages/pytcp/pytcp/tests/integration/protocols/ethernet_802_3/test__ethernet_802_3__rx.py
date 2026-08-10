@@ -31,7 +31,7 @@ This module contains integration tests for the Packet Handler Ethernet 802.3 RX 
 
 pytcp/tests/integration/protocols/ethernet_802_3/test__ethernet_802_3__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_proto.lib.packet_rx import PacketRx

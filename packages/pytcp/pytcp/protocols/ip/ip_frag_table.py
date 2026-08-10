@@ -27,7 +27,7 @@ This module contains the shared IPv4/IPv6 fragment-reassembly flow table.
 
 pytcp/protocols/ip/ip_frag_table.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

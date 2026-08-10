@@ -27,7 +27,7 @@ This package contains the PyTCP socket interface.
 
 pytcp/runtime/socket/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

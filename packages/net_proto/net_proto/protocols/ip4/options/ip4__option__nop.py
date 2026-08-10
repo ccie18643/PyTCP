@@ -27,7 +27,7 @@ This module contains the IPv4 Nop (No Operation) option support code.
 
 net_proto/protocols/ip4/options/ip4__option__nop.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass, field

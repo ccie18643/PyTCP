@@ -29,7 +29,7 @@ This package contains packet handler class for inbound and outbound packets.
 
 pytcp/runtime/packet_handler/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import random
@@ -131,9 +131,9 @@ from .packet_handler__ethernet__tx import EthernetTxHandler
 from .packet_handler__icmp4__rx import Icmp4RxHandler
 from .packet_handler__icmp4__tx import Icmp4TxHandler
 from .packet_handler__icmp6__rx import Icmp6RxHandler
-from .packet_handler__icmp6__tx import Icmp6TxHandler
+from .packet_handler__icmp6__tx import Icmp6TxHandler, MldQuerierMembership
 from .packet_handler__igmp__rx import IgmpGroupQueryPending, IgmpRxHandler
-from .packet_handler__igmp__tx import IgmpTxHandler
+from .packet_handler__igmp__tx import IgmpQuerierMembership, IgmpTxHandler
 from .packet_handler__ip4__rx import Ip4RxHandler
 from .packet_handler__ip4__tx import Ip4TxHandler
 from .packet_handler__ip6__rx import Ip6RxHandler
@@ -799,6 +799,14 @@ class PacketHandler(Subsystem, ABC):
         self._acquire_ip6_addresses()
 
         self._log_stack_address_info()
+
+        # Take up the IGMP / MLD querier role when this interface is
+        # configured as a multicast router ('igmp.mc_forwarding' /
+        # 'mld.mc_forwarding'); a no-op for a plain host. Phase 2: a
+        # runtime control API re-drives this when the switch flips
+        # after bring-up.
+        self.refresh_igmp_querier()
+        self.refresh_mld_querier()
 
     def _thread__packet_handler__acquire_ip6_addresses(self) -> None:
         """
@@ -2842,6 +2850,77 @@ class PacketHandler(Subsystem, ABC):
         """
 
         self._igmp_tx._send_igmp_leave_all()
+
+    def refresh_igmp_querier(self) -> None:
+        """
+        Reconcile the interface's IGMP querier role with its
+        'igmp.mc_forwarding' switch (delegates to the IGMP TX
+        sub-handler). Public surface for the interface bring-up path.
+        """
+
+        self._igmp_tx.refresh_querier()
+
+    def stop_igmp_querier(self) -> None:
+        """
+        Relinquish the IGMP querier role and cancel its timers
+        (delegates to the IGMP TX sub-handler). Public surface for the
+        stack-shutdown lifecycle path.
+        """
+
+        with self._lock__multicast:
+            self._igmp_tx._stop_querier()
+
+    def igmp_querier_memberships(self) -> tuple[IgmpQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the multicast group memberships
+        this interface has learned as an IGMP querier (the read-only
+        '/proc/net/igmp' router-side introspection surface).
+        """
+
+        return self._igmp_tx.querier_memberships()
+
+    def refresh_mld_querier(self) -> None:
+        """
+        Reconcile the interface's MLD querier role with its
+        'mld.mc_forwarding' switch (delegates to the ICMPv6 TX
+        sub-handler). Public surface for the interface bring-up path.
+        """
+
+        self._icmp6_tx.refresh_querier()
+
+    def stop_mld_querier(self) -> None:
+        """
+        Relinquish the MLD querier role and cancel its timers (delegates
+        to the ICMPv6 TX sub-handler). Public surface for the
+        stack-shutdown lifecycle path.
+        """
+
+        with self._lock__multicast:
+            self._icmp6_tx._stop_querier()
+
+    def mld_querier_memberships(self) -> tuple[MldQuerierMembership, ...]:
+        """
+        Return an immutable snapshot of the multicast group memberships
+        this interface has learned as an MLD querier (the read-only
+        '/proc/net/igmp6' router-side introspection surface).
+        """
+
+        return self._icmp6_tx.querier_memberships()
+
+    @property
+    def is_multicast_router(self) -> bool:
+        """
+        Whether this interface acts as a multicast router — the read-time
+        OR of the IPv4 ('igmp.mc_forwarding') and IPv6
+        ('mld.mc_forwarding') per-interface switches. A multicast router
+        receives multicast promiscuously (to forward transit groups it
+        has not itself joined) and runs the IGMP / MLD querier.
+        """
+
+        return bool(
+            sysctl_iface.get_for_iface("igmp.mc_forwarding", self._interface_name)
+            or sysctl_iface.get_for_iface("mld.mc_forwarding", self._interface_name)
+        )
 
     def send_mld_leave_all(self) -> None:
         """

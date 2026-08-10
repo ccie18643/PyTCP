@@ -37,7 +37,7 @@ without a running stack.
 
 pytcp/stack/activity_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Iterable

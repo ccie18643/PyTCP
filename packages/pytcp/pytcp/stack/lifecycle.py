@@ -37,7 +37,7 @@ the test harness uses for snapshot/restore.
 
 pytcp/stack/lifecycle.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any
@@ -883,6 +883,8 @@ def stop() -> None:
     # memberships immediately instead of waiting for a query timeout
     # (RFC 3376 §5.1; Linux 'ip_mc_down').
     for iface in _stack.interfaces.values():
+        iface.stop_igmp_querier()
+        iface.stop_mld_querier()
         iface.send_igmp_leave_all()
         iface.send_mld_leave_all()
 

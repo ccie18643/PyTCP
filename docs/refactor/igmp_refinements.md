@@ -251,14 +251,16 @@ These are feature-level gaps, not refinements — see
 - Per-group / source-specific Query response (the §5.2 per-group
   timers) and the IGMPv1 default Max Resp Time.
 - Source-specific filtering (§9, `IP_ADD_SOURCE_MEMBERSHIP`).
-- The IGMPv3 router/querier role (Phase-2).
+- ~~The IGMPv3 router/querier role (Phase-2).~~ **SHIPPED** — Phase-2
+  multicast router (M5b/M5c): querier emission / election / membership
+  + fast-leave Group-Specific Queries; see
+  `docs/refactor/router_forwarding_plane.md`.
 - ~~**MLDv2 leave reporting (IPv6).**~~ **SHIPPED** — the IPv6 MLDv2
   listener now emits a per-group leave (`CHANGE_TO_INCLUDE` State
   Change Report, or an MLDv1 Done in v1 compat mode) on
   `remove_ip6_multicast`, and `send_mld_leave_all` does the
   graceful-leave-on-shutdown, wired into `stack.stop()` alongside the
-  IGMP R7 hook. Tests: `test__icmp6__mld2_leave.py`. Only the IGMPv3
-  router/querier role above remains Phase-2.
+  IGMP R7 hook. Tests: `test__icmp6__mld2_leave.py`.
 
 ---
 

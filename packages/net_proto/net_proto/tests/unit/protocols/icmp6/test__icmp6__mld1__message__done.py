@@ -28,7 +28,7 @@ Done message (type 132) support class.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__mld1__message__done.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

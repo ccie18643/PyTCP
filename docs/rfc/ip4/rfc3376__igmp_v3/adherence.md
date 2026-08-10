@@ -29,9 +29,13 @@ datagram from a non-admitted source before socket delivery,
 Linux `ip_mc_sf_allow`) is implemented for both UDP and RAW
 sockets, mirroring Linux which gates both delivery paths
 (`__udp4_lib_mcast_deliver` and `raw_v4_input`). The IGMPv3
-**router / querier** role (sending Queries, maintaining group
-membership state for forwarding, the querier election) is
-Phase-2 router work and is marked out-of-scope per clause.
+**router / querier** role — General-Query emission, the
+Report-learned group-membership table, querier election, and
+fast-leave Group-Specific Queries — is implemented as of the Phase-2
+multicast router (M5b/M5c), gated per-interface by
+`igmp.mc_forwarding` and audited per clause below. The per-source
+timers (§6.2.1) and IGMPv1/v2 querier-emit interop (§7.3) remain
+deferred refinements.
 
 ---
 
@@ -42,7 +46,7 @@ Phase-2 router work and is marked out-of-scope per clause.
 | §3.1     | Per-socket filter mode + source list                     | met |
 | §3.2     | Per-interface state = merge of socket filters            | met |
 | §4       | Messages carried in IPv4, protocol 2, TTL 1, Router Alert | met |
-| §4.1     | Membership Query parsing (v1/v2/v3 by length)            | met (RX) |
+| §4.1     | Membership Query parse + wire assembly (v1/v2/v3)        | met |
 | §4.1.1 / §4.1.7 | Max Resp Code / QQIC floating-point decode        | met |
 | §4       | Inbound IGMP TTL = 1 enforced (drop martian TTL != 1)    | met |
 | §4.1.12  | Accept Query to 224.0.0.1 / any interface address        | met |
@@ -51,7 +55,7 @@ Phase-2 router work and is marked out-of-scope per clause.
 | §4.2.14  | Reports sent to 224.0.0.22                               | met |
 | §5.1     | State-change Report on join/leave/source-delta + robustness retransmit | met |
 | §5.2     | Random-delay response to a Query (general / group / group-and-source) | met |
-| §6       | Host state — all-systems group never reported            | met (host); router state out of scope |
+| §6       | Host state — all-systems group never reported            | met (host + Phase-2 M5b router membership table) |
 | §7       | Older-version (v1/v2) querier interoperation             | met |
 | §8       | Timing / robustness constants                            | met (sysctls) |
 | §9       | Source-Specific Multicast (INCLUDE / source filters)     | met (control plane + UDP data-plane RX filter) |
@@ -137,12 +141,17 @@ handler catches the validation error and drops the frame
 > Address, Resv|S|QRV, QQIC, Number of Sources, Source
 > Address[]]"
 
-**Adherence:** met (RX). `IgmpMessageQuery.from_buffer`
+**Adherence:** met (RX + wire assembly). `IgmpMessageQuery.from_buffer`
 (`igmp__message__query.py`) decodes the 8-octet v1/v2 form and
 the ≥12-octet v3 form, exposing `group_address`, `s_flag`,
-`qrv`, `qqic`, and the source list. The host is a listener, so
-the Query is RX-only; `assemble` raises (querier emission is
-Phase-2 router work).
+`qrv`, `qqic`, and the source list. As of the Phase-2 M5a
+scaffolding `IgmpMessageQuery.assemble` / `__buffer__` also
+serialise the v1/v2 and v3 Query wire forms (checksum injected by
+the `Igmp` base), tested at
+`test__igmp__message__query__assembler__operation.py`. The
+querier state machine that *drives* this emission — election,
+General-Query timers, the router-side group-membership table —
+shipped in Phase-2 M5b–M5c (see the §6 querier sections below).
 
 ### §4.1.1 / §4.1.7 Max Resp Code / QQIC
 
@@ -302,9 +311,65 @@ sending nothing when the result is empty.
 (`IGMP__ALL_SYSTEMS` guard), and the membership API refuses to
 leave it.
 
-The router-side host-state-table maintenance (the querier's
-view of which groups have members, used for forwarding) is
-out-of-scope Phase-2 router work.
+**Querier General Query emission** — as of the Phase-2 M5b
+slice, an interface configured as a multicast router
+(`igmp.mc_forwarding`) takes the querier role and emits General
+Queries: `IgmpTxHandler._send_igmp_general_query` builds an
+IGMPv3 General Query (group 0.0.0.0) advertising the Query
+Response Interval (Max Resp Code, §8.3), Robustness Variable
+(QRV), and Query Interval (QQIC, §8.2) to the all-systems group
+224.0.0.1 with TTL 1. `refresh_querier` / `_start_querier`
+send the §8.7 Startup Query Count burst spaced at the §8.6
+Startup Query Interval, then settle to the §8.2 steady-state
+interval via the self-re-arming General-Query ticket. Tested at
+`tests/integration/router/test__router__igmp__querier.py`.
+
+**Querier election** — as of the Phase-2 M5b election slice, an
+inbound Query from a source address lower than our interface
+address makes the router step down to Non-Querier and stop
+emitting General Queries (`IgmpTxHandler.observe_query`, called
+from the IGMP RX Query handler); the Other Querier Present timer
+(§8.5) resumes the Querier role when the elected querier goes
+silent (RFC 3376 §6.6.2). Tested in the same router integration
+file.
+
+**Router group-membership table** — as of the Phase-2 M5b
+membership slice, a querier interface learns downstream reception
+state from inbound Membership Reports into a per-group table
+(`IgmpTxHandler.observe_report`, called from the IGMP RX Report
+handler): the §6.4 action-on-reception maps each group record to a
+filter-mode + source-list entry, refreshed on every Report and
+pruned when its §8.4 Group Membership Interval group timer expires
+(§6.5). The table is populated **only** from inbound Reports,
+never from this stack's own host joins (which stay in the separate
+`_ip4_multicast_refs` host table). The querier receives Reports on
+the all-IGMPv3-routers group 224.0.0.22, admitted receive-only —
+it is an IGMP control group the interface never reports membership
+in (`IGMP__CONTROL_GROUPS`). A read-only snapshot is exposed via
+`PacketHandler.igmp_querier_memberships()` (the router-side
+introspection surface). Tested in the same router integration
+file.
+
+**Fast-leave Group-Specific Queries** — as of Phase-2 M5c, a leave
+(a `CHANGE_TO_INCLUDE{}` record, a `BLOCK` that empties an INCLUDE
+set, or an IGMPv2 Leave Group) triggers the RFC 3376 §6.4.2
+fast-leave rather than an immediate prune:
+`IgmpTxHandler._start_group_fast_leave` lowers the group timer to
+the Last Member Query Time (§8.8 × §8.9), sends the first of the
+§8.9 Last Member Query Count Group-Specific Queries to the group
+address, and arms the rest at the §8.8 Last Member Query Interval; a
+refreshing Report cancels the train and restores the full group
+timer. The querier receives IGMPv2 Leaves on the all-routers group
+224.0.0.2, admitted receive-only alongside 224.0.0.22. Tested in the
+same router integration file.
+
+PyTCP tracks membership at group granularity; the RFC 3376 §6.2.1
+per-source timers (independent aging of EXCLUDE-group sources), the
+per-source Group-and-Source-Specific Query for a partial `BLOCK`, and
+the §7.3 IGMPv1/v2 querier-emit interop (a querier emitting
+older-version-format Queries) are deferred refinements — niche for a
+last-hop router, whose value is the group-level membership the
+forwarding plane (M5f) consumes.
 
 ## §7. Interoperation With Older Versions of IGMP
 
@@ -412,12 +477,16 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
-### §4.1 / §4.1.1 / §4.1.7 Query parse + float decode
+### §4.1 / §4.1.1 / §4.1.7 Query parse + wire assembly + float decode
 
 - **Unit:**
   `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py`
   v1/v2/v3 version discrimination, field decode, the §4.1.1 /
   §4.1.7 float-code table, the General-Query predicate.
+- **Unit:**
+  `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__assembler__operation.py`
+  v1/v2/v3 Query serialisation, buffer layout, checksum
+  injection, and the assemble→parse round-trip (Phase-2 M5a).
 
 **Status:** locked in.
 
@@ -534,6 +603,116 @@ candidates the UDP demux already produced).
 
 **Status:** locked in.
 
+### §6 / §8.2 / §8.6 / §8.7 Querier General-Query emission
+
+All in
+`packages/pytcp/pytcp/tests/integration/router/test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerier::test__router__igmp_querier__disabled_interface_is_silent`
+  — an `igmp.mc_forwarding`-off interface emits no Query over
+  two Query Intervals (the activation gate).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__startup_emits_first_general_query`
+  — bring-up immediately emits one General Query to 224.0.0.1
+  from the interface address, and a non-refreshed interface
+  stays silent.
+- `TestRouterIgmpQuerier::test__router__igmp_querier__startup_burst_spacing`
+  — exactly Startup Query Count (§8.7) General Queries fire,
+  spaced one Startup Query Interval (§8.6).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__steady_state_periodic_query`
+  — after the burst drains, one General Query recurs every
+  Query Interval (§8.2).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__general_query_advertises_timers`
+  — the Query advertises the Query Response Interval (Max Resp
+  Code), Query Interval (QQIC), and Robustness Variable (QRV).
+- `TestRouterIgmpQuerier::test__router__igmp_querier__stop_cancels_queries`
+  — querier teardown cancels the pending General-Query ticket.
+
+**Status:** locked in.
+
+### §6.6.2 / §8.5 Querier election
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__lower_ip_query_steps_down`
+  — a Query from a lower source address makes the router lose
+  the election once and stop emitting General Queries.
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__higher_ip_query_ignored`
+  — a higher-address Query does not cost the election; startup
+  Queries continue.
+- `TestRouterIgmpQuerierElection::test__router__igmp_querier__resumes_after_other_querier_present`
+  — the router resumes emitting after the §8.5 Other Querier
+  Present Interval of silence.
+
+**Status:** locked in.
+
+### §6.4 / §6.5 / §8.4 Router membership table from Reports
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__learns_exclude_membership`
+  — a MODE_IS_EXCLUDE Report installs an EXCLUDE entry and bumps
+  the querier-learn counter once.
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__learns_include_membership_with_source`
+  — a MODE_IS_INCLUDE Report installs an INCLUDE entry carrying
+  the reported source list.
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__membership_expires_after_gmi`
+  — a group with no refreshing Report is pruned after the §8.4
+  Group Membership Interval (§6.5).
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__host_interface_learns_nothing`
+  — an interface that is not a multicast router builds no table
+  (the §6.4 active-router gate).
+
+**Status:** locked in (group-granularity membership).
+
+### §6.4.2 / §8.8 / §8.9 Fast-leave Group-Specific Queries
+
+`test__router__igmp__querier.py`:
+
+- `TestRouterIgmpQuerierMembership::test__router__igmp_querier__to_include_empty_is_leave`
+  — a CHANGE_TO_INCLUDE{} leave retains the group pending
+  re-assertion, then prunes it after the Last Member Query Time.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__to_include_empty_sends_group_query`
+  — the leave emits a Group-Specific Query for the group and
+  retains the membership.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__fast_leave_query_burst`
+  — Last Member Query Count (§8.9) Group-Specific Queries fire,
+  spaced one Last Member Query Interval (§8.8).
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__fast_leave_prunes_after_last_member_time`
+  — an un-re-asserted group is pruned after the Last Member
+  Query Time (LMQI × LMQC).
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__reassert_cancels_fast_leave`
+  — a fresh Report during the window retains the group past the
+  Last Member Query Time.
+- `TestRouterIgmpQuerierFastLeave::test__router__igmp_querier__v2_leave_triggers_fast_leave`
+  — an IGMPv2 Leave Group (received on 224.0.0.2) triggers the
+  Group-Specific Query.
+
+**Status:** locked in.
+
+### §4.1.1 / §4.1.7 Max Resp Code / QQIC float-code encoder
+
+- `packages/net_proto/net_proto/tests/unit/protocols/igmp/test__igmp__message__query__operation.py::TestIgmpFloatCodeEncode`
+  — linear form, exactly-representable round-trip through
+  decode, and the floor / saturate cases of `encode_igmp_float_code`.
+
+**Status:** locked in.
+
+### §5.2.4 Multicast forwarding (last hop)
+
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip4__mforward.py`:
+
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__replicates_to_listeners`
+  — a transit multicast datagram is replicated (TTL decremented)
+  out each interface with a listener and not the ingress.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__no_listeners_dropped`
+  — no downstream listener → dropped, not replicated.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__rpf_failure_dropped`
+  — a datagram arriving off the RPF interface is dropped.
+- `TestRouterIp4MulticastForward::test__router__ip4__mforward__link_local_group_not_forwarded`
+  — a 224.0.0.0/24 link-local group is never forwarded.
+
+**Status:** locked in.
+
 ### §8 Timing / robustness sysctls
 
 - **Integration:**
@@ -572,10 +751,17 @@ candidates the UDP demux already produced).
 | §5.1 State-change Report (incl. source deltas) + robustness retransmit | locked in |
 | §5.2 Query response (general / group / group-and-source) | locked in |
 | §6 all-systems never reported                  | locked in |
+| §4.1.1 / §4.1.7 Max Resp Code / QQIC encoder   | locked in |
+| §6 / §8.2 / §8.6 / §8.7 querier General-Query emission | locked in |
+| §6.6.2 / §8.5 querier election                 | locked in |
+| §6.4 / §6.5 / §8.4 router membership table      | locked in |
+| §6.4.2 / §8.8 / §8.9 fast-leave Group-Specific Queries | locked in |
+| §5.2.4 multicast forwarding — last hop (IPv4)  | locked in |
 | §8 timing / robustness sysctls                 | locked in |
 | §7 older-version querier interop               | locked in |
 | §9 source-specific filtering (control plane)   | locked in |
 | §3.1 / §9 data-plane RX source-delivery filter (UDP) | locked in |
+| §6.2.1 per-source timers + §7.3 querier-emit interop | n/a (deferred) |
 
 ---
 
@@ -594,7 +780,11 @@ candidates the UDP demux already produced).
 | §8 timing / robustness constants (sysctls)      | met   |
 | §9 source-specific multicast (control plane)    | met   |
 | §3.1 / §9 data-plane RX source-delivery filter (UDP + RAW) | met (`ip_mc_sf_allow`) |
-| Router / querier role                           | out of scope (Phase 2) |
+| Querier General Query emission (§6/§8.2/§8.6/§8.7) | met (Phase-2 M5b) |
+| Querier election (§6.6.2) + Other Querier Present (§8.5) | met (Phase-2 M5b) |
+| Router group-membership table from Reports (§6.4 / §6.5 / §8.4) | met (Phase-2 M5b; group granularity) |
+| Fast-leave Group-Specific Queries (§6.4.2 / §8.8 / §8.9) | met (Phase-2 M5c) |
+| Per-source timers (§6.2.1) + IGMPv1/v2 querier-emit interop (§7.3) | out of scope (deferred refinement) |
 
 PyTCP implements the IGMPv3 **host** role including source
 filtering: a group is held per-socket as an INCLUDE / EXCLUDE
@@ -614,5 +804,8 @@ source-delivery filter (`ip_mc_sf_allow`) is enforced for both
 UDP and RAW sockets — a received multicast datagram reaches a
 socket only from a source the socket's filter admits — mirroring
 Linux, which gates both `__udp4_lib_mcast_deliver` and
-`raw_v4_input`. The IGMPv3 router/querier role is out of scope
-(Phase 2).
+`raw_v4_input`. The IGMPv3 router/querier role is implemented as of
+the Phase-2 multicast router (M5b/M5c): General-Query emission,
+election, the Report-learned membership table, and fast-leave
+Group-Specific Queries, consumed by the last-hop multicast
+forwarding plane (M5f).

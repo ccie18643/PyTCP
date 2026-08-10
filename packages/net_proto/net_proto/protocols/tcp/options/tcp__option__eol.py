@@ -27,7 +27,7 @@ This module contains the TCP Eol (End of Option List) option support code.
 
 net_proto/protocols/tcp/options/tcp__option__eol.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass, field

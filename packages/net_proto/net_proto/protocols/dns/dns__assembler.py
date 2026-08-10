@@ -32,7 +32,7 @@ implemented — see the DHCPv6 assembler for the same pattern.
 
 net_proto/protocols/dns/dns__assembler.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

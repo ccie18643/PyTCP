@@ -30,7 +30,7 @@ a duplicate and must be DECLINEd (RFC 8415 §18.2.8).
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__dad_conflict_callback.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

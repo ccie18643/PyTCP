@@ -27,7 +27,7 @@ This module contains tests for the ARP packet parser sanity checks.
 
 net_proto/tests/unit/protocols/arp/test__arp__parser__sanity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, cast, override

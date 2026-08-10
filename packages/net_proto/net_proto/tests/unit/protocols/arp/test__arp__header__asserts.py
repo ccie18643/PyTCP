@@ -27,7 +27,7 @@ This module contains tests for the ARP packet header fields and asserts.
 
 net_proto/tests/unit/protocols/arp/test__arp__header__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import FrozenInstanceError

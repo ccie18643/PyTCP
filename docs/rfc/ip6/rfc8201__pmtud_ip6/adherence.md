@@ -62,6 +62,27 @@ parses the embedded IPv6+L4 4-tuple via the shared
 `TcpSession._apply_pmtu_update`. RFC 5927 §4 sequence-in-window
 guard applies on the TCP path.
 
+### §4 ICMPv6 Packet Too Big emission (transit forwarder)
+
+> "A router that cannot forward a packet because it is larger
+> than the outgoing link MTU MUST send an ICMPv6 Packet Too Big
+> message with the MTU of that link (routers never fragment
+> IPv6 — RFC 8200 §5)."
+
+**Adherence:** **shipped (Phase-2 M2)** — the *emission* side, the
+router counterpart of the reception clause above. When
+forwarding is enabled and a transit datagram exceeds the egress
+interface MTU, `Ip6ForwardHandler._emit_packet_too_big`
+(`packages/pytcp/pytcp/runtime/packet_handler/packet_handler__ip6__forward.py`)
+discards it (routers never fragment IPv6) and emits ICMPv6 Packet
+Too Big (Type 2) carrying the egress interface MTU, back to the
+datagram's source; the ICMPv6 TX handler bumps
+`icmp6__packet_too_big__send`. Audited alongside the IPv4
+transit-PMTU counterpart under
+[`../../ip4/rfc1812__router_requirements/adherence.md`](../../ip4/rfc1812__router_requirements/adherence.md)
+and tested in
+`packages/pytcp/pytcp/tests/integration/router/test__router__ip6__forwarding.py`.
+
 ### §4 Minimum MTU = 1280 bytes
 
 > "An implementation MUST NOT reduce its estimate

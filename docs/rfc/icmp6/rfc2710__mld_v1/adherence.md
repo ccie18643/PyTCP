@@ -42,7 +42,11 @@ Delay / Reserved / Multicast Address) and live in
 `packages/net_proto/net_proto/protocols/icmp6/message/mld1/`:
 
 - `Icmp6Mld1MessageQuery` (type 130) — parsed on RX to drive the
-  compatibility timer; RX-only (the querier emission is Phase-2).
+  compatibility timer; as of the Phase-2 M5a scaffolding it also
+  assembles the 24-octet MLDv1 Query wire form (for the
+  older-version-querier interop), tested at
+  `test__icmp6__mld1__message__query__assembler.py`. The querier
+  state machine that emits it is Phase-2 M5e router work.
 - `Icmp6Mld1MessageReport` (type 131) — full parse + assemble (the
   host emits it in MLDv1 mode).
 - `Icmp6Mld1MessageDone` (type 132) — full parse + assemble (available

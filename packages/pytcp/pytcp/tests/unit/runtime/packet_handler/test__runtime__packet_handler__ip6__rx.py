@@ -27,7 +27,7 @@ This module contains unit tests for the 'Ip6RxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip6__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Callable
@@ -103,6 +103,7 @@ class _StubInterface:
         """
 
         self._packet_stats_rx = PacketStatsRx()
+        self._interface_name: str | None = None
         self._ip6_unicast_list = [STACK__IP6_ADDRESS]
         self._ip6_multicast = [STACK__IP6_MULTICAST]
 

@@ -31,7 +31,7 @@ that upper-layer parsers can pick up the LLC payload transparently.
 
 net_proto/tests/unit/protocols/ethernet_802_3/test__ethernet_802_3__parser__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

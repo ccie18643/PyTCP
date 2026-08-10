@@ -27,5 +27,5 @@ This package contains the PyTCP example-capture / e2e-scenario tool.
 
 tools/capture/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """

@@ -27,7 +27,7 @@ This package contains the stack components and global structures.
 
 pytcp/stack/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import fcntl
@@ -112,7 +112,7 @@ IFF_TAP = TunTapFlag.IFF_TAP
 IFF_NO_PI = TunTapFlag.IFF_NO_PI
 
 # PyTCP code metadata.
-PYTCP_VERSION = "ver 3.0.8"
+PYTCP_VERSION = "ver 3.0.9"
 GITHUB_REPO = "https://github.com/ccie18643/PyTCP"
 
 # RFC 6528 §3 Initial Sequence Number secret. Generated once at
@@ -216,6 +216,55 @@ IP4__SUPPORT = True
 # docs/refactor/sysctl_per_interface.md.
 IP4__ACCEPT_SOURCE_ROUTE: dict[str, bool] = {"default": False}
 
+# IPv4 forwarding master switch — when True the stack forwards
+# transit IPv4 datagrams (a router); when False it drops any
+# datagram not addressed to it (a host). Linux
+# 'net.ipv4.ip_forward'. Default False keeps exact host
+# behaviour (RFC 1812 §5.2.1). The per-interface 'ip4.forwarding'
+# switch below is OR-combined with this master at the RX forward
+# gate, so setting the master turns every interface into a
+# forwarder.
+IP4__IP_FORWARD: bool = False
+
+# Per-interface IPv4 forwarding switch — 'dict[str, bool]' keyed
+# by interface name with a mandatory '"default"' slot. Linux
+# 'net.ipv4.conf.<iface>.forwarding'. Effective forwarding on an
+# ingress interface is 'IP4__IP_FORWARD or IP4__FORWARDING[<if>]'
+# (read-time OR), so an operator can enable forwarding on a
+# single interface without flipping the master.
+#
+# Phase 2: Linux eager-stamps every per-interface slot when the
+# master is written; PyTCP evaluates the OR at read time instead,
+# which is observably identical for the forward decision and
+# differs only in per-interface introspection fidelity.
+IP4__FORWARDING: dict[str, bool] = {"default": False}
+
+# IPv6 forwarding master switch — the IPv6 parallel of
+# 'IP4__IP_FORWARD'. Linux 'net.ipv6.conf.all.forwarding'.
+IP6__ALL_FORWARDING: bool = False
+
+# Per-interface IPv6 forwarding switch — the IPv6 parallel of
+# 'IP4__FORWARDING'. Linux 'net.ipv6.conf.<iface>.forwarding'.
+# Effective forwarding is 'IP6__ALL_FORWARDING or
+# IP6__FORWARDING[<if>]' (read-time OR).
+IP6__FORWARDING: dict[str, bool] = {"default": False}
+
+# Per-interface ICMP Redirect emission switch — when a router
+# forwards a datagram back out the interface it arrived on and the
+# next hop is on-link to the source, it sends an ICMP Redirect
+# advising the better first hop (RFC 1812 §5.2.7.2). Linux
+# 'net.ipv4.conf.<iface>.send_redirects' / '.ipv6...' default on.
+IP4__SEND_REDIRECTS: dict[str, bool] = {"default": True}
+IP6__SEND_REDIRECTS: dict[str, bool] = {"default": True}
+
+# Per-interface ICMPv4 Redirect acceptance switch — when set, an
+# inbound ICMPv4 Redirect installs a per-destination gateway route
+# (RFC 1122 §3.3.1.2). Linux
+# 'net.ipv4.conf.<iface>.accept_redirects' default on for a host.
+# (The IPv6 counterpart is 'icmp6.accept_redirects', registered
+# alongside the ND constants.)
+IP4__ACCEPT_REDIRECTS: dict[str, bool] = {"default": True}
+
 # ARP runtime configuration constants live alongside the ARP
 # protocol code at 'pytcp/protocols/arp/arp__constants.py'.
 # Importers should refer to that module directly rather than
@@ -309,6 +358,86 @@ _sysctl_register(
     interface_scope=True,
     description=(
         "RFC 791 §3.1 LSRR / SSRR acceptance gate; Linux" " 'net.ipv4.conf.<iface>.accept_source_route' analogue."
+    ),
+)
+_sysctl_register(
+    key="ip4.ip_forward",
+    module_name=__name__,
+    attr="IP4__IP_FORWARD",
+    default=IP4__IP_FORWARD,
+    validator=_stack__bool_validator("ip4.ip_forward"),
+    description=("RFC 1812 §5.2.1 IPv4 forwarding master switch (host vs router);" " Linux 'net.ipv4.ip_forward'."),
+)
+_sysctl_register(
+    key="ip4.forwarding",
+    module_name=__name__,
+    attr="IP4__FORWARDING",
+    default=IP4__FORWARDING["default"],
+    validator=_stack__bool_validator("ip4.forwarding"),
+    interface_scope=True,
+    description=(
+        "RFC 1812 §5.2.1 per-interface IPv4 forwarding switch (OR-combined"
+        " with the 'ip4.ip_forward' master); Linux"
+        " 'net.ipv4.conf.<iface>.forwarding'."
+    ),
+)
+_sysctl_register(
+    key="ip6.all.forwarding",
+    module_name=__name__,
+    attr="IP6__ALL_FORWARDING",
+    default=IP6__ALL_FORWARDING,
+    validator=_stack__bool_validator("ip6.all.forwarding"),
+    description=(
+        "RFC 1812 §5.2.1 IPv6 forwarding master switch (host vs router);" " Linux 'net.ipv6.conf.all.forwarding'."
+    ),
+)
+_sysctl_register(
+    key="ip6.forwarding",
+    module_name=__name__,
+    attr="IP6__FORWARDING",
+    default=IP6__FORWARDING["default"],
+    validator=_stack__bool_validator("ip6.forwarding"),
+    interface_scope=True,
+    description=(
+        "RFC 1812 §5.2.1 per-interface IPv6 forwarding switch (OR-combined"
+        " with the 'ip6.all.forwarding' master); Linux"
+        " 'net.ipv6.conf.<iface>.forwarding'."
+    ),
+)
+_sysctl_register(
+    key="ip4.send_redirects",
+    module_name=__name__,
+    attr="IP4__SEND_REDIRECTS",
+    default=IP4__SEND_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip4.send_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 1812 §5.2.7.2 ICMPv4 Redirect emission gate; Linux"
+        " 'net.ipv4.conf.<iface>.send_redirects' analogue (default on)."
+    ),
+)
+_sysctl_register(
+    key="ip6.send_redirects",
+    module_name=__name__,
+    attr="IP6__SEND_REDIRECTS",
+    default=IP6__SEND_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip6.send_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 4861 §8 ICMPv6 Redirect emission gate; Linux"
+        " 'net.ipv6.conf.<iface>.send_redirects' analogue (default on)."
+    ),
+)
+_sysctl_register(
+    key="ip4.accept_redirects",
+    module_name=__name__,
+    attr="IP4__ACCEPT_REDIRECTS",
+    default=IP4__ACCEPT_REDIRECTS["default"],
+    validator=_stack__bool_validator("ip4.accept_redirects"),
+    interface_scope=True,
+    description=(
+        "RFC 1122 §3.3.1.2 ICMPv4 Redirect acceptance gate; Linux"
+        " 'net.ipv4.conf.<iface>.accept_redirects' analogue (default on)."
     ),
 )
 _sysctl_register(
@@ -684,6 +813,52 @@ def _egress_handler_via_fib(destination: Ip4Address | Ip6Address, /) -> PacketHa
         if len(handlers) == 1:
             return handlers[0]
     return None
+
+
+def forward_next_hop_ip4(destination: Ip4Address, /) -> tuple[PacketHandlerL2 | PacketHandlerL3, Ip4Address] | None:
+    """
+    Resolve the '(egress handler, next-hop address)' for forwarding a
+    transit IPv4 datagram toward 'destination', or None when no route
+    covers it ("no route to host" — the caller emits ICMPv4 Destination
+    Unreachable).
+
+    The next hop is the matched route's gateway when the route is
+    off-link (gatewayed), else 'destination' itself for an on-link
+    (connected) route. The egress handler is resolved through the same
+    FIB seam socket-originated traffic uses ('_egress_handler_via_fib'),
+    so the forwarding plane and the origination plane pick the same
+    interface for a given destination.
+
+    Phase 2: single next-hop only — an ECMP next-hop group would return
+    one of several here behind the same signature.
+    """
+
+    route = ip4_fib.lookup(destination, connected=connected_ip4_networks())
+    if route is None:
+        return None
+    handler = _egress_handler_via_fib(destination)
+    if handler is None:
+        return None
+    next_hop = route.gateway if route.gateway is not None else destination
+    return handler, next_hop
+
+
+def forward_next_hop_ip6(destination: Ip6Address, /) -> tuple[PacketHandlerL2 | PacketHandlerL3, Ip6Address] | None:
+    """
+    Resolve the '(egress handler, next-hop address)' for forwarding a
+    transit IPv6 datagram toward 'destination', or None when no route
+    covers it (the caller emits ICMPv6 Destination Unreachable, No
+    Route). The IPv6 parallel of 'forward_next_hop_ip4'.
+    """
+
+    route = ip6_fib.lookup(destination, connected=connected_ip6_networks())
+    if route is None:
+        return None
+    handler = _egress_handler_via_fib(destination)
+    if handler is None:
+        return None
+    next_hop = route.gateway if route.gateway is not None else destination
+    return handler, next_hop
 
 
 def has_route_to(destination: Ip4Address | Ip6Address, /) -> bool:

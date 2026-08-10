@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Frag packet assembler operation.
 
 net_proto/tests/unit/protocols/ip6_frag/test__ip6_frag__assembler__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

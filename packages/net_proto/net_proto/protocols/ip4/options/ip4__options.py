@@ -27,7 +27,7 @@ This module contains the IPv4 packet option classes.
 
 net_proto/protocols/ip4/options/ip4__options.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from abc import ABC

@@ -38,7 +38,7 @@ plus an IANA next-header protocol.
 
 pytcp/client/client__datagram_socket.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

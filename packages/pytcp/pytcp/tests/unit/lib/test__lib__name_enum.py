@@ -27,7 +27,7 @@ This module contains tests for the 'NameEnum' base class.
 
 pytcp/tests/unit/lib/test__lib__name_enum.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from enum import IntEnum, auto

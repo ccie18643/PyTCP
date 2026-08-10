@@ -27,7 +27,7 @@ Integration tests for the IP-TX-layer loopback diversion.
 
 pytcp/tests/integration/loopback/test__loopback__tx_diversion.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

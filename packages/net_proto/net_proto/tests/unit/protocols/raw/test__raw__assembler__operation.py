@@ -27,7 +27,7 @@ This module contains tests for the Raw protocol packet assembler operation.
 
 net_proto/tests/unit/protocols/raw/test__raw__assembler__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

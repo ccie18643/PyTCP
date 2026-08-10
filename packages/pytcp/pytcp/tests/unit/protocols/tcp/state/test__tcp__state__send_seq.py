@@ -29,7 +29,7 @@ seq state container in
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__send_seq.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import inspect

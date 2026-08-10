@@ -27,7 +27,7 @@ Module contains tests for the DHCPv6 Rapid Commit option.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__option__rapid_commit.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

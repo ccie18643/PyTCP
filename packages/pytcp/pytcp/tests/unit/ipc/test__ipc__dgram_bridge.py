@@ -33,7 +33,7 @@ and inspects the stub's outbound list to exercise the TX direction.
 
 pytcp/tests/unit/ipc/test__ipc__dgram_bridge.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import queue

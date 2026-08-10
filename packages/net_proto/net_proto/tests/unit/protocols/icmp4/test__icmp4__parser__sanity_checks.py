@@ -27,7 +27,7 @@ This module contains tests for the ICMPv4 packet parser sanity checks.
 
 net_proto/tests/unit/protocols/icmp4/test__icmp4__parser__sanity_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace
@@ -144,7 +144,7 @@ _UNKNOWN_TYPE = _with_cksum(b"\x04\x00\x00\x00\x00\x00\x00\x00")
             "_description": "Unknown ICMPv4 type (Source Quench, type=4).",
             "_frame_rx": _UNKNOWN_TYPE,
             "_results": {
-                "error_message": ("The 'type' field value must be one of [0, 3, 8, 11, 12]. " "Got: 4."),
+                "error_message": ("The 'type' field value must be one of [0, 3, 5, 8, 11, 12]. " "Got: 4."),
             },
         },
     ]

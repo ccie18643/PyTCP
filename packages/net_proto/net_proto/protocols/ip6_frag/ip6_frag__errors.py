@@ -27,7 +27,7 @@ This module contains the IPv6 Frag protocol error classes.
 
 net_proto/protocols/ip6_frag/ip6_frag__errors.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

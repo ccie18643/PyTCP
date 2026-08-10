@@ -29,7 +29,7 @@ This module contains the inbound IGMP packet handler for one interface.
 
 pytcp/runtime/packet_handler/packet_handler__igmp__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import random
@@ -143,6 +143,13 @@ class IgmpRxHandler:
         self._if._packet_stats_rx.igmp__membership_report += 1
 
         message = packet_rx.igmp.message
+
+        # RFC 3376 §6.4 — when this interface is a multicast router, learn
+        # downstream reception state from the Report into the querier
+        # membership table (delegated to the TX querier state machine,
+        # which owns that state; a no-op on a plain host interface).
+        self._if._igmp_tx.observe_report(message)
+
         # Hold the interface IGMP/multicast lock across the query-response
         # state access (the pending-response scalar + suppressed-group
         # set) so the RX and timer threads cannot corrupt it on a no-GIL
@@ -192,6 +199,12 @@ class IgmpRxHandler:
 
         message = packet_rx.igmp.message
         assert isinstance(message, IgmpMessageQuery)
+
+        # RFC 3376 §6.6.2 querier election — when this interface is a
+        # multicast router, a Query from a lower source address makes us
+        # step down to Non-Querier (delegated to the TX querier state
+        # machine, which owns the election / Other-Querier-Present state).
+        self._if._igmp_tx.observe_query(packet_rx.ip4.src, message)
 
         # Hold the interface IGMP/multicast lock across the whole
         # query-response scheduling (compatibility-mode update + pending

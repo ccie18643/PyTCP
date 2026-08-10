@@ -27,7 +27,7 @@ Module contains operation tests for the DHCPv6 packet parser.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__parser__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

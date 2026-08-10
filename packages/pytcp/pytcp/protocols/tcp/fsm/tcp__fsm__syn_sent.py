@@ -29,7 +29,7 @@ This module contains the TCP FSM SYN_SENT state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__syn_sent.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import replace

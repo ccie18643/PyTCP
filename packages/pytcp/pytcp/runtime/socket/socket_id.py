@@ -27,7 +27,7 @@ This module contains the class representing the Socket identifier.
 
 pytcp/runtime/socket/socket_id.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

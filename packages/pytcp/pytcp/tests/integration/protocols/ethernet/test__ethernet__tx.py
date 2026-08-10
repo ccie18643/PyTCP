@@ -31,7 +31,7 @@ This module contains integration tests for the Packet Handler Ethernet TX operat
 
 pytcp/tests/integration/protocols/ethernet/test__ethernet__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, Literal, override

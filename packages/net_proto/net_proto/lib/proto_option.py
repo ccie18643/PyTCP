@@ -27,7 +27,7 @@ This module contains the base classes for all protocol option classes.
 
 net_proto/lib/proto_option.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from abc import ABC, abstractmethod

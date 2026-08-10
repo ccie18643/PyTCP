@@ -27,7 +27,7 @@ This module contains tests for the NetProto PacketRx class.
 
 net_proto/tests/unit/lib/test__lib__packet_rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import itertools

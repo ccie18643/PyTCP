@@ -27,7 +27,7 @@ This module contains the PacketRx class representing a received packet.
 
 net_proto/lib/packet_rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING

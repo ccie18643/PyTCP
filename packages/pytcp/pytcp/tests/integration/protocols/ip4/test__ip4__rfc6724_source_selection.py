@@ -38,7 +38,7 @@ rules 3, 6, and 7 do not apply.
 
 pytcp/tests/integration/protocols/ip4/test__ip4__rfc6724_source_selection.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

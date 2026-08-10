@@ -37,7 +37,7 @@ path drops the packet with the new
 
 pytcp/tests/integration/protocols/ip6/test__ip6__rfc8504_ext_hdr_option_caps.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

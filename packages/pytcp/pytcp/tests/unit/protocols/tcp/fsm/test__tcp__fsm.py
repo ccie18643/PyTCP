@@ -29,7 +29,7 @@ top-level 'tcp_fsm' dispatch.
 
 pytcp/tests/unit/protocols/tcp/fsm/test__tcp__fsm.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace
@@ -82,6 +82,7 @@ class _TcpSessionFsmFixture(TestCase):
         self._timer_patch = patch(
             "pytcp.protocols.tcp.session.tcp__session.stack.timer",
             self._timer,
+            create=True,
         )
         self._timer_patch.start()
 

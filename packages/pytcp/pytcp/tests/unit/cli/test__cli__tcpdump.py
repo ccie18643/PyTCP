@@ -30,7 +30,7 @@ the direction-prefixed line formatter ('format_capture_line'), and the
 
 pytcp/tests/unit/cli/test__cli__tcpdump.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

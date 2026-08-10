@@ -28,7 +28,7 @@ obligation.
 | §2.1 | Opt Data Len MUST be 2 | met (integrity-gated) |
 | §2 | Well-known values (0=MLD, 1=RSVP, 2=Active Networks) | met (named; full set is IANA) |
 | §2 | Action-on-unrecognized = skip (Type high 2 bits = 00) | met (RFC 8200 §4.2 skip) |
-| §3 | Router examines packets carrying the option | n/a (host, not a router — Phase 2) |
+| §3 | Router examines packets carrying the option | not implemented — PyTCP forwards unicast (3.0.9) but does no RAO interception; Phase-2 refinement |
 | RFC 3810 §5.2.14 | MLD messages carry the Router Alert option | met (TX emits it on MLDv2 reports) |
 
 ---
@@ -75,13 +75,15 @@ it (typed codec), so it parses rather than skips.
 
 ## §3 router processing
 
-**Adherence:** n/a (host). RFC 2711 §3's "routers examine packets
-carrying the Router Alert option" is a router fast-path obligation.
-PyTCP is a Phase-1 host: it does not forward, so it never intercepts
-transit packets on the basis of the option. A host's complete
-obligation is to (a) emit the option on the messages that require it
-(MLD, below) and (b) parse it on receipt without malfunction — both
-met. Router-side interception is Phase-2 (forwarding plane).
+**Adherence:** not implemented (Phase-2 refinement). RFC 2711 §3's
+"routers examine packets carrying the Router Alert option" is a
+router fast-path obligation. As of 3.0.9 PyTCP forwards IPv6 unicast,
+but the forward path preserves the datagram (options included)
+byte-for-byte and never intercepts on the basis of the Router Alert
+value — RAO fast-path interception is a Phase-2 refinement on the
+shipped forwarding plane. The host obligations — (a) emit the option
+on the messages that require it (MLD, below) and (b) parse it on
+receipt without malfunction — remain met.
 
 ## RFC 3810 §5.2.14 — MLD carries the Router Alert option
 
@@ -142,7 +144,8 @@ host scope.
 
 The IPv6 Router Alert option is a complete typed codec, integrity-
 gated, emitted on the MLD messages RFC 3810 requires, and parsed on
-receipt — the full host obligation. The only out-of-scope item is
-router-side interception (RFC 2711 §3), which belongs to the Phase-2
-forwarding plane. This record exists for IPv4↔IPv6 audit-set parity
+receipt — the full host obligation. The only unimplemented item is
+router-side RAO interception (RFC 2711 §3): the Phase-2 forwarding
+plane exists but does not yet act on the Router Alert value — a
+tracked refinement. This record exists for IPv4↔IPv6 audit-set parity
 with `docs/rfc/ip4/rfc6398__router_alert/adherence.md`.

@@ -32,7 +32,7 @@ stub that raises NotImplementedError — sockets are the user-facing API.
 
 net_proto/tests/unit/protocols/dhcp4/test__dhcp4__assembler__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

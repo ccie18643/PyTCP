@@ -27,7 +27,7 @@ This module contains tests for the IPv6 HBH packet assembler operation.
 
 net_proto/tests/unit/protocols/ip6_hbh/test__ip6_hbh__assembler__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

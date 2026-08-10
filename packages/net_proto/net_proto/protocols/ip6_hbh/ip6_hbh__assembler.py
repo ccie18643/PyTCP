@@ -27,7 +27,7 @@ This module contains the IPv6 Hop-by-Hop Options packet assembler.
 
 net_proto/protocols/ip6_hbh/ip6_hbh__assembler.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

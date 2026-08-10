@@ -38,7 +38,7 @@ joined with a timeout on teardown.
 
 pytcp/daemon/daemon__capture.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

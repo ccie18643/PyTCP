@@ -30,7 +30,7 @@ burst of segments within one round trip yields a single sample.
 
 pytcp/tests/unit/protocols/tcp/state/test__tcp__state__rcv_rtt.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

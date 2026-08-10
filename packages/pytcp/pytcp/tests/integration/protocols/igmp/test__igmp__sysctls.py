@@ -28,7 +28,7 @@ This module contains integration tests for the IGMP policy sysctls
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__sysctls.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address

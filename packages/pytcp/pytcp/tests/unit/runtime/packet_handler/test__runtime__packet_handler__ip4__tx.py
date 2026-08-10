@@ -27,7 +27,7 @@ This module contains unit tests for the 'Ip4TxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__ip4__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

@@ -33,7 +33,7 @@ and never tear on a free-threaded build.
 
 packages/pytcp/pytcp/tests/integration/protocols/ip6/test__addr_config__thread_safety.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

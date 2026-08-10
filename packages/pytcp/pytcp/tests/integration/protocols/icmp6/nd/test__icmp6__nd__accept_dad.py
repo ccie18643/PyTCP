@@ -46,7 +46,7 @@ lives in the async claim worker.
 
 pytcp/tests/integration/protocols/icmp6/nd/test__icmp6__nd__accept_dad.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading

@@ -27,7 +27,7 @@ Tests for the IPC length-prefixed stream framing codec.
 
 pytcp/tests/unit/ipc/test__ipc__frame.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import socket

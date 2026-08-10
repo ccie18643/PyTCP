@@ -29,7 +29,7 @@ This module contains packet handler for the inbound IPv6 packets.
 
 pytcp/runtime/packet_handler/packet_handler__ip6__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time as time_module
@@ -67,6 +67,10 @@ from pytcp.protocols.icmp.icmp__inbound_classifier import classify_inbound
 from pytcp.protocols.ip6.ip6__ext_hdr_limits import (
     Ip6ExtHdrCapViolation,
     check_ext_hdr_option_caps,
+)
+from pytcp.runtime.packet_handler.packet_handler__ip6__forward import Ip6ForwardHandler
+from pytcp.runtime.packet_handler.packet_handler__ip6__mforward import (
+    Ip6MulticastForwardHandler,
 )
 from pytcp.runtime.socket.raw__metadata import RawMetadata
 from pytcp.runtime.socket.raw__socket import RawSocket
@@ -107,33 +111,35 @@ class Ip6RxHandler:
         """
 
         self._if = interface
+        self._forward = Ip6ForwardHandler(interface=interface)
+        self._mforward = Ip6MulticastForwardHandler(interface=interface)
 
     def _forward_or_deliver_ip6(self, packet_rx: PacketRx, /) -> bool:
         """
         RFC 1812 §5.2.1 forward-or-deliver split for an inbound IPv6
-        datagram (the host equivalent). Return True to deliver it up
-        the local stack, False if the forward path consumed it.
+        datagram. Return True to deliver it up the local stack, False
+        if the forward path consumed it.
 
-        Phase 1 (host): deliver iff the destination is one of our
-        addresses — unicast or joined multicast (which covers
-        link-local, solicited-node, and the all-nodes group). Any
-        other destination is not ours to deliver.
-
-        # Phase 2: the forward branch runs the FIB next-hop lookup,
-        # the Hop-Limit decrement + ICMPv6 Time-Exceeded on expiry,
-        # and ICMPv6 Redirect generation. A host has no forwarding
-        # plane, so it drops non-local datagrams here (counted in
-        # 'ip6__dst_unknown__drop').
+        Deliver iff the destination is one of our addresses — unicast
+        or joined multicast (which covers link-local, solicited-node,
+        and the all-nodes group). Any other destination is handed to
+        the Phase-2 forward path, which forwards it toward its next hop
+        when forwarding is enabled and otherwise drops it with exact
+        host-mode behaviour (see 'Ip6ForwardHandler.try_forward_ip6').
         """
 
         if self._if._accepts_local_dst_ip6(packet_rx.ip6.dst):
             return True
 
-        self._if._packet_stats_rx.ip6__dst_unknown__drop += 1
-        __debug__ and log(
-            "ip6",
-            f"{packet_rx.tracker} - IP packet not destined for this stack; " "host does not forward, dropping",
-        )
+        # A transit multicast datagram (a group we have not joined) is
+        # replicated to downstream listeners by the multicast forward
+        # plane (Phase-2 M5f); a unicast one is forwarded toward its next
+        # hop by the unicast forward plane (M1).
+        if packet_rx.ip6.dst.is_multicast:
+            self._mforward.try_mforward_ip6(packet_rx)
+            return False
+
+        self._forward.try_forward_ip6(packet_rx)
         return False
 
     def _phrx_ip6(self, packet_rx: PacketRx, /) -> None:

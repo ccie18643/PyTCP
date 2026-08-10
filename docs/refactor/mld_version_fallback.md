@@ -23,8 +23,9 @@ exist):
 - `Icmp6Type.MULTICAST_LISTENER_REPORT = 131`, `MULTICAST_LISTENER_DONE = 132`.
 - `net_proto/.../icmp6/message/mld1/` — `Icmp6Mld1MessageReport` (131,
   parse+assemble), `Icmp6Mld1MessageDone` (132, parse+assemble),
-  `Icmp6Mld1MessageQuery` (130, 24-octet, RX-only). Shared fixed
-  24-octet RFC 2710 §3 form (`! BBH HH 16s`).
+  `Icmp6Mld1MessageQuery` (130, 24-octet; parse + assemble as of
+  Phase-2 M5a). Shared fixed 24-octet RFC 2710 §3 form
+  (`! BBH HH 16s`).
 - `Icmp6Parser._message_class`: type 130 length-discriminates MLDv1
   (24) vs MLDv2 (≥28) per RFC 3810 §8.1; 131/132 wired.
 - 14 unit tests.

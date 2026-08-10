@@ -66,7 +66,7 @@ the per-clause spec audit.
 
 pytcp/protocols/tcp/tcp__cubic.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # RFC 9438 §4.1.1 constants. Encoded as integer numerator /

@@ -27,7 +27,7 @@ This module contains the TCP Mss (Maximum Segment Size) option support code.
 
 net_proto/protocols/tcp/options/tcp__option__mss.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

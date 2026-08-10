@@ -31,7 +31,7 @@ socket observes egress; it does not intercept it).
 
 pytcp/tests/integration/packet_handler/test__packet_socket__tx_tap.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

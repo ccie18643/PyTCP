@@ -29,7 +29,7 @@ out-of-process 'pytcp.client' consumers over an AF_UNIX control socket.
 
 pytcp/daemon/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.daemon.daemon import default_socket_path, run_daemon

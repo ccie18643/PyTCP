@@ -28,7 +28,7 @@ option per RFC 8106 §5.2.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__nd__option__dnssl.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, override

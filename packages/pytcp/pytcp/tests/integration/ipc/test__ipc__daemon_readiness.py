@@ -30,7 +30,7 @@ bare 'IpcServer' (no stack) is sufficient to exercise it.
 
 pytcp/tests/integration/ipc/test__ipc__daemon_readiness.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import os

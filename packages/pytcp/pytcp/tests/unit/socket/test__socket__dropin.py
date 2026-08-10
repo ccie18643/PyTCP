@@ -27,7 +27,7 @@ This module contains surface tests for the daemon-backed socket drop-in.
 
 pytcp/tests/unit/socket/test__socket__dropin.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -30,7 +30,7 @@ modules import it without each repeating the
 
 net_proto/tests/lib/parameterized.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from parameterized import parameterized_class  # type: ignore[import-untyped]

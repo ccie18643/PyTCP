@@ -27,7 +27,7 @@ Module contains tests for the ICMPv6 packet assembler miscellaneous functions.
 
 net_proto/tests/unit/protocols/icmp6/test__icmp6__assembler__misc.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -32,7 +32,7 @@ read-only 'SocketSnapshot' tuple (the Linux 'ss' surface). It backs
 
 pytcp/client/client__socket_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import cast

@@ -30,7 +30,7 @@ pending Query response for that group.
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__v2_report_suppression.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

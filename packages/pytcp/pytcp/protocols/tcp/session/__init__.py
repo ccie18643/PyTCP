@@ -54,7 +54,7 @@ by the encapsulation contract above.
 
 pytcp/protocols/tcp/session/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.protocols.tcp.session.tcp__session import TcpSession

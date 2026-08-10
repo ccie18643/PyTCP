@@ -28,7 +28,7 @@ This module contains tests for the 'PacketStats', 'PacketStatsRx', and
 
 pytcp/tests/unit/lib/test__lib__packet_stats.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import FrozenInstanceError, dataclass, fields, is_dataclass
@@ -103,7 +103,7 @@ class TestPacketStatsBase(TestCase):
                 "is_subclass_of_packet_stats": True,
                 "is_dataclass": True,
                 "is_slotted": True,
-                "field_count": 195,
+                "field_count": 225,
             },
         },
         {
@@ -113,7 +113,7 @@ class TestPacketStatsBase(TestCase):
                 "is_subclass_of_packet_stats": True,
                 "is_dataclass": True,
                 "is_slotted": True,
-                "field_count": 116,
+                "field_count": 127,
             },
         },
     ]

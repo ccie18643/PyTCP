@@ -29,7 +29,7 @@ frame onto the egress interface's TxRing.
 
 pytcp/tests/integration/packet_handler/test__packet_socket__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

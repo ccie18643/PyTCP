@@ -28,7 +28,7 @@ validate protocol fields.
 
 net_proto/lib/int_checks.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 UINT_2__MIN = 0x00

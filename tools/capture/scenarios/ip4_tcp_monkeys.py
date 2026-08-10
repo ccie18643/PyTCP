@@ -28,7 +28,7 @@ monkeys echoed over IPv4 TCP with a graceful service-side close.
 
 tools/capture/scenarios/ip4_tcp_monkeys.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time

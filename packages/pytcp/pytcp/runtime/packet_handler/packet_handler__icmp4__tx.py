@@ -29,7 +29,7 @@ This module contains packet handler for the outbound ICMPv4 packets
 
 pytcp/runtime/packet_handler/packet_handler__icmp4__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING
@@ -99,8 +99,31 @@ class Icmp4TxHandler:
                 Icmp4DestinationUnreachableCode.PROTOCOL,
             ):
                 self._if._packet_stats_tx.icmp4__destination_unreachable__protocol__send += 1
+            case (
+                Icmp4Type.DESTINATION_UNREACHABLE,
+                Icmp4DestinationUnreachableCode.NETWORK,
+            ):
+                # RFC 1812 §4.3.3.1 — no-route response emitted by the
+                # transit forward path.
+                self._if._packet_stats_tx.icmp4__destination_unreachable__network__send += 1
+            case (
+                Icmp4Type.DESTINATION_UNREACHABLE,
+                Icmp4DestinationUnreachableCode.FRAGMENTATION_NEEDED,
+            ):
+                # RFC 1812 §4.3.3.3 / RFC 1191 — transit PMTU response
+                # emitted by the forward path when a DF=1 datagram
+                # exceeds the egress MTU.
+                self._if._packet_stats_tx.icmp4__destination_unreachable__frag_needed__send += 1
             case Icmp4Type.PARAMETER_PROBLEM, _:
                 self._if._packet_stats_tx.icmp4__parameter_problem__send += 1
+            case Icmp4Type.REDIRECT, _:
+                # RFC 1812 §5.2.7.2 — better-first-hop advice emitted by
+                # the transit forward path (hairpin forward).
+                self._if._packet_stats_tx.icmp4__redirect__send += 1
+            case Icmp4Type.TIME_EXCEEDED, _:
+                # RFC 1812 §4.3.3.5 — TTL-expiry response emitted by the
+                # transit forward path.
+                self._if._packet_stats_tx.icmp4__time_exceeded__send += 1
             case Icmp4Type.ECHO_REQUEST, _:
                 self._if._packet_stats_tx.icmp4__echo_request__send += 1
             case _:

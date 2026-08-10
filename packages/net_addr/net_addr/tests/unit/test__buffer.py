@@ -27,7 +27,7 @@ This module contains tests for the 'Buffer' type alias.
 
 net_addr/tests/unit/test__buffer.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TypeAliasType, get_args

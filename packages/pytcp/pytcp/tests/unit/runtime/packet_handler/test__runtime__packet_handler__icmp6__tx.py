@@ -27,7 +27,7 @@ This module contains unit tests for the 'Icmp6TxHandler' sub-handler.
 
 pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp6__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Callable
@@ -100,6 +100,16 @@ class _StubInterface:
         # Marshaled TX entry points route '_phtx_*' through '_marshal_tx';
         # with no TX worker under test, run the callable inline.
         return run()
+
+    def _marshal_tx_async(
+        self, run: Callable[[], TxStatus], /, *, on_complete: Callable[[], None] | None = None
+    ) -> None:
+        # Fire-and-forget marshaled entry (IGMP / MLD control messages);
+        # with no TX worker under test, run the callable inline and fire
+        # the completion hook, discarding the 'TxStatus'.
+        run()
+        if on_complete is not None:
+            on_complete()
 
     def __init__(self, *, ip6_multicast: list[Ip6Address] | None = None) -> None:
         self._packet_stats_tx = PacketStatsTx()
@@ -582,8 +592,8 @@ class TestPacketHandlerIcmp6TxUnsupported(TestCase):
         with 'TxStatus.DROPPED__ICMP6__UNKNOWN' and bumps the
         'icmp6__unknown__drop' counter — defensive over a 'raise'
         that would crash the calling thread. ICMPv6 Destination
-        Unreachable code=NO_ROUTE is not in the supported match arms
-        (only PORT is).
+        Unreachable code=ADDRESS is not in the supported match arms
+        (only PORT and NO_ROUTE are).
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -594,7 +604,7 @@ class TestPacketHandlerIcmp6TxUnsupported(TestCase):
             ip6__dst=HOST_A__IP6,
             ip6__hop=64,
             icmp6__message=Icmp6MessageDestinationUnreachable(
-                code=Icmp6DestinationUnreachableCode.NO_ROUTE,
+                code=Icmp6DestinationUnreachableCode.ADDRESS,
                 data=b"\x00" * 40,
             ),
         )

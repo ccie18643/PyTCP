@@ -27,7 +27,7 @@ This module contains the classes used to store the packet processing statistics.
 
 pytcp/lib/packet_stats.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import threading
@@ -154,12 +154,58 @@ class PacketStatsRx(PacketStats):
     ip4__frag__overlap__drop: int = 0
     ip4__frag__ecn_mixed__drop: int = 0
 
+    # Phase-2 router forwarding-plane counters (RFC 1812 §5.2).
+    # 'ip4__forward' bumps on a datagram forwarded out an egress
+    # interface; the '*__drop' variants pin each forward-branch
+    # rejection so the strict '_assert_packet_stats_rx' contract
+    # holds. The forwarding-disabled drop keeps the host-parity
+    # 'ip4__dst_unknown__drop' counter (byte-for-byte host
+    # behaviour), so there is no 'forward_disabled__drop' here.
+    ip4__forward: int = 0
+    ip4__forward_fragmented: int = 0
+    ip4__forward_redirect: int = 0
+    ip4__forward_no_route__drop: int = 0
+    ip4__forward_ttl_exceeded__drop: int = 0
+    ip4__forward_no_neighbor__drop: int = 0
+    ip4__forward_martian_dst__drop: int = 0
+    ip4__forward_too_big__drop: int = 0
+
+    # Phase-2 multicast forwarding (replication) counters (M5f):
+    # 'ip4__mforward' bumps once per replica emitted; the '*__drop'
+    # variants pin the RPF failure, no-listener, and link-scope
+    # rejections.
+    ip4__mforward: int = 0
+    ip4__mforward_rpf__drop: int = 0
+    ip4__mforward_no_listeners__drop: int = 0
+    ip4__mforward_scope__drop: int = 0
+
     ip6__pre_parse: int = 0
     ip6__failed_parse__drop: int = 0
     ip6__no_proto_support__drop: int = 0
     ip6__dst_unknown__drop: int = 0
     ip6__dst_unicast: int = 0
     ip6__dst_multicast: int = 0
+
+    # Phase-2 router forwarding-plane counters (RFC 1812 §5.2) —
+    # the IPv6 parallel of the 'ip4__forward*' set. 'scope__drop'
+    # replaces 'martian_dst__drop': IPv6 never forwards a
+    # link-local source/destination off-link (RFC 4007). No IPv6
+    # header checksum and no forwarded-packet fragmentation
+    # (routers never fragment IPv6 — RFC 8200 §5).
+    ip6__forward: int = 0
+    ip6__forward_redirect: int = 0
+    ip6__forward_no_route__drop: int = 0
+    ip6__forward_hop_exceeded__drop: int = 0
+    ip6__forward_no_neighbor__drop: int = 0
+    ip6__forward_scope__drop: int = 0
+    ip6__forward_too_big__drop: int = 0
+
+    # Phase-2 multicast forwarding (replication) counters (M5f) —
+    # the IPv6 parallel of the 'ip4__mforward*' set.
+    ip6__mforward: int = 0
+    ip6__mforward_rpf__drop: int = 0
+    ip6__mforward_no_listeners__drop: int = 0
+    ip6__mforward_scope__drop: int = 0
 
     ip6_frag__pre_parse: int = 0
     ip6_frag__failed_parse: int = 0
@@ -210,6 +256,9 @@ class PacketStatsRx(PacketStats):
     icmp4__parameter_problem__tcp__notify: int = 0
     icmp4__parameter_problem__tcp__seq_out_of_window__drop: int = 0
     icmp4__parameter_problem__udp__notify: int = 0
+    icmp4__redirect: int = 0
+    icmp4__redirect__accept: int = 0
+    icmp4__redirect__ignore: int = 0
     icmp4__unknown: int = 0
 
     icmp6__pre_parse: int = 0
@@ -260,7 +309,9 @@ class PacketStatsRx(PacketStats):
     icmp6__nd_redirect__accept_redirects_zero__drop: int = 0
     icmp6__nd_message__fragmented__drop: int = 0
     icmp6__mld2_report: int = 0
+    icmp6__mld2_report__querier_learn: int = 0
     icmp6__mld2_query: int = 0
+    icmp6__mld_query__election_lost: int = 0
     icmp6__mld2_query__scheduled: int = 0
     icmp6__mld2_query__superseded: int = 0
     icmp6__mld2_query__respond: int = 0
@@ -275,6 +326,8 @@ class PacketStatsRx(PacketStats):
     igmp__membership_query__respond: int = 0
     igmp__membership_query__suppressed: int = 0
     igmp__membership_report: int = 0
+    igmp__querier__election_lost: int = 0
+    igmp__querier__member_report: int = 0
     igmp__unknown: int = 0
 
     udp__pre_parse: int = 0
@@ -393,19 +446,28 @@ class PacketStatsTx(PacketStats):
     icmp4__echo_request__send: int = 0
     icmp4__destination_unreachable__port__send: int = 0
     icmp4__destination_unreachable__protocol__send: int = 0
+    icmp4__destination_unreachable__network__send: int = 0
+    icmp4__destination_unreachable__frag_needed__send: int = 0
     icmp4__parameter_problem__send: int = 0
+    icmp4__time_exceeded__send: int = 0
+    icmp4__redirect__send: int = 0
     icmp4__unknown__drop: int = 0
 
     icmp6__pre_assemble: int = 0
     icmp6__echo_reply__send: int = 0
     icmp6__echo_request__send: int = 0
     icmp6__destination_unreachable__port__send: int = 0
+    icmp6__destination_unreachable__no_route__send: int = 0
+    icmp6__packet_too_big__send: int = 0
     icmp6__parameter_problem__send: int = 0
+    icmp6__time_exceeded__send: int = 0
     icmp6__nd__router_solicitation__send: int = 0
     icmp6__nd__router_advertisement__send: int = 0
     icmp6__nd__neighbor_solicitation__send: int = 0
     icmp6__nd__neighbor_advertisement__send: int = 0
     icmp6__mld2__report__send: int = 0
+    icmp6__mld_general_query__send: int = 0
+    icmp6__mld_address_query__send: int = 0
     icmp6__mld1__report__send: int = 0
     icmp6__mld1__done__send: int = 0
     icmp6__unknown__drop: int = 0
@@ -415,6 +477,8 @@ class PacketStatsTx(PacketStats):
     igmp__v2_report__send: int = 0
     igmp__v1_report__send: int = 0
     igmp__v2_leave__send: int = 0
+    igmp__general_query__send: int = 0
+    igmp__group_query__send: int = 0
 
     tcp__pre_assemble: int = 0
     tcp__flag_ns: int = 0

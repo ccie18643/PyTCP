@@ -38,7 +38,7 @@ gives the registered '.default' knobs live consumers.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__buffer_defaults.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

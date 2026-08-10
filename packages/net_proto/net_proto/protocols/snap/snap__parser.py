@@ -27,7 +27,7 @@ This module contains the SNAP packet parser.
 
 net_proto/protocols/snap/snap__parser.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

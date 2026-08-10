@@ -34,7 +34,7 @@ spec audit.
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__cubic.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import Ip4Address

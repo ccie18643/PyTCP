@@ -28,7 +28,7 @@ SEND / RECEIVE / CLOSE syscall handlers.
 
 pytcp/tests/unit/protocols/tcp/test__tcp__session__syscalls.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace
@@ -65,6 +65,7 @@ class _TcpSessionSyscallFixture(TestCase):
         self._timer_patch = patch(
             "pytcp.protocols.tcp.session.tcp__session.stack.timer",
             self._timer,
+            create=True,
         )
         self._timer_patch.start()
 

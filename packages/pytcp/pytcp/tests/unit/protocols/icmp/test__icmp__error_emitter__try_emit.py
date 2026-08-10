@@ -27,7 +27,7 @@ This module contains tests for the ICMP outbound-error try_emit composition.
 
 pytcp/tests/unit/protocols/icmp/test__icmp__error_emitter__try_emit.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

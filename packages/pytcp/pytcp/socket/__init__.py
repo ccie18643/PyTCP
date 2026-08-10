@@ -37,7 +37,7 @@ surface.
 
 pytcp/socket/__init__.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.runtime.socket import (

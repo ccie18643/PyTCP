@@ -28,7 +28,7 @@ class — the legacy form a host emits under an IGMPv1 querier.
 
 net_proto/protocols/igmp/message/igmp__message__v1_report.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

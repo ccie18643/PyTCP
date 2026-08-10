@@ -27,7 +27,7 @@ This module contains tests for the IPv6 Dest Opts Pad1 option.
 
 net_proto/tests/unit/protocols/ip6_dest_opts/test__ip6_dest_opts__option__pad1.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

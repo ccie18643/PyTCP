@@ -39,7 +39,7 @@ exercise the rate-limit / queue logic in isolation.
 
 pytcp/tests/integration/protocols/arp/test__arp__resolution_flow.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

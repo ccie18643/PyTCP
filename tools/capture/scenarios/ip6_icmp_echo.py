@@ -28,7 +28,7 @@ the stack over IPv6 (ICMPv6 ND resolution + Echo).
 
 tools/capture/scenarios/ip6_icmp_echo.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import time

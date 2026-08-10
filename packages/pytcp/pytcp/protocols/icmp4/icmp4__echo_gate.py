@@ -30,7 +30,7 @@ answered, unless the 'icmp4.echo_ignore_broadcasts' sysctl is cleared.
 
 pytcp/protocols/icmp4/icmp4__echo_gate.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.protocols.icmp4 import icmp4__constants

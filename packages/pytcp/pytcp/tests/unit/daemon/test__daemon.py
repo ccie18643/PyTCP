@@ -27,7 +27,7 @@ Tests for the PyTCP daemon socket-path default and CLI argument wiring.
 
 pytcp/tests/unit/daemon/test__daemon.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import errno

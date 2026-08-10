@@ -27,7 +27,7 @@ This module contains the ICMPv4 packet parser.
 
 net_proto/protocols/icmp4/icmp4__parser.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override
@@ -53,6 +53,9 @@ from net_proto.protocols.icmp4.message.icmp4__message__echo_request import (
 )
 from net_proto.protocols.icmp4.message.icmp4__message__parameter_problem import (
     Icmp4MessageParameterProblem,
+)
+from net_proto.protocols.icmp4.message.icmp4__message__redirect import (
+    Icmp4MessageRedirect,
 )
 from net_proto.protocols.icmp4.message.icmp4__message__time_exceeded import (
     Icmp4MessageTimeExceeded,
@@ -93,6 +96,8 @@ class Icmp4Parser(Icmp4, ProtoParser):
                 return Icmp4MessageEchoReply
             case Icmp4Type.DESTINATION_UNREACHABLE:
                 return Icmp4MessageDestinationUnreachable
+            case Icmp4Type.REDIRECT:
+                return Icmp4MessageRedirect
             case Icmp4Type.ECHO_REQUEST:
                 return Icmp4MessageEchoRequest
             case Icmp4Type.TIME_EXCEEDED:

@@ -27,7 +27,7 @@ This module contains tests for the IPv4 packet assembler constructor argument as
 
 net_proto/tests/unit/protocols/ip4/test__ip4__assembler__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

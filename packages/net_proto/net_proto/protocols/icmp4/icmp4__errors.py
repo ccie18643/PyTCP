@@ -27,7 +27,7 @@ This module contains the ICMPv4 protocol error classes.
 
 net_proto/protocols/icmp4/icmp4__errors.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

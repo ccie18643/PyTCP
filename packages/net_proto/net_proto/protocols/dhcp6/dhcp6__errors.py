@@ -27,7 +27,7 @@ This module contains the DHCPv6 protocol error classes.
 
 net_proto/protocols/dhcp6/dhcp6__errors.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

@@ -34,7 +34,7 @@ socket-API / options / PMTUD tests can rely on the harness shape.
 
 pytcp/tests/integration/protocols/udp/test__udp__harness_smoke.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from net_addr import IpVersion

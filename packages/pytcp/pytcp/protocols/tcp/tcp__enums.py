@@ -27,7 +27,7 @@ This module contains the TCP session enums.
 
 pytcp/protocols/tcp/tcp__enums.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from enum import auto

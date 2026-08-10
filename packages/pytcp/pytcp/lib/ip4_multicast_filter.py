@@ -30,7 +30,7 @@ reception state from the set of per-socket filters.
 
 pytcp/lib/ip4_multicast_filter.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Iterable

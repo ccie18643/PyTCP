@@ -29,7 +29,7 @@ the stack TX path reads when emitting IPv6 datagrams.
 
 pytcp/protocols/ip6/ip6__constants.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # RFC 6437 §3 IPv6 Flow Label auto-generation toggle.

@@ -38,7 +38,7 @@ wire.
 
 pytcp/runtime/packet_handler/packet_handler__ethernet_802_3__rx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING

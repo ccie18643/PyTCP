@@ -27,7 +27,7 @@ Tests for the IPC control-plane RPC body codec.
 
 pytcp/tests/unit/ipc/test__ipc__rpc.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

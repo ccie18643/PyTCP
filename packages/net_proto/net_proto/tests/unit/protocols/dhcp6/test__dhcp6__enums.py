@@ -27,7 +27,7 @@ This module contains tests for the DHCPv6 protocol enum classes.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__enums.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

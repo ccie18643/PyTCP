@@ -27,7 +27,7 @@ This module contains the ARP protocol error classes.
 
 net_proto/protocols/arp/arp__errors.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

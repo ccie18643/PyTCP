@@ -27,7 +27,7 @@ This module contains tests for the per-interface activity introspection API.
 
 pytcp/tests/unit/stack/test__stack__activity_introspect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from types import SimpleNamespace

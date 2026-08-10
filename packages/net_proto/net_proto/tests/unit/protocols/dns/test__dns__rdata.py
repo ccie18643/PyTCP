@@ -27,7 +27,7 @@ This module contains unit tests for the DNS typed-RDATA decoders.
 
 net_proto/tests/unit/protocols/dns/test__dns__rdata.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

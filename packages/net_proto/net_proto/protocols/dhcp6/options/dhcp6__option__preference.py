@@ -27,7 +27,7 @@ This module contains the DHCPv6 Preference option support code.
 
 net_proto/protocols/dhcp6/options/dhcp6__option__preference.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

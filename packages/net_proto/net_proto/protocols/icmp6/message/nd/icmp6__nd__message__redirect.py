@@ -27,7 +27,7 @@ This module contains the ICMPv6 ND Redirect message support class.
 
 net_proto/protocols/icmp6/message/nd/icmp6__nd__message__redirect.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

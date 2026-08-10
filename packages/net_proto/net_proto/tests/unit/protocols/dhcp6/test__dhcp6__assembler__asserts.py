@@ -27,7 +27,7 @@ Module contains constructor-assert tests for the DHCPv6 packet assembler.
 
 net_proto/tests/unit/protocols/dhcp6/test__dhcp6__assembler__asserts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

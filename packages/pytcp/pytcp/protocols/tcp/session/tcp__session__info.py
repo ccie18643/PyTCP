@@ -36,7 +36,7 @@ taken under the session's own accessors, never a live reference.
 
 pytcp/protocols/tcp/session/tcp__session__info.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

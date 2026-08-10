@@ -27,7 +27,7 @@ Tests for the IPC AF_PACKET data-channel frame codec.
 
 pytcp/tests/unit/ipc/test__ipc__packet_frame.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

@@ -27,7 +27,7 @@ This module contains the stack-wide millisecond-resolution timer.
 
 pytcp/runtime/timer.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import heapq

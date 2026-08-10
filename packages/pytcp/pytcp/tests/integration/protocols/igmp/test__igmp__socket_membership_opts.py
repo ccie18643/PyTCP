@@ -28,7 +28,7 @@ IP_DROP_MEMBERSHIP socket options.
 
 net_proto/../pytcp/tests/integration/protocols/igmp/test__igmp__socket_membership_opts.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import sys

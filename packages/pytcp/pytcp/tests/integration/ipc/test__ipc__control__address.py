@@ -27,7 +27,7 @@ Integration tests for the out-of-process address control mirror.
 
 pytcp/tests/integration/ipc/test__ipc__control__address.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp import stack

@@ -27,7 +27,7 @@ This module contains class supporting stack TX Ring operations.
 
 pytcp/runtime/tx_ring.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import collections

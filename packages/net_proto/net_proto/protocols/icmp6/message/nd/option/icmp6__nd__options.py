@@ -27,7 +27,7 @@ This module contains the ICMPv6 Neighbor Discovery option support classes.
 
 net_proto/protocols/icmp6/message/nd/option/icmp6__nd__options.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Self, override

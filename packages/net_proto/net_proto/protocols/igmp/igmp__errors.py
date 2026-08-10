@@ -27,7 +27,7 @@ This module contains the IGMP protocol error classes.
 
 net_proto/protocols/igmp/igmp__errors.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import override

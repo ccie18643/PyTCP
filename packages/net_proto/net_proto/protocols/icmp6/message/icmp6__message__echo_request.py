@@ -27,7 +27,7 @@ This module contains the ICMPv6 Echo Request message support class.
 
 net_proto/protocols/icmp6/message/icmp6__message__echo_request.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

@@ -33,7 +33,7 @@ Covers the new 'interface_scope=True' '_Knob' shape, the
 
 pytcp/tests/unit/stack/test__stack__sysctl_iface.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import sys

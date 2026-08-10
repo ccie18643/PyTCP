@@ -33,7 +33,7 @@ Dynamic Right-Sizing (Track R) gate depends on (Linux 'rcv_rtt_est' /
 
 pytcp/protocols/tcp/state/tcp__state__rcv_rtt.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from dataclasses import dataclass

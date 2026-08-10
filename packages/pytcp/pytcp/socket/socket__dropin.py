@@ -49,7 +49,7 @@ fully initialised.
 
 pytcp/socket/socket__dropin.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import builtins

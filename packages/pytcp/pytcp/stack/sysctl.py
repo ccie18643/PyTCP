@@ -35,7 +35,7 @@ Workflow for adding a knob: .claude/skills/sysctl_knob/SKILL.md
 
 pytcp/stack/sysctl.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import sys
@@ -427,6 +427,23 @@ def is_non_negative_int(name: str) -> Callable[[Any], None]:
         # would otherwise pass — reject them explicitly.
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise ValueError(f"sysctl {name!r} must be a non-negative int; got {value!r}")
+
+    return validator
+
+
+def is_bool(name: str) -> Callable[[Any], None]:
+    """
+    Build a validator that requires a value of exactly 'True' or
+    'False'. Surfaces 'name' in the rejection message.
+    """
+
+    def validator(value: Any) -> None:
+        """
+        Raise 'ValueError' unless 'value' is a bool.
+        """
+
+        if not isinstance(value, bool):
+            raise ValueError(f"sysctl {name!r} must be a bool; got {type(value).__name__}({value!r})")
 
     return validator
 

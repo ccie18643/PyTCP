@@ -27,7 +27,7 @@ This module contains tests for the DNS resolution control API.
 
 pytcp/tests/unit/stack/test__stack__resolver.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import inspect

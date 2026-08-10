@@ -27,7 +27,7 @@ This module contains the IPv6 HBH parser happy-path operation tests.
 
 net_proto/tests/unit/protocols/ip6_hbh/test__ip6_hbh__parser__operation.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from unittest import TestCase

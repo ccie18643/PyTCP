@@ -40,7 +40,7 @@ absent from that event's table - the dispatcher uses dict
 
 pytcp/protocols/tcp/fsm/tcp__fsm.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from collections.abc import Callable

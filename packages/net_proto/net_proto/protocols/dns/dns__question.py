@@ -27,7 +27,7 @@ This module contains the DNS question-record class.
 
 net_proto/protocols/dns/dns__question.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import struct

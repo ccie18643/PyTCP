@@ -36,7 +36,7 @@ conservative 65535 default).
 
 pytcp/tests/integration/protocols/tcp/test__tcp__session__so_rcvbuf.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from pytcp.runtime.socket import SO_RCVBUF, SOCKET__SO_RCVBUF__DEFAULT, SOL_SOCKET

@@ -28,7 +28,7 @@ RFC 3810 §8 host compatibility defaults, exposed as policy sysctls.
 
 pytcp/protocols/icmp6/mld__constants.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # RFC 3810 §8 forced MLD Host Compatibility Mode (the IPv6 analogue of
@@ -54,12 +54,50 @@ MLD__UNSOLICITED_REPORT_INTERVAL__MS = 1000
 # Query carries no QQIC, so this default is the [Query Interval] term of
 # the §9.12 Older Version Querier Present Timeout the host arms when it
 # hears such a Query. The IPv6 analogue of 'IGMP__QUERY_INTERVAL__MS'.
+# On the querier side (Phase-2 M5d) it is also the spacing between
+# steady-state General Queries and the QQIC the querier advertises.
 MLD__QUERY_INTERVAL__MS = 125_000
+
+# --- Querier-side timing (Phase-2 M5d router role) -------------------
+
+# RFC 3810 §9.3 Query Response Interval, in milliseconds — the maximum
+# response window the querier advertises in the Maximum Response Code
+# of a General Query (RFC default 10 s). Phase 2: per-interface.
+MLD__QUERY_RESPONSE_INTERVAL__MS = 10_000
+
+# RFC 3810 §9.6 Startup Query Interval, in milliseconds — the spacing
+# between the General Queries a newly-elected querier sends at startup
+# (RFC default [Query Interval] / 4). Phase 2: per-interface.
+MLD__STARTUP_QUERY_INTERVAL__MS = 31_250
+
+# RFC 3810 §9.7 Startup Query Count — the number of General Queries a
+# newly-elected querier sends at startup (RFC default [Robustness
+# Variable]). Phase 2: per-interface.
+MLD__STARTUP_QUERY_COUNT = 2
+
+# RFC 3810 §9.8 Last Listener Query Interval, in milliseconds — the Max
+# Resp Code the querier advertises in the Multicast-Address-Specific
+# Queries it sends on a leave, and their spacing (RFC default 1 s).
+# Phase 2: per-interface.
+MLD__LAST_LISTENER_QUERY_INTERVAL__MS = 1000
+
+# RFC 3810 §9.9 Last Listener Query Count — the number of Multicast-
+# Address-Specific Queries the querier sends on a leave before pruning
+# (RFC default [Robustness Variable]). Phase 2: per-interface.
+MLD__LAST_LISTENER_QUERY_COUNT = 2
+
+# Linux 'net.ipv6.conf.<iface>.mc_forwarding' — per-interface multicast
+# router switch. When set, the interface takes the MLD querier role
+# (election, General Queries, downstream group-membership state). A
+# 'dict[str, bool]' keyed by interface name with a mandatory
+# '"default"' slot. Default off keeps exact host behaviour.
+MLD__MC_FORWARDING: dict[str, bool] = {"default": False}
 
 # Sysctl registration. Every constant above is a policy knob,
 # operator-tunable at boot via 'stack.init(sysctls={...})' or at
 # runtime via 'pytcp.stack.sysctl["mld...."] = N'.
 from pytcp.stack.sysctl import (  # noqa: E402
+    is_bool,
     is_int_in_range,
     is_positive_int,
     register,
@@ -96,4 +134,53 @@ register(
     default=MLD__QUERY_INTERVAL__MS,
     validator=is_positive_int("mld.query_interval"),
     description="RFC 3810 §9.2 Query Interval — [Query Interval] term of the MLDv1 querier-present timeout, ms.",
+)
+register(
+    key="mld.query_response_interval",
+    module_name=__name__,
+    attr="MLD__QUERY_RESPONSE_INTERVAL__MS",
+    default=MLD__QUERY_RESPONSE_INTERVAL__MS,
+    validator=is_positive_int("mld.query_response_interval"),
+    description="RFC 3810 §9.3 Query Response Interval (ms) — querier Max Resp Code window in a General Query.",
+)
+register(
+    key="mld.startup_query_interval",
+    module_name=__name__,
+    attr="MLD__STARTUP_QUERY_INTERVAL__MS",
+    default=MLD__STARTUP_QUERY_INTERVAL__MS,
+    validator=is_positive_int("mld.startup_query_interval"),
+    description="RFC 3810 §9.6 Startup Query Interval (ms) — spacing of the querier's startup General Queries.",
+)
+register(
+    key="mld.startup_query_count",
+    module_name=__name__,
+    attr="MLD__STARTUP_QUERY_COUNT",
+    default=MLD__STARTUP_QUERY_COUNT,
+    validator=is_positive_int("mld.startup_query_count"),
+    description="RFC 3810 §9.7 Startup Query Count — number of startup General Queries a new querier sends.",
+)
+register(
+    key="mld.last_listener_query_interval",
+    module_name=__name__,
+    attr="MLD__LAST_LISTENER_QUERY_INTERVAL__MS",
+    default=MLD__LAST_LISTENER_QUERY_INTERVAL__MS,
+    validator=is_positive_int("mld.last_listener_query_interval"),
+    description="RFC 3810 §9.8 Last Listener Query Interval (ms) — Address-Specific Query max-resp + spacing on leave.",
+)
+register(
+    key="mld.last_listener_query_count",
+    module_name=__name__,
+    attr="MLD__LAST_LISTENER_QUERY_COUNT",
+    default=MLD__LAST_LISTENER_QUERY_COUNT,
+    validator=is_positive_int("mld.last_listener_query_count"),
+    description="RFC 3810 §9.9 Last Listener Query Count — Address-Specific Queries sent on leave before pruning.",
+)
+register(
+    key="mld.mc_forwarding",
+    module_name=__name__,
+    attr="MLD__MC_FORWARDING",
+    default=MLD__MC_FORWARDING["default"],
+    validator=is_bool("mld.mc_forwarding"),
+    interface_scope=True,
+    description="Linux 'net.ipv6.conf.<iface>.mc_forwarding' — per-interface MLD querier / multicast-router switch.",
 )

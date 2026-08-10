@@ -29,7 +29,7 @@ sysctls.
 
 pytcp/protocols/igmp/igmp__constants.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 # RFC 3376 §8.1 Robustness Variable. The number of times a host
@@ -59,13 +59,52 @@ IGMP__FORCE_VERSION = 0
 # RFC 3376 §8.2 Query Interval default (125 s), in milliseconds. A
 # v1/v2 Query carries no QQIC, so this default is the [Query Interval]
 # term of the §8.12 Older Version Querier Present Timeout the host arms
-# when it hears such a Query.
+# when it hears such a Query. On the querier side (Phase-2 M5b) it is
+# also the spacing between steady-state General Queries the querier
+# emits and the QQIC it advertises.
 IGMP__QUERY_INTERVAL__MS = 125_000
+
+# --- Querier-side timing (Phase-2 M5b router role) -------------------
+
+# RFC 3376 §8.3 Query Response Interval, in milliseconds — the maximum
+# response window the querier advertises in the Max Resp Code of a
+# General Query (RFC default 10 s). Phase 2: per-interface.
+IGMP__QUERY_RESPONSE_INTERVAL__MS = 10_000
+
+# RFC 3376 §8.6 Startup Query Interval, in milliseconds — the spacing
+# between the General Queries a newly-elected querier sends at startup
+# (RFC default [Query Interval] / 4). Phase 2: per-interface.
+IGMP__STARTUP_QUERY_INTERVAL__MS = 31_250
+
+# RFC 3376 §8.7 Startup Query Count — the number of General Queries a
+# newly-elected querier sends at startup, spaced by the Startup Query
+# Interval (RFC default [Robustness Variable]). Phase 2: per-interface.
+IGMP__STARTUP_QUERY_COUNT = 2
+
+# RFC 3376 §8.8 Last Member Query Interval, in milliseconds — the Max
+# Resp Time the querier advertises in the Group-Specific Queries it
+# sends on a leave, and their spacing (RFC default 1 s). Phase 2:
+# per-interface.
+IGMP__LAST_MEMBER_QUERY_INTERVAL__MS = 1000
+
+# RFC 3376 §8.9 Last Member Query Count — the number of Group-Specific
+# Queries the querier sends on a leave before pruning the group (RFC
+# default [Robustness Variable]). Phase 2: per-interface.
+IGMP__LAST_MEMBER_QUERY_COUNT = 2
+
+# Linux 'net.ipv4.conf.<iface>.mc_forwarding' — per-interface multicast
+# router switch. When set, the interface takes the IGMP querier role
+# (election, General Queries, downstream group-membership state). A
+# 'dict[str, bool]' keyed by interface name with a mandatory
+# '"default"' slot. Default off keeps exact host behaviour — a host is
+# not a querier.
+IGMP__MC_FORWARDING: dict[str, bool] = {"default": False}
 
 # Sysctl registration. Every constant above is a policy knob,
 # operator-tunable at boot via 'stack.init(sysctls={...})' or at
 # runtime via 'pytcp.stack.sysctl["igmp...."] = N'.
 from pytcp.stack.sysctl import (  # noqa: E402
+    is_bool,
     is_int_in_range,
     is_positive_int,
     register,
@@ -110,4 +149,53 @@ register(
     default=IGMP__QUERY_INTERVAL__MS,
     validator=is_positive_int("igmp.query_interval"),
     description="RFC 3376 §8.2 Query Interval (ms) — default term of the §8.12 Older Version Querier Present Timeout.",
+)
+register(
+    key="igmp.query_response_interval",
+    module_name=__name__,
+    attr="IGMP__QUERY_RESPONSE_INTERVAL__MS",
+    default=IGMP__QUERY_RESPONSE_INTERVAL__MS,
+    validator=is_positive_int("igmp.query_response_interval"),
+    description="RFC 3376 §8.3 Query Response Interval (ms) — querier Max Resp Code window in a General Query.",
+)
+register(
+    key="igmp.startup_query_interval",
+    module_name=__name__,
+    attr="IGMP__STARTUP_QUERY_INTERVAL__MS",
+    default=IGMP__STARTUP_QUERY_INTERVAL__MS,
+    validator=is_positive_int("igmp.startup_query_interval"),
+    description="RFC 3376 §8.6 Startup Query Interval (ms) — spacing of the querier's startup General Queries.",
+)
+register(
+    key="igmp.startup_query_count",
+    module_name=__name__,
+    attr="IGMP__STARTUP_QUERY_COUNT",
+    default=IGMP__STARTUP_QUERY_COUNT,
+    validator=is_positive_int("igmp.startup_query_count"),
+    description="RFC 3376 §8.7 Startup Query Count — number of startup General Queries a new querier sends.",
+)
+register(
+    key="igmp.last_member_query_interval",
+    module_name=__name__,
+    attr="IGMP__LAST_MEMBER_QUERY_INTERVAL__MS",
+    default=IGMP__LAST_MEMBER_QUERY_INTERVAL__MS,
+    validator=is_positive_int("igmp.last_member_query_interval"),
+    description="RFC 3376 §8.8 Last Member Query Interval (ms) — Group-Specific Query max-resp + spacing on leave.",
+)
+register(
+    key="igmp.last_member_query_count",
+    module_name=__name__,
+    attr="IGMP__LAST_MEMBER_QUERY_COUNT",
+    default=IGMP__LAST_MEMBER_QUERY_COUNT,
+    validator=is_positive_int("igmp.last_member_query_count"),
+    description="RFC 3376 §8.9 Last Member Query Count — Group-Specific Queries sent on leave before pruning.",
+)
+register(
+    key="igmp.mc_forwarding",
+    module_name=__name__,
+    attr="IGMP__MC_FORWARDING",
+    default=IGMP__MC_FORWARDING["default"],
+    validator=is_bool("igmp.mc_forwarding"),
+    interface_scope=True,
+    description="Linux 'net.ipv4.conf.<iface>.mc_forwarding' — per-interface IGMP querier / multicast-router switch.",
 )

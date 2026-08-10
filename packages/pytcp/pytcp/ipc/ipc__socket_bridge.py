@@ -37,7 +37,7 @@ socket and closes the TCP window.
 
 pytcp/ipc/ipc__socket_bridge.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import socket

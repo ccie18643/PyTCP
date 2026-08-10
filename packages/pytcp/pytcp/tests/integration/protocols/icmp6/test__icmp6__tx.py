@@ -34,7 +34,7 @@ the 'IcmpTestCase' harness.
 
 pytcp/tests/integration/protocols/icmp6/test__icmp6__tx.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import cast, override
@@ -784,9 +784,9 @@ class TestIcmp6Tx__DestUnreachableUnsupportedCode(IcmpTestCase):
         """
         Ensure '_phtx_icmp6' drops with TxStatus.DROPPED__ICMP6__UNKNOWN
         when asked to emit a Destination Unreachable with a code other
-        than PORT — the TX path only supports the PORT subcase today,
-        and the fall-through is a defensive drop with a counter bump
-        rather than an exception.
+        than PORT or NO_ROUTE — the TX path only supports those subcases
+        today, and the fall-through is a defensive drop with a counter
+        bump rather than an exception.
 
         Reference: PyTCP test infrastructure (no RFC clause).
         """
@@ -797,7 +797,7 @@ class TestIcmp6Tx__DestUnreachableUnsupportedCode(IcmpTestCase):
             ip6__src=STACK__IP6_HOST.address,
             ip6__dst=HOST_A__IP6_ADDRESS,
             icmp6__message=Icmp6MessageDestinationUnreachable(
-                code=Icmp6DestinationUnreachableCode.NO_ROUTE,
+                code=Icmp6DestinationUnreachableCode.ADDRESS,
             ),
         )
 

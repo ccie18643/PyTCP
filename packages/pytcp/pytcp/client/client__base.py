@@ -33,7 +33,7 @@ the same flavour carrying the selected scope.
 
 pytcp/client/client__base.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import Any, Self

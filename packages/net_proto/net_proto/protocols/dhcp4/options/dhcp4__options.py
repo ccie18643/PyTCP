@@ -27,7 +27,7 @@ This module contains the DHCPv4 packet options class.
 
 net_proto/protocols/dhcp4/options/dhcp4__options.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from abc import ABC

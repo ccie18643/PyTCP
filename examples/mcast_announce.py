@@ -43,7 +43,7 @@ Needs a running daemon that owns the TAP interface, e.g.:
 
 examples/mcast_announce.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 import socket

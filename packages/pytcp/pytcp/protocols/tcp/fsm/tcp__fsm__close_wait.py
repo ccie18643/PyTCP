@@ -29,7 +29,7 @@ This module contains the TCP FSM CLOSE_WAIT state handler.
 
 pytcp/protocols/tcp/fsm/tcp__fsm__close_wait.py
 
-ver 3.0.8
+ver 3.0.9
 """
 
 from typing import TYPE_CHECKING
