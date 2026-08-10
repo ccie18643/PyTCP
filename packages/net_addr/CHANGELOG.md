@@ -6,9 +6,9 @@ lockstep with `PyTCP` and `PyTCP-net_proto` — they share a version.
 Releases before 3.0.8 are on the
 [GitHub Releases page](https://github.com/ccie18643/PyTCP/releases).
 
-## 3.0.9 — Unreleased
+## 3.0.9 — 2026-08-09
 
-_Development in progress._
+_No functional changes; released in lockstep with `PyTCP` 3.0.9._
 
 ## 3.0.8 — 2026-07-23
 
