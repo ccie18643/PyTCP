@@ -47,6 +47,7 @@ reachable in default deployments landed in the
 | TCP adapter (ack / RTO hooks)                          | met (`TcpPlpmtudAdapter`)         |
 | TCP probe-segment emit                                 | met (Phase 3c-min)                |
 | TCP operator-facing enable (`tcp.mtu_probing` sysctl)  | met (`tcp.mtu_probing=2`, `tcp.base_mss` seed) |
+| TCP send-MSS operator cap (`tcp.snd_mss_max` sysctl)   | met (clamped last in `_mss_ceiling()`; 0 = uncapped default) |
 | TCP cwnd-exempt + probe-only RTO (RFC §7.4 / §7.5)     | **Linux-pragmatic deviation** (probes share cwnd / regular RTO; matches Linux tcp_mtu_probing) |
 | UDP manual probe API (probe_pmtu / ack_probe / timeout)| met (`UdpSocket.probe_pmtu` ...)  |
 
