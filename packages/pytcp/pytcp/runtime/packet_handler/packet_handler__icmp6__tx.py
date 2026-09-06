@@ -850,21 +850,15 @@ class Icmp6TxHandler:
                 self._send_icmp6_mld1_report(group)
             return
 
-        # MLDv2: one aggregated Report (CHANGE_TO_EXCLUDE per group) to
-        # the all-MLDv2-routers address.
-        icmp6_packet_tx = Icmp6Assembler(
-            icmp6__message=Icmp6Mld2MessageReport(
-                records=[
-                    Icmp6Mld2MulticastAddressRecord(
-                        type=Icmp6Mld2MulticastAddressRecordType.CHANGE_TO_EXCLUDE,
-                        multicast_address=group,
-                    )
-                    for group in groups
-                ],
-            ),
-        )
-        self._if._packet_stats_tx.icmp6__mld2__report__send += 1
-        self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
+        # MLDv2: one aggregated Current-State Report to the
+        # all-MLDv2-routers address. A Query response reports what the
+        # interface state IS (MODE_IS_INCLUDE / MODE_IS_EXCLUDE plus the
+        # source list), not a CHANGE_TO_* transition — the State-Change
+        # form belongs to '_send_mld_state_change'. Carrying the real
+        # source list is what keeps a source-specific (SSM) listener from
+        # being reported as accept-all.
+        records = [record for group in sorted(groups, key=int) if (record := self._mld2_current_state_record(group))]
+        self._emit_mld2_report(records)
 
     def _send_icmp6_mld1_report(self, group: Ip6Address, /) -> None:
         """
@@ -934,6 +928,36 @@ class Icmp6TxHandler:
         self._if._packet_stats_tx.icmp6__mld2__report__send += 1
         self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
 
+    def _mld2_current_state_record(self, group: Ip6Address, /) -> Icmp6Mld2MulticastAddressRecord | None:
+        """
+        Build the MLDv2 Current-State Record for 'group' from its merged
+        interface filter: MODE_IS_EXCLUDE or MODE_IS_INCLUDE carrying the
+        address's source list. Returns None when the interface holds no
+        reception state for the address.
+
+        The IPv6 analogue of '_current_state_record'.
+
+        Reference: RFC 3810 §5.2.12 (Current-State Record types).
+        Reference: RFC 3810 §4.2 (per-address filter mode and source list).
+        """
+
+        with self._if._lock__multicast:
+            filter_ = self._if._ip6_multicast_filters.get(group)
+
+        if filter_ is None:
+            return None
+
+        record_type = (
+            Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE
+            if filter_.mode is Ip6MulticastFilterMode.EXCLUDE
+            else Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE
+        )
+        return Icmp6Mld2MulticastAddressRecord(
+            type=record_type,
+            multicast_address=group,
+            source_addresses=sorted(filter_.sources, key=int),
+        )
+
     def _send_icmp6_mld2_address_current_state(
         self,
         group: Ip6Address,
@@ -965,20 +989,9 @@ class Icmp6TxHandler:
             return
 
         if not queried_sources:
-            record_type = (
-                Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE
-                if filter_.mode is Ip6MulticastFilterMode.EXCLUDE
-                else Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE
-            )
-            self._emit_mld2_report(
-                [
-                    Icmp6Mld2MulticastAddressRecord(
-                        type=record_type,
-                        multicast_address=group,
-                        source_addresses=sorted(filter_.sources, key=int),
-                    )
-                ]
-            )
+            record = self._mld2_current_state_record(group)
+            if record is not None:
+                self._emit_mld2_report([record])
             return
 
         if filter_.mode is Ip6MulticastFilterMode.INCLUDE:

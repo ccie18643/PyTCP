@@ -30,6 +30,7 @@ pytcp/tests/unit/runtime/packet_handler/test__runtime__packet_handler__icmp6__tx
 ver 3.0.10
 """
 
+import threading
 from collections.abc import Callable
 from typing import TYPE_CHECKING, cast, override
 from unittest import TestCase
@@ -47,6 +48,7 @@ from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import 
     MldVersion,
 )
 from pytcp import stack
+from pytcp.lib.ip6_multicast_filter import Ip6MulticastFilter, Ip6MulticastFilterMode
 from pytcp.lib.packet_stats import PacketStatsTx
 from pytcp.lib.tx_status import TxStatus
 from pytcp.protocols.icmp6.nd.nd__router_state import Icmp6DadState
@@ -117,6 +119,14 @@ class _StubInterface:
         self._interface_name: str | None = None
         self._ip6_ifaddr = [STACK__IP6_HOST]
         self._ip6_multicast = ip6_multicast if ip6_multicast is not None else []
+        # A Query response builds one Current-State record per joined
+        # group from the merged per-address filter, so the stub carries
+        # the filter map and the lock guarding it. Every joined group
+        # defaults to the any-source EXCLUDE{} filter.
+        self._lock__multicast = threading.RLock()
+        self._ip6_multicast_filters: dict[Ip6Address, Ip6MulticastFilter] = {
+            group: Ip6MulticastFilter(Ip6MulticastFilterMode.EXCLUDE) for group in self._ip6_multicast
+        }
         self._icmp6_dad__states: dict[Ip6Address, Icmp6DadState] = {}
 
         self.ip6_tx_calls: list[dict[str, object]] = []

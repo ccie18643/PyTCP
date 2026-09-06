@@ -347,16 +347,16 @@ splits the two Query forms, mirroring the IGMP general /
 group-specific split on the IPv4 side:
 
 - **General Query** (unspecified multicast address) — schedules
-  the interface-wide response and emits the aggregated Report
-  covering every joined address. The record type is
-  `CHANGE_TO_EXCLUDE`, the same form PyTCP sends on a
-  spontaneous membership change; a querier merges the two
-  identically. **Known deviation:** §5.2.12 reserves
-  `MODE_IS_*` for a Current-State Report, and the
-  `CHANGE_TO_EXCLUDE` form also discards the per-address
-  source list, so an INCLUDE-mode (SSM) listener is reported
-  as EXCLUDE{} — accept-all. Tracked as a follow-up; the
-  address-specific path below already uses the correct form.
+  the interface-wide response and emits one aggregated
+  Current-State Report covering every joined address. Each
+  record is built by `_mld2_current_state_record` from the
+  address's merged filter: `MODE_IS_EXCLUDE` or
+  `MODE_IS_INCLUDE` carrying its real source list. The
+  `CHANGE_TO_*` State-Change form belongs to
+  `_send_mld_state_change` and is no longer used for a Query
+  response — emitting it here discarded the per-address source
+  list and reported an INCLUDE-mode (SSM) listener as
+  EXCLUDE{}, i.e. accept-all.
 - **Multicast Address Specific / Address-and-Source Specific
   Query** — schedules a *per-address* timer
   (`_mld_query__schedule_address`, keyed in
@@ -421,6 +421,14 @@ remains deferred.
 ---
 
 ## Test coverage audit
+
+### §5.2.12 Current-State Report record form
+- **Integration:** `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld__current_state_report.py`
+  — a General Query response reports an any-source listener as
+  `MODE_IS_EXCLUDE`, and a source-specific listener as `MODE_IS_INCLUDE`
+  carrying its source list rather than as accept-all.
+
+**Status:** locked in.
 
 ### §6.1 Multicast Address Specific Query response
 - **Integration:** `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld__address_specific_query.py`
