@@ -315,6 +315,8 @@ class PacketStatsRx(PacketStats):
     icmp6__mld2_query__scheduled: int = 0
     icmp6__mld2_query__superseded: int = 0
     icmp6__mld2_query__respond: int = 0
+    icmp6__mld1_report: int = 0
+    icmp6__mld1_report__suppressed: int = 0
     icmp6__unknown: int = 0
 
     igmp__pre_parse: int = 0

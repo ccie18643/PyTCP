@@ -836,7 +836,17 @@ class Icmp6TxHandler:
         # single aggregated MLDv2 Report (type 143). The querier that
         # speaks only MLDv1 cannot parse a type-143 Report.
         if self._if._mld_host_compatibility_mode() is MldVersion.V1:
-            for group in groups:
+            # RFC 2710 §4: drop any address another node already
+            # reported while this Report was pending, so only one
+            # Report per address crosses the link. The set is read and
+            # cleared under the interface multicast lock (the RX path
+            # adds to it), but the emit below runs outside the lock —
+            # holding it across a TX call is the cross-thread deadlock
+            # the fire-and-forget membership dispatch exists to avoid.
+            with self._if._lock__multicast:
+                suppressed = self._if._mld1_report__suppressed
+                self._if._mld1_report__suppressed = set()
+            for group in groups - suppressed:
                 self._send_icmp6_mld1_report(group)
             return
 

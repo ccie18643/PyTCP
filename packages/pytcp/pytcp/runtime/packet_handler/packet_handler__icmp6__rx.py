@@ -60,6 +60,10 @@ from net_proto import (
 from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__query import (
     Icmp6Mld1MessageQuery,
 )
+from net_proto.protocols.icmp6.message.mld1.icmp6__mld1__message__report import (
+    Icmp6Mld1MessageReport,
+    MldVersion,
+)
 from net_proto.protocols.icmp6.message.mld2.icmp6__mld2__message__query import (
     Icmp6Mld2MessageQuery,
 )
@@ -192,6 +196,8 @@ class Icmp6RxHandler:
                 self.__phrx_icmp6__mld2_report(packet_rx)
             case Icmp6Type.MULTICAST_LISTENER_QUERY:
                 self.__phrx_icmp6__mld_query(packet_rx)
+            case Icmp6Type.MULTICAST_LISTENER_REPORT:
+                self.__phrx_icmp6__mld1_report(packet_rx)
             case _:
                 self.__phrx_icmp6__unknown(packet_rx)
 
@@ -1215,6 +1221,58 @@ class Icmp6RxHandler:
 
         self._mld_query__schedule_response(mrd_ms)
 
+    def __phrx_icmp6__mld1_report(self, packet_rx: PacketRx) -> None:
+        """
+        Handle an inbound MLDv1 Multicast Listener Report from another
+        node on the link.
+
+        RFC 2710 §4: a listener that hears another node report a
+        multicast address for which it has a Report of its own pending
+        stops its timer and sends nothing, so exactly one Report per
+        address crosses the link. PyTCP schedules one response timer
+        per interface covering every joined group, so the address is
+        recorded here and filtered out when that timer fires.
+
+        The rule is an MLDv1 mechanism only — MLDv2 removed Report
+        suppression, so nothing is recorded outside MLDv1 Host
+        Compatibility Mode.
+
+        Reference: RFC 2710 §4 (Report suppression).
+        Reference: RFC 3810 §6.1 (MLDv2 removes Report suppression).
+        """
+
+        message = packet_rx.icmp6.message
+        assert isinstance(message, Icmp6Mld1MessageReport)
+
+        self._if._packet_stats_rx.icmp6__mld1_report += 1
+
+        # Our own Reports are never suppression input.
+        if packet_rx.ip6.src in self._if._ip6_unicast:
+            return
+
+        if self._if._mld_host_compatibility_mode() is not MldVersion.V1:
+            return
+
+        group = message.multicast_address
+
+        # The read-modify-write races the timer-thread emit that reads
+        # and clears the same set, so both take the interface multicast
+        # lock. Suppression only applies while a Report of ours is
+        # actually pending, and only for a group we would report.
+        with self._if._lock__multicast:
+            if self._if._mld2_query__pending_response_at_ms is None:
+                return
+            if group not in self._if._ip6_multicast:
+                return
+            self._if._mld1_report__suppressed.add(group)
+
+        self._if._packet_stats_rx.icmp6__mld1_report__suppressed += 1
+        __debug__ and log(
+            "icmp6",
+            f"{packet_rx.tracker} - RFC 2710 §4: {packet_rx.ip6.src} "
+            f"reported {group}; suppressing our pending Report for it",
+        )
+
     def _mld_arm_v1_compatibility(self, max_response_delay_ms: int, /) -> None:
         """
         Arm the RFC 3810 §8.2.1 MLDv1 Older Version Querier Present
@@ -1278,6 +1336,9 @@ class Icmp6RxHandler:
                     stack.timer.cancel(self._if._mld2_query__handle)
                 self._if._packet_stats_rx.icmp6__mld2_query__superseded += 1
 
+            # A new response window starts with a clean slate: RFC 2710
+            # §4 suppression only covers the window it was heard in.
+            self._if._mld1_report__suppressed.clear()
             self._if._mld2_query__pending_response_at_ms = response_at
             self._if._mld2_query__handle = stack.timer.call_later(delay_ms, self._mld2_query__deferred_send)
             self._if._packet_stats_rx.icmp6__mld2_query__scheduled += 1

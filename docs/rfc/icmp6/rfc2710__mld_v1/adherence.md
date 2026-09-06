@@ -29,7 +29,7 @@ Phase-2 router work and out of host scope.
 | Linux parity   | Forced MLD version knob (`mld.version` sysctl, IPv6 analogue of `force_igmp_version`) | met |
 | RFC 3810 §8.3.1 | Emit MLDv1 Reports while in MLDv1 mode | met |
 | RFC 2710 §5 | MLDv1 Done on leaving a group | met (emitted on leave while in MLDv1 compat mode, to ff02::2) |
-| RFC 2710 §4 | Report suppression on hearing another host's Report | deferred (optimization) |
+| RFC 2710 §4 | Report suppression on hearing another host's Report | met |
 | RFC 2710 §3 | Querier role (emit Queries) | n/a (host; Phase 2) |
 
 ---
@@ -111,16 +111,52 @@ group); the MLDv2 Report goes to `ff02::16`.
   `_send_mld_state_change`, and `send_mld_leave_all` does the graceful
   leave-all on stack shutdown. (This was the previously-deferred SHOULD;
   it landed once the MLDv2 leave path gave it a counterpart.)
-- **RFC 2710 §4 Report suppression** — deferred. A host that hears
-  another host's Report for a group may cancel its own pending Report.
-  This is an optimization, not a correctness MUST, and PyTCP does not
-  implement it for MLDv2 either; received type-131 / type-132 messages
-  are counted-and-ignored.
+- **RFC 2710 §4 Report suppression** — met. See the dedicated section
+  below. (Type-132 Done messages remain counted-and-ignored: a host has
+  no action to take on another host's Done.)
 - **Querier role** — n/a (host; Phase-2 router work).
 
 ---
 
+## RFC 2710 §4 — Report suppression
+
+**Adherence:** met. An inbound MLDv1 Report (type 131) now dispatches to
+`__phrx_icmp6__mld1_report` instead of falling through to the unknown-type
+path. When the interface is in MLDv1 Host Compatibility Mode and a Report
+of our own is pending, the reported address is recorded in the
+per-interface `_mld1_report__suppressed` set; the emit path reads and
+clears that set under `_lock__multicast` and skips those groups, so
+exactly one Report per address crosses the link.
+
+Three scoping rules make the mechanism faithful to the RFC rather than
+merely present:
+
+- **Per address, not per interface.** PyTCP schedules one response timer
+  covering every joined group, so suppression filters the emit set rather
+  than cancelling the timer. Groups nobody else reported are still
+  reported.
+- **Per response window.** The set is cleared when a new window is armed,
+  so a Report heard outside a pending window cannot suppress a later
+  response.
+- **MLDv1 only.** RFC 3810 §6.1 removed Report suppression from MLDv2, so
+  nothing is recorded outside MLDv1 Host Compatibility Mode. A node's own
+  Reports are excluded by a source check against `_ip6_unicast`.
+
+Observability: `icmp6__mld1_report` counts inbound peer Reports and
+`icmp6__mld1_report__suppressed` counts the addresses actually
+suppressed.
+
+---
+
 ## Test coverage audit
+
+### RFC 2710 §4 Report suppression
+- **Integration:** `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld1_report_suppression.py`
+  — a peer Report suppresses our pending Report for that address; other
+  joined groups are still reported; a Report heard outside a pending
+  window does not suppress; and nothing is suppressed in MLDv2 mode.
+
+**Status:** locked in.
 
 ### RFC 2710 §3 MLDv1 wire codec
 - **Unit:** `packages/net_proto/net_proto/tests/unit/protocols/icmp6/test__icmp6__mld1__message__{report,done,query}.py`
@@ -167,7 +203,7 @@ group); the MLDv2 Report goes to `ff02::16`.
 | §8.3.1 MLDv1 Report emission in v1 mode | locked in |
 | Forced `mld.version` knob | locked in (`TestIcmp6MldForcedVersion`) |
 | §5 Done on leave | locked in (`test__icmp6__mld2_leave`) |
-| §4 Report suppression | n/a (deferred) |
+| §4 Report suppression | locked in (`test__icmp6__mld1_report_suppression`) |
 
 ---
 
@@ -176,6 +212,7 @@ group); the MLDv2 Report goes to `ff02::16`.
 PyTCP's MLDv1 host fallback is complete for the RFC 3810 §8 MUSTs: an
 MLDv2 host correctly degrades to MLDv1 Reports on an MLDv1-querier
 link and reverts when the querier upgrades, and announces departures
-with an MLDv1 Done while in v1 mode. The Report-suppression behaviour
-is a deferred optimization, and the querier role is Phase-2 router
+with an MLDv1 Done while in v1 mode. The §4 Report-suppression
+optimization is implemented too, scoped per address, per response
+window, and to MLDv1 mode only. The querier role is Phase-2 router
 scope.

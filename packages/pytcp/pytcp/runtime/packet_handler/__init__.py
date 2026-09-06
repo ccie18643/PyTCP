@@ -415,6 +415,7 @@ class PacketHandler(Subsystem, ABC):
     _icmp6_ra__event: threading.Semaphore
     _mld2_query__pending_response_at_ms: int | None
     _mld2_query__handle: TimerHandle | None
+    _mld1_report__suppressed: set[Ip6Address]
     _mld__v1_querier_present_until_ms: int | None
 
     @override
@@ -3339,6 +3340,11 @@ class PacketHandlerL2(
         # absorbed without rescheduling.
         self._mld2_query__pending_response_at_ms: int | None = None
         self._mld2_query__handle: TimerHandle | None = None
+        # RFC 2710 §4: multicast addresses another node has
+        # reported while our own Report was pending. Read and
+        # cleared by the Report emit; guarded by
+        # '_lock__multicast'.
+        self._mld1_report__suppressed: set[Ip6Address] = set()
 
         # RFC 3810 §8.2.1 MLDv1 Older Version Querier Present timer.
         # Armed (under '_lock__multicast') when an MLDv1 Query is

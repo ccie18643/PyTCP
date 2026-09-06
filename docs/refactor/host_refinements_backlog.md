@@ -270,7 +270,10 @@ self._signal_readable()
     `_effective_ip4_options()`, so an IP_OPTIONS block set on a raw IPv4
     socket is emitted on the wire (hlen bumped, options round-trip),
     matching the UDP path. Tests: `TestSocketRawIpOptions` (2).
-- **R2 STATUS — substantively complete.** Every accepted setsockopt option
+- **R2 STATUS — CLOSED.** Its last non-Phase-2 dependency, `SO_RCVBUF`
+  on TCP, shipped with the 3.0.8 buffer-accounting work (`SO_RCVBUF`
+  seeds `WindowState.rcv_wnd_max` and Dynamic Right-Sizing grows it), so
+  nothing R2-scoped remains. Every accepted setsockopt option
   is now either honoured or documented-inert; the remaining true gaps are
   scoped to their proper track: `IP_MULTICAST_IF`/`_IF6` → Phase-2 (egress
   selection), `SO_RCVBUF`-on-TCP → R3 (receive-window), `SO_SNDBUF` /
@@ -641,18 +644,26 @@ stay text-only (Linux `sysctl` has no `-j` either).
 - **Effort:** medium. **Risk:** medium (threading/lifecycle). **Value:**
   medium (daemon robustness).
 
-### R10 — MLDv1 Report suppression (small) — knob part SHIPPED
+### R10 — MLDv1 Report suppression (small) — SHIPPED
 
 - **`mld.version` force knob — SHIPPED (see "Shipped" above).** New
   `MLD__FORCE_VERSION` in `protocols/icmp6/mld__constants.py`, registered
   as the `mld.version` sysctl (range 0-2), consumed by
   `_mld_host_compatibility_mode`. Mirrors `igmp.version` /
   `IGMP__FORCE_VERSION`.
-- **Remaining — RFC 2710 §4 Report suppression:** on RX of a peer MLDv1
-  Report for a group in v1 compat mode, cancel this host's pending Report
-  for that group. An optimization only (not done for MLDv2 either);
-  marginal value. Tests-first in `tests/integration/protocols/icmp6/`.
-- **Effort:** small. **Risk:** low. **Value:** marginal.
+- **RFC 2710 §4 Report suppression — SHIPPED.** Inbound MLDv1 Reports
+  (type 131) previously fell through to the unknown-type path; they now
+  dispatch to `__phrx_icmp6__mld1_report`, which records the reported
+  address in a per-interface `_mld1_report__suppressed` set when a Report
+  of ours is pending in v1 compat mode. The emit path reads and clears
+  that set under `_lock__multicast` (outside the TX call, per the
+  membership-lock deadlock rule) and skips those groups. Scoped per
+  address, per response window, and to MLDv1 mode only — MLDv2 removed
+  suppression. New counters `icmp6__mld1_report` /
+  `icmp6__mld1_report__suppressed`. Tests:
+  `test__icmp6__mld1_report_suppression.py` (4). Adherence: RFC 2710 §4
+  flipped deferred -> met.
+- **R10 STATUS — CLOSED.**
 
 ### R11 — RFC 6724 policy-table override — SHIPPED (see "Shipped" above)
 
