@@ -659,18 +659,32 @@ class TcpSession:
         or below the link ceiling so probes have somewhere to
         climb to.
 
+        Finally the 'tcp.snd_mss_max' operator cap (0 = uncapped)
+        is applied last so it bounds the send-side MSS regardless of
+        probing state, WITHOUT touching 'rcv_mss' — the advertised
+        receive MSS stays at the interface ceiling so a large MTU can
+        still invite large inbound segments while output stays small.
+
         Reference: RFC 4821 §3 (Probing without ICMP).
         Reference: Linux 'tcp_mtu_probing=2' MSS-ceiling semantics.
         """
 
         iface_ceiling = self._egress_interface_mtu() - self._ip_tcp_overhead
-        if not self._plpmtud_probing_enabled:
-            return iface_ceiling
-        base_mss: int = sysctl_iface.get_for_iface(
-            "tcp.base_mss",
+        if self._plpmtud_probing_enabled:
+            base_mss: int = sysctl_iface.get_for_iface(
+                "tcp.base_mss",
+                self._egress_interface_name(),
+            )
+            ceiling = min(base_mss - self._ip_tcp_overhead, iface_ceiling)
+        else:
+            ceiling = iface_ceiling
+        snd_mss_max: int = sysctl_iface.get_for_iface(
+            "tcp.snd_mss_max",
             self._egress_interface_name(),
         )
-        return min(base_mss - self._ip_tcp_overhead, iface_ceiling)
+        if snd_mss_max:
+            ceiling = min(ceiling, snd_mss_max)
+        return ceiling
 
     def _arm_timer(self, name: str, delay_ms: int, /) -> None:
         """
