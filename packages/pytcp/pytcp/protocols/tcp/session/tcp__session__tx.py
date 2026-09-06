@@ -106,26 +106,7 @@ class TcpTxEngine:
         self._apply_idle_reset_if_needed(flag_syn=flag_syn, flag_fin=flag_fin, data=data)
         self._handle_rtt_sample_tracker(seq=seq, flag_syn=flag_syn, flag_fin=flag_fin, data=data)
 
-        # WSCALE shift on outbound 'win' field per RFC 7323 §2.3:
-        # post-handshake segments use 'rcv_wnd >> rcv_wsc'; the
-        # SYN segment itself uses an unshifted value (RFC 7323
-        # §2.2's "WSopt is not used to scale the value in the
-        # window field of the SYN segment itself"). The SYN+ACK
-        # is also a "SYN segment" for this rule.
-        if flag_syn:
-            tcp__win = min(session._rcv_wnd, 0xFFFF)
-        elif 0 < session._rcv_wnd < session._win.rcv_mss:
-            # RFC 1122 §4.2.3.3 receiver SWS avoidance: when the
-            # available receive-window is non-zero but smaller
-            # than one MSS, advertise zero so peer's persist-
-            # probe loop fires rather than peer sending a sub-
-            # MSS segment that wastes per-byte header overhead.
-            # The next window update fires once the application
-            # has consumed at least one MSS of buffer space and
-            # '_rcv_wnd >= _rcv_mss' again.
-            tcp__win = 0
-        else:
-            tcp__win = session._rcv_wnd >> session._win.rcv_wsc
+        tcp__win = self._compute_outbound_window(flag_syn=flag_syn)
 
         # WSCALE option presence on outbound SYN / SYN+ACK is
         # gated on '_advertise_wscale' per RFC 7323 §2.2's
@@ -226,24 +207,7 @@ class TcpTxEngine:
             flag_rst=flag_rst,
         )
 
-        # RFC 3168 §6.1.5: when bilateral ECN has been
-        # negotiated, every outbound data segment MUST set
-        # the IP ECN field to ECT(0) ('10' = 2) so routers
-        # along the path can mark it on congestion via the
-        # CE codepoint. §6.1.1 forbids ECT on SYNs and §6.1.6
-        # advises against ECT on pure ACKs / FIN-only / RST,
-        # so the marking is gated on the segment carrying a
-        # TCP payload. §6.1.5 also mandates "ECN-capable TCP
-        # implementations MUST NOT set either ECT codepoint
-        # (ECT(0) or ECT(1)) in the IP header for
-        # retransmitted data packets": a segment whose seq
-        # is strictly below the current SND.MAX (the high-
-        # water mark of seqs we've ever sent) is, by
-        # definition, a retransmit since SND.NXT was rewound
-        # to SND.UNA on the RTO/FR path. The 'lt32' modular
-        # comparison handles the 32-bit seq wrap correctly.
-        is_retransmit = bool(data) and lt32(seq, session._snd_seq.max)
-        ip__ecn = 2 if (session._ecn.enabled and data and not is_retransmit) else 0
+        ip__ecn = self._compute_ip_ecn(seq=seq, data=data)
         stack.egress_packet_handler(session._remote_ip_address).send_tcp_packet(
             ip__local_address=session._local_ip_address,
             ip__remote_address=session._remote_ip_address,
@@ -793,6 +757,54 @@ class TcpTxEngine:
         # Refresh the last-send timestamp so the §5.7 idle check
         # on the next send has an accurate baseline.
         session._rtt.last_send_time_ms = stack.timer.now_ms
+
+    def _compute_outbound_window(self, *, flag_syn: bool) -> int:
+        """
+        Compute the value for the outbound segment's 'win' field.
+
+        Post-handshake segments advertise 'rcv_wnd >> rcv_wsc'; a SYN
+        or SYN+ACK carries the value unshifted, since WSopt does not
+        scale the window field of the SYN segment that offers it. A
+        non-zero window smaller than one MSS is advertised as zero so
+        the peer's persist-probe loop fires rather than the peer
+        sending a sub-MSS segment whose per-byte header overhead is
+        wasted; the next window update follows once the application
+        has consumed at least one MSS of buffer space.
+
+        Reference: RFC 7323 §2.2 (WSopt does not scale the SYN window).
+        Reference: RFC 7323 §2.3 (window-field scaling).
+        Reference: RFC 1122 §4.2.3.3 (receiver SWS avoidance).
+        """
+
+        session = self._session
+        if flag_syn:
+            return min(session._rcv_wnd, 0xFFFF)
+        if 0 < session._rcv_wnd < session._win.rcv_mss:
+            return 0
+        return session._rcv_wnd >> session._win.rcv_wsc
+
+    def _compute_ip_ecn(self, *, seq: int, data: bytes) -> int:
+        """
+        Compute the IP ECN codepoint for the outbound segment.
+
+        Once bilateral ECN is negotiated every outbound data segment
+        is marked ECT(0) so routers along the path can signal
+        congestion via CE. The marking is gated on the segment
+        carrying a payload, since ECT is forbidden on SYNs and
+        advised against on pure ACKs, FIN-only and RST. A
+        retransmission is never marked: a segment whose seq is
+        strictly below SND.MAX is by definition a retransmit, because
+        SND.NXT was rewound to SND.UNA on the RTO or fast-retransmit
+        path. The modular comparison handles the 32-bit seq wrap.
+
+        Reference: RFC 3168 §6.1.5 (ECT on data, never on retransmits).
+        Reference: RFC 3168 §6.1.1 (no ECT on SYN).
+        Reference: RFC 3168 §6.1.6 (ECT discouraged on pure ACK / FIN / RST).
+        """
+
+        session = self._session
+        is_retransmit = bool(data) and lt32(seq, session._snd_seq.max)
+        return 2 if (session._ecn.enabled and data and not is_retransmit) else 0
 
     def _phase1_compose_ecn_flags(
         self,
