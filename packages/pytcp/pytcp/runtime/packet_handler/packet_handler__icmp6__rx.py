@@ -33,6 +33,7 @@ ver 3.0.10
 """
 
 import random
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, cast
 
 from net_addr import Ip6Address, Ip6Network, IpVersion
@@ -81,6 +82,7 @@ from pytcp.runtime.socket.socket_id import SocketId
 from pytcp.runtime.socket.tcp__socket import TcpSocket
 from pytcp.runtime.socket.udp__metadata import UdpMetadata
 from pytcp.runtime.socket.udp__socket import UdpSocket
+from pytcp.runtime.timer import TimerHandle
 from pytcp.stack import sysctl_iface
 
 if TYPE_CHECKING:
@@ -113,6 +115,22 @@ def _mld2_mrc_to_mrd_ms(mrc: int) -> int:
     exp = (mrc >> 12) & 0x7
     mant = mrc & 0xFFF
     return (mant | 0x1000) << (exp + 3)
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class Mld2AddressQueryPending:
+    """
+    A pending per-address response to a Multicast Address Specific or
+    Multicast Address and Source Specific Query (RFC 3810 §6.1): the
+    absolute 'stack.timer.now_ms' deadline, the scheduled timer handle,
+    and the recorded queried-source list (empty for an address-specific
+    Query) used to build the response. The IPv6 analogue of
+    'IgmpGroupQueryPending'.
+    """
+
+    respond_at_ms: int
+    handle: TimerHandle
+    sources: frozenset[Ip6Address]
 
 
 class Icmp6RxHandler:
@@ -1207,6 +1225,7 @@ class Icmp6RxHandler:
         )
 
         message = packet_rx.icmp6.message
+        queried_sources: frozenset[Ip6Address] = frozenset()
         if isinstance(message, Icmp6Mld1MessageQuery):
             self._mld_arm_v1_compatibility(message.maximum_response_delay)
             mrd_ms = message.maximum_response_delay
@@ -1218,8 +1237,16 @@ class Icmp6RxHandler:
             # machine that owns the election / Other-Querier-Present state).
             self._if._icmp6_tx.observe_query(packet_rx.ip6.src, message)
             mrd_ms = _mld2_mrc_to_mrd_ms(message.maximum_response_code)
+            queried_sources = frozenset(message.source_addresses)
 
-        self._mld_query__schedule_response(mrd_ms)
+        # RFC 3810 §6.1 / RFC 2710 §4: the unspecified address is a
+        # General Query covering every joined address; any other address
+        # is a Multicast Address Specific Query answered for that address
+        # alone, on its own timer. Mirrors the IGMP general/group split.
+        if message.multicast_address.is_unspecified:
+            self._mld_query__schedule_response(mrd_ms)
+        else:
+            self._mld_query__schedule_address(message.multicast_address, queried_sources, mrd_ms)
 
     def __phrx_icmp6__mld1_report(self, packet_rx: PacketRx) -> None:
         """
@@ -1294,7 +1321,32 @@ class Icmp6RxHandler:
             # RFC 3810 §8.2.1 — a compatibility-mode change (MLDv2→MLDv1)
             # cancels every pending state-change retransmission.
             if self._if._mld_host_compatibility_mode() is not old_mode:
-                self._if._icmp6_tx._cancel_mld_state_change_retransmits()
+                self._mld_cancel_pending_timers()
+
+    def _mld_cancel_pending_timers(self) -> None:
+        """
+        Cancel the pending General and per-address query-response timers
+        and the state-change retransmit train — a compatibility-mode
+        change cancels every pending response and retransmission timer.
+        Caller holds '_lock__multicast'.
+
+        The IPv6 analogue of '_igmp_cancel_pending_timers'.
+
+        Reference: RFC 3810 §8.2.1 (mode change cancels pending timers).
+        """
+
+        if self._if._mld2_query__handle is not None:
+            stack.timer.cancel(self._if._mld2_query__handle)
+            self._if._mld2_query__handle = None
+        self._if._mld2_query__pending_response_at_ms = None
+        self._if._mld1_report__suppressed.clear()
+        # Snapshot before iterating: a per-address deferred send fires on
+        # the timer thread and pops its own entry, so iterating the live
+        # dict would race that pop.
+        for pending in list(self._if._mld_address_query__pending.values()):
+            stack.timer.cancel(pending.handle)
+        self._if._mld_address_query__pending.clear()
+        self._if._icmp6_tx._cancel_mld_state_change_retransmits()
 
     def _mld_query__schedule_response(self, mrd_ms: int, /) -> None:
         """
@@ -1342,6 +1394,119 @@ class Icmp6RxHandler:
             self._if._mld2_query__pending_response_at_ms = response_at
             self._if._mld2_query__handle = stack.timer.call_later(delay_ms, self._mld2_query__deferred_send)
             self._if._packet_stats_rx.icmp6__mld2_query__scheduled += 1
+
+    def _mld_query__schedule_address(
+        self,
+        group: Ip6Address,
+        sources: frozenset[Ip6Address],
+        mrd_ms: int,
+        /,
+    ) -> None:
+        """
+        Schedule (or absorb) the response to a Multicast Address
+        Specific or Multicast Address and Source Specific Query on a
+        per-address timer.
+
+        A General response already scheduled sooner covers this address
+        and absorbs the Query. Otherwise the per-address timer is armed,
+        or merged with a pending per-address response: an
+        address-specific Query — or an already-empty recorded list —
+        clears the recorded sources, a source-specific Query augments
+        them, and the response fires at the earlier of the two delays.
+
+        The IPv6 analogue of '_igmp_query__schedule_group'.
+
+        Reference: RFC 3810 §6.1 (per-address timer and merge rules).
+        """
+
+        delay_ms = self._mld2_query__pick_response_delay_ms(mrd_ms)
+
+        with self._if._lock__multicast:
+            response_at = stack.timer.now_ms + delay_ms
+
+            # A General response scheduled sooner already covers it.
+            general_pending = self._if._mld2_query__pending_response_at_ms
+            if general_pending is not None and general_pending <= response_at:
+                return
+
+            existing = self._if._mld_address_query__pending.get(group)
+
+            if existing is None:
+                recorded = sources
+            elif not sources or not existing.sources:
+                recorded = frozenset()
+            else:
+                recorded = existing.sources | sources
+
+            if existing is not None and existing.respond_at_ms <= response_at:
+                # The pending response fires sooner; only the recorded
+                # source list may need merging.
+                if recorded != existing.sources:
+                    self._if._mld_address_query__pending[group] = Mld2AddressQueryPending(
+                        respond_at_ms=existing.respond_at_ms,
+                        handle=existing.handle,
+                        sources=recorded,
+                    )
+                return
+
+            if delay_ms == 0:
+                if existing is not None:
+                    stack.timer.cancel(existing.handle)
+                self._if._mld_address_query__pending.pop(group, None)
+                immediate = recorded
+            else:
+                if existing is not None:
+                    stack.timer.cancel(existing.handle)
+                    self._if._packet_stats_rx.icmp6__mld2_query__superseded += 1
+                handle = stack.timer.call_later(delay_ms, lambda: self._mld_address_query__deferred_send(group))
+                self._if._mld_address_query__pending[group] = Mld2AddressQueryPending(
+                    respond_at_ms=response_at,
+                    handle=handle,
+                    sources=recorded,
+                )
+                self._if._packet_stats_rx.icmp6__mld2_query__scheduled += 1
+                return
+
+        # Emitted outside the lock: holding the interface multicast lock
+        # across a TX call is the cross-thread deadlock the
+        # fire-and-forget membership dispatch exists to avoid.
+        self._mld_address_query__send_now(group, immediate)
+
+    def _mld_address_query__deferred_send(self, group: Ip6Address, /) -> None:
+        """
+        Timer-fired callback for a Multicast Address Specific Query:
+        drop the pending record and emit the per-address response using
+        its recorded source list.
+        """
+
+        with self._if._lock__multicast:
+            pending = self._if._mld_address_query__pending.pop(group, None)
+            sources = pending.sources if pending is not None else frozenset[Ip6Address]()
+
+        self._mld_address_query__send_now(group, sources)
+
+    def _mld_address_query__send_now(self, group: Ip6Address, sources: frozenset[Ip6Address], /) -> None:
+        """
+        Emit the response for one multicast address in the interface's
+        Host Compatibility Mode form, but only while the interface still
+        has reception state for it. MLDv2 sends the Current-State record
+        (applying the source-intersection rules); MLDv1 compatibility
+        mode degrades to the any-source per-address Report.
+
+        The IPv6 analogue of '_igmp_group_query__send_now'.
+
+        Reference: RFC 3810 §6.1 (respond only where state exists).
+        Reference: RFC 3810 §8.3.1 (MLDv1 Report form while in v1 mode).
+        """
+
+        if group not in self._if._ip6_multicast:
+            return
+
+        if self._if._mld_host_compatibility_mode() is MldVersion.V1:
+            self._if._icmp6_tx._send_icmp6_mld1_report(group)
+        else:
+            self._if._icmp6_tx._send_icmp6_mld2_address_current_state(group, sources)
+        self._if._packet_stats_rx.icmp6__mld2_query__respond += 1
 
     def _mld2_query__pick_response_delay_ms(self, mrd_ms: int) -> int:
         """

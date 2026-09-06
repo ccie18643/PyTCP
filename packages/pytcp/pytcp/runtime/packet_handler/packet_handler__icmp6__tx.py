@@ -934,6 +934,70 @@ class Icmp6TxHandler:
         self._if._packet_stats_tx.icmp6__mld2__report__send += 1
         self.__send_icmp6_mld_via_hbh_ra(icmp6_packet_tx, ip6__dst=Ip6Address("ff02::16"))
 
+    def _send_icmp6_mld2_address_current_state(
+        self,
+        group: Ip6Address,
+        queried_sources: frozenset[Ip6Address],
+        /,
+    ) -> None:
+        """
+        Emit the MLDv2 Current-State response for a Multicast Address
+        Specific or Multicast Address and Source Specific Query on
+        'group'.
+
+        With no 'queried_sources' (an address-specific Query) the
+        response is the address's real current state — MODE_IS_INCLUDE
+        or MODE_IS_EXCLUDE carrying its source list. With queried
+        sources B the RFC 3810 §6.1 table applies: an INCLUDE(A)
+        interface answers IS_IN(A∩B), an EXCLUDE(A) interface answers
+        IS_IN(B−A); an empty result is answered with silence.
+
+        The IPv6 analogue of '_send_igmp_v3_group_current_state'.
+
+        Reference: RFC 3810 §5.2.12 (Current-State Record types).
+        Reference: RFC 3810 §6.1 (address-specific response contents).
+        """
+
+        with self._if._lock__multicast:
+            filter_ = self._if._ip6_multicast_filters.get(group)
+
+        if filter_ is None:
+            return
+
+        if not queried_sources:
+            record_type = (
+                Icmp6Mld2MulticastAddressRecordType.MODE_IS_EXCLUDE
+                if filter_.mode is Ip6MulticastFilterMode.EXCLUDE
+                else Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE
+            )
+            self._emit_mld2_report(
+                [
+                    Icmp6Mld2MulticastAddressRecord(
+                        type=record_type,
+                        multicast_address=group,
+                        source_addresses=sorted(filter_.sources, key=int),
+                    )
+                ]
+            )
+            return
+
+        if filter_.mode is Ip6MulticastFilterMode.INCLUDE:
+            answer = filter_.sources & queried_sources
+        else:
+            answer = queried_sources - filter_.sources
+        if not answer:
+            return
+
+        self._emit_mld2_report(
+            [
+                Icmp6Mld2MulticastAddressRecord(
+                    type=Icmp6Mld2MulticastAddressRecordType.MODE_IS_INCLUDE,
+                    multicast_address=group,
+                    source_addresses=sorted(answer, key=int),
+                )
+            ]
+        )
+
     def _emit_mld2_report(self, records: list[Icmp6Mld2MulticastAddressRecord], /) -> None:
         """
         Assemble and emit a single aggregated MLDv2 State Change Report

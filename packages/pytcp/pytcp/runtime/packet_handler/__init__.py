@@ -130,7 +130,7 @@ from .packet_handler__ethernet__rx import EthernetRxHandler
 from .packet_handler__ethernet__tx import EthernetTxHandler
 from .packet_handler__icmp4__rx import Icmp4RxHandler
 from .packet_handler__icmp4__tx import Icmp4TxHandler
-from .packet_handler__icmp6__rx import Icmp6RxHandler
+from .packet_handler__icmp6__rx import Icmp6RxHandler, Mld2AddressQueryPending
 from .packet_handler__icmp6__tx import Icmp6TxHandler, MldQuerierMembership
 from .packet_handler__igmp__rx import IgmpGroupQueryPending, IgmpRxHandler
 from .packet_handler__igmp__tx import IgmpQuerierMembership, IgmpTxHandler
@@ -416,6 +416,7 @@ class PacketHandler(Subsystem, ABC):
     _mld2_query__pending_response_at_ms: int | None
     _mld2_query__handle: TimerHandle | None
     _mld1_report__suppressed: set[Ip6Address]
+    _mld_address_query__pending: dict[Ip6Address, Mld2AddressQueryPending]
     _mld__v1_querier_present_until_ms: int | None
 
     @override
@@ -3345,6 +3346,10 @@ class PacketHandlerL2(
         # cleared by the Report emit; guarded by
         # '_lock__multicast'.
         self._mld1_report__suppressed: set[Ip6Address] = set()
+        # RFC 3810 §6.1 per-address response timers, armed by a
+        # Multicast Address Specific Query. Independent of the
+        # interface-wide General Query timer above.
+        self._mld_address_query__pending: dict[Ip6Address, Mld2AddressQueryPending] = {}
 
         # RFC 3810 §8.2.1 MLDv1 Older Version Querier Present timer.
         # Armed (under '_lock__multicast') when an MLDv1 Query is

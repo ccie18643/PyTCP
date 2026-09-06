@@ -343,10 +343,31 @@ deferred refinements (niche for a last-hop router).
 
 **Adherence:** met. The RX handler at
 `__phrx_icmp6__mld_query` in `packet_handler__icmp6__rx.py`
-emits the same `CHANGE_TO_EXCLUDE` Report PyTCP sends on
-spontaneous group-membership changes; the wire form is
-identical and the querier merges the on-Query Report with
-any spontaneous Reports from the listener.
+splits the two Query forms, mirroring the IGMP general /
+group-specific split on the IPv4 side:
+
+- **General Query** (unspecified multicast address) — schedules
+  the interface-wide response and emits the aggregated Report
+  covering every joined address. The record type is
+  `CHANGE_TO_EXCLUDE`, the same form PyTCP sends on a
+  spontaneous membership change; a querier merges the two
+  identically. **Known deviation:** §5.2.12 reserves
+  `MODE_IS_*` for a Current-State Report, and the
+  `CHANGE_TO_EXCLUDE` form also discards the per-address
+  source list, so an INCLUDE-mode (SSM) listener is reported
+  as EXCLUDE{} — accept-all. Tracked as a follow-up; the
+  address-specific path below already uses the correct form.
+- **Multicast Address Specific / Address-and-Source Specific
+  Query** — schedules a *per-address* timer
+  (`_mld_query__schedule_address`, keyed in
+  `_mld_address_query__pending`) and answers for that address
+  alone via `_send_icmp6_mld2_address_current_state`, which
+  emits the true Current-State record (`MODE_IS_INCLUDE` /
+  `MODE_IS_EXCLUDE` plus the source list) and applies the §6.1
+  source-intersection rules for a source-specific Query. An
+  address the interface holds no reception state for is
+  answered with silence, and in MLDv1 compatibility mode the
+  reply degrades to the per-address MLDv1 Report.
 
 **MRC random-delay window:** PyTCP honours the §5.1.10
 random-delay rule. On Query receipt the handler:
@@ -400,6 +421,15 @@ remains deferred.
 ---
 
 ## Test coverage audit
+
+### §6.1 Multicast Address Specific Query response
+- **Integration:** `packages/pytcp/pytcp/tests/integration/protocols/icmp6/test__icmp6__mld__address_specific_query.py`
+  — an address-specific Query is answered for the queried address only;
+  an address with no reception state is answered with silence; a General
+  Query still reports every joined address; and the MLDv1 compatibility
+  form is likewise address-scoped.
+
+**Status:** locked in.
 
 ### §4 Report wire format
 
