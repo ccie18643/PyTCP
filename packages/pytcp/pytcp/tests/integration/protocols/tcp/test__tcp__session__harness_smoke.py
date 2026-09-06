@@ -336,9 +336,7 @@ class TestTcpTestCaseHarness(TcpTestCase):
         # Deliberately reference the tcp__session-level symbol:
         # this test asserts the _force_iss patch point itself
         # (pytcp.protocols.tcp.session.tcp__session.compute_iss).
-        from pytcp.protocols.tcp.session.tcp__session import (  # type: ignore[attr-defined] # noqa: E501
-            compute_iss as tcp_session_compute_iss,
-        )
+        from pytcp.protocols.tcp.session.tcp__session import compute_iss as tcp_session_compute_iss  # type: ignore[attr-defined] # noqa: E501
 
         self.assertEqual(
             tcp_session_compute_iss(
