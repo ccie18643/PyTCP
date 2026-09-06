@@ -33,7 +33,10 @@ is ~400 lines. `_process_ack_packet` is ~500 lines.
 
 **Severity:** High. **Effort:** Large (must be incremental).
 
-### Concern #2 — `_transmit_packet` orchestrates 12+ concerns
+### Concern #2 — `_transmit_packet` orchestrates 12+ concerns — RESOLVED
+
+> **Resolved by Refactor #5** (see below). `transmit_packet` is now a
+> ~100-line coordinator over named per-concern helpers.
 
 A single function handles: RFC 6298 §5.7 idle-reset, RFC 5681
 §4.1 RW reduction, RTT-sample tracker init, last-send timestamp
@@ -45,7 +48,11 @@ That's twelve concerns in one function.
 
 **Severity:** Medium. **Effort:** Medium.
 
-### Concern #3 — `_process_ack_packet` mixes 16 phases inline
+### Concern #3 — `_process_ack_packet` mixes 16 phases inline — RESOLVED
+
+> **Resolved by Refactor #2** (see below), delivered as part of the
+> TcpSession decomposition. `process_ack_packet` is a ~35-line
+> coordinator over five named phase methods.
 
 The cum-ACK path runs (in this order): SACK ingest → RACK process
 → unacceptable-segment ack → SND.UNA advance → recover_seq decay
@@ -160,9 +167,19 @@ moves with no semantic change; tests pass throughout.
 **Validation:** existing 415 TCP integration tests + RFC
 adherence records' test references all unchanged.
 
-### Refactor #2 — Split `_process_ack_packet` into phase functions
+### Refactor #2 — Split `_process_ack_packet` into phase functions — SHIPPED
 
 **Effort:** 2 commits. **Risk:** Low. **Closes:** Concern #3.
+
+> **SHIPPED** as part of the TcpSession decomposition
+> (`docs/refactor/tcp_session_decomposition.md`). The processor lives
+> at `protocols/tcp/session/tcp__session__ack.py`:
+> `process_ack_packet` is a coordinator calling
+> `_phase1_cum_ack_side_effects`, `_phase3_harvest_rtt_samples`,
+> `_phase4_loss_detection_and_recovery_exit` and
+> `_phase5_consume_segment_and_postprocess`, with
+> `_phase2_frto_spurious_detect` called from phase 1. The phase
+> boundaries differ from the sketch below; the split is equivalent.
 
 Split into named phase functions called in order:
 
@@ -278,9 +295,22 @@ This refactor is the prerequisite for RFC 1191 + RFC 8201 + RFC
 those RFCs already reference "cross-cut with ICMP refactor" as
 the blocker.
 
-### Refactor #5 — Split `_transmit_packet` into option-builder + send pipeline
+### Refactor #5 — Split `_transmit_packet` into option-builder + send pipeline — SHIPPED
 
 **Effort:** 3 commits. **Risk:** Medium. **Closes:** Concern #2.
+
+> **SHIPPED.** Items 4 and 5 (`_advance_send_state`,
+> `_compose_ecn_flags`) landed with the decomposition as
+> `_phase4_advance_send_state` / `_phase1_compose_ecn_flags`. Items 2
+> and 3 were split out of the old `_phase0_pre_send_hygiene` as
+> `_apply_idle_reset_if_needed` / `_handle_rtt_sample_tracker`, and
+> item 1 landed as `_compute_outbound_options` returning the frozen
+> `OutboundOptions` value object, alongside `_compute_outbound_window`
+> and `_compute_ip_ecn`. `transmit_packet` went from 202 to ~104
+> lines. One ordering constraint is now explicit in the code: the
+> option builder MUST run after `_phase1_compose_ecn_flags`, because
+> the AccECN counter build reads state the ACE-field composition
+> advances.
 
 Decompose into:
 

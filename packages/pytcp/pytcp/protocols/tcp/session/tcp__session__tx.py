@@ -51,6 +51,7 @@ ver 3.0.10
 """
 
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from pytcp import stack
@@ -64,6 +65,31 @@ from pytcp.protocols.tcp.tcp__seq import add32, gt32, in_range32, lt32
 
 if TYPE_CHECKING:
     from pytcp.protocols.tcp.session import TcpSession
+
+
+type AccEcnCounters = tuple[int | None, int | None, int | None]
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class OutboundOptions:
+    """
+    The TCP option fields emitted on one outbound segment.
+
+    Built in one pass by 'TcpTxEngine._compute_outbound_options' and
+    consumed by the packet-handler dispatch. 'None' means "omit the
+    option"; 'sackperm' is a bool because the wire form is the option's
+    presence alone.
+    """
+
+    mss: int | None
+    wscale: int | None
+    sackperm: bool
+    sack_blocks: list[tuple[int, int]] | None
+    tsval: int | None
+    tsecr: int | None
+    fastopen_cookie: bytes | None
+    accecn0_counters: AccEcnCounters | None
+    accecn1_counters: AccEcnCounters | None
 
 
 class TcpTxEngine:
@@ -108,90 +134,6 @@ class TcpTxEngine:
 
         tcp__win = self._compute_outbound_window(flag_syn=flag_syn)
 
-        # WSCALE option presence on outbound SYN / SYN+ACK is
-        # gated on '_advertise_wscale' per RFC 7323 §2.2's
-        # bilateral non-offer rule. The packet-handler TX path
-        # treats 'tcp__wscale=0' as "no option" (falsy guard),
-        # which is the bilateral-non-offer wire form.
-        tcp__wscale: int | None
-        if flag_syn and session._advertise.wscale:
-            tcp__wscale = session._win.rcv_wsc
-        elif flag_syn:
-            tcp__wscale = 0
-        else:
-            tcp__wscale = None
-
-        # SACK-Permitted option presence per RFC 2018 §2:
-        # active-open SYN emits iff we advertise (peer's view is
-        # not yet known); passive-open SYN+ACK emits iff the
-        # bilateral negotiation succeeded ('_send_sack' is set
-        # in '_tcp_fsm_listen' on peer's SYN). Non-SYN segments
-        # never carry the option (RFC 2018 §2: "MUST NOT be sent
-        # on non-SYN segments").
-        if flag_syn and not flag_ack:
-            tcp__sackperm = session._advertise.sack
-        elif flag_syn and flag_ack:
-            tcp__sackperm = session._advertise.send_sack
-        else:
-            tcp__sackperm = False
-
-        # SACK option blocks per RFC 2018 §3-§4 / RFC 2883 §4:
-        # emitted on non-SYN ACKs iff the bilateral negotiation
-        # succeeded AND we have at least one block to report -
-        # either an OOO-queue entry OR a pending DSACK report.
-        # An empty SACK option is illegal per RFC 2018 §3
-        # (length must cover at least one 8-byte block).
-        tcp__sack_blocks: list[tuple[int, int]] | None
-        if (
-            not flag_syn
-            and session._advertise.send_sack
-            and (session._ooo_packet_queue or session._pending_dsack is not None)
-        ):
-            tcp__sack_blocks = self.build_sack_blocks()
-        else:
-            tcp__sack_blocks = None
-
-        # RFC 7323 §3 Timestamps option:
-        #   - Active-open SYN (flag_syn AND not flag_ack): emit
-        #     iff '_advertise_ts'. tsval=now_ms, tsecr=0 (peer's
-        #     TSval not yet known).
-        #   - Passive-open SYN+ACK (flag_syn AND flag_ack): emit
-        #     iff bilateral '_send_ts' set. tsval=now_ms,
-        #     tsecr=_ts_recent (peer's TSval from its SYN).
-        #   - Non-SYN segments: emit iff '_send_ts'. tsval=now_ms,
-        #     tsecr=_ts_recent. (Phase 2 wires this; Phase 1 only
-        #     handles handshake.)
-        # RFC 7323 §5.4: TSval / TSecr are 4-byte unsigned integers
-        # that wrap at 2**32. PyTCP's 'stack.timer.now_ms' is a
-        # monotonic ms counter that exceeds UINT32_MAX after ~49.7
-        # days of stack uptime; mask to 32 bits so the wire field
-        # carries the wrapped value rather than overflowing the
-        # TcpOptionTimestamps assertion.
-        ts_clock = stack.timer.now_ms & 0xFFFF_FFFF
-        tcp__tsval: int | None
-        tcp__tsecr: int | None
-        if flag_syn and not flag_ack:
-            if session._advertise.ts:
-                tcp__tsval = ts_clock
-                tcp__tsecr = 0
-            else:
-                tcp__tsval = None
-                tcp__tsecr = None
-        elif flag_syn and flag_ack:
-            if session._ts.send_ts:
-                tcp__tsval = ts_clock
-                tcp__tsecr = session._ts.ts_recent
-            else:
-                tcp__tsval = None
-                tcp__tsecr = None
-        else:
-            if session._ts.send_ts:
-                tcp__tsval = ts_clock
-                tcp__tsecr = session._ts.ts_recent
-            else:
-                tcp__tsval = None
-                tcp__tsecr = None
-
         flag_ece, flag_cwr, flag_ns = self._phase1_compose_ecn_flags(
             flag_syn=flag_syn,
             flag_ack=flag_ack,
@@ -199,13 +141,7 @@ class TcpTxEngine:
             data=data,
         )
 
-        tcp__fastopen_cookie = self._phase3_build_fastopen_cookie(flag_syn=flag_syn, flag_ack=flag_ack)
-
-        tcp__accecn0_counters, tcp__accecn1_counters = self._phase2_build_accecn_counters(
-            flag_syn=flag_syn,
-            flag_ack=flag_ack,
-            flag_rst=flag_rst,
-        )
+        options = self._compute_outbound_options(flag_syn=flag_syn, flag_ack=flag_ack, flag_rst=flag_rst)
 
         ip__ecn = self._compute_ip_ecn(seq=seq, data=data)
         stack.egress_packet_handler(session._remote_ip_address).send_tcp_packet(
@@ -249,23 +185,15 @@ class TcpTxEngine:
             # user-supplied ceiling so the peer learns no
             # advertised MSS larger than the application
             # wants. M7 of 'socket_linux_parity_audit.md'.
-            tcp__mss=(
-                min(
-                    session._win.rcv_mss,
-                    0xFFFF,
-                    session._maxseg_override if session._maxseg_override > 0 else 0xFFFF,
-                )
-                if flag_syn
-                else None
-            ),
-            tcp__wscale=tcp__wscale,
-            tcp__sackperm=tcp__sackperm,
-            tcp__sack_blocks=tcp__sack_blocks,
-            tcp__tsval=tcp__tsval,
-            tcp__tsecr=tcp__tsecr,
-            tcp__fastopen_cookie=tcp__fastopen_cookie,
-            tcp__accecn0_counters=tcp__accecn0_counters,
-            tcp__accecn1_counters=tcp__accecn1_counters,
+            tcp__mss=options.mss,
+            tcp__wscale=options.wscale,
+            tcp__sackperm=options.sackperm,
+            tcp__sack_blocks=options.sack_blocks,
+            tcp__tsval=options.tsval,
+            tcp__tsecr=options.tsecr,
+            tcp__fastopen_cookie=options.fastopen_cookie,
+            tcp__accecn0_counters=options.accecn0_counters,
+            tcp__accecn1_counters=options.accecn1_counters,
             tcp__payload=data,
         )
         self._phase4_advance_send_state(
@@ -757,6 +685,143 @@ class TcpTxEngine:
         # Refresh the last-send timestamp so the §5.7 idle check
         # on the next send has an accurate baseline.
         session._rtt.last_send_time_ms = stack.timer.now_ms
+
+    def _compute_outbound_options(self, *, flag_syn: bool, flag_ack: bool, flag_rst: bool) -> OutboundOptions:
+        """
+        Build every TCP option field emitted on one outbound segment.
+
+        Gathers the handshake-only options (MSS, WSCALE, SACK-Permitted)
+        and the per-segment ones (SACK blocks, Timestamps, TCP Fast Open
+        cookie, AccECN counters) into a single value object, so the
+        dispatch below reads as one wire-format assembly rather than a
+        page of interleaved option policy.
+
+        MUST be called after '_phase1_compose_ecn_flags': the AccECN
+        counter build reads '_accecn' state that the ACE-field
+        composition advances.
+
+        Reference: RFC 9293 §3.7.1 (MSS option).
+        Reference: RFC 2675 §5 (65535 as the jumbogram MSS signal).
+        Reference: RFC 7323 §2.2 (WSCALE bilateral non-offer rule).
+        Reference: RFC 2018 §2 (SACK-Permitted only on SYN segments).
+        Reference: RFC 2018 §3 (SACK option blocks).
+        Reference: RFC 2883 §4 (DSACK reporting).
+        Reference: RFC 7323 §3 (Timestamps option).
+        Reference: RFC 7323 §5.4 (TSval / TSecr wrap at 2**32).
+        """
+
+        session = self._session
+
+        # RFC 9293 §3.7.5 / RFC 2675 §5: the MSS option wire field is
+        # 16-bit, so '_rcv_mss > 65535' (e.g. on a mis-configured
+        # super-jumbo MTU) would otherwise overflow the assembler's
+        # uint16 assert. Cap at 65535, which RFC 2675 reserves as the
+        # "use path-MTU-derived MSS" signal for jumbogram-capable IPv6
+        # paths. The Linux 'TCP_MAXSEG' per-connection override
+        # ('_maxseg_override', 0 = no clamp) takes precedence, so the
+        # peer learns no advertised MSS larger than the application
+        # wants.
+        mss = (
+            min(
+                session._win.rcv_mss,
+                0xFFFF,
+                session._maxseg_override if session._maxseg_override > 0 else 0xFFFF,
+            )
+            if flag_syn
+            else None
+        )
+
+        # WSCALE option presence on outbound SYN / SYN+ACK is gated on
+        # '_advertise_wscale' per RFC 7323 §2.2's bilateral non-offer
+        # rule. The packet-handler TX path treats 'tcp__wscale=0' as
+        # "no option" (falsy guard), which is the bilateral-non-offer
+        # wire form.
+        wscale: int | None
+        if flag_syn and session._advertise.wscale:
+            wscale = session._win.rcv_wsc
+        elif flag_syn:
+            wscale = 0
+        else:
+            wscale = None
+
+        # SACK-Permitted option presence per RFC 2018 §2: active-open
+        # SYN emits iff we advertise (peer's view is not yet known);
+        # passive-open SYN+ACK emits iff the bilateral negotiation
+        # succeeded ('_send_sack' is set in '_tcp_fsm_listen' on peer's
+        # SYN). Non-SYN segments never carry the option (RFC 2018 §2:
+        # "MUST NOT be sent on non-SYN segments").
+        if flag_syn and not flag_ack:
+            sackperm = session._advertise.sack
+        elif flag_syn and flag_ack:
+            sackperm = session._advertise.send_sack
+        else:
+            sackperm = False
+
+        # SACK option blocks per RFC 2018 §3-§4 / RFC 2883 §4: emitted
+        # on non-SYN ACKs iff the bilateral negotiation succeeded AND we
+        # have at least one block to report - either an OOO-queue entry
+        # OR a pending DSACK report. An empty SACK option is illegal per
+        # RFC 2018 §3 (length must cover at least one 8-byte block).
+        # Note 'build_sack_blocks' consumes '_pending_dsack'.
+        sack_blocks: list[tuple[int, int]] | None
+        if (
+            not flag_syn
+            and session._advertise.send_sack
+            and (session._ooo_packet_queue or session._pending_dsack is not None)
+        ):
+            sack_blocks = self.build_sack_blocks()
+        else:
+            sack_blocks = None
+
+        # RFC 7323 §3 Timestamps option:
+        #   - Active-open SYN (flag_syn AND not flag_ack): emit iff
+        #     '_advertise_ts'. tsval=now_ms, tsecr=0 (peer's TSval not
+        #     yet known).
+        #   - Passive-open SYN+ACK (flag_syn AND flag_ack): emit iff
+        #     bilateral '_send_ts' set. tsval=now_ms, tsecr=_ts_recent
+        #     (peer's TSval from its SYN).
+        #   - Non-SYN segments: emit iff '_send_ts'. tsval=now_ms,
+        #     tsecr=_ts_recent.
+        # RFC 7323 §5.4: TSval / TSecr are 4-byte unsigned integers that
+        # wrap at 2**32. PyTCP's 'stack.timer.now_ms' is a monotonic ms
+        # counter that exceeds UINT32_MAX after ~49.7 days of stack
+        # uptime; mask to 32 bits so the wire field carries the wrapped
+        # value rather than overflowing the TcpOptionTimestamps assert.
+        ts_clock = stack.timer.now_ms & 0xFFFF_FFFF
+        tsval: int | None
+        tsecr: int | None
+        if flag_syn and not flag_ack:
+            emit_ts, tsecr_source = session._advertise.ts, 0
+        else:
+            emit_ts, tsecr_source = session._ts.send_ts, session._ts.ts_recent
+        if emit_ts:
+            tsval, tsecr = ts_clock, tsecr_source
+        else:
+            tsval, tsecr = None, None
+
+        # The cookie build precedes the AccECN counter build, matching
+        # the order 'transmit_packet' ran them inline. The two touch
+        # disjoint state, but the ordering is preserved so this stays a
+        # pure structural extraction.
+        fastopen_cookie = self._phase3_build_fastopen_cookie(flag_syn=flag_syn, flag_ack=flag_ack)
+
+        accecn0_counters, accecn1_counters = self._phase2_build_accecn_counters(
+            flag_syn=flag_syn,
+            flag_ack=flag_ack,
+            flag_rst=flag_rst,
+        )
+
+        return OutboundOptions(
+            mss=mss,
+            wscale=wscale,
+            sackperm=sackperm,
+            sack_blocks=sack_blocks,
+            tsval=tsval,
+            tsecr=tsecr,
+            fastopen_cookie=fastopen_cookie,
+            accecn0_counters=accecn0_counters,
+            accecn1_counters=accecn1_counters,
+        )
 
     def _compute_outbound_window(self, *, flag_syn: bool) -> int:
         """
