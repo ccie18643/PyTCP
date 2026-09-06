@@ -29,7 +29,7 @@
 """
 This module contains the per-session TCP TX engine —
 'TcpTxEngine' — which owns the outbound-segment construction
-pipeline: '_transmit_packet' + the six '_phase0..5' helpers,
+pipeline: '_transmit_packet' + its per-concern helpers,
 'transmit_data' (the buffered-data dribbler that paces the
 send pump), 'delayed_ack' (the §4.2.3.2 ACK-coalescing
 emit), 'build_sack_blocks' (the RFC 2018 / 2883 SACK / DSACK
@@ -103,7 +103,8 @@ class TcpTxEngine:
         seq = seq if seq is not None else session._snd_seq.nxt
         ack = session._rcv_seq.nxt if flag_ack else 0
 
-        self._phase0_pre_send_hygiene(seq=seq, flag_syn=flag_syn, flag_fin=flag_fin, data=data)
+        self._apply_idle_reset_if_needed(flag_syn=flag_syn, flag_fin=flag_fin, data=data)
+        self._handle_rtt_sample_tracker(seq=seq, flag_syn=flag_syn, flag_fin=flag_fin, data=data)
 
         # WSCALE shift on outbound 'win' field per RFC 7323 §2.3:
         # post-handshake segments use 'rcv_wnd >> rcv_wsc'; the
@@ -711,99 +712,87 @@ class TcpTxEngine:
     # Private engine helpers — phases of 'transmit_packet'.
     # ------------------------------------------------------------------
 
-    def _phase0_pre_send_hygiene(self, *, seq: int, flag_syn: bool, flag_fin: bool, data: bytes) -> None:
+    def _apply_idle_reset_if_needed(self, *, flag_syn: bool, flag_fin: bool, data: bytes) -> None:
         """
-        Phase 0 of the outbound-send pipeline. Pre-send hygiene
-        applied to every segment that consumes sequence space:
+        Reset the RTT estimator, and the congestion window, when
+        the session has been idle longer than the in-flight RTO.
 
-          - RFC 6298 §5.7 restart-after-idle: when the session
-            has been silent for longer than the in-flight
-            'rto_ms' the smoothed RTT estimator may be stale.
-            Reset to 'initial_state()' so the next sample re-
-            establishes it from scratch.
-          - RFC 5681 §4.1 Restart Window: paired with the §5.7
-            idle trigger on data segments — reduce cwnd to
-            RW = min(IW, cwnd) so a stale high-cwnd estimate
-            does not blast a line-rate burst into a network
-            whose live capacity may have decayed.
-          - RFC 6298 §4 RTT-sample tracker init: stash (seq,
-            now_ms, retransmit-flag) for the eventual covering-
-            ACK harvest in phase 3 of the inbound pipeline.
-          - RFC 6298 §5.7 idle-baseline refresh: update
-            '_last_send_time_ms' so the next call's §5.7 idle
-            check has an accurate baseline.
+        A session silent for longer than 'rto_ms' may hold a
+        smoothed RTT estimate the network no longer justifies, so
+        the estimator returns to 'initial_state()' and the next
+        sample re-establishes it from scratch. On a data segment
+        the same idle trigger also reduces cwnd to the Restart
+        Window, so a stale high-cwnd estimate does not blast a
+        line-rate burst into a path whose capacity may have decayed.
 
-        Reference: RFC 5681 §4.1 (Restart Window cwnd reduction).
-        Reference: RFC 6298 §4 (RTT sample collection).
         Reference: RFC 6298 §5.7 (restart-after-idle baseline).
+        Reference: RFC 5681 §4.1 (Restart Window cwnd reduction).
         """
 
         session = self._session
-        # RFC 6298 §5.7 restart-after-idle: when a session has
-        # been silent for longer than the in-flight 'rto_ms' the
-        # smoothed RTT estimator may be stale (the network
-        # conditions that produced the current SRTT/RTTVAR may
-        # no longer hold). Reset to 'initial_state()' so the
-        # next sample re-establishes the estimator from scratch
-        # and avoids spurious retransmits with a now-too-short
-        # RTO. The '_last_send_time_ms is not None' guard
-        # ensures the reset never fires on a fresh session
-        # before any send has occurred.
-        if (
+        # The '_last_send_time_ms is not None' guard ensures the
+        # reset never fires on a fresh session before any send has
+        # occurred.
+        if not (
             (data or flag_syn or flag_fin)
             and session._rtt.last_send_time_ms is not None
             and stack.timer.now_ms - session._rtt.last_send_time_ms > session._rto_state.rto_ms
         ):
+            return
+
+        __debug__ and log(
+            "tcp-ss",
+            f"[{session}] - RFC 6298 §5.7 idle-reset: now="
+            f"{stack.timer.now_ms} last_send="
+            f"{session._rtt.last_send_time_ms} rto_ms="
+            f"{session._rto_state.rto_ms}; resetting estimator",
+        )
+        session._rto_state = initial_state()
+
+        # RFC 5681 §4.1 Restart Window. Skipped on flag_syn
+        # (handshake path; cwnd is already the post-handshake IW)
+        # and on FIN-only (no data to pace).
+        if not data:
+            return
+        rw = min(initial_window(session._win.snd_mss), session._cc.cwnd)
+        if rw < session._cc.cwnd:
             __debug__ and log(
                 "tcp-ss",
-                f"[{session}] - RFC 6298 §5.7 idle-reset: now="
-                f"{stack.timer.now_ms} last_send="
-                f"{session._rtt.last_send_time_ms} rto_ms="
-                f"{session._rto_state.rto_ms}; resetting estimator",
+                f"[{session}] - RFC 5681 §4.1 Restart Window: "
+                f"cwnd {session._cc.cwnd} -> {rw} (IW="
+                f"{initial_window(session._win.snd_mss)})",
             )
-            session._rto_state = initial_state()
-            # RFC 5681 §4.1 Restart Window: same idle trigger,
-            # reduce cwnd to RW = min(IW, cwnd) so a stale
-            # high-cwnd estimate from a prior high-bandwidth
-            # period doesn't blast a line-rate burst into a
-            # network whose live capacity may have decayed.
-            # Skipped on flag_syn (handshake path; cwnd is
-            # already the post-handshake IW) and on FIN-only
-            # (no data to pace).
-            if data:
-                rw = min(initial_window(session._win.snd_mss), session._cc.cwnd)
-                if rw < session._cc.cwnd:
-                    __debug__ and log(
-                        "tcp-ss",
-                        f"[{session}] - RFC 5681 §4.1 Restart Window: "
-                        f"cwnd {session._cc.cwnd} -> {rw} (IW="
-                        f"{initial_window(session._win.snd_mss)})",
-                    )
-                    session._cc.cwnd = rw
-                    session._cc.snd_ewn = min(session._cc.cwnd, session._win.snd_wnd)
+            session._cc.cwnd = rw
+            session._cc.snd_ewn = min(session._cc.cwnd, session._win.snd_wnd)
 
-        # RFC 6298 §4 sample collection: record one in-flight RTT
-        # sample at a time. The covering ACK harvest hook in
-        # '_process_ack_packet' folds the observed RTT into
-        # '_rto_state' via 'tcp__rto.update' (skipping the fold
-        # iff Karn's flag is set per RFC 6298 §3). The
-        # '_rtt_sample_seq is None' gate enforces single-sample-
-        # per-RTT cadence: subsequent in-flight segments do not
-        # overwrite the pending sample, and a retransmit of the
-        # sampled segment lands here with '_rtt_sample_seq' set
-        # so no fresh sample is recorded - the original
-        # send-time stays paired with the original seq, with the
-        # taint flag controlling whether the eventual ACK
-        # produces an estimator update.
-        if (data or flag_syn or flag_fin) and session._rtt.seq is None:
+    def _handle_rtt_sample_tracker(self, *, seq: int, flag_syn: bool, flag_fin: bool, data: bytes) -> None:
+        """
+        Record the in-flight RTT sample, and refresh the idle
+        baseline, for a segment that consumes sequence space.
+
+        One sample is tracked at a time: the covering-ACK harvest
+        folds the observed RTT into the estimator, skipping the
+        fold when Karn's taint flag is set. The '_rtt.seq is None'
+        gate enforces the single-sample-per-RTT cadence, so a
+        retransmit of the sampled segment leaves the original
+        (seq, send-time) pairing intact and only the taint flag
+        decides whether the eventual ACK updates the estimator.
+
+        Reference: RFC 6298 §4 (RTT sample collection).
+        Reference: RFC 6298 §3 (Karn's algorithm).
+        Reference: RFC 6298 §5.7 (restart-after-idle baseline).
+        """
+
+        session = self._session
+        if not (data or flag_syn or flag_fin):
+            return
+
+        if session._rtt.seq is None:
             session._rtt.record(seq=seq, send_time_ms=stack.timer.now_ms)
 
-        # RFC 6298 §5.7 idle-baseline tracking: refresh the
-        # last-send timestamp on every outbound segment that
-        # consumes sequence space, so the §5.7 idle-check above
-        # has an accurate baseline for the next send.
-        if data or flag_syn or flag_fin:
-            session._rtt.last_send_time_ms = stack.timer.now_ms
+        # Refresh the last-send timestamp so the §5.7 idle check
+        # on the next send has an accurate baseline.
+        session._rtt.last_send_time_ms = stack.timer.now_ms
 
     def _phase1_compose_ecn_flags(
         self,
