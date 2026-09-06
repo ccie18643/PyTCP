@@ -1,17 +1,26 @@
-black
-mypy
-flake8
-flake8-pyproject
-codespell
-isort
-pylint
-pyright
-import-linter
-build
-twine
-ipython
-pyupgrade
-parameterized
-coverage
-setuptools
-wheel
+# Development toolchain, pinned.
+#
+# These versions are exact so a local 'make lint' and the CI gate run the
+# same formatters and type checkers. Unpinned, CI floats to whatever each
+# tool released that day and rewrites files the commit never touched --
+# the "Fail on lint-induced changes" step then trips on an unrelated diff.
+# Upgrades are deliberate: bump a pin here, run 'make validate', and land
+# the resulting reformat in the same commit.
+
+black==26.5.1
+mypy==2.3.1
+flake8==7.3.0
+flake8-pyproject==1.2.4
+codespell==2.4.3
+isort==9.0.1
+pylint==4.0.8
+pyright==1.1.411
+import-linter==2.15
+build==1.6.0
+twine==7.0.0
+ipython==9.17.1
+pyupgrade==3.21.2
+parameterized==0.9.0
+coverage==7.16.0
+setuptools==84.0.0
+wheel==0.48.0
