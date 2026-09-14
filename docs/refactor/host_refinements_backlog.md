@@ -615,7 +615,7 @@ stay text-only (Linux `sysctl` has no `-j` either).
   `rfc8899__dplpmtud/adherence.md` + `rfc4821__plpmtud/adherence.md` were
   flipped to **met**. No production change was required.
 
-### R8 — `IP_RECVERR` / `IPV6_RECVERR` error queue over the daemon boundary (medium)
+### R8 — `IP_RECVERR` / `IPV6_RECVERR` error queue over the daemon boundary — SHIPPED
 
 - **Why:** the per-socket ICMP error queue + `recvmsg(MSG_ERRQUEUE)` works
   **in-process**, but the daemon data bridge does not pump the error queue
@@ -629,6 +629,21 @@ stay text-only (Linux `sysctl` has no `-j` either).
 - **Tests-first:** integration test under `tests/integration/ipc/` driving
   an ICMP error to a daemon-backed UDP socket and asserting the client's
   `recvmsg(MSG_ERRQUEUE)` returns the `IP_RECVERR` cmsg.
+- **SHIPPED.** The error queue rides the handle-keyed control RPC rather
+  than the datagram bridge: a `recvmsg_errqueue` method on the socket-call
+  allowlist drains the daemon socket's queue and returns the Linux 4-tuple,
+  which the value codec already carries (nested tuples + base64 bytes). The
+  client shim gains `_ClientDatagramBase.recvmsg_errqueue` (so UDP / RAW /
+  PING all inherit it) and `socket__dropin.recvmsg` now honours
+  `flags & MSG_ERRQUEUE` instead of discarding `flags`. The daemon read is
+  always non-blocking — MSG_ERRQUEUE never blocks on Linux, and blocking
+  there would pin the RPC worker on a queue only an inbound ICMP error can
+  fill — so the stack's zero-timeout `TimeoutError` is normalised to
+  EAGAIN. Tests: `test__ipc__socket_dropin_errqueue.py` (4: embedded
+  datagram, IP_RECVERR cmsg shape, EAGAIN on empty, opt-in gate holds).
+- **Remaining:** TCP. `TcpSocket._recvmsg_errqueue` exists in-process, but
+  the drop-in's `recvmsg` is gated to datagram / raw sockets, so a
+  stream-socket client cannot reach it. Small follow-up.
 - **Effort:** medium. **Risk:** medium (IPC protocol surface). **Value:**
   medium (completes the drop-in's error-reporting parity).
 

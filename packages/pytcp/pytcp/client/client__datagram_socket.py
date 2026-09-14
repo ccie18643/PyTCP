@@ -180,6 +180,32 @@ class _ClientDatagramBase:
         )
         return payload[:bufsize], cmsg, 0, out_address
 
+    def recvmsg_errqueue(
+        self,
+        bufsize: int,
+        ancbufsize: int,
+    ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
+        """
+        Dequeue one entry from the daemon socket's ICMP error queue,
+        mirroring stdlib 'recvmsg(..., MSG_ERRQUEUE)'.
+
+        The error queue is control-plane state rather than a datagram
+        stream, so it rides the handle-keyed RPC instead of the data
+        channel: a client asks for an error explicitly, and mixing
+        errors into the data pump would hand them to an unsuspecting
+        'recvfrom'. An empty queue raises 'BlockingIOError' (EAGAIN).
+
+        Reference: Linux 'ip(7)' (IP_RECVERR / MSG_ERRQUEUE API shape).
+        """
+
+        data, cmsg, flags, address = socket_call(
+            self._client,
+            method="recvmsg_errqueue",
+            handle=self._handle,
+            args={"bufsize": bufsize, "ancbufsize": ancbufsize},
+        )
+        return data, [tuple(entry) for entry in cmsg], flags, tuple(address)
+
     def recv(self, bufsize: int = IPC__CLIENT_DGRAM__MAX_PAYLOAD) -> bytes:
         """
         Receive one datagram's payload, truncated to 'bufsize'.

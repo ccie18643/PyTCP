@@ -53,7 +53,7 @@ import errno
 import os
 import socket
 import threading
-from typing import Any
+from typing import Any, cast
 
 from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__dgram_bridge import DatagramBridge
@@ -71,6 +71,7 @@ from pytcp.ipc.ipc__socket_rpc import (
     encode_socket_ok,
 )
 from pytcp.runtime.socket import (
+    MSG_ERRQUEUE,
     SO_ERROR,
     SOL_SOCKET,
     AddressFamily,
@@ -95,6 +96,7 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "accept_take",
         "setsockopt",
         "getsockopt",
+        "recvmsg_errqueue",
         "shutdown",
         "close",
         "getsockname",
@@ -404,6 +406,8 @@ class SocketSession:
                 if level == SOL_SOCKET and optname == SO_ERROR:
                     return daemon_socket.take_so_error(), None
                 return sock.getsockopt(level, optname), None
+            case "recvmsg_errqueue":
+                return self._recvmsg_errqueue(sock, request.args), None
             case "shutdown":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("shutdown() is not supported on a datagram socket.")
@@ -419,6 +423,35 @@ class SocketSession:
                 return None, None
 
         raise KeyError(f"Method {request.method!r} is not a permitted socket call.")
+
+    @staticmethod
+    def _recvmsg_errqueue(
+        sock: Any,
+        args: dict[str, Any],
+        /,
+    ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
+        """
+        Dequeue one entry from the addressed socket's ICMP error queue
+        and return the Linux 'recvmsg(MSG_ERRQUEUE)' 4-tuple for the
+        client to reassemble.
+
+        The read is always non-blocking. MSG_ERRQUEUE never blocks on
+        Linux, and blocking here would pin the RPC worker thread on a
+        queue only an inbound ICMP error can fill. The stack socket
+        reports an empty queue as 'TimeoutError' under an explicit zero
+        timeout, which is normalised to the EAGAIN a caller expects.
+
+        Reference: RFC 1122 §4.1.3.3 (pass ICMP errors up to the application).
+        Reference: Linux 'ip(7)' (IP_RECVERR / MSG_ERRQUEUE API shape).
+        """
+
+        try:
+            return cast(
+                "tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]",
+                sock.recvmsg(args["bufsize"], args["ancbufsize"], int(MSG_ERRQUEUE), 0.0),
+            )
+        except TimeoutError:
+            raise BlockingIOError(errno.EAGAIN, os.strerror(errno.EAGAIN)) from None
 
     def _invoke_packet(
         self,

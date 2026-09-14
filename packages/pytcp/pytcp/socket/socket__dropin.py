@@ -64,7 +64,7 @@ from typing import TYPE_CHECKING, Self, cast, override
 from net_addr import Buffer
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket as _stdlib_socket
-from pytcp.runtime.socket import AddressFamily, SocketType
+from pytcp.runtime.socket import MSG_ERRQUEUE, AddressFamily, SocketType
 
 if TYPE_CHECKING:
     from io import _WrappedBuffer
@@ -545,11 +545,16 @@ class Socket:
 
         if self._type not in (SocketType.DGRAM, SocketType.RAW):
             raise OSError(errno.EOPNOTSUPP, "recvmsg() is only supported on a datagram or raw socket.")
-        _ = flags
-        return cast(
+        control_sock = cast(
             "ClientUdpSocket | ClientRawSocket | ClientPingSocket",
             self._control_sock(),
-        ).recvmsg(bufsize, ancbufsize)
+        )
+        # MSG_ERRQUEUE reads the per-socket ICMP error queue rather than
+        # the data channel, so it rides the control RPC instead of the
+        # datagram bridge.
+        if flags & MSG_ERRQUEUE:
+            return control_sock.recvmsg_errqueue(bufsize, ancbufsize)
+        return control_sock.recvmsg(bufsize, ancbufsize)
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
