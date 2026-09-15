@@ -40,7 +40,7 @@ from pytcp.ipc.ipc__errors import IpcConnectionError, IpcRemoteError
 from pytcp.ipc.ipc__message import IpcMessage
 from pytcp.ipc.ipc__socket_rpc import (
     SocketRequest,
-    accept_socket,
+    accept_take_socket,
     decode_socket_request,
     decode_socket_value,
     encode_socket_error,
@@ -127,7 +127,7 @@ class TestIpcSocketRpc__AcceptDecode(TestCase):
     codec-only round-trip tests reach.
     """
 
-    def test__accept__ok_returns_handle_peer_and_fd(self) -> None:
+    def test__accept_take__ok_returns_handle_peer_and_fd(self) -> None:
         """
         Ensure a RESPONSE_OK accept returns (child_handle, (host, port),
         data_fd) with the peer host at index 0 and port at index 1.
@@ -148,19 +148,19 @@ class TestIpcSocketRpc__AcceptDecode(TestCase):
             read_fd,
         )
 
-        child_handle, peer, data_fd = accept_socket(client, handle=3)
+        child_handle, peer, data_fd = accept_take_socket(client, handle=3)
         self.addCleanup(lambda: os.close(data_fd))
 
         self.assertEqual(
             (child_handle, peer),
             (5, ("10.0.0.1", 80)),
-            msg="accept must decode the child handle and the (host, port) peer tuple in order.",
+            msg="accept_take must decode the child handle and the (host, port) peer tuple in order.",
         )
-        self.assertEqual(data_fd, read_fd, msg="accept must return the passed data-channel fd.")
+        self.assertEqual(data_fd, read_fd, msg="accept_take must return the passed data-channel fd.")
 
-    def test__accept__ok_without_fd_raises(self) -> None:
+    def test__accept_take__ok_without_fd_raises(self) -> None:
         """
-        Ensure a RESPONSE_OK accept that carries no data-channel
+        Ensure a RESPONSE_OK accept_take that carries no data-channel
         descriptor is a protocol error.
 
         Reference: PyTCP test infrastructure (no RFC clause).
@@ -178,11 +178,11 @@ class TestIpcSocketRpc__AcceptDecode(TestCase):
         )
 
         with self.assertRaises(IpcConnectionError):
-            accept_socket(client, handle=3)
+            accept_take_socket(client, handle=3)
 
-    def test__accept__error_response_raises_remote(self) -> None:
+    def test__accept_take__error_response_raises_remote(self) -> None:
         """
-        Ensure a RESPONSE_ERROR accept surfaces the remote error rather
+        Ensure a RESPONSE_ERROR accept_take surfaces the remote error rather
         than returning.
 
         Reference: RFC 9293 §3.5 (accept failure).
@@ -200,4 +200,4 @@ class TestIpcSocketRpc__AcceptDecode(TestCase):
         )
 
         with self.assertRaises(IpcRemoteError):
-            accept_socket(client, handle=3)
+            accept_take_socket(client, handle=3)

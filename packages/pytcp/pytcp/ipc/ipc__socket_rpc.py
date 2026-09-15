@@ -252,41 +252,6 @@ def open_socket(
     )
 
 
-def accept_socket(client: IpcClient, /, *, handle: int) -> tuple[int, tuple[str, int], int]:
-    """
-    Issue the blocking fd-bearing 'accept' call on a listening socket and
-    return '(child_handle, peer_address, data_fd)' for the accepted
-    connection, where 'data_fd' is the passed data-channel descriptor the
-    client owns.
-
-    Raises 'IpcRemoteError' on a remote failure (the fd-less error path)
-    and closes any stray passed descriptor before raising.
-    """
-
-    response, fd = client.request_with_fd(
-        IpcOp.SOCKET_CALL,
-        body=encode_socket_request(method="accept", handle=handle, args={}),
-        blocking=True,
-    )
-
-    if response.kind is IpcMessageKind.RESPONSE_OK:
-        if fd is None:
-            raise IpcConnectionError("Daemon accepted a connection but passed no data-channel descriptor.")
-        value = decode_socket_value(response.body)
-        peer = value["peer"]
-        return int(value["handle"]), (peer[0], peer[1]), fd
-
-    if fd is not None:
-        os.close(fd)
-
-    if response.kind is IpcMessageKind.RESPONSE_ERROR:
-        raise_socket_error(response.body)
-
-    raise IpcConnectionError(
-        f"Daemon returned an unexpected response kind {response.kind!r} to an accept call.",
-    )
-
-
 def listen_socket(client: IpcClient, /, *, handle: int, backlog: int) -> int:
     """
     Issue the fd-bearing 'listen' call and return the accept-readiness

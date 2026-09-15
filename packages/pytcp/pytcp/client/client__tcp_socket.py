@@ -40,12 +40,13 @@ ver 3.0.10
 
 import errno
 import os
+import select
+import time
 from typing import Self
 
 from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__socket_rpc import (
-    accept_socket,
     accept_take_socket,
     listen_socket,
     open_socket,
@@ -205,11 +206,46 @@ class ClientTcpSocket:
         Block until an inbound connection completes, returning a new
         'ClientTcpSocket' for the accepted connection (its data path is
         the passed descriptor) and the peer's '(host, port)' address.
+
+        The wait happens here, on the listener's accept-readiness eventfd,
+        not on the daemon: a blocking call serviced daemon-side would park
+        a dispatch thread outside its request loop, where it can neither
+        notice this client disconnecting nor serve anything else. Waiting
+        client-side also puts blocking 'accept' on the same readiness
+        machinery 'fileno()' already exposes to select / poll / asyncio,
+        so there is one accept path rather than two.
+
+        A queued child is taken BEFORE waiting. The eventfd is drained
+        when a take removes the last queued child, so a child queued
+        before this call — or left queued by another thread's take — would
+        otherwise sit unclaimed until a fresh readiness edge arrived.
         """
 
         self._require_listening()
-        child_handle, peer, data_fd = accept_socket(self._client, handle=self._handle)
-        return self._adopt(self._client, child_handle, data_fd), peer
+        assert self._accept_fd is not None, "A listening socket always carries its accept-readiness fd."
+
+        # A non-blocking socket must fail fast rather than wait, matching
+        # 'accept(2)' on O_NONBLOCK.
+        timeout = self._data_socket.gettimeout()
+        if timeout == 0:
+            return self.accept_nonblocking()
+
+        deadline = None if timeout is None else time.monotonic() + timeout
+        while True:
+            try:
+                return self.accept_nonblocking()
+            except BlockingIOError:
+                pass
+
+            wait: float | None = None
+            if deadline is not None:
+                wait = deadline - time.monotonic()
+                if wait <= 0:
+                    raise TimeoutError("accept() timed out.")
+
+            readable, _, _ = select.select([self._accept_fd], [], [], wait)
+            if not readable and deadline is not None:
+                raise TimeoutError("accept() timed out.")
 
     def _require_listening(self) -> None:
         """

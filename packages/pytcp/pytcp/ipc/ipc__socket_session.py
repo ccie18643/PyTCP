@@ -92,7 +92,6 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "connect",
         "connect_start",
         "listen",
-        "accept",
         "accept_take",
         "setsockopt",
         "getsockopt",
@@ -103,10 +102,6 @@ _ALLOWED_METHODS: frozenset[str] = frozenset(
         "getpeername",
     },
 )
-
-# Poll interval for the blocking 'accept' loop so it can re-check the
-# server stop event between waits for an inbound connection.
-IPC__SESSION__ACCEPT_POLL__SEC: float = 0.2
 
 
 class _DaemonSocket:
@@ -386,10 +381,6 @@ class SocketSession:
                 # shares the kernel counter, so the daemon's accept-side
                 # drain reflects on the client's fd with no watcher thread.
                 return None, os.dup(sock.fileno())
-            case "accept":
-                if not isinstance(sock, TcpSocket):
-                    raise OSError("accept() is supported only on a stream socket.")
-                return self._accept(sock)
             case "accept_take":
                 if not isinstance(sock, TcpSocket):
                     raise OSError("accept_take() is supported only on a stream socket.")
@@ -475,23 +466,6 @@ class SocketSession:
                 return None, None
 
         raise KeyError(f"Method {request.method!r} is not permitted on an AF_PACKET socket.")
-
-    def _accept(self, listening: TcpSocket, /) -> tuple[dict[str, Any], socket.socket]:
-        """
-        Block (polling, so server shutdown interrupts) until an inbound
-        connection completes its handshake, then build a data channel for
-        the accepted child and return its handle and peer address with the
-        client end to pass.
-        """
-
-        while not self._stop_event.is_set():
-            try:
-                child, peer = listening.accept(timeout=IPC__SESSION__ACCEPT_POLL__SEC)
-            except TimeoutError:
-                continue
-            return self._build_accepted_child(child, peer)
-
-        raise OSError("accept() interrupted by daemon shutdown.")
 
     def _accept_take(self, listening: TcpSocket, /) -> tuple[dict[str, Any], socket.socket]:
         """

@@ -647,7 +647,7 @@ stay text-only (Linux `sysctl` has no `-j` either).
 - **Effort:** medium. **Risk:** medium (IPC protocol surface). **Value:**
   medium (completes the drop-in's error-reporting parity).
 
-### R9 — Selectable / cancelable `accept` over the daemon (medium)
+### R9 — Selectable / cancelable `accept` over the daemon — SHIPPED
 
 - **Why:** a client disconnecting mid-`accept` leaves the daemon dispatch
   thread polling until server stop (Phase-4 daemon limitation noted in
@@ -656,6 +656,36 @@ stay text-only (Linux `sysctl` has no `-j` either).
   disconnect / a cancellation signal) so the dispatch thread doesn't spin.
 - **Tests-first:** integration test — connect a client, issue accept, drop
   the client, assert the dispatch thread returns/cleans up promptly.
+- **SHIPPED**, by removing the daemon-side wait rather than making it
+  cancelable. The defect was not "accept cannot be cancelled" but
+  "blocking work runs inside the serial per-connection request loop": a
+  thread parked in `_accept` is not reading its connection, so it cannot
+  see the client hang up, and `close_all()` only runs once the accept
+  returns — which it did only on daemon shutdown.
+  `ClientTcpSocket.accept()` now waits client-side on the listener's
+  accept-readiness eventfd (already adopted at `listen()` for A3.4) and
+  takes the child with the non-blocking `accept_take`, so the dispatch
+  thread stays in its request loop and the existing EOF path reaps the
+  session immediately. The daemon's `_accept`, the `"accept"` method and
+  `IPC__SESSION__ACCEPT_POLL__SEC` are gone, as is the `accept_socket`
+  RPC helper; the codec unit tests moved to `accept_take_socket`, which
+  has the identical shape.
+  **Ordering rule that makes it correct:** a queued child is taken
+  *before* waiting. The eventfd drains when a take removes the last
+  queued child, so a child queued before the call — or left by another
+  thread's take — would otherwise sit unclaimed until a fresh readiness
+  edge. Non-blocking sockets (`gettimeout() == 0`) fail fast with
+  `BlockingIOError` rather than entering the loop, matching `accept(2)`
+  under O_NONBLOCK.
+  This also retires a drop-in divergence: `fileno()` already returned the
+  readiness eventfd for a listener, so select / poll / selectors /
+  asyncio were on this model while only blocking `accept()` went
+  daemon-side. There is now one accept path, not two.
+  Tests: `test__ipc__accept_cancel.py` (2: dispatch-thread unwind,
+  session-socket reaping) — they previously burned the full 5 s deadline
+  and now finish in ~1.3 s. Regression net: `test__ipc__accept`,
+  `test__ipc__nonblocking_accept`, the asyncio accept tests and
+  `test__ipc__socket_dropin` all green unchanged.
 - **Effort:** medium. **Risk:** medium (threading/lifecycle). **Value:**
   medium (daemon robustness).
 
