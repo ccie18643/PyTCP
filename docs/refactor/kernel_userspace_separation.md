@@ -2,7 +2,7 @@
 
 | Field      | Value                                                                 |
 |------------|-----------------------------------------------------------------------|
-| Status     | **COMPLETE — all six phases shipped: TCP/UDP/raw/AF_PACKET sockets + active connect + passive accept + recvmsg cmsg out-of-process, the six control APIs mirrored, and a first-class `python -m pytcp.daemon` / `pytcpd` entry point with a client readiness helper. Created 2026-05-31 on `PyTCP_3_0_7`.** Deferred: codec-core extraction for a slim client (§2), IP_RECVERR error-queue cmsg, selectable/cancelable accept. |
+| Status     | **COMPLETE — all six phases shipped: TCP/UDP/raw/AF_PACKET sockets + active connect + passive accept + recvmsg cmsg out-of-process, the six control APIs mirrored, and a first-class `python -m pytcp.daemon` / `pytcpd` entry point with a client readiness helper. Created 2026-05-31 on `PyTCP_3_0_7`.** Deferred: codec-core extraction for a slim client (§2) — the IP_RECVERR error queue and the cancelable accept have since shipped (R8 `ea04fcc6`, R9 `dd3f616f`). |
 | Branch     | `PyTCP_3_0_7`                                                          |
 | Motivation | Cut a real process boundary so the stack runs as a daemon and client processes use it from other processes — the North Star Phase-3 kernel/userspace boundary. Independent of the router/forwarding track. |
 
@@ -538,11 +538,15 @@ Design notes that landed:
   `{handle, peer}` accept-OK body. `listen` / `accept` were left off the
   allowlist in Phase 2 precisely so this could slot in.
 - **Blocking on the dispatch thread is bounded by a poll + stop event.**
-  The daemon accept loops on `accept(timeout=0.2s)` and re-checks the
-  server stop event, so teardown is clean. Known Phase-4 limitation: a
-  client that disconnects *mid-accept* (without the connection ever
-  completing) leaves the dispatch thread polling until server stop — a
-  selectable / cancelable accept is a later refinement.
+  *(Historical — superseded by R9 `dd3f616f`.)* The daemon accept looped
+  on `accept(timeout=0.2s)` and re-checked the server stop event, so
+  teardown was clean, but a client that disconnected *mid-accept* left
+  the dispatch thread polling until server stop. That was fixed by
+  removing the daemon-side wait rather than making it cancelable: the
+  client now waits on the listener's accept-readiness eventfd and takes
+  the child with the non-blocking `accept_take`, so no dispatch thread
+  blocks outside its request loop and the existing EOF path reaps the
+  session.
 
 ### Phase 5 — Examples migration (complete)
 
@@ -610,9 +614,25 @@ the original ~12k in-process tests stayed green throughout.
 **Deferred follow-ups** (documented, not blocking):
 1. **Codec-core extraction** (§2) — `pytcp.client` still transitively
    imports stack types via the value codec; a standalone `PyTCP-net_ipc`
-   dist would give a genuinely slim client.
-2. **IP_RECVERR error-queue** `recvmsg(MSG_ERRQUEUE)` over the boundary —
-   an on-demand path the data bridge does not pump.
-3. **Selectable / cancelable accept** — today a client that disconnects
-   mid-accept leaves the dispatch thread polling until server stop
-   (Phase-4 limitation).
+   dist would give a genuinely slim client. **Still open.**
+2. ~~**IP_RECVERR error-queue** `recvmsg(MSG_ERRQUEUE)` over the
+   boundary~~ — **SHIPPED** as R8 (`ea04fcc6`). The queue rides the
+   handle-keyed control RPC rather than the data bridge: a
+   `recvmsg_errqueue` socket call drains the daemon socket's queue and
+   returns the Linux 4-tuple, which the value codec already carried. The
+   daemon read is deliberately non-blocking, so it cannot park a dispatch
+   thread on a queue only an inbound ICMP error can fill. TCP is the
+   remaining slice — the drop-in gates `recvmsg` to datagram / raw
+   sockets, so a stream client cannot reach
+   `TcpSocket._recvmsg_errqueue` yet.
+3. ~~**Selectable / cancelable accept**~~ — **SHIPPED** as R9
+   (`dd3f616f`), by removing the daemon-side wait rather than making it
+   cancelable. The defect was blocking work running inside the serial
+   per-connection request loop: a thread parked in `_accept` never reads
+   its connection, so it cannot see the client hang up.
+   `ClientTcpSocket.accept()` now waits on the listener's
+   accept-readiness eventfd and takes the child with the non-blocking
+   `accept_take`, so the dispatch thread stays in its request loop and
+   the existing EOF path reaps the session. `_accept`, the `"accept"`
+   method, `IPC__SESSION__ACCEPT_POLL__SEC` and the `accept_socket`
+   helper are gone.

@@ -2,8 +2,8 @@
 
 | Field      | Value                                                                 |
 |------------|-----------------------------------------------------------------------|
-| Status     | **IN PROGRESS** — 2 of N shipped. Opened 2026-07-19 on `PyTCP_3_0_8`. |
-| Branch     | `PyTCP_3_0_8`                                                          |
+| Status     | **ESSENTIALLY CLOSED** — R1-R11 all shipped bar the R11 follow-on. Opened 2026-07-19 on `PyTCP_3_0_8`; reconciled 2026-09-16 on `PyTCP_3_0_10`. |
+| Branch     | `PyTCP_3_0_8` (opened); work continued on `PyTCP_3_0_10`               |
 | Scope      | Optional host-scope refinements deferred out of the 3.0.8 cut. **None are host-conformance gaps** — 3.0.8 is host-feature-complete. These are polish / Linux-parity completeness. |
 | Rule       | Every item is **tests-first (red tests before implementation)**, `make lint` clean, adherence + docs in lockstep. See `.claude/rules/feature_implementation.md`. |
 
@@ -617,11 +617,12 @@ stay text-only (Linux `sysctl` has no `-j` either).
 
 ### R8 — `IP_RECVERR` / `IPV6_RECVERR` error queue over the daemon boundary — SHIPPED
 
-- **Why:** the per-socket ICMP error queue + `recvmsg(MSG_ERRQUEUE)` works
-  **in-process**, but the daemon data bridge does not pump the error queue
-  across the AF_UNIX boundary, so a daemon-backed drop-in client cannot read
-  ICMP errors via `MSG_ERRQUEUE`. Source: `kernel_userspace_separation.md`
-  deferred list.
+- **Why (as filed):** the per-socket ICMP error queue +
+  `recvmsg(MSG_ERRQUEUE)` worked **in-process**, but the daemon data
+  bridge did not pump the error queue across the AF_UNIX boundary, so a
+  daemon-backed drop-in client could not read ICMP errors via
+  `MSG_ERRQUEUE`. In the event the drop-in was discarding the flag
+  outright too. Source: `kernel_userspace_separation.md` deferred list.
 - **Scope:** extend the daemon IPC protocol so an `MSG_ERRQUEUE` `recvmsg`
   is serviced across the boundary (the in-process path already builds the
   `sock_extended_err` cmsg via `runtime/socket/error_queue.py`). Wire the
@@ -649,11 +650,14 @@ stay text-only (Linux `sysctl` has no `-j` either).
 
 ### R9 — Selectable / cancelable `accept` over the daemon — SHIPPED
 
-- **Why:** a client disconnecting mid-`accept` leaves the daemon dispatch
-  thread polling until server stop (Phase-4 daemon limitation noted in
-  `kernel_userspace_separation.md`).
-- **Scope:** make the daemon-side accept wait cancelable (wake on client
-  disconnect / a cancellation signal) so the dispatch thread doesn't spin.
+- **Why (as filed):** a client disconnecting mid-`accept` left the daemon
+  dispatch thread polling until server stop (Phase-4 daemon limitation
+  noted in `kernel_userspace_separation.md`).
+- **Scope (as filed):** make the daemon-side accept wait cancelable (wake
+  on client disconnect / a cancellation signal) so the dispatch thread
+  doesn't spin. **Superseded:** the wait was removed instead — see the
+  SHIPPED note below for why cancellation turned out to be the wrong
+  frame for the defect.
 - **Tests-first:** integration test — connect a client, issue accept, drop
   the client, assert the dispatch thread returns/cleans up promptly.
 - **SHIPPED**, by removing the daemon-side wait rather than making it
@@ -753,30 +757,31 @@ so this backlog's boundary is explicit.
 
 ## Recommended ordering
 
-**Shipped:** R1, R5 (+ follow-on), R6, R7, R10 (knob), R11, and **R4
-(IPv6 SSM, P1-P5 — the big-value track, DONE)**. See the "Shipped" list
-above for commits.
+**Shipped:** R1, R2, R3, R4 (IPv6 SSM, P1-P5), R5 (+ follow-on), R6, R7,
+R8, R9, R10 (knob + §4 Report suppression), R11. See the "Shipped" list
+above and the per-item sections for commits.
 
-**Remaining (all optional; none block a 3.0.8 release):**
+**Remaining:**
 
-1. Small self-contained: **R2** (setsockopt-honored sweep — audit that
-   every accepted socket option is actually consumed on the data path),
-   **R10 §4** (MLDv1 Report suppression — marginal, an optimization).
-2. Medium, as appetite allows: **R3** (SO_SNDBUF / SO_SNDTIMEO — needs a
-   TX-completion signal), **R8** (IP_RECVERR error queue over the daemon
-   IPC boundary), **R9** (cancelable / selectable accept over the daemon).
+1. **R11 follow-on** — expose the RFC 6724 policy-table control API over
+   the daemon IPC boundary, plus the matching `pytcp` CLI verb. In-process
+   only today. Low value; do on appetite.
+2. **TCP `MSG_ERRQUEUE`** (surfaced closing R8) — `TcpSocket._recvmsg_errqueue`
+   exists in-process, but `socket__dropin.recvmsg` is gated to datagram /
+   raw sockets, so a stream client cannot reach it. Needs a stream-side
+   client method and the gate relaxed. Small.
 
-Suggested next: **R2** (small, closes a real correctness question) or
-**R3** (the last commonly-used socket knob gap). Everything here can
-equally slip to 3.0.9.
+Both are optional. With R2 / R8 / R9 / R10 closed on `PyTCP_3_0_10`, this
+backlog no longer gates anything.
 
 ---
 
-## Git state (2026-07-19)
+## Git state (2026-09-16)
 
-- Branch `PyTCP_3_0_8`. Pushed through `b9794191` (UDP + RAW SO_RCVBUF +
-  this backlog plan).
-- Pushed through `c2a76a60` (R1 / R5 / R5-followon / R10 knob / R11).
-- **Unpushed:** R7 DF-probe test-lock (`1793fb45`), R6 HyStart++ end-to-end
-  tests (`6cc2702a`), R4 P1 `Ip6MulticastFilter` (`d2054fe8`) + its doc
-  notes, and this resumable R4 P2-P5 map. Hold until the user says "push".
+- Opened on `PyTCP_3_0_8`; the remaining items closed on `PyTCP_3_0_10`.
+- Everything in this backlog is committed and pushed. The
+  2026-07-19 "Unpushed:" list this section used to carry (R7 `1793fb45`,
+  R6 `6cc2702a`, R4 P1 `d2054fe8`) went up long ago and is removed rather
+  than left to rot.
+- Closing commits on `PyTCP_3_0_10`: R10 §4 + R2 close-out `c9de1df6`,
+  R8 `ea04fcc6`, R9 `dd3f616f`.

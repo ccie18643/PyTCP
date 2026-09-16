@@ -1,10 +1,21 @@
 # TCP `SO_SNDBUF` / `SO_RCVBUF` — buffer accounting scoping
 
-Status: **Tier-1 complete** (Track A A1–A3 + Track B B1–B3 shipped). Track:
-the last open item of the host-refinements backlog
-(`docs/refactor/host_refinements_backlog.md`). Tier-2 parity polish and the
-separately-tracked Tier-3 auto-tuning (§7) remain. None of this blocks a
-3.0.8 release.
+Status: **Tier-1 and Tier-3 complete**; only Tier-2 parity polish remains.
+Track: the host-refinements backlog
+(`docs/refactor/host_refinements_backlog.md`).
+
+> **Reconciled 2026-09-16.** Tier-1 (Track A A1–A3 + Track B B1–B3)
+> shipped as recorded below. The separately-tracked **Tier-3 auto-tuning
+> (§7) also shipped in 3.0.8** — receive-buffer DRS plus send-buffer
+> growth with the congestion window, with the `tcp.rmem` / `tcp.wmem` /
+> `tcp.moderate_rcvbuf` operator surface; see
+> `docs/refactor/tcp_buffer_autotuning.md`.
+>
+> **Tier-2 parity polish is the one open item:** switching to Linux-style
+> larger default buffer sizes (~128 KiB, `tcp_rmem`-style). 3.0.8
+> deliberately kept the conservative defaults so no existing connection
+> changed behaviour, which is exactly what makes auto-tuning hard to
+> observe without an explicit sysctl. Nothing blocks a release on it.
 
 ## 1. Summary
 
@@ -197,7 +208,8 @@ writes the same buffer, so its bytes count toward the gate's occupancy and are
 released on the same cum-ACK drain. No separate charge/release path was needed.
 
 **Track B is complete.** All three tracks (A1–A3, B1–B3) of this
-backlog item have landed; only the Tier-2 parity polish and the
+backlog item have landed, as has the Tier-3 auto-tuning; only the
+Tier-2 parity polish and the
 separately-tracked Tier-3 auto-tuning remain (§7).
 
 ## 5. Recommended ordering &amp; risk

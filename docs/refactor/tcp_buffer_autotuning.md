@@ -1,11 +1,29 @@
 # TCP buffer auto-tuning (Tier 3) — implementation plan
 
-Status: **scoping** (no code yet). Track: the separately-split Tier-3
-item of the host-refinements backlog
-(`docs/refactor/host_refinements_backlog.md` "R-autotune"). The Tier-1
-`SO_SNDBUF`/`SO_RCVBUF` accounting it builds on is complete
-(`docs/refactor/tcp_buffer_accounting.md`). None of this blocks a 3.0.8
-release.
+Status: **SHIPPED in 3.0.8.** Track: the separately-split Tier-3 item of
+the host-refinements backlog
+(`docs/refactor/host_refinements_backlog.md` "R-autotune"), built on the
+Tier-1 `SO_SNDBUF`/`SO_RCVBUF` accounting
+(`docs/refactor/tcp_buffer_accounting.md`).
+
+> **Reconciled 2026-09-16.** The header read "scoping (no code yet)" long
+> after the work landed. As shipped: receive-buffer Dynamic Right-Sizing
+> grows the advertised window toward the bandwidth-delay product
+> (Linux `tcp_rcv_space_adjust`), the send buffer grows with the
+> congestion window (`tcp_sndbuf_expand`), both work with and without
+> timestamps, and the receive window scale is sized at SYN for the
+> configured ceiling. Operator surface: `tcp.rmem` / `tcp.wmem`
+> (min/default/max) and `tcp.moderate_rcvbuf`. Tests:
+> `test__tcp__session__drs.py`, `test__tcp__session__sndbuf_autotune.py`,
+> `test__tcp__session__rcv_rtt_no_ts.py`.
+>
+> Still open on the buffer track, and tracked in
+> `tcp_buffer_accounting.md` rather than here: the **Tier-2** switch to
+> Linux-style larger default buffer sizes. 3.0.8 deliberately kept the
+> conservative defaults, so a connection that sets no option and no
+> sysctl behaves exactly as before.
+
+The per-phase plan below is retained as the design record.
 
 ## 1. Summary
 
