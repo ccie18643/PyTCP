@@ -41,7 +41,7 @@ import os
 import tempfile
 from typing import cast, override
 
-from net_addr import Ip4Address, MacAddress
+from net_addr import Ip4Address, Ip6Network, MacAddress
 from pytcp.cli.__main__ import main
 from pytcp.cli.cli__format import format_route_table
 from pytcp.client import ClientTcpSocket
@@ -300,6 +300,54 @@ class TestIpcCli(IpcControlTestCase):
             raised.exception.code,
             0,
             msg="A malformed destination must exit non-zero.",
+        )
+
+    def test__cli__addrlabel_lists_the_policy_table(self) -> None:
+        """
+        Ensure 'pytcp addrlabel' renders the RFC 6724 policy table, so the
+        table is reachable from the CLI and not in-process only.
+
+        Reference: RFC 6724 §10.3 (default policy table).
+        """
+
+        output = self._run("addrlabel")
+
+        self.assertIn(
+            "prefix ::/0",
+            output,
+            msg="The addrlabel output must include the ::/0 catch-all row.",
+        )
+        self.assertIn(
+            "precedence",
+            output,
+            msg="The addrlabel output must show the precedence column PyTCP carries.",
+        )
+
+    def test__cli__addrlabel_reset_restores_defaults(self) -> None:
+        """
+        Ensure 'pytcp addrlabel --reset' restores the default table after a
+        custom one was installed over the control API.
+
+        Reference: RFC 6724 §10.3 (default policy table).
+        """
+
+        from pytcp.protocols.ip6 import ip6__policy_table
+        from pytcp.protocols.ip6.ip6__policy_table import PolicyEntry
+
+        self.addCleanup(ip6__policy_table.reset_policy_table)
+        ip6__policy_table.set_policy_table(
+            (
+                PolicyEntry(network=Ip6Network("2001:db8::/32"), precedence=77, label=9),
+                PolicyEntry(network=Ip6Network("::/0"), precedence=40, label=1),
+            )
+        )
+
+        self._run("addrlabel", "--reset")
+
+        self.assertEqual(
+            ip6__policy_table.get_policy_table(),
+            ip6__policy_table.DEFAULT_POLICY_TABLE,
+            msg="'addrlabel --reset' must restore the RFC 6724 defaults.",
         )
 
     def test__cli__output_padded_with_blank_lines(self) -> None:

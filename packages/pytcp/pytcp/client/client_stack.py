@@ -49,6 +49,7 @@ from pytcp.client.client__link import ClientLink
 from pytcp.client.client__membership import ClientMembership
 from pytcp.client.client__neighbor import ClientNeighbor
 from pytcp.client.client__packet_socket import ClientPacketSocket
+from pytcp.client.client__policy_table import ClientPolicyTable
 from pytcp.client.client__resolver import ClientResolver
 from pytcp.client.client__route import ClientRoute
 from pytcp.client.client__socket_introspect import ClientSocketIntrospect
@@ -73,6 +74,7 @@ class ClientStack:
 
         self._client = IpcClient(socket_path=socket_path)
         self.sysctl = ClientSysctl(self._client)
+        self.policy_table = ClientPolicyTable(self._client)
         self.route = ClientRoute(self._client)
         self.link = ClientLink(self._client)
         self.address = ClientAddress(self._client)

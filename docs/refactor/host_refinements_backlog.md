@@ -2,7 +2,7 @@
 
 | Field      | Value                                                                 |
 |------------|-----------------------------------------------------------------------|
-| Status     | **ESSENTIALLY CLOSED** — R1-R11 all shipped bar the R11 follow-on. Opened 2026-07-19 on `PyTCP_3_0_8`; reconciled 2026-09-16 on `PyTCP_3_0_10`. |
+| Status     | **CLOSED** — R1-R11 all shipped, follow-ons included. Opened 2026-07-19 on `PyTCP_3_0_8`; closed 2026-09-16 on `PyTCP_3_0_10`. |
 | Branch     | `PyTCP_3_0_8` (opened); work continued on `PyTCP_3_0_10`               |
 | Scope      | Optional host-scope refinements deferred out of the 3.0.8 cut. **None are host-conformance gaps** — 3.0.8 is host-feature-complete. These are polish / Linux-parity completeness. |
 | Rule       | Every item is **tests-first (red tests before implementation)**, `make lint` clean, adherence + docs in lockstep. See `.claude/rules/feature_implementation.md`. |
@@ -732,9 +732,30 @@ stay text-only (Linux `sysctl` has no `-j` either).
   a whole precedence/label table is not a scalar, and Linux itself exposes
   it via `ip addrlabel` (netlink), not `/proc/sys`. Copy-on-write
   reference swap, read live by `lookup`.
-- **Follow-on (deferred):** expose the control API over the daemon IPC
-  boundary for Phase-3 (in-process only today), and the corresponding
-  `pytcp` CLI verb. Low value; do on appetite.
+- **Follow-on — SHIPPED.** The policy table was the last control API not
+  crossing the daemon boundary, which mattered more than its own tuning
+  value: since 3.0.7 daemon mode is the supported way to run the stack, so
+  an operator could not read or change it at all in the mode they actually
+  use. Now exposed as the `policy_table` control API
+  (`get_policy_table` / `set_policy_table` / `reset_policy_table` on the
+  method allowlist), mirrored client-side by `ClientPolicyTable` reached
+  as `ClientStack.policy_table`, with `pytcp addrlabel` to list the table
+  and `--reset` to restore the RFC 6724 §10.3 defaults — named after the
+  Linux `ip addrlabel` the API already cited, which exposes the label half
+  of the same table.
+  Two supporting changes fell out: `PolicyEntry` is registered with the
+  IPC value codec (it encodes only allowlisted dataclasses), and
+  `set_policy_table` dropped its positional-only marker, because the
+  generic control plane invokes `method(**args)` and a positional-only
+  parameter is therefore unreachable over the boundary. Existing
+  positional call sites are unaffected.
+  Row-level editing is deliberately absent: `lookup` takes the first
+  matching prefix, so ordering is part of the value and the control API
+  replaces the table wholesale rather than leaving a caller to guess where
+  its row landed.
+  Tests: `test__ipc__control__policy_table.py` (5: mirror, set, field
+  round-trip, reset, allowlist refusal) + 2 CLI tests in
+  `test__ipc__cli.py`.
 
 ### Ongoing hygiene (not a discrete scheduled item)
 
@@ -776,12 +797,9 @@ above and the per-item sections for commits.
 1. **R11 follow-on** — expose the RFC 6724 policy-table control API over
    the daemon IPC boundary, plus the matching `pytcp` CLI verb. In-process
    only today. Low value; do on appetite.
-(The TCP `MSG_ERRQUEUE` slice surfaced while closing R8 has since
-shipped — see the R8 section.)
-
-With R2 / R8 (+ its TCP slice) / R9 / R10 closed on `PyTCP_3_0_10`, the
-R11 follow-on is the only item left, and this backlog no longer gates
-anything.
+**Nothing remains.** R1-R11 are all shipped, including the R11 follow-on
+and the TCP `MSG_ERRQUEUE` slice that surfaced while closing R8. This
+backlog is closed.
 
 ---
 

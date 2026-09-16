@@ -70,6 +70,7 @@ from net_proto.lib.enums import EtherType, IpProto
 from pytcp.ipc.ipc__errors import IpcValueError
 from pytcp.lib.interface_layer import InterfaceLayer
 from pytcp.lib.neighbor import NudState
+from pytcp.protocols.ip6.ip6__policy_table import PolicyEntry
 from pytcp.protocols.tcp.tcp__enums import FsmState
 from pytcp.runtime.fib import Route, RouteProtocol, RouteScope
 from pytcp.runtime.socket import (
@@ -142,6 +143,7 @@ _DATACLASS_TYPES: tuple[type[Any], ...] = (
     SockAddrLl,
     SocketSnapshot,
     InterfaceActivity,
+    PolicyEntry,
 )
 _DATACLASS_TYPE_BY_TAG: dict[str, type[Any]] = {t.__name__: t for t in _DATACLASS_TYPES}
 

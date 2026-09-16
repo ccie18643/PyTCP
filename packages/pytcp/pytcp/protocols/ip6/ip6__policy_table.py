@@ -118,13 +118,19 @@ def get_policy_table() -> tuple[PolicyEntry, ...]:
     return _active_policy_table
 
 
-def set_policy_table(entries: tuple[PolicyEntry, ...], /) -> None:
+def set_policy_table(entries: tuple[PolicyEntry, ...]) -> None:
     """
     Replace the active policy table with 'entries' — the PyTCP
     analogue of Linux 'ip addrlabel'. Entries are matched
     most-specific-first, so order them longest-prefix-first.
     The table MUST contain a ::/0 catch-all so 'lookup' stays
     total; a table without one is rejected.
+
+    'entries' is not positional-only: the generic control plane
+    invokes an exposed method as 'method(**args)', so a
+    positional-only parameter would be unreachable over the
+    daemon boundary. Existing positional call sites are
+    unaffected.
     """
 
     if not any(entry.network == Ip6Network("::/0") for entry in entries):

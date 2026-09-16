@@ -48,6 +48,7 @@ from net_addr import (
     Ip6Network,
     MacAddress,
 )
+from pytcp.protocols.ip6.ip6__policy_table import PolicyEntry
 from pytcp.runtime.fib import Route
 from pytcp.runtime.socket import AddressFamily, SocketType
 from pytcp.stack.activity_introspect import InterfaceActivity
@@ -350,6 +351,19 @@ def format_sysctl(items: Mapping[str, object], /) -> str:
     """
 
     return "\n".join(f"{key} = {value}" for key, value in flatten_sysctl(items).items())
+
+
+def format_policy_table(entries: Iterable[PolicyEntry], /) -> str:
+    """
+    Render the RFC 6724 policy table one row per line, in table order —
+    'lookup' takes the first matching prefix, so the order is meaningful
+    and is preserved rather than sorted.
+
+    Shaped after 'ip addrlabel list', with the precedence column PyTCP
+    also carries.
+    """
+
+    return "\n".join(f"prefix {entry.network} precedence {entry.precedence} label {entry.label}" for entry in entries)
 
 
 def _interface_lines(view: InterfaceView, *, with_addresses: bool) -> list[str]:

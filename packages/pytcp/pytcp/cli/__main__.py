@@ -66,6 +66,7 @@ from pytcp.cli.cli__format import (
     format_link,
     format_neighbor_table,
     format_neighbor_table_json,
+    format_policy_table,
     format_route_table,
     format_route_table_json,
     format_socket_table,
@@ -413,6 +414,24 @@ def _cmd_route_list(client: ClientStack, args: argparse.Namespace, /) -> str:
             client.route.list_routes(family=family), family=family, interface_names=names
         ),
     )
+
+
+def _cmd_addrlabel(client: ClientStack, args: argparse.Namespace, /) -> str:
+    """
+    List the RFC 6724 policy table, or restore its §10.3 defaults, for
+    the 'addrlabel' subcommand. Named after Linux 'ip addrlabel', which
+    exposes the label half of the same table; PyTCP's rows carry the
+    precedence too.
+
+    The table is read-only from the CLI beyond the reset: 'lookup' takes
+    the first matching prefix, so a row edit would need the caller to say
+    where the row goes, and the control API replaces the table wholesale.
+    """
+
+    if args.reset:
+        client.policy_table.reset_policy_table()
+        return ""
+    return format_policy_table(client.policy_table.get_policy_table())
 
 
 def _cmd_sysctl(client: ClientStack, args: argparse.Namespace, /) -> str:
@@ -1247,6 +1266,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser_link_set.add_argument("--mac", metavar="MAC", help="Set the interface MAC address (stack must be stopped).")
     parser_link_set.set_defaults(func=_cmd_link_set)
     parser_link.set_defaults(func=_cmd_link)
+
+    parser_addrlabel = subparsers.add_parser(
+        "addrlabel",
+        help="List the RFC 6724 policy table, or reset it to defaults.",
+    )
+    parser_addrlabel.add_argument(
+        "--reset",
+        action="store_true",
+        help="Restore the RFC 6724 default policy table.",
+    )
+    parser_addrlabel.set_defaults(func=_cmd_addrlabel)
 
     parser_sysctl = subparsers.add_parser("sysctl", help="Read or write sysctl values.")
     parser_sysctl.add_argument(

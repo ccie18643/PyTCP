@@ -86,6 +86,7 @@ _ALLOWED_METHODS: dict[str, frozenset[str]] = {
     "resolver": frozenset({"resolve", "get_dns_server"}),
     "socket_introspect": frozenset({"list_sockets"}),
     "activity_introspect": frozenset({"list_activity"}),
+    "policy_table": frozenset({"get_policy_table", "set_policy_table", "reset_policy_table"}),
 }
 
 
@@ -117,6 +118,14 @@ def _resolve_api(name: str, /) -> Any:
             return stack.ss
         case "activity_introspect":
             return stack.activity
+        case "policy_table":
+            # The RFC 6724 policy table is already a dedicated control
+            # API, module-scoped rather than a class instance bound on
+            # 'stack' — resolve the module itself rather than inventing a
+            # wrapper and a new stack singleton for three functions.
+            from pytcp.protocols.ip6 import ip6__policy_table
+
+            return ip6__policy_table
 
     raise KeyError(f"Unknown control API {name!r}.")
 
