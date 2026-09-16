@@ -252,6 +252,33 @@ def open_socket(
     )
 
 
+def recvmsg_errqueue_socket(
+    client: IpcClient,
+    /,
+    *,
+    handle: int,
+    bufsize: int,
+    ancbufsize: int,
+) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
+    """
+    Dequeue one entry from the daemon socket's ICMP error queue and
+    rebuild the Linux 'recvmsg(MSG_ERRQUEUE)' 4-tuple.
+
+    Shared by every client socket flavour that has an error queue —
+    datagram, raw, ping and stream — so the decode lives in one place.
+    An empty queue surfaces as 'BlockingIOError' (EAGAIN) through the
+    remote-error path.
+    """
+
+    data, cmsg, flags, address = socket_call(
+        client,
+        method="recvmsg_errqueue",
+        handle=handle,
+        args={"bufsize": bufsize, "ancbufsize": ancbufsize},
+    )
+    return data, [tuple(entry) for entry in cmsg], flags, tuple(address)
+
+
 def listen_socket(client: IpcClient, /, *, handle: int, backlog: int) -> int:
     """
     Issue the fd-bearing 'listen' call and return the accept-readiness

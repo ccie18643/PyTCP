@@ -50,7 +50,11 @@ from net_proto.lib.enums import IpProto
 from pytcp.ipc.ipc__client import IpcClient
 from pytcp.ipc.ipc__dgram_bridge import IPC__DGRAM_BRIDGE__CHUNK_SIZE
 from pytcp.ipc.ipc__dgram_frame import decode_dgram, encode_dgram
-from pytcp.ipc.ipc__socket_rpc import open_socket, socket_call
+from pytcp.ipc.ipc__socket_rpc import (
+    open_socket,
+    recvmsg_errqueue_socket,
+    socket_call,
+)
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
 from pytcp.runtime.socket import SO_RCVBUF, SOL_SOCKET, AddressFamily, SocketType
 
@@ -198,13 +202,12 @@ class _ClientDatagramBase:
         Reference: Linux 'ip(7)' (IP_RECVERR / MSG_ERRQUEUE API shape).
         """
 
-        data, cmsg, flags, address = socket_call(
+        return recvmsg_errqueue_socket(
             self._client,
-            method="recvmsg_errqueue",
             handle=self._handle,
-            args={"bufsize": bufsize, "ancbufsize": ancbufsize},
+            bufsize=bufsize,
+            ancbufsize=ancbufsize,
         )
-        return data, [tuple(entry) for entry in cmsg], flags, tuple(address)
 
     def recv(self, bufsize: int = IPC__CLIENT_DGRAM__MAX_PAYLOAD) -> bytes:
         """

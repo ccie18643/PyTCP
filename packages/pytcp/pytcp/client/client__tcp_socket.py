@@ -50,6 +50,7 @@ from pytcp.ipc.ipc__socket_rpc import (
     accept_take_socket,
     listen_socket,
     open_socket,
+    recvmsg_errqueue_socket,
     socket_call,
 )
 from pytcp.ipc.ipc__stdlib_socket import stdlib_socket
@@ -95,6 +96,31 @@ class ClientTcpSocket:
         """
 
         return self._accept_fd if self._accept_fd is not None else self._data_socket.fileno()
+
+    def recvmsg_errqueue(
+        self,
+        bufsize: int,
+        ancbufsize: int,
+    ) -> tuple[bytes, list[tuple[int, int, bytes]], int, tuple[str, int] | tuple[str, int, int, int]]:
+        """
+        Dequeue one entry from the daemon socket's ICMP error queue,
+        mirroring stdlib 'recvmsg(..., MSG_ERRQUEUE)'.
+
+        A stream socket has no data-path 'recvmsg' here — the byte stream
+        is the data channel — but it does have an error queue, which TCP
+        must report per RFC 1122 §4.2.3.9. The queue rides the
+        handle-keyed control RPC, as it does for the datagram flavours.
+
+        Reference: RFC 1122 §4.2.3.9 (TCP MUST report ICMP errors).
+        Reference: Linux 'ip(7)' (IP_RECVERR / MSG_ERRQUEUE API shape).
+        """
+
+        return recvmsg_errqueue_socket(
+            self._client,
+            handle=self._handle,
+            bufsize=bufsize,
+            ancbufsize=ancbufsize,
+        )
 
     def settimeout(self, timeout: float | None, /) -> None:
         """

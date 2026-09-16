@@ -642,9 +642,19 @@ stay text-only (Linux `sysctl` has no `-j` either).
   fill — so the stack's zero-timeout `TimeoutError` is normalised to
   EAGAIN. Tests: `test__ipc__socket_dropin_errqueue.py` (4: embedded
   datagram, IP_RECVERR cmsg shape, EAGAIN on empty, opt-in gate holds).
-- **Remaining:** TCP. `TcpSocket._recvmsg_errqueue` exists in-process, but
-  the drop-in's `recvmsg` is gated to datagram / raw sockets, so a
-  stream-socket client cannot reach it. Small follow-up.
+- **TCP slice — SHIPPED** (follow-up to the above). The drop-in gated
+  `recvmsg` to datagram / raw sockets, so a stream client could not reach
+  `TcpSocket._recvmsg_errqueue`. The MSG_ERRQUEUE branch now runs before
+  that gate — every flavour with an error queue can serve it, and the
+  datagram/raw restriction is scoped to the DATA-path `recvmsg`, where it
+  belongs (a stream's payload arrives over its byte-stream channel, not
+  as messages with ancillary data). `ClientTcpSocket.recvmsg_errqueue`
+  joins the datagram one, both delegating to a shared
+  `recvmsg_errqueue_socket` RPC helper so the decode lives in one place.
+  The daemon side needed no change: its `recvmsg_errqueue` dispatch was
+  already flavour-agnostic. Tests:
+  `test__ipc__socket_dropin_errqueue_tcp.py` (3), including a guard that
+  a stream data-path `recvmsg` still reports EOPNOTSUPP.
 - **Effort:** medium. **Risk:** medium (IPC protocol surface). **Value:**
   medium (completes the drop-in's error-reporting parity).
 
@@ -766,13 +776,12 @@ above and the per-item sections for commits.
 1. **R11 follow-on** — expose the RFC 6724 policy-table control API over
    the daemon IPC boundary, plus the matching `pytcp` CLI verb. In-process
    only today. Low value; do on appetite.
-2. **TCP `MSG_ERRQUEUE`** (surfaced closing R8) — `TcpSocket._recvmsg_errqueue`
-   exists in-process, but `socket__dropin.recvmsg` is gated to datagram /
-   raw sockets, so a stream client cannot reach it. Needs a stream-side
-   client method and the gate relaxed. Small.
+(The TCP `MSG_ERRQUEUE` slice surfaced while closing R8 has since
+shipped — see the R8 section.)
 
-Both are optional. With R2 / R8 / R9 / R10 closed on `PyTCP_3_0_10`, this
-backlog no longer gates anything.
+With R2 / R8 (+ its TCP slice) / R9 / R10 closed on `PyTCP_3_0_10`, the
+R11 follow-on is the only item left, and this backlog no longer gates
+anything.
 
 ---
 

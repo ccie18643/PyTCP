@@ -543,18 +543,22 @@ class Socket:
         stdlib 'socket.recvmsg'.
         """
 
-        if self._type not in (SocketType.DGRAM, SocketType.RAW):
-            raise OSError(errno.EOPNOTSUPP, "recvmsg() is only supported on a datagram or raw socket.")
-        control_sock = cast(
-            "ClientUdpSocket | ClientRawSocket | ClientPingSocket",
-            self._control_sock(),
-        )
         # MSG_ERRQUEUE reads the per-socket ICMP error queue rather than
         # the data channel, so it rides the control RPC instead of the
-        # datagram bridge.
+        # datagram bridge — and every flavour with an error queue can
+        # serve it, streams included (RFC 1122 §4.2.3.9). The
+        # datagram/raw restriction below is about the DATA-path recvmsg
+        # only: a stream's payload arrives over its byte-stream channel,
+        # not as messages with ancillary data.
         if flags & MSG_ERRQUEUE:
-            return control_sock.recvmsg_errqueue(bufsize, ancbufsize)
-        return control_sock.recvmsg(bufsize, ancbufsize)
+            return self._control_sock().recvmsg_errqueue(bufsize, ancbufsize)
+
+        if self._type not in (SocketType.DGRAM, SocketType.RAW):
+            raise OSError(errno.EOPNOTSUPP, "recvmsg() is only supported on a datagram or raw socket.")
+        return cast(
+            "ClientUdpSocket | ClientRawSocket | ClientPingSocket",
+            self._control_sock(),
+        ).recvmsg(bufsize, ancbufsize)
 
     def setsockopt(self, level: int | IpProto, optname: int, value: int | bytes, /) -> None:
         """
