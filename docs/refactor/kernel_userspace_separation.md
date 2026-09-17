@@ -621,10 +621,10 @@ the original ~12k in-process tests stayed green throughout.
    `recvmsg_errqueue` socket call drains the daemon socket's queue and
    returns the Linux 4-tuple, which the value codec already carried. The
    daemon read is deliberately non-blocking, so it cannot park a dispatch
-   thread on a queue only an inbound ICMP error can fill. TCP is the
-   remaining slice — the drop-in gates `recvmsg` to datagram / raw
-   sockets, so a stream client cannot reach
-   `TcpSocket._recvmsg_errqueue` yet.
+   thread on a queue only an inbound ICMP error can fill. The TCP slice
+   shipped too (`e45a8fc5`): the MSG_ERRQUEUE branch now runs before the
+   drop-in's datagram/raw gate, which is scoped to the data-path
+   `recvmsg` where it belongs.
 3. ~~**Selectable / cancelable accept**~~ — **SHIPPED** as R9
    (`dd3f616f`), by removing the daemon-side wait rather than making it
    cancelable. The defect was blocking work running inside the serial
@@ -636,3 +636,43 @@ the original ~12k in-process tests stayed green throughout.
    the existing EOF path reaps the session. `_accept`, the `"accept"`
    method, `IPC__SESSION__ACCEPT_POLL__SEC` and the `accept_socket`
    helper are gone.
+
+---
+
+## Open question — a daemon connection that did not observe its peer closing
+
+Recorded from the R9 investigation (2026-09-15) because it is
+**unexplained**, not because it is known to be a defect. R9's shipped
+design does not depend on the answer.
+
+**Observed**, with a client's `accept()` outstanding and the daemon's
+dispatch thread parked in the old `_accept`:
+
+- The client's control fd was genuinely closed — gone from
+  `/proc/self/fd`, and `IpcClient.close()` had run `shutdown(SHUT_RDWR)`
+  before closing.
+- The daemon's accepted connection never became readable. A `select` on
+  it returned not-readable indefinitely, so the EOF probe under test
+  never fired.
+- Worse, the daemon end stayed **writable**: `conn.send(b"x")` succeeded,
+  where a socket whose peer has closed must raise `BrokenPipeError`.
+  That implies the peer socket was still alive in the kernel.
+- The same primitive in isolation behaves correctly: connect / accept an
+  AF_UNIX pair in one process, close the client end, and the server end
+  goes readable, peeks `b''`, and raises `BrokenPipeError` on send.
+- With **no** accept outstanding the daemon detects the disconnect
+  promptly and closes the connection — the normal `recv_frame` EOF path
+  works, and is what R9 now relies on.
+
+**Caveat that likely deflates it:** the IPC tests run client and daemon
+in one process. In production they are separate processes, where exit
+closes descriptors unconditionally. This may therefore be an artifact of
+the in-process test topology with no production analogue — which is why
+it was not chased further.
+
+**If picked up:** the question to answer first is what still held the
+peer socket alive. Candidates ruled out during the investigation: an fd
+duplicate in the same process (none found by inode), and the client
+failing to close (the fd was gone). Not ruled out: something in the
+SCM_RIGHTS fd-passing path, or a reference held by the mux client's
+reader thread across its `join(timeout=…)`.
