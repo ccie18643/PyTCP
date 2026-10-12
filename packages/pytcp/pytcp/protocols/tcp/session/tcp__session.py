@@ -34,6 +34,7 @@ ver 3.0.9
 
 from __future__ import annotations
 
+import collections
 import errno
 import os
 import threading
@@ -560,6 +561,12 @@ class TcpSession:
 
         # Out of order packet buffer.
         self._ooo_packet_queue: dict[int, TcpMetadata] = {}
+
+        # Segments released from '_ooo_packet_queue' by a gap-fill,
+        # waiting for the outermost 'tcp_fsm' call to dispatch them
+        # one after another ('_ooo_draining' marks that loop).
+        self._ooo_ready: collections.deque[TcpMetadata] = collections.deque()
+        self._ooo_draining: bool = False
 
         # Used to report cause of connection failure.
         self._connection_error: ConnError = ConnError.NONE
@@ -2286,3 +2293,20 @@ class TcpSession:
                 tcp_fsm_dispatch_timer(self)
 
             self._pump_tail(state_at_entry, packet_rx_md is not None or syscall is not None)
+
+            # RFC 9293 §3.10.7.4: segments held for later processing
+            # are processed once RCV.NXT reaches them. A gap-fill
+            # releases them one at a time into '_ooo_ready'; process
+            # them here in a loop rather than by re-entering the FSM
+            # from inside the dispatch that released them, which
+            # nested one dispatch per queued segment and raised
+            # RecursionError on a long OOO run. The nested
+            # 'tcp_fsm' calls below see '_ooo_draining' and leave
+            # the next released segment to this loop.
+            if self._ooo_ready and not self._ooo_draining:
+                self._ooo_draining = True
+                try:
+                    while self._ooo_ready:
+                        self.tcp_fsm(packet_rx_md=self._ooo_ready.popleft())
+                finally:
+                    self._ooo_draining = False

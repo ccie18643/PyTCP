@@ -823,10 +823,13 @@ class TcpAckProcessor:
                     "tcp-ss",
                     f"[{session}] - Purged expired TX packet retransmit request counter for {seq}",
                 )
-        # Bring next packet from ooo_packet_queue if available.
+        # Bring next packet from ooo_packet_queue if available. The
+        # outermost 'tcp_fsm' call processes it once this dispatch
+        # has finished, so a long OOO run does not nest one FSM
+        # dispatch per queued segment.
         if ooo_packet := session._ooo_packet_queue.pop(session._rcv_seq.nxt, None):
             __debug__ and log(
                 "tcp-ss",
                 f"[{session}] - <lg>Retrieving packet {session._rcv_seq.nxt} from Out of Order queue</>",
             )
-            session.tcp_fsm(ooo_packet)
+            session._ooo_ready.append(ooo_packet)

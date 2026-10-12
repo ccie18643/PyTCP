@@ -597,3 +597,56 @@ class TestTcpDataTransfer__OutOfOrder(TcpTestCase):
             FsmState.ESTABLISHED,
             msg="OOO-burst handling must not transition the session out of ESTABLISHED.",
         )
+
+    def test__data_transfer_out_of_order__long_queue_drains_without_recursion(self) -> None:
+        """
+        Ensure that a gap-fill in front of a long run of
+        queued out-of-order segments delivers the whole run
+        in order without nesting one FSM dispatch per queued
+        segment. Draining by re-entering the FSM from inside
+        the dispatch that is still processing the previous
+        segment exhausts the interpreter stack (RecursionError)
+        once the run is a few hundred segments long, which
+        kills the packet-handler thread.
+
+        Reference: RFC 9293 §3.10.7.4 (segments with higher sequence numbers held for later processing).
+        """
+
+        session = self._drive_handshake_to_established(iss=LOCAL__ISS, peer_iss=PEER__ISS)
+
+        segment_count = 300
+        payload_size = 10
+
+        def _build(index: int) -> bytes:
+            """Helper: build the peer's 'index'-th data segment (0-based)."""
+            return build_tcp4(
+                sport=PEER__PORT,
+                dport=STACK__PORT,
+                seq=PEER__ISS + 1 + index * payload_size,
+                ack=LOCAL__ISS + 1,
+                flags=("ACK",),
+                payload=bytes([index % 256]) * payload_size,
+                win=PEER__WIN,
+            )
+
+        for index in range(1, segment_count):
+            self._drive_rx(frame=_build(index))
+        self.assertEqual(
+            len(session._ooo_packet_queue),
+            segment_count - 1,
+            msg="Setup precondition: every segment after the gap must be held in the OOO queue.",
+        )
+
+        self._drive_rx(frame=_build(0))
+
+        self.assertEqual(
+            bytes(session._rx_buffer),
+            b"".join(bytes([index % 256]) * payload_size for index in range(segment_count)),
+            msg="The gap-fill must deliver all queued segments to '_rx_buffer' in sequence order.",
+        )
+        self.assertEqual(
+            session._rcv_seq.nxt,
+            PEER__ISS + 1 + segment_count * payload_size,
+            msg="RCV.NXT must cover every drained segment.",
+        )
+        self.assertEqual(len(session._ooo_packet_queue), 0, msg="The OOO queue must be empty after the drain.")
