@@ -1183,3 +1183,34 @@ class TestTcpDataTransferRfc6691ReqB(TcpTestCase):
                 f"{len(first.payload)} bytes."
             ),
         )
+
+    def test__data_transfer_send__nagle_does_not_hold_full_tsopt_segments(self) -> None:
+        """
+        Ensure that with TSopt active, a back-to-back stream of
+        full-sized segments is not throttled by Nagle. A segment
+        carrying 'snd_mss - options_overhead' payload bytes is
+        a full segment for Nagle's purposes, so successive full
+        segments fire on successive ticks without waiting for
+        the previous one to be ACKed.
+
+        Reference: RFC 1122 §4.2.3.4 (Nagle algorithm).
+        Reference: RFC 6691 §2 Req B (sender reduces data length for options).
+        """
+
+        session = self._drive_handshake_with_tsopt(iss=LOCAL__ISS, peer_iss=PEER__ISS)
+        max_data_per_segment = PEER__MSS - 12  # TSopt 10 bytes + 2 NOPs
+
+        session.send(data=b"X" * (3 * max_data_per_segment))
+        tx = self._advance(ms=1) + self._advance(ms=1) + self._advance(ms=1)
+
+        self.assertEqual(
+            [len(self._parse_tx(frame).payload) for frame in tx],
+            [max_data_per_segment] * 3,
+            msg=(
+                "RFC 1122 §4.2.3.4: Nagle only defers a segment "
+                "smaller than a full segment while earlier data is "
+                "unacknowledged. With TSopt a full segment carries "
+                f"{max_data_per_segment} bytes, so three full segments "
+                "must go out on three ticks with no ACK in between."
+            ),
+        )

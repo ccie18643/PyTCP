@@ -519,7 +519,15 @@ class TcpTxEngine:
                     # disables R2-based connection-abort progression,
                     # silently hanging the connection.
                     is_retransmit = lt32(session._snd_seq.nxt, session._snd_seq.max)
-                    is_partial = transmit_data_len < session._win.snd_mss
+                    # A full segment is 'mss_for_data' bytes, not
+                    # '_snd_mss': with TSopt (or SACK / AccECN) options
+                    # on every segment the largest payload is smaller
+                    # (RFC 6691 §2 Req B). Comparing with '_snd_mss'
+                    # made every full segment a "partial", so Nagle
+                    # held each one until the previous was ACKed.
+                    # Linux's Nagle / Minshall checks likewise use the
+                    # options-aware 'tcp_current_mss()'.
+                    is_partial = transmit_data_len < mss_for_data
                     prev_partial_in_flight = gt32(session._snd_seq.sml, session._snd_seq.una)
                     # RFC 1122 §4.2.3.4: TCP_NODELAY disables
                     # Nagle for latency-sensitive applications;
